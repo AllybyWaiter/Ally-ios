@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container mx-auto">
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div className="col-span-2">
-            <div className="flex items-center gap-2 mb-4">
+            <Link to="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
               <div className="w-10 h-10 flex items-center justify-center">
                 <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
               </div>
@@ -15,7 +15,7 @@ const Footer = () => {
                 <div className="font-bold text-lg leading-none">Ally</div>
                 <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
               </div>
-            </div>
+            </Link>
             <p className="text-muted-foreground max-w-sm">
               Making aquarium water care effortless with AI-powered insights and personalized care plans.
             </p>
