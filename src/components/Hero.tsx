@@ -1,8 +1,18 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-aquarium.jpg";
+import { WaitlistDialog } from "@/components/WaitlistDialog";
 
 const Hero = () => {
+  const [showWaitlist, setShowWaitlist] = useState(false);
+
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background with overlay */}
@@ -30,14 +40,26 @@ const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button variant="hero" size="lg" className="text-lg px-8">
+          <Button 
+            variant="hero" 
+            size="lg" 
+            className="text-lg px-8"
+            onClick={() => setShowWaitlist(true)}
+          >
             Get Started Free
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
-          <Button variant="heroOutline" size="lg" className="text-lg px-8">
+          <Button 
+            variant="heroOutline" 
+            size="lg" 
+            className="text-lg px-8"
+            onClick={() => scrollToSection("how-it-works")}
+          >
             See How It Works
           </Button>
         </div>
+
+        <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
 
         {/* Stats */}
         <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
