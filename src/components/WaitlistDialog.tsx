@@ -2,17 +2,19 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { Loader2 } from "lucide-react";
 
-const waitlistSchema = z.object({
+const emailSchema = z.object({
   email: z
     .string()
     .trim()
     .email({ message: "Please enter a valid email address" })
-    .max(255, { message: "Email must be less than 255 characters" }),
+    .max(255, { message: "Email must be less than 255 characters" })
+    .toLowerCase(),
 });
 
 interface WaitlistDialogProps {
@@ -23,51 +25,45 @@ interface WaitlistDialogProps {
 export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate email
-    const result = waitlistSchema.safeParse({ email });
-    if (!result.success) {
-      toast({
-        title: "Invalid email",
-        description: result.error.errors[0].message,
-        variant: "destructive",
-      });
-      return;
-    }
-
+    setError("");
     setIsLoading(true);
 
     try {
-      const { error } = await supabase
-        .from("waitlist")
-        .insert([{ email: result.data.email.toLowerCase() }]);
+      // Validate email
+      const validatedData = emailSchema.parse({ email });
 
-      if (error) {
-        if (error.code === "23505") {
-          toast({
-            title: "Already on the list!",
-            description: "You're already signed up for early access.",
-          });
-        } else {
-          throw error;
+      // Insert into database
+      const { error: dbError } = await supabase
+        .from("waitlist")
+        .insert([{ email: validatedData.email }]);
+
+      if (dbError) {
+        // Check for duplicate email
+        if (dbError.code === "23505") {
+          throw new Error("This email is already on the waitlist");
         }
-      } else {
-        toast({
-          title: "Welcome aboard! 🎉",
-          description: "Thanks for joining! We'll be in touch soon with early access details.",
-        });
-        setEmail("");
-        setTimeout(() => onOpenChange(false), 2000);
+        throw new Error("Failed to join waitlist. Please try again.");
       }
-    } catch (error) {
-      toast({
-        title: "Something went wrong",
-        description: "Please try again later.",
-        variant: "destructive",
+
+      // Success!
+      toast.success("Welcome aboard! 🎉", {
+        description: "We'll notify you as soon as we launch.",
       });
+      
+      setEmail("");
+      setTimeout(() => onOpenChange(false), 1500);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        setError(err.errors[0].message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,23 +73,30 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Join the Waitlist</DialogTitle>
+          <DialogTitle>Join the Waitlist</DialogTitle>
           <DialogDescription>
-            Be among the first to experience Ally. Get early access and exclusive benefits.
+            Be the first to know when Ally launches. We respect your privacy and won't spam you.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="relative">
-            <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
             <Input
+              id="email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="you@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="pl-10"
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError("");
+              }}
               disabled={isLoading}
               autoFocus
+              required
             />
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
@@ -105,9 +108,6 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
               "Join Waitlist"
             )}
           </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            We respect your privacy. Unsubscribe anytime.
-          </p>
         </form>
       </DialogContent>
     </Dialog>
