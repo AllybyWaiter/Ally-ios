@@ -1,4 +1,4 @@
-import { Waves } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Footer = () => {
   return (
@@ -7,8 +7,8 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gradient-water flex items-center justify-center">
-                <Waves className="w-6 h-6 text-primary-foreground" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
               </div>
               <div>
                 <div className="font-bold text-lg leading-none">Ally</div>
