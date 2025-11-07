@@ -4,6 +4,7 @@ import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
 import AppShowcase from "@/components/AppShowcase";
 import CTA from "@/components/CTA";
+import { ContactForm } from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -16,6 +17,7 @@ const Index = () => {
         <HowItWorks />
         <AppShowcase />
         <CTA />
+        <ContactForm />
       </main>
       <Footer />
     </div>
