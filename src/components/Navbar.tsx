@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -16,7 +17,7 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div className="w-10 h-10 flex items-center justify-center">
             <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
           </div>
@@ -24,7 +25,7 @@ const Navbar = () => {
             <div className="font-bold text-lg leading-none">Ally</div>
             <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
           </div>
-        </div>
+        </Link>
 
         <div className="hidden md:flex items-center gap-8">
           <a 
