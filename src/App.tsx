@@ -12,6 +12,7 @@ import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Dashboard from "./pages/Dashboard";
+import WaterTests from "./pages/WaterTests";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Features from "./pages/Features";
@@ -38,6 +39,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/water-tests" 
+              element={
+                <ProtectedRoute>
+                  <WaterTests />
                 </ProtectedRoute>
               } 
             />

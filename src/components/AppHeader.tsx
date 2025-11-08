@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, Settings, LogOut } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const AppHeader = () => {
   const { user, userName, signOut } = useAuth();
+  const location = useLocation();
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -38,6 +39,26 @@ const AppHeader = () => {
             <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
           </div>
         </Link>
+
+        {/* Navigation Links */}
+        <nav className="hidden md:flex items-center gap-1">
+          <Link to="/dashboard">
+            <Button
+              variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
+              size="sm"
+            >
+              Dashboard
+            </Button>
+          </Link>
+          <Link to="/water-tests">
+            <Button
+              variant={location.pathname === "/water-tests" ? "secondary" : "ghost"}
+              size="sm"
+            >
+              Water Tests
+            </Button>
+          </Link>
+        </nav>
 
         <div className="flex items-center gap-3">
           {/* Notification Bell - placeholder for future */}
