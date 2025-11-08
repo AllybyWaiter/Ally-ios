@@ -96,7 +96,7 @@ const About = () => {
                 </div>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-3 lg:col-start-2">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
                     <span className="text-primary font-bold">4</span>
