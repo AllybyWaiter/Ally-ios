@@ -178,7 +178,11 @@ export default function Dashboard() {
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {aquariums.map((aquarium) => (
-                <Card key={aquarium.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card 
+                  key={aquarium.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/aquarium/${aquarium.id}`)}
+                >
                   <CardHeader>
                     <CardTitle>{aquarium.name}</CardTitle>
                     <CardDescription className="capitalize">

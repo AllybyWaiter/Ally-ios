@@ -13,6 +13,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Dashboard from "./pages/Dashboard";
 import WaterTests from "./pages/WaterTests";
+import AquariumDetail from "./pages/AquariumDetail";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Features from "./pages/Features";
@@ -47,6 +48,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <WaterTests />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/aquarium/:id" 
+              element={
+                <ProtectedRoute>
+                  <AquariumDetail />
                 </ProtectedRoute>
               } 
             />
