@@ -38,13 +38,12 @@ const Navbar = () => {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          <a 
-            href="#features" 
+          <Link 
+            to="/features" 
             className="text-sm font-medium hover:text-primary transition-colors"
-            onClick={(e) => scrollToSection(e, "features")}
           >
             Features
-          </a>
+          </Link>
           <a 
             href="#how-it-works" 
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -92,13 +91,13 @@ const Navbar = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px]">
               <nav className="flex flex-col gap-4 mt-8">
-                <a 
-                  href="#features" 
+                <Link 
+                  to="/features" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
-                  onClick={(e) => scrollToSection(e, "features")}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Features
-                </a>
+                </Link>
                 <a 
                   href="#how-it-works" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
