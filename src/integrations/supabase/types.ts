@@ -80,6 +80,39 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_parameter_templates: {
+        Row: {
+          aquarium_type: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          parameters: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aquarium_type: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          parameters: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aquarium_type?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          parameters?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
           aquarium_id: string
