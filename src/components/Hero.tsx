@@ -3,16 +3,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-aquarium.jpg";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background with overlay */}
@@ -53,7 +48,7 @@ const Hero = () => {
             variant="heroOutline" 
             size="lg" 
             className="text-lg px-8"
-            onClick={() => scrollToSection("how-it-works")}
+            onClick={() => navigate("/how-it-works")}
           >
             See How It Works
           </Button>
