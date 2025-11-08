@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Menu } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ const Navbar = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, userName } = useAuth();
+  const navigate = useNavigate();
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
@@ -22,6 +23,16 @@ const Navbar = () => {
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
       setMobileMenuOpen(false);
+    }
+  };
+
+  const handleAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    if (user) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
     }
   };
   return (
@@ -60,7 +71,7 @@ const Navbar = () => {
           <a 
             href="#app" 
             className="text-sm font-medium hover:text-primary transition-colors"
-            onClick={(e) => scrollToSection(e, "app")}
+            onClick={handleAppClick}
           >
             App
           </a>
@@ -115,7 +126,7 @@ const Navbar = () => {
                 <a 
                   href="#app" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
-                  onClick={(e) => scrollToSection(e, "app")}
+                  onClick={handleAppClick}
                 >
                   App
                 </a>
