@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      aquariums: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          setup_date: string | null
+          status: string | null
+          type: string
+          updated_at: string
+          user_id: string
+          volume_gallons: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          setup_date?: string | null
+          status?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+          volume_gallons?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          setup_date?: string | null
+          status?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+          volume_gallons?: number | null
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           created_at: string
@@ -41,12 +80,124 @@ export type Database = {
         }
         Relationships: []
       }
+      equipment: {
+        Row: {
+          aquarium_id: string
+          brand: string | null
+          created_at: string
+          equipment_type: string
+          id: string
+          install_date: string | null
+          last_maintenance_date: string | null
+          maintenance_interval_days: number | null
+          model: string | null
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          aquarium_id: string
+          brand?: string | null
+          created_at?: string
+          equipment_type: string
+          id?: string
+          install_date?: string | null
+          last_maintenance_date?: string | null
+          maintenance_interval_days?: number | null
+          model?: string | null
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aquarium_id?: string
+          brand?: string | null
+          created_at?: string
+          equipment_type?: string
+          id?: string
+          install_date?: string | null
+          last_maintenance_date?: string | null
+          maintenance_interval_days?: number | null
+          model?: string | null
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_tasks: {
+        Row: {
+          aquarium_id: string
+          completed_date: string | null
+          created_at: string
+          due_date: string
+          equipment_id: string | null
+          id: string
+          notes: string | null
+          status: string | null
+          task_name: string
+          task_type: string
+          updated_at: string
+        }
+        Insert: {
+          aquarium_id: string
+          completed_date?: string | null
+          created_at?: string
+          due_date: string
+          equipment_id?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          task_name: string
+          task_type: string
+          updated_at?: string
+        }
+        Update: {
+          aquarium_id?: string
+          completed_date?: string | null
+          created_at?: string
+          due_date?: string
+          equipment_id?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          task_name?: string
+          task_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tasks_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_tasks_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
           email: string
           id: string
           name: string | null
+          onboarding_completed: boolean | null
+          subscription_tier: string | null
           updated_at: string
           user_id: string
         }
@@ -55,6 +206,8 @@ export type Database = {
           email: string
           id?: string
           name?: string | null
+          onboarding_completed?: boolean | null
+          subscription_tier?: string | null
           updated_at?: string
           user_id: string
         }
@@ -63,10 +216,50 @@ export type Database = {
           email?: string
           id?: string
           name?: string | null
+          onboarding_completed?: boolean | null
+          subscription_tier?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      test_parameters: {
+        Row: {
+          created_at: string
+          id: string
+          parameter_name: string
+          status: string | null
+          test_id: string
+          unit: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parameter_name: string
+          status?: string | null
+          test_id: string
+          unit: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parameter_name?: string
+          status?: string | null
+          test_id?: string
+          unit?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_parameters_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "water_tests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -109,6 +302,47 @@ export type Database = {
           metadata?: Json | null
         }
         Relationships: []
+      }
+      water_tests: {
+        Row: {
+          aquarium_id: string
+          created_at: string
+          entry_method: string | null
+          id: string
+          notes: string | null
+          test_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aquarium_id: string
+          created_at?: string
+          entry_method?: string | null
+          id?: string
+          notes?: string | null
+          test_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aquarium_id?: string
+          created_at?: string
+          entry_method?: string | null
+          id?: string
+          notes?: string | null
+          test_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_tests_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
