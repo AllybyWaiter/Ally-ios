@@ -48,7 +48,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
   });
 
   const { data: upcomingTasks, isLoading: tasksLoading } = useQuery({
-    queryKey: ["upcoming-tasks", aquariumId],
+    queryKey: ["upcomingTasks", aquariumId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("maintenance_tasks")
@@ -56,12 +56,26 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
         .eq("aquarium_id", aquariumId)
         .eq("status", "pending")
         .order("due_date", { ascending: true })
-        .limit(3);
+        .limit(5);
 
       if (error) throw error;
       return data;
     },
   });
+
+  const getTaskDueDateStatus = (dueDate: string) => {
+    const due = new Date(dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    due.setHours(0, 0, 0, 0);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return { label: "Overdue", variant: "destructive" as const };
+    if (diffDays === 0) return { label: "Due Today", variant: "default" as const };
+    if (diffDays <= 3) return { label: "Due Soon", variant: "secondary" as const };
+    return { label: "Upcoming", variant: "outline" as const };
+  };
 
   const isLoading = testLoading || equipmentLoading || tasksLoading;
 
@@ -115,9 +129,31 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
             <CardTitle className="text-sm font-medium">Upcoming Tasks</CardTitle>
             <ListTodo className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{upcomingTasks?.length || 0}</div>
-            <p className="text-xs text-muted-foreground mt-1">tasks pending</p>
+          <CardContent className="pt-6">
+            <div className="text-3xl font-bold mb-2">
+              {upcomingTasks?.length || 0}
+            </div>
+            <p className="text-sm text-muted-foreground">Tasks pending</p>
+            {upcomingTasks && upcomingTasks.length > 0 && (
+              <div className="mt-4 space-y-2">
+                {upcomingTasks.slice(0, 3).map((task) => {
+                  const dueDateStatus = getTaskDueDateStatus(task.due_date);
+                  return (
+                    <div key={task.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{task.task_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(task.due_date), "MMM d")}
+                        </p>
+                      </div>
+                      <Badge variant={dueDateStatus.variant} className="ml-2 text-xs">
+                        {dueDateStatus.label}
+                      </Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

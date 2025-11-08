@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
+  const [upcomingTaskCount, setUpcomingTaskCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -75,6 +76,21 @@ export default function Dashboard() {
 
       if (error) throw error;
       setAquariums(data || []);
+
+      // Load upcoming task count
+      if (data && data.length > 0) {
+        const sevenDaysFromNow = new Date();
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+        const { count } = await supabase
+          .from('maintenance_tasks')
+          .select('*', { count: 'exact', head: true })
+          .in('aquarium_id', data.map(a => a.id))
+          .eq('status', 'pending')
+          .lte('due_date', sevenDaysFromNow.toISOString());
+
+        setUpcomingTaskCount(count || 0);
+      }
     } catch (error: any) {
       console.error('Error loading aquariums:', error);
       toast({
@@ -148,7 +164,7 @@ export default function Dashboard() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
+              <div className="text-2xl font-bold">{upcomingTaskCount}</div>
               <p className="text-xs text-muted-foreground">Tasks due this week</p>
             </CardContent>
           </Card>
