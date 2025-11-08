@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -77,16 +78,32 @@ export const EquipmentDialog = ({
   const form = useForm<EquipmentFormValues>({
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
-      name: equipment?.name || "",
-      equipment_type: equipment?.equipment_type || "",
-      brand: equipment?.brand || "",
-      model: equipment?.model || "",
-      install_date: equipment?.install_date || "",
-      maintenance_interval_days: equipment?.maintenance_interval_days || undefined,
-      last_maintenance_date: equipment?.last_maintenance_date || "",
-      notes: equipment?.notes || "",
+      name: "",
+      equipment_type: "",
+      brand: "",
+      model: "",
+      install_date: "",
+      maintenance_interval_days: undefined,
+      last_maintenance_date: "",
+      notes: "",
     },
   });
+
+  // Reset form when dialog opens or equipment changes
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: equipment?.name || "",
+        equipment_type: equipment?.equipment_type || "",
+        brand: equipment?.brand || "",
+        model: equipment?.model || "",
+        install_date: equipment?.install_date || "",
+        maintenance_interval_days: equipment?.maintenance_interval_days || undefined,
+        last_maintenance_date: equipment?.last_maintenance_date || "",
+        notes: equipment?.notes || "",
+      });
+    }
+  }, [open, equipment, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: EquipmentFormValues) => {
