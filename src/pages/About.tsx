@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Heart, Target, Users } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const About = () => {
   return (
@@ -33,15 +33,17 @@ const About = () => {
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-3xl mx-auto">
             <div className="prose prose-lg max-w-none">
-              <h2 className="text-3xl font-bold mb-6">Our Story</h2>
+              <h2 className="text-3xl font-bold mb-6">Ally by WA.I.TER — Our Story</h2>
               <p className="text-muted-foreground mb-4">
-                Ally was born from a simple observation: aquarium care shouldn't be complicated. Too many passionate aquarists struggle with water testing, maintenance schedules, and knowing when something is wrong with their aquatic ecosystem.
+                Ally started with a simple but frustrating truth: water care shouldn't be this complicated.
+                Whether it's a home aquarium or a backyard pool, people were guessing, Googling, or paying someone else to handle what should be simple — keeping water healthy, balanced, and beautiful.
               </p>
               <p className="text-muted-foreground mb-4">
-                We combined cutting-edge AI technology with decades of aquarium expertise to create an intelligent companion that helps you maintain pristine water conditions. Whether you're caring for a single betta or managing multiple reef tanks, Ally adapts to your needs and grows smarter with every interaction.
+                Founded by Jacob Stephens, Ally was born from the belief that AI could make water care effortless, accurate, and empowering. Instead of replacing people, Ally was designed to act like a real partner — a digital water expert that always knows what's happening and what to do next.
               </p>
-              <p className="text-muted-foreground">
-                Our team at WA.I.TER is dedicated to revolutionizing aquarium care through innovation, making it accessible, predictive, and stress-free for hobbyists worldwide.
+              <p className="text-muted-foreground mb-4">
+                What began as a smart aquarium app is evolving into a full ecosystem — from auto-testers and dosers to intelligent insights that help homeowners, hobbyists, and businesses alike.
+                Ally is pioneering "hands-free water care" — where clarity, chemistry, and confidence all flow together.
               </p>
             </div>
           </div>
@@ -49,37 +51,77 @@ const About = () => {
 
         {/* Values Section */}
         <section className="container mx-auto px-4 py-12">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Our Values</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Heart className="h-8 w-8 text-primary" />
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12">Our Core Values</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <span className="text-primary font-bold">1</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2">Intelligence You Can Trust</h3>
+                    <p className="text-muted-foreground">
+                      Every insight Ally gives is grounded in data, accuracy, and transparency — not gimmicks or marketing fluff. Our AI is designed to earn trust, not just automate tasks.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-xl mb-3">Care First</h3>
-                <p className="text-muted-foreground">
-                  We prioritize the health and wellbeing of your aquatic life above everything else.
-                </p>
               </div>
               
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Target className="h-8 w-8 text-primary" />
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <span className="text-primary font-bold">2</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2">Effortless Clarity</h3>
+                    <p className="text-muted-foreground">
+                      Water care should feel simple, sleek, and intuitive. Every feature, from test logging to care plans, is built to remove friction — so users focus on enjoying their tanks or pools, not managing them.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-xl mb-3">Precision</h3>
-                <p className="text-muted-foreground">
-                  AI-powered insights that give you accurate, actionable recommendations every time.
-                </p>
               </div>
               
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                  <Users className="h-8 w-8 text-primary" />
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <span className="text-primary font-bold">3</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2">Precision Meets Design</h3>
+                    <p className="text-muted-foreground">
+                      Ally merges scientific precision with Tesla-level design — smart, minimal, and modern. We believe technology should look as good as it performs.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-xl mb-3">Community</h3>
-                <p className="text-muted-foreground">
-                  Building a supportive community where aquarists of all levels can thrive together.
-                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <span className="text-primary font-bold">4</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2">Partnership Over Product</h3>
+                    <p className="text-muted-foreground">
+                      Ally isn't just software — it's a water-care companion. We design every feature around how real people think, test, and maintain their water spaces.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                    <span className="text-primary font-bold">5</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-xl mb-2">Sustainable by Default</h3>
+                    <p className="text-muted-foreground">
+                      Good water care protects more than tanks and pools — it protects the environment. Ally's dosing and guidance are optimized to reduce chemical waste and promote responsible stewardship.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
