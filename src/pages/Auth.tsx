@@ -16,7 +16,10 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
-const signupSchema = loginSchema.extend({
+const signupSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -25,13 +28,14 @@ const signupSchema = loginSchema.extend({
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
   
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
@@ -57,8 +61,8 @@ export default function Auth() {
           throw error;
         }
       } else {
-        const validated = signupSchema.parse({ email, password, confirmPassword });
-        const { error } = await signUp(validated.email, validated.password);
+        const validated = signupSchema.parse({ name, email, password, confirmPassword });
+        const { error } = await signUp(validated.email, validated.password, validated.name);
         
         if (error) {
           throw error;
@@ -74,10 +78,10 @@ export default function Auth() {
       navigate('/admin');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        const fieldErrors: { email?: string; password?: string; confirmPassword?: string } = {};
+        const fieldErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
         error.errors.forEach((err) => {
           if (err.path[0]) {
-            fieldErrors[err.path[0] as 'email' | 'password' | 'confirmPassword'] = err.message;
+            fieldErrors[err.path[0] as 'name' | 'email' | 'password' | 'confirmPassword'] = err.message;
           }
         });
         setErrors(fieldErrors);
@@ -129,6 +133,22 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isLoading}
+                />
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name}</p>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input

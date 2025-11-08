@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navbar = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
+  const { user, userName } = useAuth();
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
@@ -52,12 +54,20 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/auth">Sign In</Link>
-          </Button>
-          <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)}>
-            Get Early Access
-          </Button>
+          {user ? (
+            <div className="text-sm font-medium">
+              Welcome, {userName || 'User'}
+            </div>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/auth">Sign In</Link>
+              </Button>
+              <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)}>
+                Get Early Access
+              </Button>
+            </>
+          )}
         </div>
         
         <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
