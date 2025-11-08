@@ -58,6 +58,14 @@ const AppHeader = () => {
               Water Tests
             </Button>
           </Link>
+          <Link to="/calendar">
+            <Button
+              variant={location.pathname === "/calendar" ? "secondary" : "ghost"}
+              size="sm"
+            >
+              Calendar
+            </Button>
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">

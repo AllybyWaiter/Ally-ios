@@ -14,6 +14,7 @@ import Admin from "./pages/Admin";
 import Dashboard from "./pages/Dashboard";
 import WaterTests from "./pages/WaterTests";
 import AquariumDetail from "./pages/AquariumDetail";
+import TaskCalendar from "./pages/TaskCalendar";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Features from "./pages/Features";
@@ -60,7 +61,15 @@ const App = () => (
               } 
             />
             <Route 
-              path="/admin" 
+              path="/calendar" 
+              element={
+                <ProtectedRoute>
+                  <TaskCalendar />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin"
               element={
                 <ProtectedRoute requireAdmin>
                   <Admin />
