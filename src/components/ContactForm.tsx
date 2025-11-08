@@ -45,16 +45,14 @@ export const ContactForm = () => {
       // Validate form data
       const validatedData = contactSchema.parse(formData);
 
-      // Insert into database with name and message in metadata
+      // Insert into contacts table
       const { error: dbError } = await supabase
-        .from("waitlist")
+        .from("contacts")
         .insert([{
+          name: validatedData.name,
           email: validatedData.email,
-          metadata: {
-            name: validatedData.name,
-            message: validatedData.message,
-            type: "contact"
-          }
+          message: validatedData.message,
+          status: "new"
         }]);
 
       if (dbError) {
