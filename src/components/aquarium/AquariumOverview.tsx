@@ -1,0 +1,200 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Droplet, Wrench, ListTodo, Plus } from "lucide-react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+
+interface AquariumOverviewProps {
+  aquariumId: string;
+  aquarium: any;
+}
+
+export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
+  const navigate = useNavigate();
+
+  const { data: latestTest, isLoading: testLoading } = useQuery({
+    queryKey: ["latest-test", aquariumId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("water_tests")
+        .select(`
+          *,
+          test_parameters(*)
+        `)
+        .eq("aquarium_id", aquariumId)
+        .order("test_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: equipmentCount, isLoading: equipmentLoading } = useQuery({
+    queryKey: ["equipment-count", aquariumId],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("equipment")
+        .select("*", { count: "exact", head: true })
+        .eq("aquarium_id", aquariumId);
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: upcomingTasks, isLoading: tasksLoading } = useQuery({
+    queryKey: ["upcoming-tasks", aquariumId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("maintenance_tasks")
+        .select("*")
+        .eq("aquarium_id", aquariumId)
+        .eq("status", "pending")
+        .order("due_date", { ascending: true })
+        .limit(3);
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isLoading = testLoading || equipmentLoading || tasksLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Latest Water Test</CardTitle>
+            <Droplet className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {latestTest ? (
+              <div>
+                <div className="text-2xl font-bold">
+                  {format(new Date(latestTest.test_date), "MMM d")}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {latestTest.test_parameters?.length || 0} parameters logged
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No tests yet</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Equipment</CardTitle>
+            <Wrench className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{equipmentCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {equipmentCount === 1 ? "item" : "items"} installed
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Tasks</CardTitle>
+            <ListTodo className="w-4 h-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{upcomingTasks?.length || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">tasks pending</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {latestTest && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Latest Test Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-3">
+              {latestTest.test_parameters?.slice(0, 6).map((param: any) => (
+                <div
+                  key={param.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{param.parameter_name}</p>
+                    <p className="text-xs text-muted-foreground">{param.unit}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{param.value}</p>
+                    {param.status && param.status !== "normal" && (
+                      <Badge variant="destructive" className="text-xs mt-1">
+                        {param.status}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {upcomingTasks && upcomingTasks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Maintenance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {upcomingTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                >
+                  <div>
+                    <p className="font-medium">{task.task_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {task.task_type}
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {format(new Date(task.due_date), "MMM d")}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Button onClick={() => navigate("/water-tests")} className="w-full">
+          <Plus className="w-4 h-4 mr-2" />
+          Log Water Test
+        </Button>
+        <Button variant="outline" className="w-full">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Equipment
+        </Button>
+        <Button variant="outline" className="w-full">
+          <Plus className="w-4 h-4 mr-2" />
+          Create Task
+        </Button>
+      </div>
+    </div>
+  );
+}
