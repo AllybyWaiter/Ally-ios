@@ -1,7 +1,10 @@
 import logo from "@/assets/logo.png";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const Footer = () => {
+  const { isAdmin } = useAuth();
+  
   return (
     <footer className="bg-muted py-12 px-4">
       <div className="container mx-auto">
@@ -38,6 +41,9 @@ const Footer = () => {
               <li><a href="#blog" className="hover:text-primary transition-colors">Blog</a></li>
               <li><a href="#contact" className="hover:text-primary transition-colors">Contact</a></li>
               <li><a href="#careers" className="hover:text-primary transition-colors">Careers</a></li>
+              {isAdmin && (
+                <li><Link to="/admin" className="hover:text-primary transition-colors">Admin</Link></li>
+              )}
             </ul>
           </div>
         </div>
