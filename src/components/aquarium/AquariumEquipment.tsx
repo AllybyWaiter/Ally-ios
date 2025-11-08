@@ -1,16 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Wrench } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Plus, Wrench, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "@/hooks/use-toast";
+import { EquipmentDialog } from "./EquipmentDialog";
 
 interface AquariumEquipmentProps {
   aquariumId: string;
 }
 
 export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [equipmentToDelete, setEquipmentToDelete] = useState<any>(null);
+  const queryClient = useQueryClient();
+
   const { data: equipment, isLoading } = useQuery({
     queryKey: ["equipment", aquariumId],
     queryFn: async () => {
@@ -24,6 +43,44 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
       return data;
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("equipment").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["equipment", aquariumId] });
+      toast({
+        title: "Equipment deleted",
+        description: "The equipment has been removed successfully.",
+      });
+      setDeleteDialogOpen(false);
+      setEquipmentToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEdit = (item: any) => {
+    setEditingEquipment(item);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = (item: any) => {
+    setEquipmentToDelete(item);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingEquipment(null);
+    setDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -42,7 +99,7 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
           <p className="text-muted-foreground mb-6">
             Start tracking your aquarium equipment and maintenance schedules
           </p>
-          <Button>
+          <Button onClick={handleAddNew}>
             <Plus className="w-4 h-4 mr-2" />
             Add Equipment
           </Button>
@@ -55,7 +112,7 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Equipment</h2>
-        <Button>
+        <Button onClick={handleAddNew}>
           <Plus className="w-4 h-4 mr-2" />
           Add Equipment
         </Button>
@@ -66,8 +123,26 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
           <Card key={item.id}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{item.name}</CardTitle>
-                <Badge variant="secondary">{item.equipment_type}</Badge>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-lg">{item.name}</CardTitle>
+                  <Badge variant="secondary">{item.equipment_type}</Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(item)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(item)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -116,6 +191,34 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
           </Card>
         ))}
       </div>
+
+      <EquipmentDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        aquariumId={aquariumId}
+        equipment={editingEquipment}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{equipmentToDelete?.name}"? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate(equipmentToDelete.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
