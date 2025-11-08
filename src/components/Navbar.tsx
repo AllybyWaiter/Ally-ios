@@ -79,9 +79,8 @@ const Navbar = () => {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="hidden md:flex items-center gap-2">
-              <span className="text-sm font-medium">Welcome, {userName || 'User'}</span>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/settings">Settings</Link>
+              <Button variant="default" size="sm" asChild>
+                <Link to="/dashboard">Go to Dashboard</Link>
               </Button>
               <Button variant="ghost" size="sm" onClick={() => {
                 signOut();
@@ -142,11 +141,8 @@ const Navbar = () => {
                 <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
                   {user ? (
                     <>
-                      <div className="text-sm font-medium py-2">
-                        Welcome, {userName || 'User'}
-                      </div>
-                      <Button variant="outline" asChild onClick={() => setMobileMenuOpen(false)}>
-                        <Link to="/settings">Settings</Link>
+                      <Button variant="default" asChild onClick={() => setMobileMenuOpen(false)}>
+                        <Link to="/dashboard">Go to Dashboard</Link>
                       </Button>
                       <Button variant="ghost" onClick={() => {
                         setMobileMenuOpen(false);
