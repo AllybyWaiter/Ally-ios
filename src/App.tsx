@@ -18,6 +18,7 @@ import TaskCalendar from "./pages/TaskCalendar";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Features from "./pages/Features";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TaskCalendar />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } 
             />

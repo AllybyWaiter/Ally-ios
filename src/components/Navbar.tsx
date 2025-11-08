@@ -14,7 +14,7 @@ import {
 const Navbar = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, userName } = useAuth();
+  const { user, userName, signOut } = useAuth();
   const navigate = useNavigate();
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
@@ -79,8 +79,17 @@ const Navbar = () => {
 
         <div className="flex items-center gap-2">
           {user ? (
-            <div className="text-sm font-medium hidden md:block">
-              Welcome, {userName || 'User'}
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-sm font-medium">Welcome, {userName || 'User'}</span>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/settings">Settings</Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => {
+                signOut();
+                navigate('/');
+              }}>
+                Sign Out
+              </Button>
             </div>
           ) : (
             <>
@@ -133,9 +142,21 @@ const Navbar = () => {
                 
                 <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
                   {user ? (
-                    <div className="text-sm font-medium py-2">
-                      Welcome, {userName || 'User'}
-                    </div>
+                    <>
+                      <div className="text-sm font-medium py-2">
+                        Welcome, {userName || 'User'}
+                      </div>
+                      <Button variant="outline" asChild onClick={() => setMobileMenuOpen(false)}>
+                        <Link to="/settings">Settings</Link>
+                      </Button>
+                      <Button variant="ghost" onClick={() => {
+                        setMobileMenuOpen(false);
+                        signOut();
+                        navigate('/');
+                      }}>
+                        Sign Out
+                      </Button>
+                    </>
                   ) : (
                     <>
                       <Button variant="ghost" asChild onClick={() => setMobileMenuOpen(false)}>
