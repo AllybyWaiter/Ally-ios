@@ -55,13 +55,12 @@ const Navbar = () => {
           >
             Features
           </Link>
-          <a 
-            href="#how-it-works" 
+          <Link 
+            to="/how-it-works" 
             className="text-sm font-medium hover:text-primary transition-colors"
-            onClick={(e) => scrollToSection(e, "how-it-works")}
           >
             How It Works
-          </a>
+          </Link>
           <Link 
             to="/pricing" 
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -118,13 +117,13 @@ const Navbar = () => {
                 >
                   Features
                 </Link>
-                <a 
-                  href="#how-it-works" 
+                <Link 
+                  to="/how-it-works" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
-                  onClick={(e) => scrollToSection(e, "how-it-works")}
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   How It Works
-                </a>
+                </Link>
                 <Link 
                   to="/pricing" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
