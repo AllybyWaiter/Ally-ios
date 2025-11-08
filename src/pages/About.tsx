@@ -96,30 +96,32 @@ const About = () => {
                 </div>
               </div>
               
-              <div className="space-y-3 lg:col-start-2">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
-                    <span className="text-primary font-bold">4</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-xl mb-2">Partnership Over Product</h3>
-                    <p className="text-muted-foreground">
-                      Ally isn't just software — it's a water-care companion. We design every feature around how real people think, test, and maintain their water spaces.
-                    </p>
+              <div className="lg:col-span-3 flex justify-center gap-8">
+                <div className="space-y-3 max-w-md">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                      <span className="text-primary font-bold">4</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl mb-2">Partnership Over Product</h3>
+                      <p className="text-muted-foreground">
+                        Ally isn't just software — it's a water-care companion. We design every feature around how real people think, test, and maintain their water spaces.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
-                    <span className="text-primary font-bold">5</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-xl mb-2">Sustainable by Default</h3>
-                    <p className="text-muted-foreground">
-                      Good water care protects more than tanks and pools — it protects the environment. Ally's dosing and guidance are optimized to reduce chemical waste and promote responsible stewardship.
-                    </p>
+                
+                <div className="space-y-3 max-w-md">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
+                      <span className="text-primary font-bold">5</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-xl mb-2">Sustainable by Default</h3>
+                      <p className="text-muted-foreground">
+                        Good water care protects more than tanks and pools — it protects the environment. Ally's dosing and guidance are optimized to reduce chemical waste and promote responsible stewardship.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
