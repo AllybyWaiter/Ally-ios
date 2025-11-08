@@ -306,30 +306,39 @@ export type Database = {
       water_tests: {
         Row: {
           aquarium_id: string
+          confidence: string | null
           created_at: string
           entry_method: string | null
           id: string
           notes: string | null
+          photo_url: string | null
+          tags: string[] | null
           test_date: string
           updated_at: string
           user_id: string
         }
         Insert: {
           aquarium_id: string
+          confidence?: string | null
           created_at?: string
           entry_method?: string | null
           id?: string
           notes?: string | null
+          photo_url?: string | null
+          tags?: string[] | null
           test_date?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           aquarium_id?: string
+          confidence?: string | null
           created_at?: string
           entry_method?: string | null
           id?: string
           notes?: string | null
+          photo_url?: string | null
+          tags?: string[] | null
           test_date?: string
           updated_at?: string
           user_id?: string
