@@ -102,6 +102,14 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     if (!taskToComplete) return;
 
     try {
+      // Get the task details first
+      const { data: task } = await supabase
+        .from("maintenance_tasks")
+        .select("*, equipment_id")
+        .eq("id", taskToComplete)
+        .single();
+
+      // Complete the current task
       const { error } = await supabase
         .from("maintenance_tasks")
         .update({
@@ -112,10 +120,43 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Task marked as complete",
-      });
+      // If task has equipment with maintenance interval, create next occurrence
+      if (task?.equipment_id) {
+        const { data: equipment } = await supabase
+          .from("equipment")
+          .select("maintenance_interval_days, name")
+          .eq("id", task.equipment_id)
+          .single();
+
+        if (equipment?.maintenance_interval_days) {
+          const nextDueDate = new Date();
+          nextDueDate.setDate(nextDueDate.getDate() + equipment.maintenance_interval_days);
+
+          await supabase.from("maintenance_tasks").insert({
+            aquarium_id: aquariumId,
+            equipment_id: task.equipment_id,
+            task_name: task.task_name,
+            task_type: task.task_type,
+            due_date: nextDueDate.toISOString().split("T")[0],
+            status: "pending",
+          });
+
+          toast({
+            title: "Success",
+            description: "Task completed and next occurrence created",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "Task marked as complete",
+          });
+        }
+      } else {
+        toast({
+          title: "Success",
+          description: "Task marked as complete",
+        });
+      }
 
       queryClient.invalidateQueries({ queryKey: ["tasks", aquariumId] });
       queryClient.invalidateQueries({ queryKey: ["upcomingTasks", aquariumId] });
