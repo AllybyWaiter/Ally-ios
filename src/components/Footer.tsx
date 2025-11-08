@@ -29,7 +29,7 @@ const Footer = () => {
             <ul className="space-y-2 text-muted-foreground">
               <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-primary transition-colors">How It Works</a></li>
-              <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
+              <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
               <li><a href="#faq" className="hover:text-primary transition-colors">FAQ</a></li>
             </ul>
           </div>
@@ -37,10 +37,8 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#about" className="hover:text-primary transition-colors">About</a></li>
-              <li><a href="#blog" className="hover:text-primary transition-colors">Blog</a></li>
+              <li><Link to="/about" className="hover:text-primary transition-colors">About</Link></li>
               <li><a href="#contact" className="hover:text-primary transition-colors">Contact</a></li>
-              <li><a href="#careers" className="hover:text-primary transition-colors">Careers</a></li>
               {isAdmin && (
                 <li><Link to="/admin" className="hover:text-primary transition-colors">Admin</Link></li>
               )}
