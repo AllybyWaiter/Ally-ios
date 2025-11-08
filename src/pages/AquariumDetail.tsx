@@ -5,18 +5,25 @@ import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { AquariumOverview } from "@/components/aquarium/AquariumOverview";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
 import { AquariumTasks } from "@/components/aquarium/AquariumTasks";
 import { format } from "date-fns";
+import { AquariumDialog } from "@/components/aquarium/AquariumDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export default function AquariumDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const { data: aquarium, isLoading } = useQuery({
+  const { data: aquarium, isLoading, refetch } = useQuery({
     queryKey: ["aquarium", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -29,6 +36,33 @@ export default function AquariumDetail() {
       return data;
     },
   });
+
+  const handleDeleteConfirm = async () => {
+    try {
+      const { error } = await supabase
+        .from("aquariums")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Aquarium deleted successfully",
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error deleting aquarium:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete aquarium",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -67,10 +101,32 @@ export default function AquariumDetail() {
         </Button>
 
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">{aquarium.name}</h1>
-            <Badge variant="secondary">{aquarium.type}</Badge>
-            <Badge variant="outline">{aquarium.status}</Badge>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">{aquarium.name}</h1>
+              <Badge variant="secondary">{aquarium.type}</Badge>
+              <Badge variant="outline">{aquarium.status}</Badge>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Aquarium
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Aquarium
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
             {aquarium.volume_gallons && (
@@ -110,6 +166,30 @@ export default function AquariumDetail() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AquariumDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={refetch}
+        aquarium={aquarium}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Aquarium</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{aquarium.name}"? This action cannot be undone and will also delete all associated water tests, equipment, and tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -4,10 +4,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Droplets, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
+import { AquariumDialog } from '@/components/aquarium/AquariumDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 interface Aquarium {
   id: string;
@@ -16,6 +20,7 @@ interface Aquarium {
   volume_gallons: number;
   status: string;
   setup_date: string;
+  notes: string | null;
 }
 
 export default function Dashboard() {
@@ -26,6 +31,10 @@ export default function Dashboard() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [upcomingTaskCount, setUpcomingTaskCount] = useState(0);
+  const [aquariumDialogOpen, setAquariumDialogOpen] = useState(false);
+  const [editingAquarium, setEditingAquarium] = useState<Aquarium | undefined>();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingAquariumId, setDeletingAquariumId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -106,6 +115,51 @@ export default function Dashboard() {
     await loadAquariums();
   };
 
+  const handleCreateAquarium = () => {
+    setEditingAquarium(undefined);
+    setAquariumDialogOpen(true);
+  };
+
+  const handleEditAquarium = (aquarium: Aquarium) => {
+    setEditingAquarium(aquarium);
+    setAquariumDialogOpen(true);
+  };
+
+  const handleDeleteClick = (aquariumId: string) => {
+    setDeletingAquariumId(aquariumId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingAquariumId) return;
+
+    try {
+      const { error } = await supabase
+        .from("aquariums")
+        .delete()
+        .eq("id", deletingAquariumId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Aquarium deleted successfully",
+      });
+
+      await loadAquariums();
+    } catch (error) {
+      console.error("Error deleting aquarium:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete aquarium",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeletingAquariumId(null);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -178,7 +232,7 @@ export default function Dashboard() {
             <p className="text-muted-foreground mb-4">
               Get started by adding your first aquarium
             </p>
-            <Button>
+            <Button onClick={handleCreateAquarium}>
               <Plus className="mr-2 h-4 w-4" />
               Add Aquarium
             </Button>
@@ -187,7 +241,7 @@ export default function Dashboard() {
           <>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold">Your Aquariums</h2>
-              <Button>
+              <Button onClick={handleCreateAquarium}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Aquarium
               </Button>
@@ -196,21 +250,48 @@ export default function Dashboard() {
               {aquariums.map((aquarium) => (
                 <Card 
                   key={aquarium.id} 
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/aquarium/${aquarium.id}`)}
+                  className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <CardTitle>{aquarium.name}</CardTitle>
-                    <CardDescription className="capitalize">
-                      {aquarium.type} • {aquarium.volume_gallons} gallons
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status:</span>
-                        <span className="capitalize font-medium">{aquarium.status}</span>
+                    <div className="flex justify-between items-start">
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => navigate(`/aquarium/${aquarium.id}`)}
+                      >
+                        <CardTitle>{aquarium.name}</CardTitle>
+                        <CardDescription className="capitalize">
+                          {aquarium.type} • {aquarium.volume_gallons} gallons
+                        </CardDescription>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={aquarium.status === 'active' ? 'default' : 'secondary'}>
+                          {aquarium.status}
+                        </Badge>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditAquarium(aquarium)}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteClick(aquarium.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent onClick={() => navigate(`/aquarium/${aquarium.id}`)} className="cursor-pointer">
+                    <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Setup Date:</span>
                         <span className="font-medium">
@@ -225,6 +306,30 @@ export default function Dashboard() {
           </>
         )}
       </main>
+
+      <AquariumDialog
+        open={aquariumDialogOpen}
+        onOpenChange={setAquariumDialogOpen}
+        onSuccess={loadAquariums}
+        aquarium={editingAquarium}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Aquarium</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this aquarium? This action cannot be undone and will also delete all associated water tests, equipment, and tasks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
