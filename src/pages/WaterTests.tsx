@@ -50,7 +50,7 @@ const WaterTests = () => {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 pt-24">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">No Aquariums Found</h2>
             <p className="text-muted-foreground">
@@ -65,7 +65,7 @@ const WaterTests = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pt-24">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Water Test Logging</h1>
           <p className="text-muted-foreground">
