@@ -26,7 +26,6 @@ import {
   Settings,
   Zap,
   CheckCircle,
-  CheckCircle2,
   PlayCircle,
   Star,
 } from "lucide-react";
@@ -184,21 +183,21 @@ const Features = () => {
               </h2>
               <div className="space-y-4 text-muted-foreground">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Instant Test Analysis</h3>
                     <p>Snap a photo of your test strip and get results in seconds</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Real-Time Monitoring</h3>
                     <p>Track water parameters with beautiful, intuitive charts</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-foreground mb-1">Step-by-Step Plans</h3>
                     <p>Follow personalized 14-day plans to achieve crystal clear water</p>
