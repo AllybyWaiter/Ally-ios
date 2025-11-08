@@ -44,6 +44,12 @@ const Navbar = () => {
           >
             How It Works
           </a>
+          <Link 
+            to="/pricing" 
+            className="text-sm font-medium hover:text-primary transition-colors"
+          >
+            Pricing
+          </Link>
           <a 
             href="#app" 
             className="text-sm font-medium hover:text-primary transition-colors"
