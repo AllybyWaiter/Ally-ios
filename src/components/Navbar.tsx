@@ -51,9 +51,14 @@ const Navbar = () => {
           </a>
         </div>
 
-        <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)}>
-          Get Early Access
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/auth">Sign In</Link>
+          </Button>
+          <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)}>
+            Get Early Access
+          </Button>
+        </div>
         
         <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
       </div>
