@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface ParameterRange {
   min: number;
   max: number;
@@ -15,6 +17,15 @@ export interface ParameterTemplate {
   id: string;
   name: string;
   parameters: Parameter[];
+  isCustom?: boolean;
+}
+
+export interface CustomParameterTemplate extends ParameterTemplate {
+  userId: string;
+  aquariumType: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Space-aware parameter templates
@@ -147,6 +158,50 @@ export const getParameterTemplates = (aquariumType: string): ParameterTemplate[]
       ],
     },
   ];
+};
+
+// Fetch user's custom templates
+export const getCustomTemplates = async (
+  userId: string,
+  aquariumType: string
+): Promise<CustomParameterTemplate[]> => {
+  const { data, error } = await supabase
+    .from("custom_parameter_templates")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("aquarium_type", aquariumType)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching custom templates:", error);
+    return [];
+  }
+
+  return (data || []).map((template) => ({
+    id: template.id,
+    name: template.name,
+    parameters: template.parameters as any as Parameter[],
+    isCustom: true,
+    userId: template.user_id,
+    aquariumType: template.aquarium_type,
+    isDefault: template.is_default,
+    createdAt: template.created_at,
+    updatedAt: template.updated_at,
+  }));
+};
+
+// Get all templates (system + custom) for an aquarium type
+export const getAllTemplates = async (
+  aquariumType: string,
+  userId?: string
+): Promise<ParameterTemplate[]> => {
+  const systemTemplates = getParameterTemplates(aquariumType);
+
+  if (!userId) return systemTemplates;
+
+  const customTemplates = await getCustomTemplates(userId, aquariumType);
+
+  return [...systemTemplates, ...customTemplates];
 };
 
 // Validation function with context hints

@@ -7,6 +7,8 @@ interface AuthContextType {
   session: Session | null;
   userName: string | null;
   isAdmin: boolean;
+  subscriptionTier: string | null;
+  canCreateCustomTemplates: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
@@ -20,6 +22,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
+  const [canCreateCustomTemplates, setCanCreateCustomTemplates] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setIsAdmin(false);
           setUserName(null);
+          setSubscriptionTier(null);
+          setCanCreateCustomTemplates(false);
         }
       }
     );
@@ -72,12 +78,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('name')
+      .select('name, subscription_tier')
       .eq('user_id', userId)
       .maybeSingle();
     
-    if (data?.name) {
+    if (data) {
       setUserName(data.name);
+      setSubscriptionTier(data.subscription_tier);
+      setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
     }
   };
 
@@ -109,10 +117,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     setIsAdmin(false);
     setUserName(null);
+    setSubscriptionTier(null);
+    setCanCreateCustomTemplates(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userName, isAdmin, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
