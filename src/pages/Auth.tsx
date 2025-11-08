@@ -43,7 +43,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user) {
-      navigate('/admin');
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -75,7 +75,7 @@ export default function Auth() {
           description: 'Account created successfully!',
         });
       }
-      navigate('/admin');
+      navigate('/dashboard');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
