@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface WaitlistEntry {
@@ -141,10 +141,16 @@ export default function Admin() {
             <h1 className="text-2xl font-bold">Admin Dashboard</h1>
             <p className="text-sm text-muted-foreground">{user?.email}</p>
           </div>
-          <Button onClick={handleSignOut} variant="outline">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate('/')} variant="outline">
+              <Home className="mr-2 h-4 w-4" />
+              Home
+            </Button>
+            <Button onClick={handleSignOut} variant="outline">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
