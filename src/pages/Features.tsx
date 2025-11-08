@@ -5,7 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
-import { Link } from "react-router-dom";
+import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import DemoVideoModal from "@/components/DemoVideoModal";
+import AnimatedCounter from "@/components/AnimatedCounter";
+import appMockup from "@/assets/app-mockup.png";
 import {
   Camera,
   Calendar,
@@ -23,6 +26,9 @@ import {
   Settings,
   Zap,
   CheckCircle,
+  CheckCircle2,
+  PlayCircle,
+  Star,
 } from "lucide-react";
 
 const coreDifferentiators = [
@@ -144,24 +150,71 @@ const trustMetrics = [
 
 const Features = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
+  const [isDemoVideoOpen, setIsDemoVideoOpen] = useState(false);
 
   return (
     <div className="min-h-screen">
       <Navbar />
-      
+
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 bg-gradient-hero relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent opacity-50" />
-        <div className="container mx-auto text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
-            Your Water. Perfected.
+      <section className="pt-32 pb-20 px-4 bg-gradient-hero">
+        <div className="container mx-auto text-center">
+          <Badge className="mb-4" variant="secondary">
+            Complete Feature Overview
+          </Badge>
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            The Complete Ally<br />Experience
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-4">
-            App-first intelligence that understands your water like an expert — and scales from home tanks to full pools and commercial systems.
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            From intelligent water testing to automated dosing, discover how Ally makes aquarium care effortless.
           </p>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Ally combines cutting-edge AI with aquatic science to give you instant, personalized water care guidance.
-          </p>
+        </div>
+      </section>
+
+      {/* App Mockup Showcase */}
+      <section className="py-20 px-4 bg-background">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge className="mb-4" variant="outline">
+                Mobile First Design
+              </Badge>
+              <h2 className="text-4xl font-bold mb-6">
+                Your Aquarium Assistant,<br />In Your Pocket
+              </h2>
+              <div className="space-y-4 text-muted-foreground">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Instant Test Analysis</h3>
+                    <p>Snap a photo of your test strip and get results in seconds</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Real-Time Monitoring</h3>
+                    <p>Track water parameters with beautiful, intuitive charts</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Step-by-Step Plans</h3>
+                    <p>Follow personalized 14-day plans to achieve crystal clear water</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-water opacity-20 blur-3xl"></div>
+              <img
+                src={appMockup}
+                alt="Ally mobile app interface"
+                className="relative z-10 w-full max-w-sm mx-auto drop-shadow-2xl"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -210,14 +263,30 @@ const Features = () => {
       <section className="py-20 px-4 bg-gradient-hero">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <div className="w-16 h-16 rounded-full bg-gradient-water flex items-center justify-center mx-auto mb-4">
-              <Camera className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Testing & Analysis
+            <Badge className="mb-4" variant="secondary">
+              Smart Testing
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Testing Made Simple
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Professional-grade water testing made simple and instant.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              No more guessing or manual calculations. Just snap, analyze, and act.
+            </p>
+          </div>
+
+          {/* Before/After Comparison */}
+          <div className="mb-16 max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold text-center mb-6">
+              See The Difference
+            </h3>
+            <BeforeAfterSlider
+              beforeImage="https://images.unsplash.com/photo-1520990378085-483217737dce?w=800&q=80"
+              afterImage="https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=800&q=80"
+              beforeLabel="Manual Testing"
+              afterLabel="With Ally"
+            />
+            <p className="text-center text-muted-foreground mt-4">
+              Drag the slider to see how Ally transforms water care from chaos to clarity
             </p>
           </div>
 
@@ -365,87 +434,129 @@ const Features = () => {
       {/* Trust & Proof */}
       <section className="py-20 px-4 bg-gradient-hero">
         <div className="container mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Backed by Science, Built for Real People
+          <div className="text-center mb-16">
+            <Badge className="mb-4" variant="secondary">
+              Trusted by Aquarium Enthusiasts
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Results That Speak
             </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Join thousands who've already transformed their aquarium care with Ally.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12">
+          {/* Trust Metrics with Animation */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
             {trustMetrics.map((metric, index) => {
               const Icon = metric.icon;
+              const numericValue = metric.value === "< 10 sec" ? 10 : 
+                                   metric.value === "Any Kit" ? 0 :
+                                   parseInt(metric.value.replace(/[^0-9]/g, ''));
+              const suffix = metric.value === "< 10 sec" ? " sec" :
+                            metric.value.includes('%') ? '%' : '';
+              const prefix = metric.value === "< 10 sec" ? '< ' : '';
+              
               return (
-                <Card key={index} className="border-2 bg-card/50 backdrop-blur-sm">
-                  <CardContent className="p-8 text-center">
-                    <Icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                    <div className="text-4xl font-bold mb-2">{metric.value}</div>
-                    <div className="text-muted-foreground">{metric.label}</div>
+                <Card key={index} className="bg-card/50 backdrop-blur-sm border-2">
+                  <CardContent className="p-6 text-center">
+                    <Icon className="w-8 h-8 text-primary mx-auto mb-4" />
+                    <div className="text-4xl font-bold mb-2">
+                      {numericValue > 0 ? (
+                        <AnimatedCounter 
+                          end={numericValue} 
+                          suffix={suffix}
+                          prefix={prefix}
+                        />
+                      ) : (
+                        metric.value
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">{metric.label}</p>
                   </CardContent>
                 </Card>
               );
             })}
           </div>
 
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-lg text-muted-foreground">
-              Built and trained by aquatics experts and AI engineers. Every feature is designed around how real people test, think, and care for their water spaces.
-            </p>
+          {/* Enhanced Testimonials Placeholder */}
+          <div className="grid md:grid-cols-3 gap-6 mb-12">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="bg-card/50 backdrop-blur-sm border-2">
+                <CardContent className="p-6">
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} className="w-4 h-4 fill-primary text-primary" />
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground italic mb-4">
+                    "Beta testimonial coming soon from our amazing users who are testing Ally."
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-water"></div>
+                    <div>
+                      <div className="font-semibold">Beta User</div>
+                      <div className="text-sm text-muted-foreground">Aquarium Enthusiast</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Placeholder for future testimonials */}
-          <div className="mt-16 text-center">
-            <p className="text-sm text-muted-foreground italic">
-              Beta testimonials coming soon from aquarium hobbyists and partner stores.
-            </p>
-          </div>
+          <Card className="bg-card/50 backdrop-blur-sm border-2 p-8">
+            <div className="text-center">
+              <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
+              <h3 className="text-2xl font-bold mb-4">More Stories Coming Soon</h3>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                We're working with our beta users to collect real stories of how Ally has transformed their aquarium care.
+                Check back soon for detailed case studies and success stories.
+              </p>
+            </div>
+          </Card>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            Ready to Experience Perfect Water?
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Join thousands of aquarium owners who trust Ally to keep their water crystal clear.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              variant="hero" 
-              size="lg"
-              onClick={() => setShowWaitlist(true)}
-              className="text-lg px-8"
-            >
-              Join the Waitlist
-            </Button>
-            <Button 
-              variant="outline" 
-              size="lg"
-              asChild
-              className="text-lg px-8"
-            >
-              <Link to="/pricing">See Pricing</Link>
-            </Button>
-          </div>
-
-          {/* Optional: Watch Demo button (disabled for now) */}
-          <div className="mt-6">
-            <Button 
-              variant="ghost" 
-              size="lg"
-              disabled
-              className="text-lg px-8 opacity-50"
-            >
-              Watch Demo (Coming Soon)
-            </Button>
-          </div>
+      <section className="py-20 px-4 bg-background">
+        <div className="container mx-auto">
+          <Card className="bg-gradient-water p-12 text-center">
+            <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
+              Ready to Transform Your Aquarium Care?
+            </h2>
+            <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
+              Join the waitlist today and be among the first to experience the future of water care.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                size="lg"
+                variant="heroOutline"
+                onClick={() => setShowWaitlist(true)}
+                className="bg-background text-foreground hover:bg-background/90"
+              >
+                Join the Waitlist
+              </Button>
+              <Button 
+                size="lg" 
+                variant="heroOutline"
+                onClick={() => setIsDemoVideoOpen(true)}
+                className="bg-background/10 text-primary-foreground hover:bg-background/20"
+              >
+                <PlayCircle className="mr-2" />
+                Watch Demo
+              </Button>
+            </div>
+          </Card>
         </div>
       </section>
 
       <Footer />
       <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
+      <DemoVideoModal 
+        isOpen={isDemoVideoOpen} 
+        onClose={() => setIsDemoVideoOpen(false)}
+        title="Ally Product Demo"
+      />
     </div>
   );
 };
