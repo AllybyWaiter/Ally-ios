@@ -7,8 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Droplets, Calendar, AlertCircle } from 'lucide-react';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { useToast } from '@/hooks/use-toast';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import AppHeader from '@/components/AppHeader';
 
 interface Aquarium {
   id: string;
@@ -20,7 +19,7 @@ interface Aquarium {
 }
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -91,10 +90,6 @@ export default function Dashboard() {
     await loadAquariums();
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   if (loading) {
     return (
@@ -110,18 +105,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <Navbar />
+      <AppHeader />
       
-      <main className="container mx-auto px-4 py-8 mt-20">
+      <main className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">My Aquariums</h1>
-            <p className="text-muted-foreground">Manage your aquarium collection</p>
-          </div>
-          <Button onClick={handleSignOut} variant="outline">
-            Sign Out
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">My Aquariums</h1>
+          <p className="text-muted-foreground">Manage your aquarium collection</p>
         </div>
 
         {/* Stats Overview */}
@@ -215,8 +205,6 @@ export default function Dashboard() {
           </>
         )}
       </main>
-
-      <Footer />
     </div>
   );
 }
