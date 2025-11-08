@@ -102,15 +102,38 @@ export const EquipmentDialog = ({
         notes: values.notes || null,
       };
 
+      let equipmentId: string;
+
       if (isEditing) {
         const { error } = await supabase
           .from("equipment")
           .update(data)
           .eq("id", equipment.id);
         if (error) throw error;
+        equipmentId = equipment.id;
       } else {
-        const { error } = await supabase.from("equipment").insert([data]);
+        const { data: newEquipment, error } = await supabase
+          .from("equipment")
+          .insert([data])
+          .select()
+          .single();
         if (error) throw error;
+        equipmentId = newEquipment.id;
+      }
+
+      // Create recurring maintenance task if interval is set
+      if (values.maintenance_interval_days) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + values.maintenance_interval_days);
+
+        await supabase.from("maintenance_tasks").insert({
+          aquarium_id: aquariumId,
+          equipment_id: equipmentId,
+          task_name: `${values.name} Maintenance`,
+          task_type: "equipment_maintenance",
+          due_date: dueDate.toISOString().split("T")[0],
+          status: "pending",
+        });
       }
     },
     onSuccess: () => {
