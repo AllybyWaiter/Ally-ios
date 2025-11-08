@@ -8,19 +8,30 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
-const authSchema = z.object({
+const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+const signupSchema = loginSchema.extend({
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
@@ -38,13 +49,39 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const validated = authSchema.parse({ email, password });
-      
-      const { error } = isLogin 
-        ? await signIn(validated.email, validated.password)
-        : await signUp(validated.email, validated.password);
+      if (isLogin) {
+        const validated = loginSchema.parse({ email, password });
+        const { error } = await signIn(validated.email, validated.password);
+        
+        if (error) {
+          throw error;
+        }
+      } else {
+        const validated = signupSchema.parse({ email, password, confirmPassword });
+        const { error } = await signUp(validated.email, validated.password);
+        
+        if (error) {
+          throw error;
+        }
+      }
 
-      if (error) {
+      if (!isLogin) {
+        toast({
+          title: 'Success',
+          description: 'Account created successfully!',
+        });
+      }
+      navigate('/admin');
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: { email?: string; password?: string; confirmPassword?: string } = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as 'email' | 'password' | 'confirmPassword'] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      } else if (error?.message) {
         if (error.message.includes('Invalid login credentials')) {
           toast({
             title: 'Error',
@@ -64,24 +101,6 @@ export default function Auth() {
             variant: 'destructive',
           });
         }
-      } else {
-        if (!isLogin) {
-          toast({
-            title: 'Success',
-            description: 'Account created successfully!',
-          });
-        }
-        navigate('/admin');
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const fieldErrors: { email?: string; password?: string } = {};
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as 'email' | 'password'] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
       }
     } finally {
       setIsLoading(false);
@@ -126,18 +145,56 @@ export default function Auth() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {errors.password && (
                 <p className="text-sm text-destructive">{errors.password}</p>
               )}
             </div>
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                )}
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
