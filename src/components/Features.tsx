@@ -1,5 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Brain, Droplets, LineChart, Shield, Smartphone, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Brain, Droplets, LineChart, Shield, Smartphone, Zap, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const features = [
   {
@@ -65,6 +67,15 @@ const Features = () => {
               </Card>
             );
           })}
+        </div>
+
+        <div className="text-center mt-12">
+          <Button variant="outline" size="lg" asChild className="group">
+            <Link to="/features">
+              View All Features
+              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
