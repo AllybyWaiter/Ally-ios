@@ -125,10 +125,10 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               <div className="grid gap-4">
                 <button
                   onClick={() => setUnitPreference('imperial')}
-                  className={`p-6 rounded-lg border-2 transition-all text-left ${
+                  className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
                     unitPreference === 'imperial'
                       ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
+                      : 'border-border hover:border-primary/50 active:border-primary/50'
                   }`}
                 >
                   <div className="font-semibold text-lg mb-2">{t('preferencesOnboarding.step1.imperial')}</div>
@@ -139,10 +139,10 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 
                 <button
                   onClick={() => setUnitPreference('metric')}
-                  className={`p-6 rounded-lg border-2 transition-all text-left ${
+                  className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
                     unitPreference === 'metric'
                       ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
+                      : 'border-border hover:border-primary/50 active:border-primary/50'
                   }`}
                 >
                   <div className="font-semibold text-lg mb-2">{t('preferencesOnboarding.step1.metric')}</div>
@@ -153,7 +153,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button onClick={handleNext} disabled={isLoading}>
+                <Button onClick={handleNext} disabled={isLoading} className="touch-manipulation min-h-[44px] min-w-[88px]">
                   {t('preferencesOnboarding.next')}
                 </Button>
               </div>
