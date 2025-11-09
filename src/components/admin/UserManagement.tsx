@@ -80,22 +80,29 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     setLoading(true);
+    console.log('UserManagement: Starting to fetch users...');
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
+    console.log('UserManagement: Fetch complete', { data, error, dataCount: data?.length });
+
     if (error) {
+      console.error('UserManagement: Error fetching users:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch users',
         variant: 'destructive',
       });
     } else {
+      console.log('UserManagement: Setting users:', data?.length, 'users');
       setUsers(data || []);
       setFilteredUsers(data || []);
     }
     setLoading(false);
+    console.log('UserManagement: Loading set to false');
   };
 
   const handleEditUser = (user: UserProfile) => {
