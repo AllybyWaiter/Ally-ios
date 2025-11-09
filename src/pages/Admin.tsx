@@ -32,7 +32,7 @@ interface ContactEntry {
 }
 
 export default function Admin() {
-  const { signOut, user } = useAuth();
+  const { signOut, user, hasPermission, hasAnyRole } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -195,58 +195,81 @@ export default function Admin() {
           </Card>
         </div>
 
-        <Tabs defaultValue="users" className="space-y-4">
+        <Tabs defaultValue={hasPermission('manage_users') ? 'users' : hasPermission('manage_roles') ? 'roles' : hasPermission('manage_blog') ? 'blog' : 'tickets'} className="space-y-4">
           <TabsList>
-            <TabsTrigger value="users">
-              <UserCog className="mr-2 h-4 w-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="roles">
-              <Shield className="mr-2 h-4 w-4" />
-              Roles
-            </TabsTrigger>
-            <TabsTrigger value="blog">
-              <FileText className="mr-2 h-4 w-4" />
-              Blog
-            </TabsTrigger>
-            <TabsTrigger value="announcements">
-              <Megaphone className="mr-2 h-4 w-4" />
-              Announcements
-            </TabsTrigger>
-            <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
-            <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
+            {hasPermission('manage_users') && (
+              <TabsTrigger value="users">
+                <UserCog className="mr-2 h-4 w-4" />
+                Users
+              </TabsTrigger>
+            )}
+            {hasPermission('manage_roles') && (
+              <TabsTrigger value="roles">
+                <Shield className="mr-2 h-4 w-4" />
+                Roles
+              </TabsTrigger>
+            )}
+            {(hasPermission('manage_blog') || hasPermission('publish_blog')) && (
+              <TabsTrigger value="blog">
+                <FileText className="mr-2 h-4 w-4" />
+                Blog
+              </TabsTrigger>
+            )}
+            {hasPermission('manage_announcements') && (
+              <TabsTrigger value="announcements">
+                <Megaphone className="mr-2 h-4 w-4" />
+                Announcements
+              </TabsTrigger>
+            )}
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+            )}
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="contacts">Contacts</TabsTrigger>
+            )}
+            {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
+              <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="users" className="space-y-4">
-            <UserManagement />
-          </TabsContent>
+          {hasPermission('manage_users') && (
+            <TabsContent value="users" className="space-y-4">
+              <UserManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="roles" className="space-y-4">
-            <RoleManager />
-          </TabsContent>
+          {hasPermission('manage_roles') && (
+            <TabsContent value="roles" className="space-y-4">
+              <RoleManager />
+            </TabsContent>
+          )}
 
-          <TabsContent value="blog" className="space-y-4">
-            <BlogManager />
-          </TabsContent>
+          {(hasPermission('manage_blog') || hasPermission('publish_blog')) && (
+            <TabsContent value="blog" className="space-y-4">
+              <BlogManager />
+            </TabsContent>
+          )}
 
-          <TabsContent value="announcements" className="space-y-4">
-            <AnnouncementManager />
-          </TabsContent>
+          {hasPermission('manage_announcements') && (
+            <TabsContent value="announcements" className="space-y-4">
+              <AnnouncementManager />
+            </TabsContent>
+          )}
 
-          <TabsContent value="waitlist" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Waitlist Signups</CardTitle>
-                    <CardDescription>Manage and export waitlist entries</CardDescription>
+          {hasAnyRole(['admin']) && (
+            <TabsContent value="waitlist" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Waitlist Signups</CardTitle>
+                      <CardDescription>Manage and export waitlist entries</CardDescription>
+                    </div>
+                    <Button onClick={() => exportToCSV(waitlist, 'waitlist')} variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export CSV
+                    </Button>
                   </div>
-                  <Button onClick={() => exportToCSV(waitlist, 'waitlist')} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
-                </div>
                 <div className="flex items-center gap-2 mt-4">
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <Input
@@ -287,20 +310,22 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
-          <TabsContent value="contacts" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Contact Submissions</CardTitle>
-                    <CardDescription>View and manage contact form messages</CardDescription>
+          {hasAnyRole(['admin']) && (
+            <TabsContent value="contacts" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Contact Submissions</CardTitle>
+                      <CardDescription>View and manage contact form messages</CardDescription>
+                    </div>
+                    <Button onClick={() => exportToCSV(contacts, 'contacts')} variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Export CSV
+                    </Button>
                   </div>
-                  <Button onClick={() => exportToCSV(contacts, 'contacts')} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
-                </div>
                 <div className="flex items-center gap-2 mt-4">
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <Input
@@ -345,10 +370,13 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+          )}
 
-          <TabsContent value="tickets" className="space-y-4">
-            <SupportTickets />
-          </TabsContent>
+          {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
+            <TabsContent value="tickets" className="space-y-4">
+              <SupportTickets />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

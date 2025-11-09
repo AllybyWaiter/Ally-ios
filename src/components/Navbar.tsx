@@ -4,7 +4,9 @@ import logo from "@/assets/logo.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Menu } from "lucide-react";
+import { Menu, Shield } from "lucide-react";
+import { PermissionGuard } from './PermissionGuard';
+import { RoleGuard } from './RoleGuard';
 import {
   Sheet,
   SheetContent,
@@ -73,6 +75,25 @@ const Navbar = () => {
           >
             Blog
           </Link>
+          <RoleGuard role="admin" fallback={
+            <PermissionGuard permission="moderate_support">
+              <Link 
+                to="/admin" 
+                className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
+              >
+                <Shield className="h-4 w-4" />
+                Dashboard
+              </Link>
+            </PermissionGuard>
+          }>
+            <Link 
+              to="/admin" 
+              className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          </RoleGuard>
           <a 
             href="#app" 
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -136,6 +157,34 @@ const Navbar = () => {
                 >
                   Pricing
                 </Link>
+                <Link 
+                  to="/blog" 
+                  className="text-lg font-medium hover:text-primary transition-colors py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Blog
+                </Link>
+                <RoleGuard role="admin" fallback={
+                  <PermissionGuard permission="moderate_support">
+                    <Link 
+                      to="/admin" 
+                      className="text-lg font-medium hover:text-primary transition-colors py-2 flex items-center gap-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Shield className="h-5 w-5" />
+                      Dashboard
+                    </Link>
+                  </PermissionGuard>
+                }>
+                  <Link 
+                    to="/admin" 
+                    className="text-lg font-medium hover:text-primary transition-colors py-2 flex items-center gap-2"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Shield className="h-5 w-5" />
+                    Admin
+                  </Link>
+                </RoleGuard>
                 <a 
                   href="#app" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
