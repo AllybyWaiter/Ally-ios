@@ -5,6 +5,7 @@ interface BlogContentStatsProps {
   title: string;
   content: string;
   excerpt: string;
+  authorName: string;
   seoTitle: string;
   seoDescription: string;
   featuredImage: string;
@@ -15,6 +16,7 @@ export default function BlogContentStats({
   title,
   content,
   excerpt,
+  authorName,
   seoTitle,
   seoDescription,
   featuredImage,
@@ -33,6 +35,7 @@ export default function BlogContentStats({
   // Calculate completion percentage
   const checklist = [
     { label: 'Title', completed: !!title },
+    { label: 'Author Name', completed: !!authorName },
     { label: 'Content', completed: wordCount > 100 },
     { label: 'Excerpt', completed: !!excerpt },
     { label: 'Featured Image', completed: !!featuredImage },
