@@ -208,7 +208,7 @@ const AllyChat = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <AppHeader />
       
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
+      <main className="container mx-auto px-4 py-8 pt-24 max-w-4xl">
         <Card className="shadow-lg">
           {/* Header */}
           <div className="bg-gradient-primary p-6 border-b">
