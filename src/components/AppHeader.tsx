@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import NotificationBell from "./NotificationBell";
 
 const AppHeader = () => {
   const { user, userName, signOut } = useAuth();
@@ -79,10 +80,8 @@ const AppHeader = () => {
         </nav>
 
         <div className="flex items-center gap-3">
-          {/* Notification Bell - placeholder for future */}
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <Bell className="h-5 w-5" />
-          </Button>
+          {/* Notification Bell */}
+          <NotificationBell />
 
           {/* User Profile Dropdown */}
           <DropdownMenu>
