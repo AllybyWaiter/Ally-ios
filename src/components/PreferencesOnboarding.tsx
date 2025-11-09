@@ -38,7 +38,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
     try {
       // Update profile with preferences AND mark onboarding as complete
-      const { error: profileError } = await supabase
+      const { data: updateData, error: profileError } = await supabase
         .from('profiles')
         .update({
           unit_preference: unitPreference,
@@ -46,9 +46,16 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           language_preference: languagePreference,
           onboarding_completed: true,
         })
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw profileError;
+      }
+
+      console.log('Profile updated successfully:', updateData);
 
       // Apply preferences immediately
       setTheme(themePreference);
@@ -62,7 +69,10 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
         description: t('preferencesOnboarding.successDescription'),
       });
 
-      onComplete();
+      // Add a small delay before calling onComplete to ensure state has updated
+      setTimeout(() => {
+        onComplete();
+      }, 100);
     } catch (error: any) {
       console.error('Error saving preferences:', error);
       toast({
