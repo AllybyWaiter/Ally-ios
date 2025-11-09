@@ -16,7 +16,7 @@ interface AquariumOverviewProps {
 
 export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
   const navigate = useNavigate();
-  const { unitPreference } = useAuth();
+  const { units } = useAuth();
 
   const { data: latestTest, isLoading: testLoading } = useQuery({
     queryKey: ["latest-test", aquariumId],
@@ -178,7 +178,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold">
-                      {formatParameter(param.value, param.unit, unitPreference as UnitSystem | null)}
+                      {formatParameter(param.value, param.unit, units)}
                     </p>
                     {param.status && param.status !== "normal" && (
                       <Badge variant="destructive" className="text-xs mt-1">

@@ -26,7 +26,7 @@ interface Aquarium {
 }
 
 export default function Dashboard() {
-  const { user, unitPreference, onboardingCompleted } = useAuth();
+  const { user, units, onboardingCompleted } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -211,7 +211,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatVolume(aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0), unitPreference as UnitSystem | null)}
+                {formatVolume(aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0), units)}
               </div>
               <p className="text-xs text-muted-foreground">Combined capacity</p>
             </CardContent>
@@ -294,7 +294,7 @@ export default function Dashboard() {
                       >
                         <CardTitle>{aquarium.name}</CardTitle>
                         <CardDescription className="capitalize">
-                          {aquarium.type} • {formatVolume(aquarium.volume_gallons, unitPreference as UnitSystem | null)}
+                          {aquarium.type} • {formatVolume(aquarium.volume_gallons, units)}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
