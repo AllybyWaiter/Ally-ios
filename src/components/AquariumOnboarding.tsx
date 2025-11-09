@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { Waves, ArrowRight, CheckCircle, Calendar } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { useTranslation } from 'react-i18next';
 
 const aquariumSchema = z.object({
   name: z.string().trim().min(1, 'Aquarium name is required').max(100, 'Name must be less than 100 characters'),
@@ -31,6 +32,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Form state
   const [name, setName] = useState('');
@@ -47,34 +49,34 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
     if (step === 1) {
       if (!name.trim()) {
-        setErrors({ name: 'Aquarium name is required' });
+        setErrors({ name: t('aquariumOnboarding.step1.nameRequired') });
         return false;
       }
       if (name.length > 100) {
-        setErrors({ name: 'Name must be less than 100 characters' });
+        setErrors({ name: t('aquariumOnboarding.step1.nameTooLong') });
         return false;
       }
     }
 
     if (step === 2) {
       if (!type) {
-        setErrors({ type: 'Please select an aquarium type' });
+        setErrors({ type: t('aquariumOnboarding.step2.typeRequired') });
         return false;
       }
       const volume = parseFloat(volumeGallons);
       if (!volumeGallons || isNaN(volume) || volume < 1) {
-        setErrors({ volume_gallons: 'Please enter a valid volume (at least 1 gallon)' });
+        setErrors({ volume_gallons: t('aquariumOnboarding.step2.volumeRequired') });
         return false;
       }
       if (volume > 10000) {
-        setErrors({ volume_gallons: 'Volume seems too large' });
+        setErrors({ volume_gallons: t('aquariumOnboarding.step2.volumeTooLarge') });
         return false;
       }
     }
 
     if (step === 3) {
       if (!setupDate) {
-        setErrors({ setup_date: 'Setup date is required' });
+        setErrors({ setup_date: t('aquariumOnboarding.step3.setupDateRequired') });
         return false;
       }
     }
@@ -127,8 +129,8 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
       if (profileError) throw profileError;
 
       toast({
-        title: 'Success!',
-        description: 'Your aquarium has been set up successfully.',
+        title: t('aquariumOnboarding.success'),
+        description: t('aquariumOnboarding.successDescription'),
       });
 
       onComplete();
@@ -145,8 +147,8 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
         setErrors(fieldErrors);
       } else {
         toast({
-          title: 'Error',
-          description: error.message || 'Failed to create aquarium',
+          title: t('aquariumOnboarding.error'),
+          description: error.message || t('aquariumOnboarding.errorDescription'),
           variant: 'destructive',
         });
       }
@@ -162,8 +164,8 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
           <div className="flex items-center justify-center gap-2">
             <img src={logo} alt="Ally Logo" className="w-12 h-12 object-contain" />
             <div className="text-center">
-              <div className="font-bold text-2xl">Welcome to Ally</div>
-              <div className="text-xs text-muted-foreground">Let's set up your first aquarium</div>
+              <div className="font-bold text-2xl">{t('aquariumOnboarding.welcome')}</div>
+              <div className="text-xs text-muted-foreground">{t('aquariumOnboarding.subtitle')}</div>
             </div>
           </div>
 
@@ -200,15 +202,15 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
             <div className="space-y-4 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Waves className="w-16 h-16 mx-auto text-primary mb-4" />
-                <CardTitle className="text-2xl">What's your aquarium called?</CardTitle>
-                <CardDescription>Give your aquarium a memorable name</CardDescription>
+                <CardTitle className="text-2xl">{t('aquariumOnboarding.step1.title')}</CardTitle>
+                <CardDescription>{t('aquariumOnboarding.step1.description')}</CardDescription>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Aquarium Name</Label>
+                <Label htmlFor="name">{t('aquariumOnboarding.step1.nameLabel')}</Label>
                 <Input
                   id="name"
-                  placeholder="e.g., Living Room Reef Tank"
+                  placeholder={t('aquariumOnboarding.step1.namePlaceholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={isLoading}
@@ -220,7 +222,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
               <div className="flex justify-end pt-4">
                 <Button onClick={handleNext} disabled={isLoading}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('aquariumOnboarding.next')} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -230,21 +232,21 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
           {step === 2 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
-                <CardTitle className="text-2xl">Tank Details</CardTitle>
-                <CardDescription>Tell us about your aquarium setup</CardDescription>
+                <CardTitle className="text-2xl">{t('aquariumOnboarding.step2.title')}</CardTitle>
+                <CardDescription>{t('aquariumOnboarding.step2.description')}</CardDescription>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="type">Aquarium Type</Label>
+                <Label htmlFor="type">{t('aquariumOnboarding.step2.typeLabel')}</Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger id="type">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder={t('aquariumOnboarding.step2.typePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="freshwater">Freshwater</SelectItem>
-                    <SelectItem value="saltwater">Saltwater</SelectItem>
-                    <SelectItem value="reef">Reef</SelectItem>
-                    <SelectItem value="planted">Planted</SelectItem>
+                    <SelectItem value="freshwater">{t('aquarium.types.freshwater')}</SelectItem>
+                    <SelectItem value="saltwater">{t('aquarium.types.saltwater')}</SelectItem>
+                    <SelectItem value="reef">{t('aquarium.types.reef')}</SelectItem>
+                    <SelectItem value="planted">{t('aquarium.types.planted')}</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.type && (
@@ -253,11 +255,11 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="volume">Tank Volume (gallons)</Label>
+                <Label htmlFor="volume">{t('aquariumOnboarding.step2.volumeLabel')}</Label>
                 <Input
                   id="volume"
                   type="number"
-                  placeholder="e.g., 55"
+                  placeholder={t('aquariumOnboarding.step2.volumePlaceholder')}
                   value={volumeGallons}
                   onChange={(e) => setVolumeGallons(e.target.value)}
                   disabled={isLoading}
@@ -270,10 +272,10 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
               <div className="flex justify-between pt-4">
                 <Button onClick={() => setStep(1)} variant="outline" disabled={isLoading}>
-                  Back
+                  {t('aquariumOnboarding.back')}
                 </Button>
                 <Button onClick={handleNext} disabled={isLoading}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('aquariumOnboarding.next')} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -284,12 +286,12 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
             <div className="space-y-4 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Calendar className="w-16 h-16 mx-auto text-primary mb-4" />
-                <CardTitle className="text-2xl">Almost Done!</CardTitle>
-                <CardDescription>When did you set up this aquarium?</CardDescription>
+                <CardTitle className="text-2xl">{t('aquariumOnboarding.step3.title')}</CardTitle>
+                <CardDescription>{t('aquariumOnboarding.step3.description')}</CardDescription>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="setup_date">Setup Date</Label>
+                <Label htmlFor="setup_date">{t('aquariumOnboarding.step3.setupDateLabel')}</Label>
                 <Input
                   id="setup_date"
                   type="date"
@@ -304,10 +306,10 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Label htmlFor="notes">{t('aquariumOnboarding.step3.notesLabel')}</Label>
                 <Textarea
                   id="notes"
-                  placeholder="Any additional information about your aquarium..."
+                  placeholder={t('aquariumOnboarding.step3.notesPlaceholder')}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={isLoading}
@@ -324,17 +326,17 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
               <div className="flex justify-between pt-4">
                 <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
-                  Back
+                  {t('aquariumOnboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
-                      Creating...
+                      {t('aquariumOnboarding.creating')}
                     </>
                   ) : (
                     <>
-                      Complete Setup <CheckCircle className="ml-2 h-4 w-4" />
+                      {t('aquariumOnboarding.complete')} <CheckCircle className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>

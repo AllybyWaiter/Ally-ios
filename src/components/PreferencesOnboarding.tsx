@@ -18,7 +18,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { setTheme } = useTheme();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   // Preferences state
   const [unitPreference, setUnitPreference] = useState<'metric' | 'imperial'>('imperial');
@@ -53,16 +53,16 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
       i18n.changeLanguage(languagePreference);
 
       toast({
-        title: 'Preferences saved!',
-        description: 'Your preferences have been configured successfully.',
+        title: t('preferencesOnboarding.success'),
+        description: t('preferencesOnboarding.successDescription'),
       });
 
       onComplete();
     } catch (error: any) {
       console.error('Error saving preferences:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to save preferences',
+        title: t('common.error'),
+        description: error.message || t('settings.saveError'),
         variant: 'destructive',
       });
     } finally {
@@ -77,8 +77,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           <div className="flex items-center justify-center gap-2">
             <img src={logo} alt="Ally Logo" className="w-12 h-12 object-contain" />
             <div className="text-center">
-              <div className="font-bold text-2xl">Welcome to Ally</div>
-              <div className="text-xs text-muted-foreground">Let's personalize your experience</div>
+              <div className="font-bold text-2xl">{t('preferencesOnboarding.welcome')}</div>
+              <div className="text-xs text-muted-foreground">{t('preferencesOnboarding.subtitle')}</div>
             </div>
           </div>
 
@@ -113,8 +113,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Ruler className="w-16 h-16 mx-auto text-primary mb-4" />
-                <CardTitle className="text-2xl">Choose Your Units</CardTitle>
-                <CardDescription>Select your preferred measurement system</CardDescription>
+                <CardTitle className="text-2xl">{t('preferencesOnboarding.step1.title')}</CardTitle>
+                <CardDescription>{t('preferencesOnboarding.step1.description')}</CardDescription>
               </div>
 
               <div className="grid gap-4">
@@ -126,9 +126,9 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">Imperial</div>
+                  <div className="font-semibold text-lg mb-2">{t('preferencesOnboarding.step1.imperial')}</div>
                   <div className="text-sm text-muted-foreground">
-                    Gallons • Fahrenheit • Inches
+                    {t('preferencesOnboarding.step1.imperialDescription')}
                   </div>
                 </button>
                 
@@ -140,16 +140,16 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">Metric</div>
+                  <div className="font-semibold text-lg mb-2">{t('preferencesOnboarding.step1.metric')}</div>
                   <div className="text-sm text-muted-foreground">
-                    Liters • Celsius • Centimeters
+                    {t('preferencesOnboarding.step1.metricDescription')}
                   </div>
                 </button>
               </div>
 
               <div className="flex justify-end pt-4">
                 <Button onClick={handleNext} disabled={isLoading}>
-                  Next
+                  {t('preferencesOnboarding.next')}
                 </Button>
               </div>
             </div>
@@ -160,8 +160,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Monitor className="w-16 h-16 mx-auto text-primary mb-4" />
-                <CardTitle className="text-2xl">Choose Your Theme</CardTitle>
-                <CardDescription>Select your preferred appearance</CardDescription>
+                <CardTitle className="text-2xl">{t('preferencesOnboarding.step2.title')}</CardTitle>
+                <CardDescription>{t('preferencesOnboarding.step2.description')}</CardDescription>
               </div>
 
               <div className="grid gap-4">
@@ -175,10 +175,10 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Sun className="w-5 h-5" />
-                    <div className="font-semibold text-lg">Light</div>
+                    <div className="font-semibold text-lg">{t('preferencesOnboarding.step2.light')}</div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Bright and clear for daytime use
+                    {t('preferencesOnboarding.step2.lightDescription')}
                   </div>
                 </button>
                 
@@ -192,10 +192,10 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Moon className="w-5 h-5" />
-                    <div className="font-semibold text-lg">Dark</div>
+                    <div className="font-semibold text-lg">{t('preferencesOnboarding.step2.dark')}</div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Easy on the eyes in low light
+                    {t('preferencesOnboarding.step2.darkDescription')}
                   </div>
                 </button>
 
@@ -209,20 +209,20 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <Monitor className="w-5 h-5" />
-                    <div className="font-semibold text-lg">System</div>
+                    <div className="font-semibold text-lg">{t('preferencesOnboarding.step2.system')}</div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Matches your device settings
+                    {t('preferencesOnboarding.step2.systemDescription')}
                   </div>
                 </button>
               </div>
 
               <div className="flex justify-between pt-4">
                 <Button onClick={() => setStep(1)} variant="outline" disabled={isLoading}>
-                  Back
+                  {t('preferencesOnboarding.back')}
                 </Button>
                 <Button onClick={handleNext} disabled={isLoading}>
-                  Next
+                  {t('preferencesOnboarding.next')}
                 </Button>
               </div>
             </div>
@@ -233,8 +233,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Languages className="w-16 h-16 mx-auto text-primary mb-4" />
-                <CardTitle className="text-2xl">Choose Your Language</CardTitle>
-                <CardDescription>Select your preferred language</CardDescription>
+                <CardTitle className="text-2xl">{t('preferencesOnboarding.step3.title')}</CardTitle>
+                <CardDescription>{t('preferencesOnboarding.step3.description')}</CardDescription>
               </div>
 
               <div className="grid gap-4">
@@ -246,9 +246,9 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">English</div>
+                  <div className="font-semibold text-lg mb-2">{t('languages.english')}</div>
                   <div className="text-sm text-muted-foreground">
-                    English (United States)
+                    {t('preferencesOnboarding.step3.englishDescription')}
                   </div>
                 </button>
                 
@@ -260,9 +260,9 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">Español</div>
+                  <div className="font-semibold text-lg mb-2">{t('languages.spanish')}</div>
                   <div className="text-sm text-muted-foreground">
-                    Spanish (Spain)
+                    {t('preferencesOnboarding.step3.spanishDescription')}
                   </div>
                 </button>
 
@@ -274,25 +274,25 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">Français</div>
+                  <div className="font-semibold text-lg mb-2">{t('languages.french')}</div>
                   <div className="text-sm text-muted-foreground">
-                    French (France)
+                    {t('preferencesOnboarding.step3.frenchDescription')}
                   </div>
                 </button>
               </div>
 
               <div className="flex justify-between pt-4">
                 <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
-                  Back
+                  {t('preferencesOnboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
-                      Saving...
+                      {t('preferencesOnboarding.saving')}
                     </>
                   ) : (
-                    'Complete Setup'
+                    t('preferencesOnboarding.complete')
                   )}
                 </Button>
               </div>
