@@ -7,14 +7,14 @@ interface ThemeWrapperProps {
 }
 
 export const ThemeWrapper = ({ children }: ThemeWrapperProps) => {
-  const { themePreference, loading } = useAuth();
+  const auth = useAuth();
   const { setTheme } = useTheme();
 
   useEffect(() => {
-    if (!loading && themePreference) {
-      setTheme(themePreference);
+    if (!auth.loading && auth.themePreference) {
+      setTheme(auth.themePreference);
     }
-  }, [themePreference, loading, setTheme]);
+  }, [auth.themePreference, auth.loading, setTheme]);
 
   return <>{children}</>;
 };
