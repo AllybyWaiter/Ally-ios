@@ -742,35 +742,31 @@ const AllyChat = () => {
 
             {/* Messages */}
             <ScrollArea className="flex-1 p-6">
-              <div className="space-y-6 max-w-3xl mx-auto">
+              <div className="space-y-8 max-w-4xl mx-auto">
                 {messages.map((message, index) => (
                   <div
                     key={index}
                     className={cn(
-                      "flex gap-3 group animate-fade-in",
+                      "flex gap-4 group animate-fade-in relative",
                       message.role === "user" ? "justify-end" : "justify-start"
                     )}
                   >
                     {message.role === "assistant" && (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Sparkles className="h-4 w-4 text-primary" />
+                      <div className="h-6 w-6 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0 mt-1">
+                        <Sparkles className="h-3 w-3 text-primary" />
                       </div>
                     )}
                     
                     <div className={cn(
-                      "flex-1 max-w-[80%] space-y-2",
+                      "flex-1 space-y-1",
                       message.role === "user" && "flex flex-col items-end"
                     )}>
-                      <div
-                        className={cn(
-                          "rounded-2xl px-4 py-3 relative",
-                          message.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted border"
-                        )}
-                      >
+                      <div className={cn(
+                        "relative group/message",
+                        message.role === "user" ? "text-right" : "text-left"
+                      )}>
                         {message.role === "assistant" ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
                             <ReactMarkdown>{message.content}</ReactMarkdown>
                           </div>
                         ) : editingIndex === index ? (
@@ -778,7 +774,7 @@ const AllyChat = () => {
                             <Input
                               value={editingContent}
                               onChange={(e) => setEditingContent(e.target.value)}
-                              className="bg-primary-foreground text-foreground"
+                              className="bg-background/50"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
@@ -826,7 +822,12 @@ const AllyChat = () => {
                             </div>
                           </div>
                         ) : (
-                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          <p className={cn(
+                            "whitespace-pre-wrap leading-relaxed",
+                            message.role === "user" ? "text-foreground font-medium" : "text-foreground/90"
+                          )}>
+                            {message.content}
+                          </p>
                         )}
                         
                         {message.role === "assistant" && (
@@ -835,7 +836,7 @@ const AllyChat = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-2 bottom-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-7 w-7 bg-background/80 backdrop-blur-sm"
+                                className="absolute -right-8 top-0 opacity-0 group-hover/message:opacity-100 transition-opacity h-6 w-6"
                                 onClick={() => copyMessage(message.content, index)}
                               >
                                 {copiedIndex === index ? (
@@ -857,7 +858,7 @@ const AllyChat = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-2 bottom-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-7 w-7 bg-primary-foreground/20 backdrop-blur-sm hover:bg-primary-foreground/30"
+                                className="absolute -left-8 top-0 opacity-0 group-hover/message:opacity-100 transition-opacity h-6 w-6"
                                 onClick={() => startEditMessage(index, message.content)}
                                 disabled={isLoading}
                               >
@@ -873,7 +874,7 @@ const AllyChat = () => {
                       
                       {message.timestamp && (
                         <p className={cn(
-                          "text-xs text-muted-foreground px-2",
+                          "text-xs text-muted-foreground/60",
                           message.role === "user" && "text-right"
                         )}>
                           {format(message.timestamp, "h:mm a")}
@@ -882,19 +883,19 @@ const AllyChat = () => {
                     </div>
                     
                     {message.role === "user" && (
-                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-medium text-primary-foreground">You</span>
+                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-xs font-medium text-primary">U</span>
                       </div>
                     )}
                   </div>
                 ))}
                 
                 {isLoading && messages[messages.length - 1]?.content === "" && (
-                  <div className="flex gap-3 animate-fade-in">
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-primary" />
+                  <div className="flex gap-4 animate-fade-in">
+                    <div className="h-6 w-6 rounded-full bg-primary/5 flex items-center justify-center mt-1">
+                      <Sparkles className="h-3 w-3 text-primary" />
                     </div>
-                    <div className="bg-muted rounded-2xl px-4 py-3 border">
+                    <div className="flex-1">
                       <TypingIndicator />
                     </div>
                   </div>
