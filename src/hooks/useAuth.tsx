@@ -10,6 +10,8 @@ interface AuthContextType {
   session: Session | null;
   userName: string | null;
   isAdmin: boolean;
+  roles: string[];
+  permissions: string[];
   subscriptionTier: string | null;
   canCreateCustomTemplates: boolean;
   themePreference: string | null;
@@ -22,6 +24,9 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  hasRole: (role: string) => boolean;
+  hasPermission: (permission: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [canCreateCustomTemplates, setCanCreateCustomTemplates] = useState(false);
   const [themePreference, setThemePreference] = useState<string | null>(null);
@@ -85,14 +92,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
-    const { data } = await supabase
+    // Fetch all roles for the user
+    const { data: rolesData } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle();
+      .eq('user_id', userId);
     
-    setIsAdmin(!!data);
+    const userRoles = rolesData?.map(r => r.role) || [];
+    setRoles(userRoles);
+    setIsAdmin(userRoles.includes('admin'));
+    
+    // Fetch permissions
+    const { data: permsData } = await (supabase as any).rpc('get_user_permissions', {
+      _user_id: userId
+    });
+    
+    setPermissions(permsData || []);
     setLoading(false);
   };
 
@@ -174,6 +189,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     setIsAdmin(false);
+    setRoles([]);
+    setPermissions([]);
     setUserName(null);
     setSubscriptionTier(null);
     setCanCreateCustomTemplates(false);
@@ -184,12 +201,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     clearUserContext();
   };
 
+  const hasRole = (role: string) => roles.includes(role);
+  const hasPermission = (permission: string) => permissions.includes(permission);
+  const hasAnyRole = (checkRoles: string[]) => checkRoles.some(role => roles.includes(role));
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       session, 
       userName, 
-      isAdmin, 
+      isAdmin,
+      roles,
+      permissions,
       subscriptionTier, 
       canCreateCustomTemplates, 
       themePreference, 
@@ -201,7 +224,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       refreshProfile,
       signIn, 
       signUp, 
-      signOut 
+      signOut,
+      hasRole,
+      hasPermission,
+      hasAnyRole
     }}>
       {children}
     </AuthContext.Provider>

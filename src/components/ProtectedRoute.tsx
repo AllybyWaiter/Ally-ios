@@ -4,10 +4,23 @@ import { useAuth } from '@/hooks/useAuth';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireRole?: string;
+  requireAnyRole?: string[];
+  requirePermission?: string;
+  requireAllPermissions?: string[];
+  fallback?: React.ReactNode;
 }
 
-export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { user, isAdmin, loading } = useAuth();
+export const ProtectedRoute = ({ 
+  children, 
+  requireAdmin = false,
+  requireRole,
+  requireAnyRole,
+  requirePermission,
+  requireAllPermissions,
+  fallback
+}: ProtectedRouteProps) => {
+  const { user, isAdmin, loading, hasRole, hasPermission, hasAnyRole } = useAuth();
 
   if (loading) {
     return (
@@ -22,7 +35,23 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
+  }
+
+  if (requireRole && !hasRole(requireRole)) {
+    return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
+  }
+
+  if (requireAnyRole && !hasAnyRole(requireAnyRole)) {
+    return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
+  }
+
+  if (requirePermission && !hasPermission(requirePermission)) {
+    return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
+  }
+
+  if (requireAllPermissions && !requireAllPermissions.every(p => hasPermission(p))) {
+    return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

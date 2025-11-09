@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
 import AnnouncementManager from '@/components/admin/AnnouncementManager';
 import BlogManager from '@/components/admin/BlogManager';
+import { RoleManager } from '@/components/admin/RoleManager';
 import { formatDate } from '@/lib/formatters';
 
 interface WaitlistEntry {
@@ -200,6 +201,10 @@ export default function Admin() {
               <UserCog className="mr-2 h-4 w-4" />
               Users
             </TabsTrigger>
+            <TabsTrigger value="roles">
+              <Shield className="mr-2 h-4 w-4" />
+              Roles
+            </TabsTrigger>
             <TabsTrigger value="blog">
               <FileText className="mr-2 h-4 w-4" />
               Blog
@@ -215,6 +220,10 @@ export default function Admin() {
 
           <TabsContent value="users" className="space-y-4">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="roles" className="space-y-4">
+            <RoleManager />
           </TabsContent>
 
           <TabsContent value="blog" className="space-y-4">
