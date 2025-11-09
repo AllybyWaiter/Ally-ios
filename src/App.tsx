@@ -21,6 +21,7 @@ import About from "./pages/About";
 import Features from "./pages/Features";
 import Settings from "./pages/Settings";
 import HowItWorksPage from "./pages/HowItWorks";
+import AllyChat from "./pages/AllyChat";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/chat" 
+              element={
+                <ProtectedRoute>
+                  <AllyChat />
                 </ProtectedRoute>
               } 
             />
