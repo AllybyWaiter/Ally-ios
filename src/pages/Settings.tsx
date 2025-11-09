@@ -27,6 +27,8 @@ const Settings = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showUnitConfirmDialog, setShowUnitConfirmDialog] = useState(false);
+  const [pendingUnitChange, setPendingUnitChange] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -131,22 +133,31 @@ const Settings = () => {
     }
   };
 
-  const handleUnitChange = async (newUnit: string) => {
-    if (!user) return;
+  const handleUnitChangeRequest = (newUnit: string) => {
+    // If it's the same as current, no need to confirm
+    if (newUnit === units) return;
     
-    setUnits(newUnit);
+    // Show confirmation dialog
+    setPendingUnitChange(newUnit);
+    setShowUnitConfirmDialog(true);
+  };
+
+  const handleUnitChangeConfirm = async () => {
+    if (!user || !pendingUnitChange) return;
+    
+    setUnits(pendingUnitChange);
     
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ unit_preference: newUnit })
+        .update({ unit_preference: pendingUnitChange })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
       toast({
         title: "Units updated",
-        description: "Your unit preference has been saved.",
+        description: "Your unit preference has been saved. All measurements will now display in the new unit system.",
       });
     } catch (error: any) {
       console.error('Failed to save unit preference:', error);
@@ -155,6 +166,9 @@ const Settings = () => {
         description: "Failed to save unit preference.",
         variant: "destructive",
       });
+    } finally {
+      setShowUnitConfirmDialog(false);
+      setPendingUnitChange(null);
     }
   };
 
@@ -433,7 +447,7 @@ const Settings = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <Card 
                       className={`cursor-pointer transition-all hover:border-primary ${units === 'imperial' ? 'border-primary shadow-md' : ''}`}
-                      onClick={() => handleUnitChange('imperial')}
+                      onClick={() => handleUnitChangeRequest('imperial')}
                     >
                       <CardContent className="p-6">
                         <div className="space-y-3">
@@ -452,7 +466,7 @@ const Settings = () => {
                     
                     <Card 
                       className={`cursor-pointer transition-all hover:border-primary ${units === 'metric' ? 'border-primary shadow-md' : ''}`}
-                      onClick={() => handleUnitChange('metric')}
+                      onClick={() => handleUnitChangeRequest('metric')}
                     >
                       <CardContent className="p-6">
                         <div className="space-y-3">
@@ -626,6 +640,37 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Unit Change Confirmation Dialog */}
+        <AlertDialog open={showUnitConfirmDialog} onOpenChange={setShowUnitConfirmDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Change Unit System?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Changing from <strong>{units === 'imperial' ? 'Imperial' : 'Metric'}</strong> to{' '}
+                <strong>{pendingUnitChange === 'imperial' ? 'Imperial' : 'Metric'}</strong> will update how all measurements are displayed throughout the app.
+                <br /><br />
+                This will affect:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Aquarium volumes ({pendingUnitChange === 'imperial' ? 'gallons' : 'liters'})</li>
+                  <li>Water temperature ({pendingUnitChange === 'imperial' ? 'Fahrenheit' : 'Celsius'})</li>
+                  <li>Equipment measurements ({pendingUnitChange === 'imperial' ? 'inches' : 'centimeters'})</li>
+                  <li>All water test results and historical data display</li>
+                </ul>
+                <br />
+                Your existing data will be automatically converted to the new unit system.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingUnitChange(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={handleUnitChangeConfirm}>
+                Change Units
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
