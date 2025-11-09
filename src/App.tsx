@@ -26,6 +26,9 @@ import Features from "./pages/Features";
 import Settings from "./pages/Settings";
 import HowItWorksPage from "./pages/HowItWorks";
 import AllyChat from "./pages/AllyChat";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import BlogEditor from "./components/admin/BlogEditor";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +122,32 @@ const App = () => (
                       </ProtectedRoute>
                     } 
                   />
+                  <Route 
+                    path="/admin/blog/new"
+                    element={
+                      <ProtectedRoute requireAdmin>
+                        <PageErrorBoundary pageName="Blog Editor" featureArea="admin">
+                          <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-8">
+                            <BlogEditor />
+                          </div>
+                        </PageErrorBoundary>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/blog/edit/:id"
+                    element={
+                      <ProtectedRoute requireAdmin>
+                        <PageErrorBoundary pageName="Blog Editor" featureArea="admin">
+                          <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-8">
+                            <BlogEditor />
+                          </div>
+                        </PageErrorBoundary>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route path="/blog" element={<PageErrorBoundary pageName="Blog" featureArea="general"><Blog /></PageErrorBoundary>} />
+                  <Route path="/blog/:slug" element={<PageErrorBoundary pageName="Blog Post" featureArea="general"><BlogPost /></PageErrorBoundary>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<PageErrorBoundary featureArea="general"><NotFound /></PageErrorBoundary>} />
                 </Routes>
