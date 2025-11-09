@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ interface AquariumOverviewProps {
 export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
   const navigate = useNavigate();
   const { units } = useAuth();
+  const { t } = useTranslation();
 
   const { data: latestTest, isLoading: testLoading } = useQuery({
     queryKey: ["latest-test", aquariumId],
@@ -74,10 +76,10 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays < 0) return { label: "Overdue", variant: "destructive" as const };
-    if (diffDays === 0) return { label: "Due Today", variant: "default" as const };
-    if (diffDays <= 3) return { label: "Due Soon", variant: "secondary" as const };
-    return { label: "Upcoming", variant: "outline" as const };
+    if (diffDays < 0) return { label: t('overview.overdue'), variant: "destructive" as const };
+    if (diffDays === 0) return { label: t('overview.dueToday'), variant: "default" as const };
+    if (diffDays <= 3) return { label: t('overview.dueSoon'), variant: "secondary" as const };
+    return { label: t('overview.upcoming'), variant: "outline" as const };
   };
 
   const isLoading = testLoading || equipmentLoading || tasksLoading;
@@ -95,7 +97,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Latest Water Test</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('overview.latestWaterTest')}</CardTitle>
             <Droplet className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -105,38 +107,38 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
                   {format(new Date(latestTest.test_date), "MMM d")}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {latestTest.test_parameters?.length || 0} parameters logged
+                  {latestTest.test_parameters?.length || 0} {t('overview.parametersLogged')}
                 </p>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No tests yet</p>
+              <p className="text-sm text-muted-foreground">{t('overview.noTestsYet')}</p>
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Equipment</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('overview.equipment')}</CardTitle>
             <Wrench className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{equipmentCount}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {equipmentCount === 1 ? "item" : "items"} installed
+              {equipmentCount === 1 ? t('overview.item') : t('overview.items')} {t('overview.itemsInstalled')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Tasks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('overview.upcomingTasks')}</CardTitle>
             <ListTodo className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="pt-6">
             <div className="text-3xl font-bold mb-2">
               {upcomingTasks?.length || 0}
             </div>
-            <p className="text-sm text-muted-foreground">Tasks pending</p>
+            <p className="text-sm text-muted-foreground">{t('overview.tasksPending')}</p>
             {upcomingTasks && upcomingTasks.length > 0 && (
               <div className="mt-4 space-y-2">
                 {upcomingTasks.slice(0, 3).map((task) => {
@@ -164,7 +166,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       {latestTest && (
         <Card>
           <CardHeader>
-            <CardTitle>Latest Test Results</CardTitle>
+            <CardTitle>{t('overview.latestTestResults')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
@@ -196,7 +198,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       {upcomingTasks && upcomingTasks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Upcoming Maintenance</CardTitle>
+            <CardTitle>{t('overview.upcomingMaintenance')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -224,15 +226,15 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       <div className="grid gap-4 md:grid-cols-3">
         <Button onClick={() => navigate("/water-tests")} className="w-full">
           <Plus className="w-4 h-4 mr-2" />
-          Log Water Test
+          {t('overview.logWaterTest')}
         </Button>
         <Button variant="outline" className="w-full">
           <Plus className="w-4 h-4 mr-2" />
-          Add Equipment
+          {t('overview.addEquipment')}
         </Button>
         <Button variant="outline" className="w-full">
           <Plus className="w-4 h-4 mr-2" />
-          Create Task
+          {t('overview.createTask')}
         </Button>
       </div>
     </div>

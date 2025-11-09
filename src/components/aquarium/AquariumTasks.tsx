@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["tasks", aquariumId],
@@ -79,8 +81,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Task deleted successfully",
+        title: t('common.success'),
+        description: t('tasks.taskDeleted'),
       });
 
       queryClient.invalidateQueries({ queryKey: ["tasks", aquariumId] });
@@ -142,19 +144,19 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
           });
 
           toast({
-            title: "Success",
-            description: "Task completed and next occurrence created",
+            title: t('common.success'),
+            description: t('tasks.taskCompletedAndNext'),
           });
         } else {
           toast({
-            title: "Success",
-            description: "Task marked as complete",
+            title: t('common.success'),
+            description: t('tasks.taskMarkedComplete'),
           });
         }
       } else {
         toast({
-          title: "Success",
-          description: "Task marked as complete",
+          title: t('common.success'),
+          description: t('tasks.taskMarkedComplete'),
         });
       }
 
@@ -190,13 +192,13 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         <Card>
           <CardContent className="py-12 text-center">
             <ListTodo className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Tasks Yet</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('tasks.noTasksYet')}</h3>
             <p className="text-muted-foreground mb-6">
-              Create maintenance tasks to keep your aquarium in top condition
+              {t('tasks.createTasksMessage')}
             </p>
             <Button onClick={handleCreateTask}>
               <Plus className="w-4 h-4 mr-2" />
-              Create Task
+              {t('tasks.createTask')}
             </Button>
           </CardContent>
         </Card>
@@ -212,13 +214,13 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   }
 
   return (
-    <>
+      <>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Maintenance Tasks</h2>
+          <h2 className="text-2xl font-bold">{t('tasks.title')}</h2>
           <Button onClick={handleCreateTask}>
             <Plus className="w-4 h-4 mr-2" />
-            Create Task
+            {t('tasks.createTask')}
           </Button>
         </div>
 
@@ -226,7 +228,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         <div>
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
             <ListTodo className="w-5 h-5" />
-            Pending ({pendingTasks.length})
+            {t('tasks.pending')} ({pendingTasks.length})
           </h3>
           <div className="space-y-3">
             {pendingTasks.map((task) => (
@@ -239,7 +241,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <Badge variant="secondary">{task.task_type}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        Due: {format(new Date(task.due_date), "PPP")}
+                        {t('tasks.due')} {format(new Date(task.due_date), "PPP")}
                       </p>
                       {task.notes && (
                         <p className="text-sm text-muted-foreground">{task.notes}</p>
@@ -256,7 +258,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         }}
                       >
                         <CheckCircle2 className="w-4 h-4 mr-2" />
-                        Complete
+                        {t('tasks.complete')}
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -267,7 +269,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditTask(task.id)}>
                             <Pencil className="w-4 h-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -277,7 +279,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                             className="text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -294,7 +296,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         <div>
           <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5" />
-            Completed ({completedTasks.length})
+            {t('tasks.completed')} ({completedTasks.length})
           </h3>
           <div className="space-y-3">
             {completedTasks.map((task) => (
@@ -308,7 +310,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <Badge variant="outline">Completed</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Completed: {task.completed_date && format(new Date(task.completed_date), "PPP")}
+                        {t('tasks.completedDate')} {task.completed_date && format(new Date(task.completed_date), "PPP")}
                       </p>
                     </div>
                   </div>
@@ -331,15 +333,15 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogTitle>{t('tasks.deleteTask')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this task? This action cannot be undone.
+              {t('tasks.deleteConfirmation')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -348,15 +350,15 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       <AlertDialog open={completeConfirmOpen} onOpenChange={setCompleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Complete Task</AlertDialogTitle>
+            <AlertDialogTitle>{t('tasks.completeTask')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Mark this task as complete?
+              {t('tasks.completeConfirmation')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleCompleteTask}>
-              Complete
+              {t('tasks.complete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ interface AquariumDialogProps {
 
 export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: AquariumDialogProps) {
   const { units } = useAuth();
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!aquarium;
   
@@ -97,8 +99,8 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
         if (error) throw error;
 
         toast({
-          title: "Success",
-          description: "Aquarium updated successfully",
+          title: t('common.success'),
+          description: t('aquarium.aquariumUpdated'),
         });
       } else {
         const { error } = await supabase
@@ -108,8 +110,8 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
         if (error) throw error;
 
         toast({
-          title: "Success",
-          description: "Aquarium created successfully",
+          title: t('common.success'),
+          description: t('aquarium.aquariumCreated'),
         });
       }
 
@@ -119,8 +121,8 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
     } catch (error) {
       console.error("Error saving aquarium:", error);
       toast({
-        title: "Error",
-        description: `Failed to ${isEditMode ? "update" : "create"} aquarium`,
+        title: t('common.error'),
+        description: t(isEditMode ? 'aquarium.failedToUpdate' : 'aquarium.failedToCreate'),
         variant: "destructive",
       });
     } finally {
@@ -132,9 +134,9 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Aquarium" : "Create New Aquarium"}</DialogTitle>
+          <DialogTitle>{t(isEditMode ? 'aquarium.editAquarium' : 'aquarium.createNew')}</DialogTitle>
           <DialogDescription>
-            {isEditMode ? "Update your aquarium details" : "Add a new aquarium to your collection"}
+            {t(isEditMode ? 'aquarium.updateDetails' : 'aquarium.addToCollection')}
           </DialogDescription>
         </DialogHeader>
 
@@ -145,9 +147,9 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name *</FormLabel>
+                  <FormLabel>{t('aquarium.name')} *</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Living Room Tank" {...field} />
+                    <Input placeholder={t('aquarium.namePlaceholder')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -159,19 +161,19 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type *</FormLabel>
+                  <FormLabel>{t('aquarium.type')} *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select aquarium type" />
+                        <SelectValue placeholder={t('aquarium.selectType')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="freshwater">Freshwater</SelectItem>
-                      <SelectItem value="saltwater">Saltwater</SelectItem>
-                      <SelectItem value="reef">Reef</SelectItem>
-                      <SelectItem value="planted">Planted</SelectItem>
-                      <SelectItem value="brackish">Brackish</SelectItem>
+                      <SelectItem value="freshwater">{t('aquarium.types.freshwater')}</SelectItem>
+                      <SelectItem value="saltwater">{t('aquarium.types.saltwater')}</SelectItem>
+                      <SelectItem value="reef">{t('aquarium.types.reef')}</SelectItem>
+                      <SelectItem value="planted">{t('aquarium.types.planted')}</SelectItem>
+                      <SelectItem value="brackish">{t('aquarium.types.brackish')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -184,7 +186,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="volume_gallons"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Volume ({getVolumeUnit(units)})</FormLabel>
+                  <FormLabel>{t('aquarium.volume')} ({getVolumeUnit(units)})</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -205,17 +207,17 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status *</FormLabel>
+                  <FormLabel>{t('aquarium.status')} *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={t('aquarium.selectStatus')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="active">{t('aquarium.statuses.active')}</SelectItem>
+                      <SelectItem value="inactive">{t('aquarium.statuses.inactive')}</SelectItem>
+                      <SelectItem value="maintenance">{t('aquarium.statuses.maintenance')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -228,7 +230,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="setup_date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Setup Date</FormLabel>
+                  <FormLabel>{t('aquarium.setupDate')}</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -239,7 +241,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
                             !field.value && "text-muted-foreground"
                           )}
                         >
-                          {field.value ? format(field.value, "PPP") : "Pick a date"}
+                          {field.value ? format(field.value, "PPP") : t('aquarium.pickDate')}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -264,10 +266,10 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>{t('aquarium.notes')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Additional notes about your aquarium..."
+                      placeholder={t('aquarium.notesPlaceholder')}
                       className="min-h-[100px]"
                       {...field}
                       value={field.value || ""}
@@ -280,11 +282,11 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {isEditMode ? "Update" : "Create"} Aquarium
+                {t(isEditMode ? 'common.update' : 'common.create')} {t('aquarium.name')}
               </Button>
             </DialogFooter>
           </form>

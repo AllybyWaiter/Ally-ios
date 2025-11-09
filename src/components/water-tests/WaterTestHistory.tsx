@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
@@ -13,6 +14,7 @@ interface WaterTestHistoryProps {
 
 export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
   const { units } = useAuth();
+  const { t } = useTranslation();
   
   const { data: tests, isLoading } = useQuery({
     queryKey: ["water-tests", aquariumId],
@@ -45,7 +47,7 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
       <Card>
         <CardContent className="py-12 text-center">
           <p className="text-muted-foreground">
-            No water tests recorded yet. Start logging to see your history here.
+            {t('waterTests.noTestsYet')}
           </p>
         </CardContent>
       </Card>

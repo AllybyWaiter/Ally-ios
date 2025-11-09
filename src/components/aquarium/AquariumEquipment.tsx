@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,7 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [equipmentToDelete, setEquipmentToDelete] = useState<any>(null);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const { data: equipment, isLoading } = useQuery({
     queryKey: ["equipment", aquariumId],
@@ -52,8 +54,8 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment", aquariumId] });
       toast({
-        title: "Equipment deleted",
-        description: "The equipment has been removed successfully.",
+        title: t('equipment.equipmentDeleted'),
+        description: t('equipment.equipmentRemoved'),
       });
       setDeleteDialogOpen(false);
       setEquipmentToDelete(null);
@@ -95,13 +97,13 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
       <Card>
         <CardContent className="py-12 text-center">
           <Wrench className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No Equipment Yet</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('equipment.noEquipmentYet')}</h3>
           <p className="text-muted-foreground mb-6">
-            Start tracking your aquarium equipment and maintenance schedules
+            {t('equipment.startTracking')}
           </p>
           <Button onClick={handleAddNew}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Equipment
+            {t('equipment.addEquipment')}
           </Button>
         </CardContent>
       </Card>
@@ -111,10 +113,10 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Equipment</h2>
+        <h2 className="text-2xl font-bold">{t('equipment.title')}</h2>
         <Button onClick={handleAddNew}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Equipment
+          {t('equipment.addEquipment')}
         </Button>
       </div>
 
@@ -149,19 +151,19 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
               <div className="space-y-2 text-sm">
                 {item.brand && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Brand:</span>
+                    <span className="text-muted-foreground">{t('equipment.brand')}</span>
                     <span className="font-medium">{item.brand}</span>
                   </div>
                 )}
                 {item.model && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Model:</span>
+                    <span className="text-muted-foreground">{t('equipment.model')}</span>
                     <span className="font-medium">{item.model}</span>
                   </div>
                 )}
                 {item.install_date && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Installed:</span>
+                    <span className="text-muted-foreground">{t('equipment.installed')}</span>
                     <span className="font-medium">
                       {format(new Date(item.install_date), "PPP")}
                     </span>
@@ -169,15 +171,15 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
                 )}
                 {item.maintenance_interval_days && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Maintenance:</span>
+                    <span className="text-muted-foreground">{t('equipment.maintenance')}</span>
                     <span className="font-medium">
-                      Every {item.maintenance_interval_days} days
+                      {t('equipment.everyDays', { days: item.maintenance_interval_days })}
                     </span>
                   </div>
                 )}
                 {item.last_maintenance_date && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Last Service:</span>
+                    <span className="text-muted-foreground">{t('equipment.lastService')}</span>
                     <span className="font-medium">
                       {format(new Date(item.last_maintenance_date), "PPP")}
                     </span>
@@ -202,19 +204,18 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
+            <AlertDialogTitle>{t('equipment.deleteEquipment')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{equipmentToDelete?.name}"? This
-              action cannot be undone.
+              {t('equipment.deleteConfirmation', { name: equipmentToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate(equipmentToDelete.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

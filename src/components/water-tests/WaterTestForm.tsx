@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ interface WaterTestFormProps {
 export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const { user, canCreateCustomTemplates, subscriptionTier, units } = useAuth();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
@@ -118,13 +120,13 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["water-tests"] });
       queryClient.invalidateQueries({ queryKey: ["all-templates"] });
-      toast.success("Water test logged successfully");
+      toast.success(t('waterTests.testLogged'));
       setParameters({});
       setNotes("");
       setTags("");
     },
     onError: (error) => {
-      toast.error("Failed to log water test: " + error.message);
+      toast.error(t('waterTests.failedToLog') + ": " + error.message);
     },
   });
 
@@ -164,20 +166,20 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             {/* Template Selector */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Parameter Template</Label>
+                <Label>{t('waterTests.parameterTemplate')}</Label>
                 <Button type="button" variant="outline" size="sm" onClick={handleManageTemplates}>
                   <Settings className="h-4 w-4 mr-1" />
-                  Manage Templates
+                  {t('waterTests.manageTemplates')}
                 </Button>
               </div>
               <Select value={selectedTemplate} onValueChange={handleTemplateChange} disabled={templatesLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder={templatesLoading ? "Loading templates..." : "Select a template..."} />
+                  <SelectValue placeholder={templatesLoading ? t('common.loading') : t('waterTests.parameterTemplate')} />
                 </SelectTrigger>
                 <SelectContent>
                   {systemTemplates.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>System Templates</SelectLabel>
+                      <SelectLabel>{t('waterTests.systemTemplates')}</SelectLabel>
                       {systemTemplates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           {template.name}
@@ -187,12 +189,12 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                   )}
                   {customTemplates.length > 0 && (
                     <SelectGroup>
-                      <SelectLabel>My Custom Templates</SelectLabel>
+                      <SelectLabel>{t('waterTests.myCustomTemplates')}</SelectLabel>
                       {customTemplates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           <div className="flex items-center gap-2">
                             {template.name}
-                            <Badge variant="secondary" className="ml-auto text-xs">Custom</Badge>
+                            <Badge variant="secondary" className="ml-auto text-xs">{t('waterTests.custom')}</Badge>
                           </div>
                         </SelectItem>
                       ))}
@@ -201,14 +203,14 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Pre-configured parameter sets for your aquarium type
+                {t('waterTests.templateDescription')}
               </p>
             </div>
 
             {/* Parameter Inputs */}
             {activeTemplate && (
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Test Parameters</h3>
+                <h3 className="font-semibold text-lg">{t('waterTests.testParameters')}</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   {activeTemplate.parameters.map((param) => {
                     const value = parameters[param.name] || "";
@@ -262,7 +264,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                         {validation && validation.isValid && value && (
                           <div className="flex items-center gap-1 text-xs text-green-600">
                             <CheckCircle2 className="w-3 h-3" />
-                            <span>Within normal range</span>
+                            <span>{t('waterTests.withinNormalRange')}</span>
                           </div>
                         )}
                       </div>
@@ -275,10 +277,10 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             {/* Notes & Tags */}
             <div className="space-y-4">
               <div>
-                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Label htmlFor="notes">{t('aquarium.notes')} ({t('common.optional')})</Label>
                 <Textarea
                   id="notes"
-                  placeholder="Any observations or context for this test..."
+                  placeholder={t('aquarium.notesPlaceholder')}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
@@ -286,10 +288,10 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
               </div>
 
               <div>
-                <Label htmlFor="tags">Tags (Optional)</Label>
+                <Label htmlFor="tags">Tags ({t('common.optional')})</Label>
                 <Input
                   id="tags"
-                  placeholder="water change, new livestock, dosing (comma-separated)"
+                  placeholder={t('waterTests.tagsPlaceholder')}
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                 />
@@ -306,7 +308,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                 {createTestMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                Save Test
+                {t('waterTests.saveTest')}
               </Button>
             </div>
           </form>
@@ -322,22 +324,22 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upgrade to Premium</DialogTitle>
+            <DialogTitle>{t('waterTests.upgradeTitle')}</DialogTitle>
             <DialogDescription>
-              Custom parameter templates are available for Plus and Gold subscribers.
+              {t('waterTests.upgradeDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <h4 className="font-semibold mb-2">Plus Plan</h4>
-              <p className="text-sm text-muted-foreground">Up to 10 custom templates</p>
+              <h4 className="font-semibold mb-2">{t('waterTests.plusPlan')}</h4>
+              <p className="text-sm text-muted-foreground">{t('waterTests.plusDescription')}</p>
             </div>
             <div>
-              <h4 className="font-semibold mb-2">Gold Plan</h4>
-              <p className="text-sm text-muted-foreground">Unlimited custom templates</p>
+              <h4 className="font-semibold mb-2">{t('waterTests.goldPlan')}</h4>
+              <p className="text-sm text-muted-foreground">{t('waterTests.goldDescription')}</p>
             </div>
             <p className="text-sm text-muted-foreground">
-              Current plan: <span className="font-semibold capitalize">{subscriptionTier || "Free"}</span>
+              {t('waterTests.currentPlan')} <span className="font-semibold capitalize">{subscriptionTier || "Free"}</span>
             </p>
           </div>
         </DialogContent>
