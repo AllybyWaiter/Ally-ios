@@ -231,6 +231,7 @@ export type Database = {
           name: string | null
           onboarding_completed: boolean | null
           subscription_tier: string | null
+          theme_preference: string | null
           updated_at: string
           user_id: string
         }
@@ -241,6 +242,7 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           subscription_tier?: string | null
+          theme_preference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -251,6 +253,7 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           subscription_tier?: string | null
+          theme_preference?: string | null
           updated_at?: string
           user_id?: string
         }

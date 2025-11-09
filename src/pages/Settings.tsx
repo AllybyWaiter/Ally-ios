@@ -64,6 +64,23 @@ const Settings = () => {
     }
   };
 
+  const handleThemeChange = async (newTheme: string) => {
+    if (!user) return;
+    
+    setTheme(newTheme);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ theme_preference: newTheme })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Failed to save theme preference:', error);
+    }
+  };
+
   const handleUpdatePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast({
@@ -230,7 +247,7 @@ const Settings = () => {
                   <div className="grid grid-cols-3 gap-4">
                     <Card 
                       className={`cursor-pointer transition-all hover:border-primary ${theme === 'light' ? 'border-primary shadow-md' : ''}`}
-                      onClick={() => setTheme('light')}
+                      onClick={() => handleThemeChange('light')}
                     >
                       <CardContent className="p-6 flex flex-col items-center gap-3">
                         <Sun className="h-8 w-8" />
@@ -243,7 +260,7 @@ const Settings = () => {
                     
                     <Card 
                       className={`cursor-pointer transition-all hover:border-primary ${theme === 'dark' ? 'border-primary shadow-md' : ''}`}
-                      onClick={() => setTheme('dark')}
+                      onClick={() => handleThemeChange('dark')}
                     >
                       <CardContent className="p-6 flex flex-col items-center gap-3">
                         <Moon className="h-8 w-8" />
@@ -256,7 +273,7 @@ const Settings = () => {
                     
                     <Card 
                       className={`cursor-pointer transition-all hover:border-primary ${theme === 'system' ? 'border-primary shadow-md' : ''}`}
-                      onClick={() => setTheme('system')}
+                      onClick={() => handleThemeChange('system')}
                     >
                       <CardContent className="p-6 flex flex-col items-center gap-3">
                         <Monitor className="h-8 w-8" />
