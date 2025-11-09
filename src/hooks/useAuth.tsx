@@ -60,12 +60,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Log auth events to Sentry
         addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
         
-        // Check admin status and fetch profile IMMEDIATELY (no setTimeout)
+        // Check admin status and fetch profile in parallel
         if (session?.user) {
           // Keep loading true while fetching profile
           setLoading(true);
-          await checkAdminStatus(session.user.id);
-          await fetchUserProfile(session.user.id);
+          await Promise.all([
+            checkAdminStatus(session.user.id),
+            fetchUserProfile(session.user.id)
+          ]);
         } else {
           setIsAdmin(false);
           setUserName(null);
@@ -93,8 +95,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await checkAdminStatus(session.user.id);
-        await fetchUserProfile(session.user.id);
+        await Promise.all([
+          checkAdminStatus(session.user.id),
+          fetchUserProfile(session.user.id)
+        ]);
       } else {
         setLoading(false);
       }
@@ -109,23 +113,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
-    // Fetch all roles for the user
-    const { data: rolesData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
+    // Fetch roles and permissions in parallel
+    const [rolesResult, permsResult] = await Promise.all([
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId),
+      (supabase as any).rpc('get_user_permissions', {
+        _user_id: userId
+      })
+    ]);
     
-    const userRoles = rolesData?.map(r => r.role) || [];
+    const userRoles = rolesResult.data?.map(r => r.role) || [];
     setRoles(userRoles);
     setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
     
-    // Fetch permissions
-    const { data: permsData } = await (supabase as any).rpc('get_user_permissions', {
-      _user_id: userId
-    });
-    
     // Extract permission names from the result
-    const permissionNames = permsData?.map((p: any) => p.permission_name || p) || [];
+    const permissionNames = permsResult.data?.map((p: any) => p.permission_name || p) || [];
     setPermissions(permissionNames);
   };
 
