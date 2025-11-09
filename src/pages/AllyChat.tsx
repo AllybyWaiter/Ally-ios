@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Send, Loader2, MessageSquare, Sparkles } from "lucide-react";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Send, Loader2, MessageSquare, Sparkles, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +35,7 @@ const AllyChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [selectedAquarium, setSelectedAquarium] = useState<string>("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -204,6 +206,12 @@ const AllyChat = () => {
     "Equipment recommendations",
   ];
 
+  const getSelectedAquariumName = () => {
+    if (selectedAquarium === "general") return "General Advice";
+    const aquarium = aquariums.find(aq => aq.id === selectedAquarium);
+    return aquarium ? `${aquarium.name} (${aquarium.type})` : "General Advice";
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <AppHeader />
@@ -212,8 +220,8 @@ const AllyChat = () => {
         <Card className="shadow-lg">
           {/* Header */}
           <div className="bg-gradient-primary p-6 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1">
                 <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                   <Sparkles className="h-6 w-6 text-primary-foreground" />
                 </div>
@@ -223,9 +231,10 @@ const AllyChat = () => {
                 </div>
               </div>
               
+              {/* Desktop Selector */}
               {aquariums.length > 0 && (
                 <Select value={selectedAquarium} onValueChange={setSelectedAquarium}>
-                  <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20">
+                  <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hidden md:flex">
                     <SelectValue placeholder="Select aquarium" />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,7 +247,74 @@ const AllyChat = () => {
                   </SelectContent>
                 </Select>
               )}
+
+              {/* Mobile Drawer Trigger */}
+              {aquariums.length > 0 && (
+                <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+                  <DrawerTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="md:hidden text-primary-foreground hover:bg-primary-foreground/10"
+                    >
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader>
+                      <DrawerTitle>Select Aquarium</DrawerTitle>
+                      <DrawerDescription>
+                        Choose which aquarium you want to discuss with Ally
+                      </DrawerDescription>
+                    </DrawerHeader>
+                    <div className="px-4 pb-4">
+                      <div className="space-y-2">
+                        <Button
+                          variant={selectedAquarium === "general" ? "default" : "outline"}
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setSelectedAquarium("general");
+                            setDrawerOpen(false);
+                          }}
+                        >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          General Advice
+                        </Button>
+                        {aquariums.map((aq) => (
+                          <Button
+                            key={aq.id}
+                            variant={selectedAquarium === aq.id ? "default" : "outline"}
+                            className="w-full justify-start"
+                            onClick={() => {
+                              setSelectedAquarium(aq.id);
+                              setDrawerOpen(false);
+                            }}
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            {aq.name} ({aq.type})
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <DrawerFooter>
+                      <DrawerClose asChild>
+                        <Button variant="outline">Close</Button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </DrawerContent>
+                </Drawer>
+              )}
             </div>
+            
+            {/* Mobile: Show selected aquarium below header */}
+            {aquariums.length > 0 && (
+              <div className="mt-3 md:hidden">
+                <p className="text-xs text-primary-foreground/70 mb-1">Current context:</p>
+                <div className="text-sm text-primary-foreground bg-primary-foreground/10 px-3 py-2 rounded">
+                  {getSelectedAquariumName()}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Messages */}
