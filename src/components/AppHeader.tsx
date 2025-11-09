@@ -50,6 +50,14 @@ const AppHeader = () => {
               Dashboard
             </Button>
           </Link>
+          <Link to="/chat">
+            <Button
+              variant={location.pathname === "/chat" ? "secondary" : "ghost"}
+              size="sm"
+            >
+              Chat with Ally
+            </Button>
+          </Link>
           <Link to="/water-tests">
             <Button
               variant={location.pathname === "/water-tests" ? "secondary" : "ghost"}

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles } from 'lucide-react';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
@@ -223,6 +223,35 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Chat with Ally CTA */}
+        <Card className="mb-8 bg-gradient-primary border-none">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-primary-foreground mb-1">
+                    Chat with Ally
+                  </h3>
+                  <p className="text-sm text-primary-foreground/80">
+                    Get personalized aquarium advice and answers to your questions
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => navigate('/chat')}
+                variant="secondary"
+                className="gap-2"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Start Chat
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Aquariums Grid */}
         {aquariums.length === 0 ? (
