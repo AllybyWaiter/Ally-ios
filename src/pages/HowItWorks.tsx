@@ -6,6 +6,7 @@ import { Camera, Sparkles, CheckCircle2, Upload, LineChart, Bell, Droplets, Fish
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
+import AllySupportChat from "@/components/AllySupportChat";
 
 const steps = [
   {
@@ -217,6 +218,7 @@ const HowItWorksPage = () => {
 
       <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
       <Footer />
+      <AllySupportChat />
     </div>
   );
 };

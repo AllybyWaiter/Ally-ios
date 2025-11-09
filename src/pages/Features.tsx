@@ -9,6 +9,7 @@ import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import DemoVideoModal from "@/components/DemoVideoModal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import appMockup from "@/assets/app-mockup.png";
+import AllySupportChat from "@/components/AllySupportChat";
 import {
   Camera,
   Calendar,
@@ -556,6 +557,7 @@ const Features = () => {
         onClose={() => setIsDemoVideoOpen(false)}
         title="Ally Product Demo"
       />
+      <AllySupportChat />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import CTA from "@/components/CTA";
 import FAQ from "@/components/FAQ";
 import { ContactForm } from "@/components/ContactForm";
 import Footer from "@/components/Footer";
+import AllySupportChat from "@/components/AllySupportChat";
 
 const Index = () => {
   return (
@@ -22,6 +23,7 @@ const Index = () => {
         <ContactForm />
       </main>
       <Footer />
+      <AllySupportChat />
     </div>
   );
 };
