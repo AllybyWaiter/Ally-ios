@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   subscriptionTier: string | null;
   canCreateCustomTemplates: boolean;
+  themePreference: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
@@ -24,6 +25,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [canCreateCustomTemplates, setCanCreateCustomTemplates] = useState(false);
+  const [themePreference, setThemePreference] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUserName(null);
           setSubscriptionTier(null);
           setCanCreateCustomTemplates(false);
+          setThemePreference(null);
         }
       }
     );
@@ -78,13 +81,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('name, subscription_tier')
+      .select('name, subscription_tier, theme_preference')
       .eq('user_id', userId)
       .maybeSingle();
     
     if (data) {
       setUserName(data.name);
       setSubscriptionTier(data.subscription_tier);
+      setThemePreference(data.theme_preference);
       setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
     }
   };
@@ -119,10 +123,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUserName(null);
     setSubscriptionTier(null);
     setCanCreateCustomTemplates(false);
+    setThemePreference(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, themePreference, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
