@@ -233,6 +233,7 @@ export type Database = {
           onboarding_completed: boolean | null
           subscription_tier: string | null
           theme_preference: string | null
+          unit_preference: string | null
           updated_at: string
           user_id: string
         }
@@ -245,6 +246,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           subscription_tier?: string | null
           theme_preference?: string | null
+          unit_preference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -257,6 +259,7 @@ export type Database = {
           onboarding_completed?: boolean | null
           subscription_tier?: string | null
           theme_preference?: string | null
+          unit_preference?: string | null
           updated_at?: string
           user_id?: string
         }

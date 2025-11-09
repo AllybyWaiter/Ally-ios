@@ -12,6 +12,7 @@ interface AuthContextType {
   canCreateCustomTemplates: boolean;
   themePreference: string | null;
   languagePreference: string | null;
+  unitPreference: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [canCreateCustomTemplates, setCanCreateCustomTemplates] = useState(false);
   const [themePreference, setThemePreference] = useState<string | null>(null);
   const [languagePreference, setLanguagePreference] = useState<string | null>(null);
+  const [unitPreference, setUnitPreference] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setCanCreateCustomTemplates(false);
           setThemePreference(null);
           setLanguagePreference(null);
+          setUnitPreference(null);
           clearUserContext();
         }
       }
@@ -89,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('name, subscription_tier, theme_preference, language_preference')
+      .select('name, subscription_tier, theme_preference, language_preference, unit_preference')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -98,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSubscriptionTier(data.subscription_tier);
       setThemePreference(data.theme_preference);
       setLanguagePreference(data.language_preference);
+      setUnitPreference(data.unit_preference);
       setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
       
       // Set user context in Sentry
@@ -140,11 +144,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCanCreateCustomTemplates(false);
     setThemePreference(null);
     setLanguagePreference(null);
+    setUnitPreference(null);
     clearUserContext();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, themePreference, languagePreference, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, themePreference, languagePreference, unitPreference, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
