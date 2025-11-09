@@ -228,6 +228,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          language_preference: string | null
           name: string | null
           onboarding_completed: boolean | null
           subscription_tier: string | null
@@ -239,6 +240,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          language_preference?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
           subscription_tier?: string | null
@@ -250,6 +252,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          language_preference?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
           subscription_tier?: string | null
