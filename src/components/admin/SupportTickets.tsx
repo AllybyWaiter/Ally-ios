@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Send, Sparkles } from "lucide-react";
+import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Send, Sparkles, Lightbulb, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface Ticket {
@@ -40,6 +40,11 @@ interface Message {
   created_at: string;
 }
 
+interface ReplyTemplate {
+  title: string;
+  content: string;
+}
+
 const SupportTickets = () => {
   const { toast } = useToast();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -48,6 +53,8 @@ const SupportTickets = () => {
   const [replyMessage, setReplyMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [suggestedReplies, setSuggestedReplies] = useState<ReplyTemplate[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     fetchTickets();
@@ -56,6 +63,7 @@ const SupportTickets = () => {
   useEffect(() => {
     if (selectedTicket) {
       fetchMessages(selectedTicket.id);
+      fetchSuggestedReplies(selectedTicket);
     }
   }, [selectedTicket]);
 
@@ -93,6 +101,44 @@ const SupportTickets = () => {
       });
     } else {
       setMessages(data || []);
+    }
+  };
+
+  const fetchSuggestedReplies = async (ticket: Ticket) => {
+    setIsLoadingSuggestions(true);
+    setSuggestedReplies([]);
+    
+    try {
+      const { data: messagesData } = await supabase
+        .from('support_messages')
+        .select('*')
+        .eq('ticket_id', ticket.id)
+        .order('created_at', { ascending: true });
+
+      const initialMessage = messagesData?.[0]?.message || '';
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/suggest-ticket-reply`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            ticketContent: initialMessage,
+            priority: ticket.priority,
+            messages: messagesData || []
+          }),
+        }
+      );
+
+      const { templates } = await response.json();
+      setSuggestedReplies(templates || []);
+    } catch (error) {
+      console.error("Failed to fetch suggestions:", error);
+    } finally {
+      setIsLoadingSuggestions(false);
     }
   };
 
@@ -328,6 +374,37 @@ const SupportTickets = () => {
 
             {/* Reply Box */}
             <div className="space-y-2">
+              {/* Suggested Replies */}
+              {isLoadingSuggestions && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating AI reply suggestions...
+                </div>
+              )}
+              
+              {suggestedReplies.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Lightbulb className="h-4 w-4 text-yellow-500" />
+                    AI-Suggested Replies
+                  </div>
+                  <div className="grid gap-2">
+                    {suggestedReplies.map((template, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setReplyMessage(template.content)}
+                        className="text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="font-medium text-sm mb-1">{template.title}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {template.content}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <Textarea
                 value={replyMessage}
                 onChange={(e) => setReplyMessage(e.target.value)}

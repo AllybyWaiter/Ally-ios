@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-ticket-priority]
 verify_jwt = false
+
+[functions.suggest-ticket-reply]
+verify_jwt = false
