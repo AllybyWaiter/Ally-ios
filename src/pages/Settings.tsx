@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler } from "lucide-react";
+import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler, Palette, Globe, Shield, Crown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
@@ -28,7 +29,6 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showUnitConfirmDialog, setShowUnitConfirmDialog] = useState(false);
   const [pendingUnitChange, setPendingUnitChange] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("profile");
 
   useEffect(() => {
     if (!user) {
@@ -48,14 +48,12 @@ const Settings = () => {
     }
   }, [unitPreference]);
 
-  // Sync theme preference from database on mount
   useEffect(() => {
     if (themePreference && theme !== themePreference) {
       setTheme(themePreference);
     }
   }, [themePreference]);
 
-  // Sync language preference from database on mount
   useEffect(() => {
     if (languagePreference && i18n.language !== languagePreference) {
       i18n.changeLanguage(languagePreference);
@@ -134,10 +132,8 @@ const Settings = () => {
   };
 
   const handleUnitChangeRequest = (newUnit: string) => {
-    // If it's the same as current, no need to confirm
     if (newUnit === units) return;
     
-    // Show confirmation dialog
     setPendingUnitChange(newUnit);
     setShowUnitConfirmDialog(true);
   };
@@ -222,8 +218,6 @@ const Settings = () => {
 
     setLoading(true);
     try {
-      // Note: In production, you'd want a proper account deletion flow
-      // This is a simplified version
       toast({
         title: "Account deletion requested",
         description: "Please contact support to complete account deletion.",
@@ -242,460 +236,559 @@ const Settings = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/dashboard")}
-          className="mb-6 hover:bg-muted"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="flex items-center justify-between mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/dashboard")}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
 
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
+        <div className="mb-10 text-center">
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            Settings
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Customize your experience
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Navigation */}
-          <aside className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardContent className="p-4">
-                <nav className="space-y-1">
-                  {[
-                    { id: 'profile', icon: User, label: 'Profile' },
-                    { id: 'appearance', icon: Moon, label: 'Appearance' },
-                    { id: 'language', icon: Languages, label: 'Language' },
-                    { id: 'units', icon: Ruler, label: 'Units' },
-                    { id: 'security', icon: Lock, label: 'Security' },
-                    { id: 'subscription', icon: CreditCard, label: 'Subscription' },
-                  ].map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
-                          activeTab === item.id
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                      >
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                        <span className="font-medium">{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </nav>
+        <Tabs defaultValue="profile" className="space-y-8">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto p-1 bg-muted/50 backdrop-blur">
+            <TabsTrigger value="profile" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">Theme</span>
+            </TabsTrigger>
+            <TabsTrigger value="language" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Globe className="h-4 w-4" />
+              <span className="hidden sm:inline">Language</span>
+            </TabsTrigger>
+            <TabsTrigger value="units" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Ruler className="h-4 w-4" />
+              <span className="hidden sm:inline">Units</span>
+            </TabsTrigger>
+            <TabsTrigger value="security" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Security</span>
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Crown className="h-4 w-4" />
+              <span className="hidden sm:inline">Plan</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile" className="space-y-6">
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl">Profile Information</CardTitle>
+                </div>
+                <CardDescription className="text-base">
+                  Manage your personal details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="email" className="text-sm font-semibold">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={user.email || ""}
+                    disabled
+                    className="bg-muted/30 h-11"
+                  />
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    Email cannot be changed
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="name" className="text-sm font-semibold">Display Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="h-11"
+                  />
+                </div>
+
+                <Button 
+                  onClick={handleUpdateProfile} 
+                  disabled={loading}
+                  className="w-full sm:w-auto h-11 px-8"
+                  size="lg"
+                >
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
               </CardContent>
             </Card>
-          </aside>
+          </TabsContent>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            {activeTab === "profile" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Profile Information</CardTitle>
-                  <CardDescription>
-                    Update your profile details and personal information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={user.email || ""}
-                      disabled
-                      className="bg-muted/50"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Email cannot be changed at this time
-                    </p>
+          <TabsContent value="appearance" className="space-y-6">
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-secondary/10">
+                    <Palette className="h-5 w-5 text-secondary" />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">Name</Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your name"
-                    />
-                  </div>
-
-                  <Button onClick={handleUpdateProfile} disabled={loading} className="w-full sm:w-auto">
-                    {loading ? "Saving..." : "Save Changes"}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "appearance" && (
-              <Card>
-                <CardHeader>
                   <CardTitle className="text-2xl">Appearance</CardTitle>
-                  <CardDescription>
-                    Customize how the app looks on your device
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <Label className="text-sm font-medium">Theme</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Select the theme for the app interface
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <Card 
-                        className={`cursor-pointer transition-all hover:border-primary hover:shadow-md ${theme === 'light' ? 'border-primary shadow-md ring-2 ring-primary/20' : 'border-border'}`}
-                        onClick={() => handleThemeChange('light')}
-                      >
-                        <CardContent className="p-6 flex flex-col items-center gap-3">
-                          <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                            <Sun className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                          </div>
-                          <div className="text-center">
-                            <p className="font-semibold">Light</p>
-                            <p className="text-xs text-muted-foreground">Bright & clean</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card 
-                        className={`cursor-pointer transition-all hover:border-primary hover:shadow-md ${theme === 'dark' ? 'border-primary shadow-md ring-2 ring-primary/20' : 'border-border'}`}
-                        onClick={() => handleThemeChange('dark')}
-                      >
-                        <CardContent className="p-6 flex flex-col items-center gap-3">
-                          <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
-                            <Moon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                          </div>
-                          <div className="text-center">
-                            <p className="font-semibold">Dark</p>
-                            <p className="text-xs text-muted-foreground">Easy on eyes</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card 
-                        className={`cursor-pointer transition-all hover:border-primary hover:shadow-md ${theme === 'system' ? 'border-primary shadow-md ring-2 ring-primary/20' : 'border-border'}`}
-                        onClick={() => handleThemeChange('system')}
-                      >
-                        <CardContent className="p-6 flex flex-col items-center gap-3">
-                          <div className="p-3 rounded-full bg-slate-100 dark:bg-slate-900/30">
-                            <Monitor className="h-6 w-6 text-slate-600 dark:text-slate-400" />
-                          </div>
-                          <div className="text-center">
-                            <p className="font-semibold">System</p>
-                            <p className="text-xs text-muted-foreground">Auto-adjust</p>
-                          </div>
-                        </CardContent>
-                      </Card>
+                </div>
+                <CardDescription className="text-base">
+                  Choose how the app looks
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => handleThemeChange('light')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      theme === 'light' 
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-4">
+                      <div className={`p-4 rounded-full transition-colors ${
+                        theme === 'light' ? 'bg-amber-100' : 'bg-muted'
+                      }`}>
+                        <Sun className={`h-8 w-8 ${
+                          theme === 'light' ? 'text-amber-600' : 'text-muted-foreground'
+                        }`} />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-semibold text-lg">Light</p>
+                        <p className="text-xs text-muted-foreground mt-1">Bright & clear</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    {theme === 'light' && (
+                      <div className="absolute top-2 right-2">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleThemeChange('dark')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      theme === 'dark' 
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-4">
+                      <div className={`p-4 rounded-full transition-colors ${
+                        theme === 'dark' ? 'bg-indigo-100 dark:bg-indigo-900/30' : 'bg-muted'
+                      }`}>
+                        <Moon className={`h-8 w-8 ${
+                          theme === 'dark' ? 'text-indigo-600 dark:text-indigo-400' : 'text-muted-foreground'
+                        }`} />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-semibold text-lg">Dark</p>
+                        <p className="text-xs text-muted-foreground mt-1">Easy on eyes</p>
+                      </div>
+                    </div>
+                    {theme === 'dark' && (
+                      <div className="absolute top-2 right-2">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleThemeChange('system')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      theme === 'system' 
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-4">
+                      <div className={`p-4 rounded-full transition-colors ${
+                        theme === 'system' ? 'bg-slate-100 dark:bg-slate-900/30' : 'bg-muted'
+                      }`}>
+                        <Monitor className={`h-8 w-8 ${
+                          theme === 'system' ? 'text-slate-600 dark:text-slate-400' : 'text-muted-foreground'
+                        }`} />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-semibold text-lg">System</p>
+                        <p className="text-xs text-muted-foreground mt-1">Auto-adjust</p>
+                      </div>
+                    </div>
+                    {theme === 'system' && (
+                      <div className="absolute top-2 right-2">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {activeTab === "language" && (
-              <Card>
-                <CardHeader>
+          <TabsContent value="language" className="space-y-6">
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-accent/10">
+                    <Globe className="h-5 w-5 text-accent" />
+                  </div>
                   <CardTitle className="text-2xl">Language & Region</CardTitle>
-                  <CardDescription>
-                    Select your preferred language for the app interface
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <Label className="text-sm font-medium">Preferred Language</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Choose the language for menus, buttons, and other interface elements
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {[
-                        { code: 'en', name: 'English', flag: '🇺🇸' },
-                        { code: 'es', name: 'Español', flag: '🇪🇸' },
-                        { code: 'fr', name: 'Français', flag: '🇫🇷' },
-                        { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-                        { code: 'pt', name: 'Português', flag: '🇵🇹' },
-                        { code: 'ja', name: '日本語', flag: '🇯🇵' },
-                      ].map((lang) => (
-                        <Card 
-                          key={lang.code}
-                          className={`cursor-pointer transition-all hover:border-primary hover:shadow-md ${i18n.language === lang.code ? 'border-primary shadow-md ring-2 ring-primary/20' : 'border-border'}`}
-                          onClick={() => handleLanguageChange(lang.code)}
-                        >
-                          <CardContent className="p-4 flex items-center gap-3">
-                            <span className="text-3xl">{lang.flag}</span>
-                            <div>
-                              <p className="font-semibold">{lang.name}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+                <CardDescription className="text-base">
+                  Select your preferred language
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[
+                    { code: 'en', name: 'English', flag: '🇺🇸' },
+                    { code: 'es', name: 'Español', flag: '🇪🇸' },
+                    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+                    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+                    { code: 'pt', name: 'Português', flag: '🇵🇹' },
+                    { code: 'ja', name: '日本語', flag: '🇯🇵' },
+                  ].map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => handleLanguageChange(lang.code)}
+                      className={`relative p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        i18n.language === lang.code
+                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{lang.flag}</span>
+                        <p className="font-semibold">{lang.name}</p>
+                      </div>
+                      {i18n.language === lang.code && (
+                        <div className="absolute top-2 right-2">
+                          <div className="h-3 w-3 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {activeTab === "units" && (
-              <Card>
-                <CardHeader>
+          <TabsContent value="units" className="space-y-6">
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-secondary/10">
+                    <Ruler className="h-5 w-5 text-secondary" />
+                  </div>
                   <CardTitle className="text-2xl">Units & Measurements</CardTitle>
-                  <CardDescription>
-                    Choose your preferred unit system for measurements
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <Label className="text-sm font-medium">Unit System</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Select how measurements are displayed throughout the app
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Card 
-                        className={`cursor-pointer transition-all hover:border-primary hover:shadow-md ${units === 'imperial' ? 'border-primary shadow-md ring-2 ring-primary/20' : 'border-border'}`}
-                        onClick={() => handleUnitChangeRequest('imperial')}
-                      >
-                        <CardContent className="p-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-primary/10">
-                                <Ruler className="h-5 w-5 text-primary" />
-                              </div>
-                              <p className="font-semibold text-lg">Imperial</p>
-                            </div>
-                            <div className="space-y-2 text-sm text-muted-foreground pl-1">
-                              <p>• Gallons</p>
-                              <p>• Fahrenheit (°F)</p>
-                              <p>• Inches</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card 
-                        className={`cursor-pointer transition-all hover:border-primary hover:shadow-md ${units === 'metric' ? 'border-primary shadow-md ring-2 ring-primary/20' : 'border-border'}`}
-                        onClick={() => handleUnitChangeRequest('metric')}
-                      >
-                        <CardContent className="p-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 rounded-lg bg-secondary/10">
-                                <Ruler className="h-5 w-5 text-secondary" />
-                              </div>
-                              <p className="font-semibold text-lg">Metric</p>
-                            </div>
-                            <div className="space-y-2 text-sm text-muted-foreground pl-1">
-                              <p>• Liters</p>
-                              <p>• Celsius (°C)</p>
-                              <p>• Centimeters</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "security" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Security Settings</CardTitle>
-                  <CardDescription>
-                    Manage your password and account security
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Change Password</h3>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="current-password" className="text-sm font-medium">Current Password</Label>
-                      <Input
-                        id="current-password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter current password"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password" className="text-sm font-medium">New Password</Label>
-                      <Input
-                        id="new-password"
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="text-sm font-medium">Confirm New Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password"
-                      />
-                    </div>
-
-                    <Button onClick={handleUpdatePassword} disabled={loading} className="w-full sm:w-auto">
-                      {loading ? "Updating..." : "Update Password"}
-                    </Button>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg border-2 border-destructive/20 bg-destructive/5">
-                      <h3 className="font-semibold text-lg text-destructive mb-2">Danger Zone</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Permanently delete your account and all associated data
-                      </p>
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Account
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete your
-                              account and remove all your data from our servers.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteAccount}>
-                              Delete Account
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {activeTab === "subscription" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Subscription & Billing</CardTitle>
-                  <CardDescription>
-                    Manage your subscription plan and billing information
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
-                      <div>
-                        <h3 className="font-semibold text-lg">Current Plan</h3>
-                        <p className="text-sm text-muted-foreground">
-                          You are currently on the {subscriptionTier || 'free'} plan
-                        </p>
+                </div>
+                <CardDescription className="text-base">
+                  Choose your measurement system
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleUnitChangeRequest('imperial')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      units === 'imperial'
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-lg ${
+                          units === 'imperial' ? 'bg-primary/10' : 'bg-muted'
+                        }`}>
+                          <Ruler className={`h-6 w-6 ${
+                            units === 'imperial' ? 'text-primary' : 'text-muted-foreground'
+                          }`} />
+                        </div>
+                        <p className="font-bold text-xl">Imperial</p>
                       </div>
-                      <Badge variant={subscriptionTier === 'free' ? 'secondary' : 'default'} className="text-sm px-3 py-1">
-                        {(subscriptionTier || 'free').toUpperCase()}
-                      </Badge>
+                      <div className="space-y-2 text-sm text-muted-foreground text-left">
+                        <p>• Gallons (gal)</p>
+                        <p>• Fahrenheit (°F)</p>
+                        <p>• Inches (in)</p>
+                      </div>
                     </div>
+                    {units === 'imperial' && (
+                      <div className="absolute top-3 right-3">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleUnitChangeRequest('metric')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      units === 'metric'
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-lg ${
+                          units === 'metric' ? 'bg-secondary/10' : 'bg-muted'
+                        }`}>
+                          <Ruler className={`h-6 w-6 ${
+                            units === 'metric' ? 'text-secondary' : 'text-muted-foreground'
+                          }`} />
+                        </div>
+                        <p className="font-bold text-xl">Metric</p>
+                      </div>
+                      <div className="space-y-2 text-sm text-muted-foreground text-left">
+                        <p>• Liters (L)</p>
+                        <p>• Celsius (°C)</p>
+                        <p>• Centimeters (cm)</p>
+                      </div>
+                    </div>
+                    {units === 'metric' && (
+                      <div className="absolute top-3 right-3">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                    <Separator />
+          <TabsContent value="security" className="space-y-6">
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Shield className="h-5 w-5 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl">Security</CardTitle>
+                </div>
+                <CardDescription className="text-base">
+                  Manage your password and account security
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Change Password
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    <Label htmlFor="new-password" className="text-sm font-semibold">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      className="h-11"
+                    />
+                  </div>
 
+                  <div className="space-y-3">
+                    <Label htmlFor="confirm-password" className="text-sm font-semibold">Confirm New Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="h-11"
+                    />
+                  </div>
+
+                  <Button 
+                    onClick={handleUpdatePassword} 
+                    disabled={loading}
+                    className="w-full sm:w-auto h-11 px-8"
+                    size="lg"
+                  >
+                    {loading ? "Updating..." : "Update Password"}
+                  </Button>
+                </div>
+
+                <Separator />
+
+                <div className="p-6 rounded-xl border-2 border-destructive/30 bg-destructive/5">
+                  <h3 className="font-bold text-lg text-destructive mb-2 flex items-center gap-2">
+                    <Trash2 className="h-5 w-5" />
+                    Danger Zone
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Permanently delete your account and all data
+                  </p>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        Delete Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your
+                          account and remove all your data from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAccount}>
+                          Delete Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="subscription" className="space-y-6">
+            <Card className="border-2 shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-primary/10 via-secondary/10 to-accent/10 p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-background/80 backdrop-blur">
+                      <Crown className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl">Current Plan</CardTitle>
+                      <CardDescription className="text-base">
+                        {subscriptionTier || 'free'} subscription
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={subscriptionTier === 'free' ? 'secondary' : 'default'}
+                    className="text-base px-4 py-2 font-bold"
+                  >
+                    {(subscriptionTier || 'free').toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
+              
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold text-lg mb-4">Plan Features</h3>
                     <div className="space-y-3">
-                      <h3 className="font-semibold text-lg">Plan Features</h3>
-                      <div className="space-y-2 text-sm">
-                        {subscriptionTier === 'free' && (
-                          <>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Up to 3 aquariums
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Basic water testing
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Task reminders
-                            </p>
-                            <p className="text-muted-foreground/50 flex items-center gap-2 line-through">
-                              <span>✗</span> Custom templates
-                            </p>
-                            <p className="text-muted-foreground/50 flex items-center gap-2 line-through">
-                              <span>✗</span> Advanced analytics
-                            </p>
-                          </>
-                        )}
-                        {subscriptionTier === 'plus' && (
-                          <>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Up to 10 aquariums
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Advanced water testing
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Task reminders
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> 10 custom templates
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Basic analytics
-                            </p>
-                          </>
-                        )}
-                        {(subscriptionTier === 'gold' || subscriptionTier === 'enterprise') && (
-                          <>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Unlimited aquariums
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Advanced water testing
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Task reminders
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Unlimited custom templates
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Advanced analytics
-                            </p>
-                            <p className="text-muted-foreground flex items-center gap-2">
-                              <span className="text-green-500">✓</span> Priority support
-                            </p>
-                          </>
-                        )}
-                      </div>
+                      {subscriptionTier === 'free' && (
+                        <>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Up to 3 aquariums</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Basic water testing</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Task reminders</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 opacity-60">
+                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                              <span className="text-muted-foreground">✗</span>
+                            </div>
+                            <p className="text-sm line-through">Custom templates</p>
+                          </div>
+                        </>
+                      )}
+                      {subscriptionTier === 'plus' && (
+                        <>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Up to 10 aquariums</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Advanced water testing</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">10 custom templates</p>
+                          </div>
+                        </>
+                      )}
+                      {(subscriptionTier === 'gold' || subscriptionTier === 'enterprise') && (
+                        <>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Unlimited aquariums</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Advanced water testing</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Unlimited custom templates</p>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                            <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                              <span className="text-green-600 font-bold">✓</span>
+                            </div>
+                            <p className="text-sm">Priority support</p>
+                          </div>
+                        </>
+                      )}
                     </div>
-
-                    <Button variant="outline" onClick={() => navigate('/pricing')} className="w-full sm:w-auto">
-                      View All Plans
-                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
 
-        {/* Unit Change Confirmation Dialog */}
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate('/pricing')}
+                    className="w-full h-11"
+                    size="lg"
+                  >
+                    View All Plans
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
         <AlertDialog open={showUnitConfirmDialog} onOpenChange={setShowUnitConfirmDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
