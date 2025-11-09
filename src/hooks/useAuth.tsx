@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+    let isInitialLoad = true;
     console.log('🔵 Auth: useEffect initializing');
 
     // Set up auth state listener
@@ -57,16 +58,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         console.log('🔵 Auth: State change event:', event, 'Session exists:', !!session);
         
+        // Skip profile fetch on initial SIGNED_IN since initializeAuth handles it
+        if (event === 'SIGNED_IN' && isInitialLoad) {
+          console.log('🔵 Auth: Skipping duplicate fetch on initial SIGNED_IN');
+          return;
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Log auth events to Sentry
         addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
         
-        // Check admin status and fetch profile in parallel
-        if (session?.user) {
+        // Only fetch profile on non-initial auth changes
+        if (session?.user && event !== 'INITIAL_SESSION') {
           console.log('🔵 Auth: Fetching profile for user:', session.user.id);
-          // Keep loading true while fetching profile
           setLoading(true);
           try {
             await Promise.all([
@@ -78,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error('🔴 Auth: Error in parallel fetch:', error);
             setLoading(false);
           }
-        } else {
+        } else if (!session) {
           console.log('🔵 Auth: No session, clearing state');
           setIsAdmin(false);
           setUserName(null);
@@ -116,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             fetchUserProfile(session.user.id)
           ]);
           console.log('🟢 Auth: Initial profile fetch complete');
+          isInitialLoad = false; // Mark initial load complete
         } catch (error) {
           console.error('🔴 Auth: Error in initial fetch:', error);
           setLoading(false);
@@ -148,9 +155,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         _user_id: userId
       });
 
-      // Add timeout wrapper
+      // Add timeout wrapper (10 seconds for initial connection)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), 5000)
+        setTimeout(() => reject(new Error('Query timeout')), 10000)
       );
 
       const [rolesResult, permsResult] = await Promise.race([
@@ -190,7 +197,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+        setTimeout(() => reject(new Error('Profile query timeout')), 10000)
       );
 
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
