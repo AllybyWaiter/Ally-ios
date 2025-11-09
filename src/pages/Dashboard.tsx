@@ -30,7 +30,7 @@ interface Aquarium {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, isAdmin, userName, hasPermission, hasAnyRole, units, onboardingCompleted } = useAuth();
+  const { user, isAdmin, userName, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,11 @@ export default function Dashboard() {
       return;
     }
     
+    // Wait for auth to finish loading before checking onboarding status
+    if (authLoading) {
+      return;
+    }
+    
     // Check if preferences onboarding needs to be shown
     if (!onboardingCompleted) {
       setShowPreferencesOnboarding(true);
@@ -57,7 +62,7 @@ export default function Dashboard() {
     }
     
     loadAquariums();
-  }, [user, navigate, onboardingCompleted]);
+  }, [user, navigate, onboardingCompleted, authLoading]);
 
   const loadAquariums = async () => {
     try {
@@ -157,7 +162,7 @@ export default function Dashboard() {
   };
 
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

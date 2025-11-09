@@ -120,8 +120,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('user_id', userId)
       .maybeSingle();
     
-    console.log('Fetched user profile:', data);
-    
     if (data) {
       setUserName(data.name);
       setSubscriptionTier(data.subscription_tier);
@@ -130,8 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUnitPreference(data.unit_preference);
       setOnboardingCompleted(data.onboarding_completed === true);
       setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
-      
-      console.log('Onboarding completed status:', data.onboarding_completed);
       
       // Set user context in Sentry
       setUserContext(userId, undefined, data.name || undefined);
