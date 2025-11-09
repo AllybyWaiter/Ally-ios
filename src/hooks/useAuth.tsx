@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed, status, suspended_until, suspension_reason')
+        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
         .eq('user_id', userId)
         .maybeSingle();
       
@@ -186,27 +186,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       if (data) {
-        // Check if user is suspended or banned
-        if (data.status === 'banned') {
-          console.log('🔴 Auth: User is banned');
-          await supabase.auth.signOut();
-          setLoading(false);
-          throw new Error('Your account has been banned. Reason: ' + (data.suspension_reason || 'No reason provided'));
-        }
-        
-        if (data.status === 'suspended') {
-          const suspendedUntil = data.suspended_until ? new Date(data.suspended_until) : null;
-          const isStillSuspended = !suspendedUntil || suspendedUntil > new Date();
-          
-          if (isStillSuspended) {
-            console.log('🔴 Auth: User is suspended');
-            await supabase.auth.signOut();
-            setLoading(false);
-            const untilText = suspendedUntil ? `until ${suspendedUntil.toLocaleDateString()}` : 'indefinitely';
-            throw new Error(`Your account has been suspended ${untilText}. Reason: ${data.suspension_reason || 'No reason provided'}`);
-          }
-        }
-        
         setUserName(data.name);
         setSubscriptionTier(data.subscription_tier);
         setThemePreference(data.theme_preference);
@@ -225,11 +204,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       console.error('🔴 Auth: Exception in fetchUserProfile:', error);
-      // Show error to user if it's a suspension/ban message
-      if (error.message?.includes('suspended') || error.message?.includes('banned')) {
-        // This will be caught by the UI layer
-        throw error;
-      }
     } finally {
       setLoading(false);
       console.log('🟢 Auth: fetchUserProfile complete, loading = false');
