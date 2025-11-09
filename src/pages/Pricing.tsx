@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import AllySupportChat from "@/components/AllySupportChat";
 
 const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -337,6 +338,7 @@ const Pricing = () => {
       </main>
       <Footer />
       <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
+      <AllySupportChat />
     </div>
   );
 };
