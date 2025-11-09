@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions";
 import { formatRelativeTime } from "@/lib/formatters";
 import { EquipmentDialog } from "./EquipmentDialog";
+import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 
 interface AquariumOverviewProps {
   aquariumId: string;
@@ -23,6 +24,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
   const { units } = useAuth();
   const { t } = useTranslation();
   const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const { data: latestTest, isLoading: testLoading } = useQuery({
     queryKey: ["latest-test", aquariumId],
@@ -236,7 +238,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
           <Plus className="w-4 h-4 mr-2" />
           {t('overview.addEquipment')}
         </Button>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={() => setTaskDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           {t('overview.createTask')}
         </Button>
@@ -247,6 +249,13 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
         onOpenChange={setEquipmentDialogOpen}
         aquariumId={aquariumId}
         equipment={null}
+      />
+
+      <MaintenanceTaskDialog
+        open={taskDialogOpen}
+        onOpenChange={setTaskDialogOpen}
+        aquariumId={aquariumId}
+        mode="create"
       />
     </div>
   );
