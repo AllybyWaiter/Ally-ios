@@ -558,13 +558,13 @@ const AllyChat = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute -right-10 top-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                            className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 bg-background/80 backdrop-blur-sm"
                             onClick={() => copyMessage(message.content, index)}
                           >
                             {copiedIndex === index ? (
-                              <Check className="h-4 w-4 text-green-500" />
+                              <Check className="h-3 w-3 text-green-500" />
                             ) : (
-                              <Copy className="h-4 w-4" />
+                              <Copy className="h-3 w-3" />
                             )}
                           </Button>
                         )}
