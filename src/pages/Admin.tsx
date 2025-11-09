@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
+import AnnouncementManager from '@/components/admin/AnnouncementManager';
 import { formatDate } from '@/lib/formatters';
 
 interface WaitlistEntry {
@@ -198,6 +199,10 @@ export default function Admin() {
               <UserCog className="mr-2 h-4 w-4" />
               Users
             </TabsTrigger>
+            <TabsTrigger value="announcements">
+              <Megaphone className="mr-2 h-4 w-4" />
+              Announcements
+            </TabsTrigger>
             <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             <TabsTrigger value="contacts">Contacts</TabsTrigger>
             <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
@@ -205,6 +210,10 @@ export default function Admin() {
 
           <TabsContent value="users" className="space-y-4">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="announcements" className="space-y-4">
+            <AnnouncementManager />
           </TabsContent>
 
           <TabsContent value="waitlist" className="space-y-4">

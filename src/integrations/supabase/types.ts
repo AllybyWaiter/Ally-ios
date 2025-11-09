@@ -44,6 +44,57 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          created_at: string
+          created_by: string
+          custom_user_ids: string[] | null
+          id: string
+          message: string
+          scheduled_at: string | null
+          send_email: boolean
+          send_in_app: boolean
+          sent_at: string | null
+          status: string
+          target_audience: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          custom_user_ids?: string[] | null
+          id?: string
+          message: string
+          scheduled_at?: string | null
+          send_email?: boolean
+          send_in_app?: boolean
+          sent_at?: string | null
+          status?: string
+          target_audience?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          custom_user_ids?: string[] | null
+          id?: string
+          message?: string
+          scheduled_at?: string | null
+          send_email?: boolean
+          send_in_app?: boolean
+          sent_at?: string | null
+          status?: string
+          target_audience?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       aquariums: {
         Row: {
           created_at: string
@@ -598,6 +649,41 @@ export type Database = {
             columns: ["test_id"]
             isOneToOne: false
             referencedRelation: "water_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notifications: {
+        Row: {
+          announcement_id: string
+          created_at: string
+          id: string
+          read: boolean
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
             referencedColumns: ["id"]
           },
         ]
