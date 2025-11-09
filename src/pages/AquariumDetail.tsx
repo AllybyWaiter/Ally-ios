@@ -148,7 +148,7 @@ export default function AquariumDetail() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-5 w-full">
+          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 w-full mx-auto max-w-4xl">
             <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
             <TabsTrigger value="livestock">Livestock & Plants</TabsTrigger>
             <TabsTrigger value="water-tests">{t('tabs.waterTests')}</TabsTrigger>
