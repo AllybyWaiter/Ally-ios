@@ -11,6 +11,8 @@ import { AquariumOverview } from "@/components/aquarium/AquariumOverview";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
 import { AquariumTasks } from "@/components/aquarium/AquariumTasks";
+import { AquariumLivestock } from "@/components/aquarium/AquariumLivestock";
+import { AquariumPlants } from "@/components/aquarium/AquariumPlants";
 import { format } from "date-fns";
 import { AquariumDialog } from "@/components/aquarium/AquariumDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -147,8 +149,10 @@ export default function AquariumDetail() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
+          <TabsList className="grid grid-cols-3 lg:grid-cols-6 w-full">
             <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="livestock">Livestock</TabsTrigger>
+            <TabsTrigger value="plants">Plants</TabsTrigger>
             <TabsTrigger value="water-tests">{t('tabs.waterTests')}</TabsTrigger>
             <TabsTrigger value="equipment">{t('tabs.equipment')}</TabsTrigger>
             <TabsTrigger value="tasks">{t('tabs.tasks')}</TabsTrigger>
@@ -156,6 +160,14 @@ export default function AquariumDetail() {
 
           <TabsContent value="overview">
             <AquariumOverview aquariumId={id!} aquarium={aquarium} />
+          </TabsContent>
+
+          <TabsContent value="livestock">
+            <AquariumLivestock aquariumId={id!} />
+          </TabsContent>
+
+          <TabsContent value="plants">
+            <AquariumPlants aquariumId={id!} />
           </TabsContent>
 
           <TabsContent value="water-tests">

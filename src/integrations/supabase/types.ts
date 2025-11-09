@@ -166,6 +166,59 @@ export type Database = {
           },
         ]
       }
+      livestock: {
+        Row: {
+          aquarium_id: string
+          category: string
+          created_at: string
+          date_added: string
+          health_status: string
+          id: string
+          name: string
+          notes: string | null
+          quantity: number
+          species: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aquarium_id: string
+          category: string
+          created_at?: string
+          date_added?: string
+          health_status?: string
+          id?: string
+          name: string
+          notes?: string | null
+          quantity?: number
+          species: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aquarium_id?: string
+          category?: string
+          created_at?: string
+          date_added?: string
+          health_status?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          quantity?: number
+          species?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestock_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_tasks: {
         Row: {
           aquarium_id: string
@@ -219,6 +272,59 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plants: {
+        Row: {
+          aquarium_id: string
+          condition: string
+          created_at: string
+          date_added: string
+          id: string
+          name: string
+          notes: string | null
+          placement: string
+          quantity: number
+          species: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aquarium_id: string
+          condition?: string
+          created_at?: string
+          date_added?: string
+          id?: string
+          name: string
+          notes?: string | null
+          placement?: string
+          quantity?: number
+          species: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aquarium_id?: string
+          condition?: string
+          created_at?: string
+          date_added?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          placement?: string
+          quantity?: number
+          species?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plants_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
             referencedColumns: ["id"]
           },
         ]
