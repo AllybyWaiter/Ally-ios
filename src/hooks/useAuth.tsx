@@ -48,11 +48,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
+    console.log('🔵 Auth: useEffect initializing');
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
+        
+        console.log('🔵 Auth: State change event:', event, 'Session exists:', !!session);
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -62,13 +65,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Check admin status and fetch profile in parallel
         if (session?.user) {
+          console.log('🔵 Auth: Fetching profile for user:', session.user.id);
           // Keep loading true while fetching profile
           setLoading(true);
-          await Promise.all([
-            checkAdminStatus(session.user.id),
-            fetchUserProfile(session.user.id)
-          ]);
+          try {
+            await Promise.all([
+              checkAdminStatus(session.user.id),
+              fetchUserProfile(session.user.id)
+            ]);
+            console.log('🟢 Auth: Profile fetch complete');
+          } catch (error) {
+            console.error('🔴 Auth: Error in parallel fetch:', error);
+            setLoading(false);
+          }
         } else {
+          console.log('🔵 Auth: No session, clearing state');
           setIsAdmin(false);
           setUserName(null);
           setSubscriptionTier(null);
@@ -81,59 +92,83 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setPermissions([]);
           clearUserContext();
           setLoading(false);
+          console.log('🟢 Auth: State cleared, loading = false');
         }
       }
     );
 
     // Check for existing session
     const initializeAuth = async () => {
+      console.log('🔵 Auth: Checking for existing session');
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!mounted) return;
       
+      console.log('🔵 Auth: Existing session:', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await Promise.all([
-          checkAdminStatus(session.user.id),
-          fetchUserProfile(session.user.id)
-        ]);
+        console.log('🔵 Auth: Initializing with existing session');
+        try {
+          await Promise.all([
+            checkAdminStatus(session.user.id),
+            fetchUserProfile(session.user.id)
+          ]);
+          console.log('🟢 Auth: Initial profile fetch complete');
+        } catch (error) {
+          console.error('🔴 Auth: Error in initial fetch:', error);
+          setLoading(false);
+        }
       } else {
         setLoading(false);
+        console.log('🟢 Auth: No existing session, loading = false');
       }
     };
 
     initializeAuth();
 
     return () => {
+      console.log('🔵 Auth: useEffect cleanup');
       mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
-    // Fetch roles and permissions in parallel
-    const [rolesResult, permsResult] = await Promise.all([
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId),
-      (supabase as any).rpc('get_user_permissions', {
-        _user_id: userId
-      })
-    ]);
-    
-    const userRoles = rolesResult.data?.map(r => r.role) || [];
-    setRoles(userRoles);
-    setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
-    
-    // Extract permission names from the result
-    const permissionNames = permsResult.data?.map((p: any) => p.permission_name || p) || [];
-    setPermissions(permissionNames);
+    console.log('🔵 Auth: checkAdminStatus starting for:', userId);
+    try {
+      // Fetch roles and permissions in parallel
+      const [rolesResult, permsResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId),
+        (supabase as any).rpc('get_user_permissions', {
+          _user_id: userId
+        })
+      ]);
+      
+      console.log('🔵 Auth: Roles result:', rolesResult.data);
+      console.log('🔵 Auth: Perms result:', permsResult.data);
+      
+      const userRoles = rolesResult.data?.map(r => r.role) || [];
+      setRoles(userRoles);
+      setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
+      
+      // Extract permission names from the result
+      const permissionNames = permsResult.data?.map((p: any) => p.permission_name || p) || [];
+      setPermissions(permissionNames);
+      
+      console.log('🟢 Auth: checkAdminStatus complete');
+    } catch (error) {
+      console.error('🔴 Auth: Error in checkAdminStatus:', error);
+      throw error;
+    }
   };
 
   const fetchUserProfile = async (userId: string) => {
+    console.log('🔵 Auth: fetchUserProfile starting for:', userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -141,8 +176,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('user_id', userId)
         .maybeSingle();
       
+      console.log('🔵 Auth: Profile data:', data);
+      console.log('🔵 Auth: Profile error:', error);
+      
       if (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('🔴 Auth: Error fetching user profile:', error);
         setLoading(false);
         return;
       }
@@ -150,6 +188,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data) {
         // Check if user is suspended or banned
         if (data.status === 'banned') {
+          console.log('🔴 Auth: User is banned');
           await supabase.auth.signOut();
           setLoading(false);
           throw new Error('Your account has been banned. Reason: ' + (data.suspension_reason || 'No reason provided'));
@@ -160,6 +199,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const isStillSuspended = !suspendedUntil || suspendedUntil > new Date();
           
           if (isStillSuspended) {
+            console.log('🔴 Auth: User is suspended');
             await supabase.auth.signOut();
             setLoading(false);
             const untilText = suspendedUntil ? `until ${suspendedUntil.toLocaleDateString()}` : 'indefinitely';
@@ -179,12 +219,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Set user context in Sentry
         setUserContext(userId, undefined, data.name || undefined);
         
-        console.log('Profile loaded - onboarding_completed:', data.onboarding_completed);
+        console.log('🟢 Auth: Profile loaded successfully');
       } else {
-        console.warn('No profile data found for user:', userId);
+        console.warn('⚠️ Auth: No profile data found for user:', userId);
       }
     } catch (error: any) {
-      console.error('Exception fetching user profile:', error);
+      console.error('🔴 Auth: Exception in fetchUserProfile:', error);
       // Show error to user if it's a suspension/ban message
       if (error.message?.includes('suspended') || error.message?.includes('banned')) {
         // This will be caught by the UI layer
@@ -192,6 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } finally {
       setLoading(false);
+      console.log('🟢 Auth: fetchUserProfile complete, loading = false');
     }
   };
 
