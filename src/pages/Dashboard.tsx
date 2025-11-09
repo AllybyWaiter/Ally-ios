@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
+import { PermissionGuard } from '@/components/PermissionGuard';
+import { useTranslation } from 'react-i18next';
 import { PreferencesOnboarding } from '@/components/PreferencesOnboarding';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles } from 'lucide-react';
+import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import { AquariumDialog } from '@/components/aquarium/AquariumDialog';
@@ -28,8 +29,8 @@ interface Aquarium {
 }
 
 export default function Dashboard() {
-  const { user, units, onboardingCompleted } = useAuth();
   const navigate = useNavigate();
+  const { user, isAdmin, userName, hasPermission, hasAnyRole, units, onboardingCompleted } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -232,6 +233,20 @@ export default function Dashboard() {
               <p className="text-xs text-muted-foreground">{t('dashboard.tasksDueThisWeek')}</p>
             </CardContent>
           </Card>
+
+          {(hasAnyRole(['admin', 'moderator', 'editor']) || hasPermission('moderate_support')) && (
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10" onClick={() => navigate('/admin')}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  {isAdmin ? 'Admin Panel' : 'Dashboard'}
+                </CardTitle>
+                <CardDescription>
+                  {isAdmin ? 'Manage users, content, and system settings' : 'Access your management tools'}
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
         </div>
 
         {/* Chat with Ally CTA */}
