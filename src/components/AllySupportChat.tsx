@@ -188,7 +188,7 @@ const AllySupportChat = () => {
       {isOpen && (
         <Card className="fixed bottom-6 right-6 w-[380px] h-[600px] flex flex-col shadow-2xl z-50 border-border">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-primary">
+          <div className="flex items-center justify-between p-4 border-b border-border bg-primary">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-primary-foreground" />
               <h3 className="font-semibold text-primary-foreground">Ally Support</h3>
