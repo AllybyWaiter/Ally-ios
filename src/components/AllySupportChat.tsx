@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { SupportEmailDialog } from "./SupportEmailDialog";
 
 interface Message {
   role: "user" | "assistant";
@@ -14,6 +15,7 @@ interface Message {
 const AllySupportChat = () => {
   const { userName } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -266,6 +268,17 @@ const AllySupportChat = () => {
 
           {/* Input */}
           <div className="p-4 border-t border-border bg-background">
+            <div className="flex gap-2 mb-2">
+              <Button
+                onClick={() => setShowEmailDialog(true)}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                <Mail className="h-3 w-3 mr-1" />
+                Email Support
+              </Button>
+            </div>
             <div className="flex gap-2">
               <Input
                 ref={inputRef}
@@ -291,6 +304,11 @@ const AllySupportChat = () => {
           </div>
         </Card>
       )}
+      
+      <SupportEmailDialog 
+        open={showEmailDialog} 
+        onOpenChange={setShowEmailDialog}
+      />
     </>
   );
 };
