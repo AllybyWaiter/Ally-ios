@@ -1,5 +1,30 @@
 import * as Sentry from "@sentry/react";
 
+// Feature areas for error categorization
+export const FeatureArea = {
+  AUTH: 'auth',
+  AQUARIUM: 'aquarium',
+  WATER_TESTS: 'water-tests',
+  EQUIPMENT: 'equipment',
+  MAINTENANCE: 'maintenance',
+  CHAT: 'chat',
+  SETTINGS: 'settings',
+  ADMIN: 'admin',
+  GENERAL: 'general',
+} as const;
+
+export type FeatureAreaType = typeof FeatureArea[keyof typeof FeatureArea];
+
+// Severity levels
+export const ErrorSeverity = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  CRITICAL: 'critical',
+} as const;
+
+export type ErrorSeverityType = typeof ErrorSeverity[keyof typeof ErrorSeverity];
+
 // Initialize Sentry
 export const initSentry = () => {
   Sentry.init({
@@ -12,16 +37,34 @@ export const initSentry = () => {
 };
 
 // Helper function to log custom errors
-export const logError = (error: Error, context?: Record<string, any>) => {
+export const logError = (
+  error: Error, 
+  context?: Record<string, any>,
+  featureArea?: FeatureAreaType,
+  severity?: ErrorSeverityType
+) => {
   Sentry.captureException(error, {
     extra: context,
+    tags: {
+      feature_area: featureArea || FeatureArea.GENERAL,
+      severity: severity || ErrorSeverity.MEDIUM,
+    },
   });
   console.error('Error:', error, context);
 };
 
 // Helper function to log custom messages
-export const logMessage = (message: string, level: 'info' | 'warning' | 'error' = 'info') => {
-  Sentry.captureMessage(message, level);
+export const logMessage = (
+  message: string, 
+  level: 'info' | 'warning' | 'error' = 'info',
+  featureArea?: FeatureAreaType
+) => {
+  Sentry.captureMessage(message, {
+    level,
+    tags: {
+      feature_area: featureArea || FeatureArea.GENERAL,
+    },
+  });
   console[level === 'warning' ? 'warn' : level === 'error' ? 'error' : 'log'](message);
 };
 
@@ -40,11 +83,19 @@ export const clearUserContext = () => {
 };
 
 // Helper to add breadcrumb
-export const addBreadcrumb = (message: string, category?: string, data?: Record<string, any>) => {
+export const addBreadcrumb = (
+  message: string, 
+  category?: string, 
+  data?: Record<string, any>,
+  featureArea?: FeatureAreaType
+) => {
   Sentry.addBreadcrumb({
     message,
     category,
-    data,
+    data: {
+      ...data,
+      feature_area: featureArea,
+    },
     level: 'info',
   });
 };
