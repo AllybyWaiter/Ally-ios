@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { setUserContext, clearUserContext, addBreadcrumb, FeatureArea } from '@/lib/sentry';
 import { UnitSystem } from '@/lib/unitConversions';
+import { logActivity, logLoginHistory } from '@/lib/activityLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -124,10 +125,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     addBreadcrumb('User attempting sign in', 'auth', undefined, FeatureArea.AUTH);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    // Log login attempt
+    if (data?.user) {
+      setTimeout(() => {
+        logLoginHistory(data.user.id, !error, error?.message);
+        if (!error) {
+          logActivity({ actionType: 'login', userId: data.user.id });
+        }
+      }, 0);
+    }
+    
     return { error };
   };
 
@@ -150,7 +162,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     addBreadcrumb('User signing out', 'auth', undefined, FeatureArea.AUTH);
+    const currentUserId = user?.id;
+    
     await supabase.auth.signOut();
+    
+    // Log logout activity
+    if (currentUserId) {
+      setTimeout(() => {
+        logActivity({ actionType: 'logout', userId: currentUserId });
+      }, 0);
+    }
+    
     setIsAdmin(false);
     setUserName(null);
     setSubscriptionTier(null);

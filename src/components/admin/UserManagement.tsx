@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Edit, Mail, UserCheck, UserX, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Search, Download, Edit, Mail, UserCheck, UserX, Trash2, CheckSquare, Square, Activity } from 'lucide-react';
+import UserActivityLogs from './UserActivityLogs';
 import { formatDate } from '@/lib/formatters';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -244,6 +245,8 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Activity Logs Section */}
+      <UserActivityLogs />
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
