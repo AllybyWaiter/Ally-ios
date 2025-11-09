@@ -2,12 +2,13 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { logError } from '@/lib/sentry';
+import { logError, FeatureArea, ErrorSeverity, FeatureAreaType } from '@/lib/sentry';
 
 interface Props {
   children: ReactNode;
   fallbackUI?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  featureArea?: FeatureAreaType;
 }
 
 interface State {
@@ -30,11 +31,11 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
-    // Log to Sentry
+    // Log to Sentry with feature area and high severity
     logError(error, {
       componentStack: errorInfo.componentStack,
       errorBoundary: true,
-    });
+    }, this.props.featureArea || FeatureArea.GENERAL, ErrorSeverity.HIGH);
     
     this.setState({
       error,

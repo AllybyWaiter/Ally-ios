@@ -41,19 +41,19 @@ const App = () => (
               <BrowserRouter>
                 <ScrollToTop />
                 <Routes>
-                  <Route path="/" element={<PageErrorBoundary pageName="Home"><Index /></PageErrorBoundary>} />
-                  <Route path="/about" element={<PageErrorBoundary pageName="About"><About /></PageErrorBoundary>} />
-                  <Route path="/features" element={<PageErrorBoundary pageName="Features"><Features /></PageErrorBoundary>} />
-                  <Route path="/how-it-works" element={<PageErrorBoundary pageName="How It Works"><HowItWorksPage /></PageErrorBoundary>} />
-                  <Route path="/pricing" element={<PageErrorBoundary pageName="Pricing"><Pricing /></PageErrorBoundary>} />
-                  <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy"><PrivacyPolicy /></PageErrorBoundary>} />
-                  <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service"><TermsOfService /></PageErrorBoundary>} />
-                  <Route path="/auth" element={<PageErrorBoundary pageName="Authentication"><Auth /></PageErrorBoundary>} />
+                  <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
+                  <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><About /></PageErrorBoundary>} />
+                  <Route path="/features" element={<PageErrorBoundary pageName="Features" featureArea="general"><Features /></PageErrorBoundary>} />
+                  <Route path="/how-it-works" element={<PageErrorBoundary pageName="How It Works" featureArea="general"><HowItWorksPage /></PageErrorBoundary>} />
+                  <Route path="/pricing" element={<PageErrorBoundary pageName="Pricing" featureArea="general"><Pricing /></PageErrorBoundary>} />
+                  <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
+                  <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
+                  <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
                   <Route 
                     path="/dashboard" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Dashboard">
+                        <PageErrorBoundary pageName="Dashboard" featureArea="aquarium">
                           <Dashboard />
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -63,7 +63,7 @@ const App = () => (
                     path="/water-tests" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Water Tests">
+                        <PageErrorBoundary pageName="Water Tests" featureArea="water-tests">
                           <WaterTests />
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -73,7 +73,7 @@ const App = () => (
                     path="/aquarium/:id" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Aquarium Details">
+                        <PageErrorBoundary pageName="Aquarium Details" featureArea="aquarium">
                           <AquariumDetail />
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -83,7 +83,7 @@ const App = () => (
                     path="/calendar" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Calendar">
+                        <PageErrorBoundary pageName="Calendar" featureArea="maintenance">
                           <TaskCalendar />
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -93,7 +93,7 @@ const App = () => (
                     path="/settings" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Settings">
+                        <PageErrorBoundary pageName="Settings" featureArea="settings">
                           <Settings />
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -103,7 +103,7 @@ const App = () => (
                     path="/chat" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Chat">
+                        <PageErrorBoundary pageName="Chat" featureArea="chat">
                           <AllyChat />
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -113,14 +113,14 @@ const App = () => (
                     path="/admin"
                     element={
                       <ProtectedRoute requireAdmin>
-                        <PageErrorBoundary pageName="Admin">
+                        <PageErrorBoundary pageName="Admin" featureArea="admin">
                           <Admin />
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
                   />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<PageErrorBoundary><NotFound /></PageErrorBoundary>} />
+                  <Route path="*" element={<PageErrorBoundary featureArea="general"><NotFound /></PageErrorBoundary>} />
                 </Routes>
               </BrowserRouter>
             </LanguageWrapper>

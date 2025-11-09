@@ -3,10 +3,12 @@ import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ErrorBoundary from './ErrorBoundary';
+import { FeatureAreaType } from '@/lib/sentry';
 
 interface PageErrorBoundaryProps {
   children: ReactNode;
   pageName?: string;
+  featureArea?: FeatureAreaType;
 }
 
 const PageErrorFallback = ({ pageName }: { pageName?: string }) => (
@@ -37,9 +39,9 @@ const PageErrorFallback = ({ pageName }: { pageName?: string }) => (
   </div>
 );
 
-export const PageErrorBoundary = ({ children, pageName }: PageErrorBoundaryProps) => {
+export const PageErrorBoundary = ({ children, pageName, featureArea }: PageErrorBoundaryProps) => {
   return (
-    <ErrorBoundary fallbackUI={<PageErrorFallback pageName={pageName} />}>
+    <ErrorBoundary fallbackUI={<PageErrorFallback pageName={pageName} />} featureArea={featureArea}>
       {children}
     </ErrorBoundary>
   );

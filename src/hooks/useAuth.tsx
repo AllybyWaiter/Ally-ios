@@ -1,7 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { setUserContext, clearUserContext, addBreadcrumb } from '@/lib/sentry';
+import { setUserContext, clearUserContext, addBreadcrumb, FeatureArea } from '@/lib/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         // Log auth events to Sentry
-        addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id });
+        addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
         
         // Check admin status and fetch profile
         if (session?.user) {
@@ -106,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    addBreadcrumb('User attempting sign in', 'auth');
+    addBreadcrumb('User attempting sign in', 'auth', undefined, FeatureArea.AUTH);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string) => {
-    addBreadcrumb('User attempting sign up', 'auth', { name });
+    addBreadcrumb('User attempting sign up', 'auth', { name }, FeatureArea.AUTH);
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -132,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    addBreadcrumb('User signing out', 'auth');
+    addBreadcrumb('User signing out', 'auth', undefined, FeatureArea.AUTH);
     await supabase.auth.signOut();
     setIsAdmin(false);
     setUserName(null);
