@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.ally-chat]
 verify_jwt = true
+
+[functions.blog-ai-assistant]
+verify_jwt = true
+
+[functions.publish-scheduled-posts]
+verify_jwt = false
