@@ -14,6 +14,11 @@ import { toast } from "sonner";
 import { Loader2, AlertCircle, CheckCircle2, Settings } from "lucide-react";
 import { getAllTemplates, validateParameter, type ParameterTemplate } from "@/lib/waterTestUtils";
 import { CustomTemplateManager } from "./CustomTemplateManager";
+import { 
+  celsiusToFahrenheit, 
+  fahrenheitToCelsius, 
+  getTemperatureUnit 
+} from "@/lib/unitConversions";
 
 interface WaterTestFormProps {
   aquarium: {
@@ -24,7 +29,7 @@ interface WaterTestFormProps {
 }
 
 export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
-  const { user, canCreateCustomTemplates, subscriptionTier } = useAuth();
+  const { user, canCreateCustomTemplates, subscriptionTier, units } = useAuth();
   const queryClient = useQueryClient();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [parameters, setParameters] = useState<Record<string, string>>({});
@@ -79,13 +84,23 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
         .filter(([_, value]) => value !== "")
         .map(([paramName, value]) => {
           const param = activeTemplate?.parameters.find((p) => p.name === paramName);
-          const validation = validateParameter(paramName, parseFloat(value), aquarium.type);
+          let storedValue = parseFloat(value);
+          let storedUnit = param?.unit || "";
+          
+          // Convert temperature to Fahrenheit for storage if user entered in Celsius
+          if (param?.unit === '°F' && units === 'metric') {
+            storedValue = celsiusToFahrenheit(storedValue);
+            storedUnit = '°F';
+          }
+          
+          // Validate using the stored value
+          const validation = validateParameter(paramName, storedValue, aquarium.type);
           
           return {
             test_id: test.id,
             parameter_name: paramName,
-            value: parseFloat(value),
-            unit: param?.unit || "",
+            value: storedValue,
+            unit: storedUnit,
             status: validation.isValid ? "normal" : "warning",
           };
         });
@@ -197,8 +212,27 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                 <div className="grid gap-4 md:grid-cols-2">
                   {activeTemplate.parameters.map((param) => {
                     const value = parameters[param.name] || "";
-                    const validation = value
-                      ? validateParameter(param.name, parseFloat(value), aquarium.type)
+                    
+                    // Display unit based on user preference
+                    let displayUnit = param.unit;
+                    let displayMin = param.range.min;
+                    let displayMax = param.range.max;
+                    
+                    // Convert temperature display if metric and parameter is in Fahrenheit
+                    if (param.unit === '°F' && units === 'metric') {
+                      displayUnit = getTemperatureUnit(units);
+                      displayMin = fahrenheitToCelsius(param.range.min);
+                      displayMax = fahrenheitToCelsius(param.range.max);
+                    }
+                    
+                    // For validation, we need to convert input value to storage unit
+                    let validationValue = value ? parseFloat(value) : null;
+                    if (validationValue && param.unit === '°F' && units === 'metric') {
+                      validationValue = celsiusToFahrenheit(validationValue);
+                    }
+                    
+                    const validation = validationValue
+                      ? validateParameter(param.name, validationValue, aquarium.type)
                       : null;
 
                     return (
@@ -206,14 +240,14 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                         <Label htmlFor={param.name}>
                           {param.name}
                           <span className="text-xs text-muted-foreground ml-2">
-                            ({param.unit})
+                            ({displayUnit})
                           </span>
                         </Label>
                         <Input
                           id={param.name}
                           type="number"
                           step="0.01"
-                          placeholder={`${param.range.min} - ${param.range.max}`}
+                          placeholder={`${displayMin.toFixed(1)} - ${displayMax.toFixed(1)}`}
                           value={value}
                           onChange={(e) =>
                             setParameters({ ...parameters, [param.name]: e.target.value })

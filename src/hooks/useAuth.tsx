@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { setUserContext, clearUserContext, addBreadcrumb, FeatureArea } from '@/lib/sentry';
+import { UnitSystem } from '@/lib/unitConversions';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +14,7 @@ interface AuthContextType {
   themePreference: string | null;
   languagePreference: string | null;
   unitPreference: string | null;
+  units: UnitSystem | null;
   onboardingCompleted: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -154,7 +156,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, themePreference, languagePreference, unitPreference, onboardingCompleted, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      userName, 
+      isAdmin, 
+      subscriptionTier, 
+      canCreateCustomTemplates, 
+      themePreference, 
+      languagePreference, 
+      unitPreference, 
+      units: (unitPreference as UnitSystem) || 'imperial',
+      onboardingCompleted, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -15,6 +15,8 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { gallonsToLiters, litersToGallons, getVolumeUnit } from "@/lib/unitConversions";
 
 const aquariumSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -43,15 +45,22 @@ interface AquariumDialogProps {
 }
 
 export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: AquariumDialogProps) {
+  const { units } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!aquarium;
+  
+  // Convert volume for display based on user preference
+  const getDisplayVolume = (gallons: number | null) => {
+    if (!gallons) return null;
+    return units === 'metric' ? gallonsToLiters(gallons) : gallons;
+  };
 
   const form = useForm<AquariumFormData>({
     resolver: zodResolver(aquariumSchema),
     defaultValues: {
       name: aquarium?.name || "",
       type: aquarium?.type || "",
-      volume_gallons: aquarium?.volume_gallons || null,
+      volume_gallons: getDisplayVolume(aquarium?.volume_gallons || null),
       status: (aquarium?.status as "active" | "inactive" | "maintenance") || "active",
       setup_date: aquarium?.setup_date ? new Date(aquarium.setup_date) : null,
       notes: aquarium?.notes || "",
@@ -64,10 +73,15 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Convert volume to gallons for storage if user entered in liters
+      const volumeInGallons = data.volume_gallons && units === 'metric' 
+        ? litersToGallons(data.volume_gallons)
+        : data.volume_gallons;
+
       const aquariumData = {
         name: data.name,
         type: data.type,
-        volume_gallons: data.volume_gallons,
+        volume_gallons: volumeInGallons,
         status: data.status,
         setup_date: data.setup_date?.toISOString().split('T')[0] || null,
         notes: data.notes || null,
@@ -170,11 +184,12 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="volume_gallons"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Volume (Gallons)</FormLabel>
+                  <FormLabel>Volume ({getVolumeUnit(units)})</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
-                      placeholder="e.g. 55" 
+                      step="0.1"
+                      placeholder={units === 'metric' ? 'e.g. 208' : 'e.g. 55'} 
                       {...field} 
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
