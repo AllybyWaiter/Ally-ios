@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SupportTickets from '@/components/admin/SupportTickets';
 
 interface WaitlistEntry {
   id: string;
@@ -193,6 +194,7 @@ export default function Admin() {
           <TabsList>
             <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
             <TabsTrigger value="contacts">Contacts</TabsTrigger>
+            <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
           </TabsList>
 
           <TabsContent value="waitlist" className="space-y-4">
@@ -305,6 +307,10 @@ export default function Admin() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="tickets" className="space-y-4">
+            <SupportTickets />
           </TabsContent>
         </Tabs>
       </main>

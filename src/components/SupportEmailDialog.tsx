@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SupportEmailDialogProps {
   open: boolean;
@@ -44,20 +45,46 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
     setIsSubmitting(true);
 
     try {
-      // For now, just simulate sending - you'll need to set up Resend
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create support ticket
+      const { data: ticket, error: ticketError } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: user?.id || null,
+          email: formData.email,
+          name: formData.name,
+          subject: "Support Request",
+          status: 'open',
+          priority: 'medium'
+        })
+        .select()
+        .single();
+
+      if (ticketError) throw ticketError;
+
+      // Add initial message to ticket
+      const { error: messageError } = await supabase
+        .from('support_messages')
+        .insert({
+          ticket_id: ticket.id,
+          sender_type: 'user',
+          message: formData.message,
+          sender_user_id: user?.id || null
+        });
+
+      if (messageError) throw messageError;
       
       toast({
-        title: "Message Sent!",
+        title: "Ticket Created!",
         description: "We'll get back to you as soon as possible.",
       });
       
       onOpenChange(false);
       setFormData({ name: userName || "", email: user?.email || "", message: "" });
     } catch (error) {
+      console.error("Error creating ticket:", error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: "Failed to create ticket. Please try again.",
         variant: "destructive",
       });
     } finally {
