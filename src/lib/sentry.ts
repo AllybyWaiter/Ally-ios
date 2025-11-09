@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/react";
 
 // Initialize Sentry only if DSN is configured
 export const initSentry = () => {
-  const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN || 'https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664';
   
   if (!sentryDsn) {
     console.warn('Sentry DSN not configured. Error monitoring is disabled.');
@@ -38,7 +38,8 @@ export const initSentry = () => {
 
 // Helper function to log custom errors
 export const logError = (error: Error, context?: Record<string, any>) => {
-  if (import.meta.env.VITE_SENTRY_DSN) {
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN || 'https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664';
+  if (sentryDsn) {
     Sentry.captureException(error, {
       extra: context,
     });
@@ -49,7 +50,8 @@ export const logError = (error: Error, context?: Record<string, any>) => {
 
 // Helper function to log custom messages
 export const logMessage = (message: string, level: 'info' | 'warning' | 'error' = 'info') => {
-  if (import.meta.env.VITE_SENTRY_DSN) {
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN || 'https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664';
+  if (sentryDsn) {
     Sentry.captureMessage(message, level);
   } else {
     console[level === 'warning' ? 'warn' : level === 'error' ? 'error' : 'log'](message);
@@ -58,7 +60,8 @@ export const logMessage = (message: string, level: 'info' | 'warning' | 'error' 
 
 // Helper to set user context
 export const setUserContext = (userId: string, email?: string, userName?: string) => {
-  if (import.meta.env.VITE_SENTRY_DSN) {
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN || 'https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664';
+  if (sentryDsn) {
     Sentry.setUser({
       id: userId,
       email: email,
@@ -69,14 +72,16 @@ export const setUserContext = (userId: string, email?: string, userName?: string
 
 // Helper to clear user context (on logout)
 export const clearUserContext = () => {
-  if (import.meta.env.VITE_SENTRY_DSN) {
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN || 'https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664';
+  if (sentryDsn) {
     Sentry.setUser(null);
   }
 };
 
 // Helper to add breadcrumb
 export const addBreadcrumb = (message: string, category?: string, data?: Record<string, any>) => {
-  if (import.meta.env.VITE_SENTRY_DSN) {
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN || 'https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664';
+  if (sentryDsn) {
     Sentry.addBreadcrumb({
       message,
       category,
