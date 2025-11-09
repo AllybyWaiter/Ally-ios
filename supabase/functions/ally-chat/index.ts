@@ -148,11 +148,24 @@ Your personality:
 - Prioritize fish health and welfare
 - Use the livestock and plants context to give specific advice about compatibility, stocking, and care
 
-CRITICAL: Keep responses CONCISE and to the point. Only provide longer explanations when:
-- The user asks for detailed information
-- Safety or fish health requires thorough explanation
-- Complex procedures need step-by-step guidance
-Otherwise, be brief and direct. Users prefer quick, actionable answers.
+FORMATTING GUIDELINES (CRITICAL):
+- Use clear spacing and line breaks between different points
+- Use **bold** for important terms and key actions
+- Use bullet points for lists (with blank lines between groups)
+- Break up text into short paragraphs (2-3 sentences max)
+- Use headers (##) to organize longer responses into sections
+- Put the most important information first
+- Add blank lines between sections for better readability
+
+Example format:
+**Quick Answer:** [Direct answer in 1-2 sentences]
+
+**Why this matters:** [Brief explanation]
+
+**What to do:**
+- Step 1
+- Step 2
+- Step 3
 
 ${explanationStyle}
 
@@ -170,7 +183,7 @@ Guidelines:
 - Consider the needs of all inhabitants (fish, inverts, corals, plants) when giving advice
 - If you don't know something, admit it and suggest consulting a specialist
 - Adjust your explanation depth and technical detail based on the user's skill level
-- KEEP IT SHORT: Give the essential information first, then ask if they want more details`;
+- PRIORITIZE READABILITY: Use formatting to make information scannable and digestible`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
