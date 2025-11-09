@@ -20,7 +20,10 @@ import {
   MoreVertical,
   Trash2,
   MessageSquare,
-  Fish
+  Fish,
+  Edit2,
+  X,
+  RotateCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +36,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp?: Date;
+  id?: string;
 }
 
 interface Aquarium {
@@ -60,6 +64,8 @@ const AllyChat = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -336,6 +342,177 @@ const AllyChat = () => {
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
+  const startEditMessage = (index: number, content: string) => {
+    setEditingIndex(index);
+    setEditingContent(content);
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditingContent("");
+  };
+
+  const saveEdit = async () => {
+    if (editingIndex === null || !editingContent.trim()) return;
+
+    const updatedMessages = [...messages];
+    const messageToEdit = updatedMessages[editingIndex];
+    
+    if (!messageToEdit || messageToEdit.role !== "user") return;
+
+    // Update local state
+    messageToEdit.content = editingContent.trim();
+    
+    // Remove all messages after the edited one
+    const newMessages = updatedMessages.slice(0, editingIndex + 1);
+    setMessages(newMessages);
+    
+    // Update in database if conversation exists
+    if (currentConversationId) {
+      // Delete messages after the edited one
+      const { data: existingMessages } = await supabase
+        .from('chat_messages')
+        .select('id, created_at')
+        .eq('conversation_id', currentConversationId)
+        .order('created_at', { ascending: true });
+
+      if (existingMessages && existingMessages.length > editingIndex) {
+        const messageToUpdate = existingMessages[editingIndex];
+        
+        // Update the edited message
+        await supabase
+          .from('chat_messages')
+          .update({ content: editingContent.trim() })
+          .eq('id', messageToUpdate.id);
+        
+        // Delete subsequent messages
+        const messagesToDelete = existingMessages.slice(editingIndex + 1);
+        if (messagesToDelete.length > 0) {
+          await supabase
+            .from('chat_messages')
+            .delete()
+            .in('id', messagesToDelete.map(m => m.id));
+        }
+      }
+    }
+
+    // Clear editing state
+    setEditingIndex(null);
+    setEditingContent("");
+    
+    // Regenerate assistant response
+    setIsLoading(true);
+    
+    try {
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to continue",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
+      
+      const response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.data.session.access_token}`,
+        },
+        body: JSON.stringify({ 
+          messages: newMessages,
+          aquariumId: selectedAquarium === "general" ? null : selectedAquarium
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Failed to get response");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = "";
+      let textBuffer = "";
+      let streamDone = false;
+
+      setMessages((prev) => [...prev, { role: "assistant", content: "", timestamp: new Date() }]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const data = JSON.parse(jsonStr);
+            const content = data.choices[0]?.delta?.content || "";
+            if (content) {
+              assistantMessage += content;
+              setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  content: assistantMessage
+                };
+                return updated;
+              });
+            }
+          } catch (e) {
+            console.error("Error parsing SSE:", e);
+          }
+        }
+      }
+
+      // Save to database
+      if (currentConversationId) {
+        await supabase
+          .from('chat_messages')
+          .insert({
+            conversation_id: currentConversationId,
+            role: "assistant",
+            content: assistantMessage
+          });
+
+        await supabase
+          .from('chat_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', currentConversationId);
+      } else {
+        // Create new conversation and save messages
+        const lastUserMessage = newMessages[newMessages.length - 1];
+        await saveConversation(lastUserMessage, { role: "assistant", content: assistantMessage, timestamp: new Date() });
+        await fetchConversations();
+      }
+    } catch (error) {
+      console.error("Error regenerating response:", error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const quickQuestions = [
     "What are ideal water parameters?",
     "Help with cloudy water",
@@ -596,6 +773,58 @@ const AllyChat = () => {
                           <div className="prose prose-sm dark:prose-invert max-w-none">
                             <ReactMarkdown>{message.content}</ReactMarkdown>
                           </div>
+                        ) : editingIndex === index ? (
+                          <div className="space-y-2">
+                            <Input
+                              value={editingContent}
+                              onChange={(e) => setEditingContent(e.target.value)}
+                              className="bg-primary-foreground text-foreground"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  saveEdit();
+                                } else if (e.key === "Escape") {
+                                  cancelEdit();
+                                }
+                              }}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={cancelEdit}
+                                    className="h-7"
+                                  >
+                                    <X className="h-3 w-3 mr-1" />
+                                    Cancel
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Cancel editing (Esc)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="default"
+                                    size="sm"
+                                    onClick={saveEdit}
+                                    disabled={!editingContent.trim()}
+                                    className="h-7"
+                                  >
+                                    <RotateCw className="h-3 w-3 mr-1" />
+                                    Save & Regenerate
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Save and regenerate response (Enter)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </div>
                         ) : (
                           <p className="whitespace-pre-wrap">{message.content}</p>
                         )}
@@ -618,6 +847,25 @@ const AllyChat = () => {
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>{copiedIndex === index ? "Copied!" : "Copy message"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        
+                        {message.role === "user" && editingIndex !== index && index !== 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 bottom-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-7 w-7 bg-primary-foreground/20 backdrop-blur-sm hover:bg-primary-foreground/30"
+                                onClick={() => startEditMessage(index, message.content)}
+                                disabled={isLoading}
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit message</p>
                             </TooltipContent>
                           </Tooltip>
                         )}
