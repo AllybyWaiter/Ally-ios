@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
@@ -10,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions";
 import { formatRelativeTime } from "@/lib/formatters";
+import { EquipmentDialog } from "./EquipmentDialog";
 
 interface AquariumOverviewProps {
   aquariumId: string;
@@ -20,6 +22,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
   const navigate = useNavigate();
   const { units } = useAuth();
   const { t } = useTranslation();
+  const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
 
   const { data: latestTest, isLoading: testLoading } = useQuery({
     queryKey: ["latest-test", aquariumId],
@@ -229,7 +232,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
           <Plus className="w-4 h-4 mr-2" />
           {t('overview.logWaterTest')}
         </Button>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={() => setEquipmentDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           {t('overview.addEquipment')}
         </Button>
@@ -238,6 +241,13 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
           {t('overview.createTask')}
         </Button>
       </div>
+
+      <EquipmentDialog
+        open={equipmentDialogOpen}
+        onOpenChange={setEquipmentDialogOpen}
+        aquariumId={aquariumId}
+        equipment={null}
+      />
     </div>
   );
 }
