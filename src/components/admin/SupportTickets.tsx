@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Send } from "lucide-react";
+import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Send, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 
 interface Ticket {
@@ -221,6 +221,10 @@ const SupportTickets = () => {
             <MessageSquare className="h-5 w-5" />
             Support Tickets ({tickets.length})
           </CardTitle>
+          <p className="text-sm text-muted-foreground mt-2">
+            <Sparkles className="h-4 w-4 inline mr-1" />
+            Priorities are automatically detected by AI based on message urgency and impact
+          </p>
         </CardHeader>
         <CardContent>
           {tickets.length === 0 ? (
@@ -242,6 +246,7 @@ const SupportTickets = () => {
                           <span className="ml-1">{ticket.status}</span>
                         </Badge>
                         <Badge variant={getPriorityColor(ticket.priority)}>
+                          <Sparkles className="h-3 w-3 mr-1" />
                           {ticket.priority}
                         </Badge>
                       </div>

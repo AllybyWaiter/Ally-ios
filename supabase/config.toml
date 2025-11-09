@@ -2,3 +2,6 @@ project_id = "pomvsimhphgbqxreyhfp"
 
 [functions.chat-support]
 verify_jwt = false
+
+[functions.analyze-ticket-priority]
+verify_jwt = false
