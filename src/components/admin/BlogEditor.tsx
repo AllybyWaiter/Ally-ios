@@ -6,28 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Eye, Upload, X, Sparkles, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { z } from 'zod';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import BlogContentStats from './BlogContentStats';
+import BlogAISidebar from './BlogAISidebar';
+import BlogPreview from './BlogPreview';
 
 const blogPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
@@ -48,13 +42,13 @@ export default function BlogEditor() {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiDialogOpen, setAiDialogOpen] = useState(false);
-  const [aiTopic, setAiTopic] = useState('');
   const [scheduleDate, setScheduleDate] = useState<Date>();
   const [scheduleTime, setScheduleTime] = useState('12:00');
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string>('');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('content');
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -67,15 +61,24 @@ export default function BlogEditor() {
   });
 
   useEffect(() => {
+    fetchCategories();
     if (isEditing) {
       fetchPost();
     }
   }, [id]);
 
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from('blog_categories')
+      .select('id, name')
+      .order('name');
+    setCategories(data || []);
+  };
+
   const fetchPost = async () => {
     const { data, error } = await supabase
       .from('blog_posts')
-      .select('*')
+      .select('*, blog_post_categories(category_id)')
       .eq('id', id)
       .maybeSingle();
 
@@ -100,6 +103,9 @@ export default function BlogEditor() {
       if (data.featured_image_url) {
         setFeaturedImagePreview(data.featured_image_url);
       }
+      // Load selected categories
+      const postCategories = data.blog_post_categories?.map((pc: any) => pc.category_id) || [];
+      setSelectedCategories(postCategories);
     }
     setLoading(false);
   };
@@ -156,152 +162,12 @@ export default function BlogEditor() {
     return publicUrl;
   };
 
-  const handleAiGenerate = async () => {
-    if (!aiTopic.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a topic',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setAiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('blog-ai-assistant', {
-        body: { action: 'generate', input: { topic: aiTopic } },
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setFormData({
-        ...formData,
-        title: data.title || '',
-        excerpt: data.excerpt || '',
-        content: data.content || '',
-        seo_title: data.seo_title || '',
-        seo_description: data.seo_description || '',
-        tags: data.tags || '',
-        slug: generateSlug(data.title || ''),
-      });
-
-      setAiDialogOpen(false);
-      setAiTopic('');
-      toast({
-        title: 'Success',
-        description: 'Blog post generated successfully',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to generate content',
-        variant: 'destructive',
-      });
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleAiImprove = async () => {
-    if (!formData.content.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter some content first',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setAiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('blog-ai-assistant', {
-        body: {
-          action: 'improve',
-          input: { title: formData.title, content: formData.content },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setFormData({ ...formData, content: data.content || formData.content });
-      toast({
-        title: 'Success',
-        description: 'Content improved successfully',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to improve content',
-        variant: 'destructive',
-      });
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleAiSeo = async () => {
-    if (!formData.title.trim() && !formData.content.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a title or content first',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setAiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('blog-ai-assistant', {
-        body: {
-          action: 'seo',
-          input: { title: formData.title, content: formData.content },
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      setFormData({
-        ...formData,
-        seo_title: data.seo_title || formData.seo_title,
-        seo_description: data.seo_description || formData.seo_description,
-        tags: data.tags || formData.tags,
-      });
-
-      toast({
-        title: 'Success',
-        description: 'SEO fields generated successfully',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to generate SEO fields',
-        variant: 'destructive',
-      });
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
   const handleSave = async (publish: boolean = false, schedule: boolean = false) => {
     try {
       setSaving(true);
       
       const validatedData = blogPostSchema.parse(formData);
-
       const imageUrl = await uploadImage();
-
       const tags = validatedData.tags
         ? validatedData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         : [];
@@ -355,6 +221,8 @@ export default function BlogEditor() {
         author_id: user?.id,
       };
 
+      let postId = id;
+
       if (isEditing) {
         const { error } = await supabase
           .from('blog_posts')
@@ -363,11 +231,32 @@ export default function BlogEditor() {
 
         if (error) throw error;
       } else {
-        const { error } = await supabase
+        const { data: newPost, error } = await supabase
           .from('blog_posts')
-          .insert(postData);
+          .insert(postData)
+          .select()
+          .single();
 
         if (error) throw error;
+        postId = newPost.id;
+      }
+
+      // Update categories
+      if (postId) {
+        // Delete existing categories
+        await supabase
+          .from('blog_post_categories')
+          .delete()
+          .eq('post_id', postId);
+
+        // Insert new categories
+        if (selectedCategories.length > 0) {
+          const categoryData = selectedCategories.map(categoryId => ({
+            post_id: postId,
+            category_id: categoryId,
+          }));
+          await supabase.from('blog_post_categories').insert(categoryData);
+        }
       }
 
       const actionText = schedule ? 'scheduled' : (publish ? 'published' : 'saved as draft');
@@ -407,277 +296,308 @@ export default function BlogEditor() {
     );
   }
 
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate('/admin')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Posts
-        </Button>
-        <div className="flex gap-2">
-          <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" disabled={aiLoading}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                AI Assistant
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>AI Blog Assistant</DialogTitle>
-                <DialogDescription>
-                  Generate a complete blog post from a topic
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="ai-topic">Blog Topic</Label>
-                  <Textarea
-                    id="ai-topic"
-                    value={aiTopic}
-                    onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="E.g., 'How to set up a planted aquarium for beginners'"
-                    rows={3}
-                  />
-                </div>
-                <Button
-                  onClick={handleAiGenerate}
-                  disabled={aiLoading}
-                  className="w-full"
-                >
-                  {aiLoading ? 'Generating...' : 'Generate Blog Post'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button
-            variant="outline"
-            onClick={handleAiImprove}
-            disabled={aiLoading || !formData.content}
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Improve Content
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleAiSeo}
-            disabled={aiLoading || (!formData.title && !formData.content)}
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Generate SEO
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" disabled={saving}>
-                <Clock className="mr-2 h-4 w-4" />
-                Schedule
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-4" align="end">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Publication Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !scheduleDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={scheduleDate}
-                        onSelect={setScheduleDate}
-                        disabled={(date) => date < new Date()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b bg-card sticky top-0 z-10">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={() => navigate('/admin')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Posts
+            </Button>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" disabled={saving}>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Schedule
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-4" align="end">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Publication Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !scheduleDate && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={scheduleDate}
+                            onSelect={setScheduleDate}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="schedule-time">Time</Label>
+                      <Input
+                        id="schedule-time"
+                        type="time"
+                        value={scheduleTime}
+                        onChange={(e) => setScheduleTime(e.target.value)}
                       />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="schedule-time">Time</Label>
-                  <Input
-                    id="schedule-time"
-                    type="time"
-                    value={scheduleTime}
-                    onChange={(e) => setScheduleTime(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  onClick={() => handleSave(false, true)} 
-                  disabled={saving || !scheduleDate}
-                  className="w-full"
-                >
-                  Schedule Post
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Draft
-          </Button>
-          <Button onClick={() => handleSave(true)} disabled={saving}>
-            <Eye className="mr-2 h-4 w-4" />
-            Publish Now
-          </Button>
+                    </div>
+                    <Button 
+                      onClick={() => handleSave(false, true)} 
+                      disabled={saving || !scheduleDate}
+                      className="w-full"
+                    >
+                      Schedule Post
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
+                <Save className="mr-2 h-4 w-4" />
+                Save Draft
+              </Button>
+              <Button onClick={() => handleSave(true)} disabled={saving}>
+                <Eye className="mr-2 h-4 w-4" />
+                Publish Now
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? 'Edit' : 'Create'} Blog Post</CardTitle>
-          <CardDescription>Write and publish engaging content for your audience</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              placeholder="Enter post title..."
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Editor - 2/3 width */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardContent className="p-6">
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="w-full justify-start">
+                    <TabsTrigger value="content">Content</TabsTrigger>
+                    <TabsTrigger value="media">Media</TabsTrigger>
+                    <TabsTrigger value="settings">Settings</TabsTrigger>
+                    <TabsTrigger value="seo">SEO</TabsTrigger>
+                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                  </TabsList>
+
+                  {/* Content Tab */}
+                  <TabsContent value="content" className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Title *</Label>
+                      <Input
+                        id="title"
+                        value={formData.title}
+                        onChange={(e) => handleTitleChange(e.target.value)}
+                        placeholder="Enter an engaging post title..."
+                        className="text-lg"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="slug">Slug * (URL-friendly)</Label>
+                      <Input
+                        id="slug"
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        placeholder="my-blog-post"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Preview: /blog/{formData.slug || 'your-slug'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="excerpt">Excerpt</Label>
+                      <Textarea
+                        id="excerpt"
+                        value={formData.excerpt}
+                        onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                        placeholder="Brief summary of your post..."
+                        rows={3}
+                        maxLength={300}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {formData.excerpt.length}/300 characters
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Content *</Label>
+                      <div className="border rounded-md">
+                        <ReactQuill
+                          theme="snow"
+                          value={formData.content}
+                          onChange={(content) => setFormData({ ...formData, content })}
+                          modules={modules}
+                          className="min-h-[400px]"
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Media Tab */}
+                  <TabsContent value="media" className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="image">Featured Image</Label>
+                      {featuredImagePreview && (
+                        <div className="relative w-full max-w-2xl">
+                          <img
+                            src={featuredImagePreview}
+                            alt="Preview"
+                            className="w-full h-64 object-cover rounded-lg"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2"
+                            onClick={() => {
+                              setFeaturedImage(null);
+                              setFeaturedImagePreview('');
+                              setFormData({ ...formData, featured_image_url: '' });
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('image')?.click()}
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Image
+                        </Button>
+                        <span className="text-sm text-muted-foreground">Max 5MB</span>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Settings Tab */}
+                  <TabsContent value="settings" className="space-y-6">
+                    <div className="space-y-2">
+                      <Label>Categories</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {categories.map((category) => (
+                          <div key={category.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={category.id}
+                              checked={selectedCategories.includes(category.id)}
+                              onCheckedChange={() => toggleCategory(category.id)}
+                            />
+                            <label
+                              htmlFor={category.id}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {category.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tags">Tags (comma-separated)</Label>
+                      <Input
+                        id="tags"
+                        value={formData.tags}
+                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                        placeholder="aquarium, fish, care, tips"
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* SEO Tab */}
+                  <TabsContent value="seo" className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="seo_title">SEO Title</Label>
+                      <Input
+                        id="seo_title"
+                        value={formData.seo_title}
+                        onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                        placeholder="Optimized title for search engines"
+                        maxLength={60}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {formData.seo_title.length}/60 characters
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="seo_description">SEO Description</Label>
+                      <Textarea
+                        id="seo_description"
+                        value={formData.seo_description}
+                        onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                        placeholder="Meta description for search engines"
+                        rows={4}
+                        maxLength={160}
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {formData.seo_description.length}/160 characters
+                      </p>
+                    </div>
+                  </TabsContent>
+
+                  {/* Preview Tab */}
+                  <TabsContent value="preview">
+                    <BlogPreview
+                      title={formData.title}
+                      excerpt={formData.excerpt}
+                      content={formData.content}
+                      featuredImage={featuredImagePreview}
+                      author={user?.email || 'Unknown Author'}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar - 1/3 width */}
+          <div className="space-y-6">
+            <BlogContentStats
+              title={formData.title}
+              content={formData.content}
+              excerpt={formData.excerpt}
+              seoTitle={formData.seo_title}
+              seoDescription={formData.seo_description}
+              featuredImage={featuredImagePreview}
+              categories={selectedCategories}
+            />
+            <BlogAISidebar
+              formData={formData}
+              onUpdate={(updates) => setFormData({ ...formData, ...updates })}
+              generateSlug={generateSlug}
             />
           </div>
-
-          {/* Slug */}
-          <div className="space-y-2">
-            <Label htmlFor="slug">Slug * (URL-friendly)</Label>
-            <Input
-              id="slug"
-              value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              placeholder="my-blog-post"
-            />
-            <p className="text-sm text-muted-foreground">
-              Preview: /blog/{formData.slug || 'your-slug'}
-            </p>
-          </div>
-
-          {/* Featured Image */}
-          <div className="space-y-2">
-            <Label htmlFor="image">Featured Image</Label>
-            {featuredImagePreview && (
-              <div className="relative w-full max-w-md">
-                <img
-                  src={featuredImagePreview}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2"
-                  onClick={() => {
-                    setFeaturedImage(null);
-                    setFeaturedImagePreview('');
-                    setFormData({ ...formData, featured_image_url: '' });
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-              />
-              <Button
-                variant="outline"
-                onClick={() => document.getElementById('image')?.click()}
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Image
-              </Button>
-              <span className="text-sm text-muted-foreground">Max 5MB</span>
-            </div>
-          </div>
-
-          {/* Excerpt */}
-          <div className="space-y-2">
-            <Label htmlFor="excerpt">Excerpt</Label>
-            <Textarea
-              id="excerpt"
-              value={formData.excerpt}
-              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-              placeholder="Brief summary of your post..."
-              rows={3}
-            />
-          </div>
-
-          {/* Content */}
-          <div className="space-y-2">
-            <Label>Content *</Label>
-            <div className="border rounded-md">
-              <ReactQuill
-                theme="snow"
-                value={formData.content}
-                onChange={(content) => setFormData({ ...formData, content })}
-                modules={modules}
-                className="h-64 mb-12"
-              />
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags (comma-separated)</Label>
-            <Input
-              id="tags"
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              placeholder="aquarium, fish, care, tips"
-            />
-          </div>
-
-          {/* SEO Section */}
-          <div className="border-t pt-6 space-y-4">
-            <h3 className="text-lg font-semibold">SEO Settings</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="seo_title">SEO Title</Label>
-              <Input
-                id="seo_title"
-                value={formData.seo_title}
-                onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
-                placeholder="Optimized title for search engines (max 60 chars)"
-                maxLength={60}
-              />
-              <p className="text-sm text-muted-foreground">
-                {formData.seo_title.length}/60 characters
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="seo_description">SEO Description</Label>
-              <Textarea
-                id="seo_description"
-                value={formData.seo_description}
-                onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
-                placeholder="Meta description for search engines (max 160 chars)"
-                rows={3}
-                maxLength={160}
-              />
-              <p className="text-sm text-muted-foreground">
-                {formData.seo_description.length}/160 characters
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
