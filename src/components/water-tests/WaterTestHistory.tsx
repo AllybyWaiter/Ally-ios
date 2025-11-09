@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { formatParameter, UnitSystem } from "@/lib/unitConversions";
+import { formatRelativeTime } from "@/lib/formatters";
 
 interface WaterTestHistoryProps {
   aquariumId: string;
@@ -61,10 +62,13 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
-                {format(new Date(test.test_date), "PPP 'at' p")}
+                {formatRelativeTime(test.test_date)}
               </CardTitle>
               <Badge variant="secondary">{test.confidence}</Badge>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {format(new Date(test.test_date), "PPP 'at' p")}
+            </p>
             {test.tags && test.tags.length > 0 && (
               <div className="flex gap-2 mt-2">
                 {test.tags.map((tag: string, idx: number) => (
