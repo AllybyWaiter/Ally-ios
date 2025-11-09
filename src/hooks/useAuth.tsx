@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { setUserContext, clearUserContext, addBreadcrumb } from '@/lib/sentry';
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
+        // Log auth events to Sentry
+        addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id });
+        
         // Check admin status and fetch profile
         if (session?.user) {
           setTimeout(() => {
@@ -50,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setCanCreateCustomTemplates(false);
           setThemePreference(null);
           setLanguagePreference(null);
+          clearUserContext();
         }
       }
     );
@@ -94,10 +99,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setThemePreference(data.theme_preference);
       setLanguagePreference(data.language_preference);
       setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
+      
+      // Set user context in Sentry
+      setUserContext(userId, undefined, data.name || undefined);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    addBreadcrumb('User attempting sign in', 'auth');
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -106,6 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string) => {
+    addBreadcrumb('User attempting sign up', 'auth', { name });
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -122,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    addBreadcrumb('User signing out', 'auth');
     await supabase.auth.signOut();
     setIsAdmin(false);
     setUserName(null);
@@ -129,6 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCanCreateCustomTemplates(false);
     setThemePreference(null);
     setLanguagePreference(null);
+    clearUserContext();
   };
 
   return (
