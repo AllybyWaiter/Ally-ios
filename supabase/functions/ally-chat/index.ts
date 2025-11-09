@@ -45,6 +45,17 @@ serve(async (req) => {
         .eq('id', aquariumId)
         .single();
 
+      // Fetch livestock and plants for this aquarium
+      const { data: livestock } = await supabase
+        .from('livestock')
+        .select('*')
+        .eq('aquarium_id', aquariumId);
+
+      const { data: plants } = await supabase
+        .from('plants')
+        .select('*')
+        .eq('aquarium_id', aquariumId);
+
       if (aquarium) {
         aquariumContext = `
 
@@ -57,6 +68,16 @@ ${aquarium.notes ? `- Notes: ${aquarium.notes}` : ''}
 
 Recent Water Tests: ${aquarium.water_tests?.length || 0} tests on record
 Equipment: ${aquarium.equipment?.length || 0} items tracked
+
+Livestock (${livestock?.length || 0} total):
+${livestock && livestock.length > 0 
+  ? livestock.map(l => `  - ${l.quantity}x ${l.species} (${l.name}) - Category: ${l.category}, Health: ${l.health_status}${l.notes ? ', Notes: ' + l.notes : ''}`).join('\n')
+  : '  None added yet'}
+
+Plants (${plants?.length || 0} total):
+${plants && plants.length > 0
+  ? plants.map(p => `  - ${p.quantity}x ${p.species} (${p.name}) - Placement: ${p.placement}, Condition: ${p.condition}${p.notes ? ', Notes: ' + p.notes : ''}`).join('\n')
+  : '  None added yet'}
 `;
       }
     }
@@ -67,11 +88,14 @@ Equipment: ${aquarium.equipment?.length || 0} items tracked
 - Freshwater and saltwater aquarium care
 - Water chemistry and testing (pH, ammonia, nitrite, nitrate, GH, KH, temperature, etc.)
 - Fish species, compatibility, and care requirements
-- Plant care and aquascaping
+- Invertebrate and coral care (for reef tanks)
+- Plant care, CO2, lighting, and aquascaping
 - Equipment setup and maintenance
 - Disease diagnosis and treatment
 - Cycling new tanks
 - Troubleshooting common issues
+- Species compatibility and stocking levels
+- Bioload management and tank balance
 
 Your personality:
 - Friendly, encouraging, and patient
@@ -80,16 +104,20 @@ Your personality:
 - Ask clarifying questions when needed
 - Celebrate successes and help through challenges
 - Prioritize fish health and welfare
+- Use the livestock and plants context to give specific advice about compatibility, stocking, and care
 
 ${aquariumContext}
 
 Guidelines:
-- Always consider the specific aquarium type (freshwater/saltwater)
-- Recommend appropriate water parameters for the species
-- Suggest maintenance schedules based on tank size and stocking
-- Warn about compatibility issues
-- Provide step-by-step guidance for complex tasks
-- When discussing water tests, be specific about ideal ranges
+- Always consider the specific aquarium type (freshwater/saltwater/reef)
+- Use the livestock list to assess stocking levels and compatibility
+- Consider plant requirements when discussing lighting, CO2, and fertilization
+- Recommend appropriate water parameters for the actual species in the tank
+- Warn about compatibility issues between existing and proposed livestock
+- Suggest maintenance schedules based on tank size, stocking, and bioload
+- Provide species-specific care advice based on what's actually in the tank
+- When discussing water tests, be specific about ideal ranges for the inhabitants
+- Consider the needs of all inhabitants (fish, inverts, corals, plants) when giving advice
 - If you don't know something, admit it and suggest consulting a specialist`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
