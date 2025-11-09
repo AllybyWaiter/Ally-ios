@@ -21,44 +21,97 @@ serve(async (req) => {
     let systemPrompt = '';
     let userPrompt = '';
 
+    let tools: any[] = [];
+    let toolChoice: any = undefined;
+
     switch (action) {
       case 'generate':
         systemPrompt = 'You are a professional blog writer specializing in aquarium care and fishkeeping. Write engaging, informative, and SEO-friendly blog posts.';
         userPrompt = `Write a complete blog post about: ${input.topic}
 
-Include:
-- An engaging title (max 200 chars)
+Write an engaging, well-structured article with:
+- A catchy title (max 200 chars)
 - A compelling excerpt (max 300 chars)
-- Full article content with proper formatting (use HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>)
-- SEO title (max 60 chars)
+- Full article content with proper HTML formatting (use <h2> for sections, <h3> for subsections, <p> for paragraphs, <ul>/<li> for lists, <strong> for emphasis)
+- SEO-optimized title (max 60 chars)
 - SEO description (max 160 chars)
-- 4-5 relevant tags (comma-separated)
+- 4-5 relevant tags`;
 
-Return as JSON:
-{
-  "title": "Blog post title",
-  "excerpt": "Brief summary",
-  "content": "Full HTML content",
-  "seo_title": "SEO title",
-  "seo_description": "SEO description",
-  "tags": "tag1, tag2, tag3"
-}`;
+        tools = [{
+          type: "function",
+          function: {
+            name: "generate_blog_post",
+            description: "Generate a complete blog post with all required fields",
+            parameters: {
+              type: "object",
+              properties: {
+                title: { 
+                  type: "string",
+                  description: "Engaging blog post title (max 200 chars)"
+                },
+                excerpt: { 
+                  type: "string",
+                  description: "Compelling summary (max 300 chars)"
+                },
+                content: { 
+                  type: "string",
+                  description: "Full article content with HTML formatting"
+                },
+                seo_title: { 
+                  type: "string",
+                  description: "SEO-optimized title (max 60 chars)"
+                },
+                seo_description: { 
+                  type: "string",
+                  description: "SEO description (max 160 chars)"
+                },
+                tags: { 
+                  type: "string",
+                  description: "Comma-separated tags (4-5 tags)"
+                }
+              },
+              required: ["title", "excerpt", "content", "seo_title", "seo_description", "tags"],
+              additionalProperties: false
+            }
+          }
+        }];
+        toolChoice = { type: "function", function: { name: "generate_blog_post" } };
         break;
 
       case 'improve':
         systemPrompt = 'You are a professional blog editor specializing in aquarium content. Improve and enhance existing blog posts while maintaining their core message.';
-        userPrompt = `Improve this blog post:
+        userPrompt = `Improve this blog post content:
 
 Title: ${input.title}
-Content: ${input.content}
+Current Content: ${input.content}
 
-Enhance the content with:
+Enhance with:
 - Better structure and flow
 - More engaging language
 - Additional helpful details
-- Proper HTML formatting (<h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>)
+- Clean HTML formatting (<h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>)
 
-Return the improved content as HTML.`;
+Return only the improved HTML content.`;
+
+        tools = [{
+          type: "function",
+          function: {
+            name: "improve_content",
+            description: "Improve blog post content",
+            parameters: {
+              type: "object",
+              properties: {
+                content: { 
+                  type: "string",
+                  description: "Improved HTML content"
+                }
+              },
+              required: ["content"],
+              additionalProperties: false
+            }
+          }
+        }];
+        toolChoice = { type: "function", function: { name: "improve_content" } };
         break;
 
       case 'seo':
@@ -68,16 +121,55 @@ Return the improved content as HTML.`;
 Title: ${input.title}
 Content: ${input.content}
 
-Return as JSON:
-{
-  "seo_title": "SEO title (max 60 chars)",
-  "seo_description": "SEO description (max 160 chars)",
-  "tags": "tag1, tag2, tag3, tag4, tag5"
-}`;
+Create:
+- SEO title (max 60 chars)
+- SEO description (max 160 chars)
+- 4-5 relevant tags (comma-separated)`;
+
+        tools = [{
+          type: "function",
+          function: {
+            name: "generate_seo",
+            description: "Generate SEO fields for blog post",
+            parameters: {
+              type: "object",
+              properties: {
+                seo_title: { 
+                  type: "string",
+                  description: "SEO title (max 60 chars)"
+                },
+                seo_description: { 
+                  type: "string",
+                  description: "SEO description (max 160 chars)"
+                },
+                tags: { 
+                  type: "string",
+                  description: "Comma-separated tags (4-5 tags)"
+                }
+              },
+              required: ["seo_title", "seo_description", "tags"],
+              additionalProperties: false
+            }
+          }
+        }];
+        toolChoice = { type: "function", function: { name: "generate_seo" } };
         break;
 
       default:
         throw new Error('Invalid action');
+    }
+
+    const requestBody: any = {
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+    };
+
+    if (tools.length > 0) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = toolChoice;
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -86,13 +178,7 @@ Return as JSON:
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -114,15 +200,22 @@ Return as JSON:
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const message = data.choices[0].message;
 
-    // Try to parse as JSON for structured responses
+    // Extract structured output from tool call
     let result;
-    try {
-      result = JSON.parse(content);
-    } catch {
-      // If not JSON, return as plain text (for 'improve' action)
-      result = { content };
+    if (message.tool_calls && message.tool_calls[0]) {
+      const toolCall = message.tool_calls[0];
+      result = JSON.parse(toolCall.function.arguments);
+    } else if (message.content) {
+      // Fallback to content parsing
+      try {
+        result = JSON.parse(message.content);
+      } catch {
+        result = { content: message.content };
+      }
+    } else {
+      throw new Error('No valid response from AI');
     }
 
     return new Response(JSON.stringify(result), {
