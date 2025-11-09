@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,17 +12,25 @@ interface Message {
 }
 
 const AllySupportChat = () => {
+  const { userName } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hi! I'm Ally Support. How can I help you learn about our aquarium management platform today?",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Set initial greeting based on user name
+  useEffect(() => {
+    const greeting = userName 
+      ? `Hi ${userName}! I'm Ally Support. How can I help you today?`
+      : "Hi! I'm Ally Support. How can I help you learn about our aquarium management platform today?";
+    
+    setMessages([{
+      role: "assistant",
+      content: greeting,
+    }]);
+  }, [userName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,7 +63,10 @@ const AllySupportChat = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
+        body: JSON.stringify({ 
+          messages: [...messages, userMessage],
+          userName: userName || undefined
+        }),
       });
 
       if (!response.ok || !response.body) {
