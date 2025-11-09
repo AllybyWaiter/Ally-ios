@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
+import { SentryTestButton } from "@/components/SentryTestButton";
 
 const Settings = () => {
   const { user, userName, subscriptionTier, signOut } = useAuth();
@@ -196,6 +197,11 @@ const Settings = () => {
           <p className="text-muted-foreground">
             Manage your account settings and preferences
           </p>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4">
+              <SentryTestButton />
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
