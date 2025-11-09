@@ -45,6 +45,28 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    
+    // Set up realtime subscription for new users
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('Profile change detected:', payload);
+          // Refresh the user list when any profile changes
+          fetchUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -300,6 +322,15 @@ export default function UserManagement() {
               <CardDescription>View and manage user profiles, track activity, and perform bulk operations</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                onClick={fetchUsers} 
+                variant="outline" 
+                size="sm"
+                disabled={loading}
+              >
+                <Activity className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
               <Button onClick={exportToCSV} variant="outline" size="sm">
                 <Download className="mr-2 h-4 w-4" />
                 Export
