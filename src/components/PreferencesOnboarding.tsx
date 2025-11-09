@@ -246,7 +246,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">{t('languages.english')}</div>
+                  <div className="font-semibold text-lg mb-2">English</div>
                   <div className="text-sm text-muted-foreground">
                     {t('preferencesOnboarding.step3.englishDescription')}
                   </div>
@@ -260,7 +260,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">{t('languages.spanish')}</div>
+                  <div className="font-semibold text-lg mb-2">Español</div>
                   <div className="text-sm text-muted-foreground">
                     {t('preferencesOnboarding.step3.spanishDescription')}
                   </div>
@@ -274,7 +274,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <div className="font-semibold text-lg mb-2">{t('languages.french')}</div>
+                  <div className="font-semibold text-lg mb-2">Français</div>
                   <div className="text-sm text-muted-foreground">
                     {t('preferencesOnboarding.step3.frenchDescription')}
                   </div>
