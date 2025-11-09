@@ -138,43 +138,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAdminStatus = async (userId: string) => {
     console.log('🔵 Auth: checkAdminStatus starting for:', userId);
     try {
-      // Fetch roles and permissions in parallel
-      const [rolesResult, permsResult] = await Promise.all([
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId),
-        (supabase as any).rpc('get_user_permissions', {
-          _user_id: userId
-        })
-      ]);
+      // Fetch roles and permissions in parallel with timeout
+      const rolesPromise = supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
       
-      console.log('🔵 Auth: Roles result:', rolesResult.data);
-      console.log('🔵 Auth: Perms result:', permsResult.data);
+      const permsPromise = (supabase as any).rpc('get_user_permissions', {
+        _user_id: userId
+      });
+
+      // Add timeout wrapper
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 5000)
+      );
+
+      const [rolesResult, permsResult] = await Promise.race([
+        Promise.all([rolesPromise, permsPromise]),
+        timeoutPromise
+      ]) as any;
       
-      const userRoles = rolesResult.data?.map(r => r.role) || [];
+      console.log('🔵 Auth: Roles result:', rolesResult?.data, 'Error:', rolesResult?.error);
+      console.log('🔵 Auth: Perms result:', permsResult?.data, 'Error:', permsResult?.error);
+      
+      const userRoles = rolesResult?.data?.map((r: any) => r.role) || [];
       setRoles(userRoles);
       setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
       
       // Extract permission names from the result
-      const permissionNames = permsResult.data?.map((p: any) => p.permission_name || p) || [];
+      const permissionNames = permsResult?.data?.map((p: any) => p.permission_name || p) || [];
       setPermissions(permissionNames);
       
       console.log('🟢 Auth: checkAdminStatus complete');
-    } catch (error) {
+    } catch (error: any) {
       console.error('🔴 Auth: Error in checkAdminStatus:', error);
-      throw error;
+      // Don't throw - allow auth to continue with empty roles/permissions
+      setRoles([]);
+      setPermissions([]);
+      setIsAdmin(false);
     }
   };
 
   const fetchUserProfile = async (userId: string) => {
     console.log('🔵 Auth: fetchUserProfile starting for:', userId);
     try {
-      const { data, error } = await supabase
+      // Add timeout wrapper
+      const queryPromise = supabase
         .from('profiles')
         .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
         .eq('user_id', userId)
         .maybeSingle();
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile query timeout')), 5000)
+      );
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
       
       console.log('🔵 Auth: Profile data:', data);
       console.log('🔵 Auth: Profile error:', error);
@@ -191,11 +210,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setThemePreference(data.theme_preference);
         setLanguagePreference(data.language_preference);
         setUnitPreference(data.unit_preference);
-        // Explicitly check for true, treat null/undefined as false
         setOnboardingCompleted(data.onboarding_completed === true);
         setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
         
-        // Set user context in Sentry
         setUserContext(userId, undefined, data.name || undefined);
         
         console.log('🟢 Auth: Profile loaded successfully');
