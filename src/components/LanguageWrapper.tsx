@@ -7,14 +7,14 @@ interface LanguageWrapperProps {
 }
 
 export const LanguageWrapper = ({ children }: LanguageWrapperProps) => {
-  const { languagePreference, loading } = useAuth();
+  const auth = useAuth();
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    if (!loading && languagePreference && i18n.language !== languagePreference) {
-      i18n.changeLanguage(languagePreference);
+    if (!auth.loading && auth.languagePreference && i18n.language !== auth.languagePreference) {
+      i18n.changeLanguage(auth.languagePreference);
     }
-  }, [languagePreference, loading, i18n]);
+  }, [auth.languagePreference, auth.loading, i18n]);
 
   return <>{children}</>;
 };
