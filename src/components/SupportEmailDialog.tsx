@@ -45,7 +45,23 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
     setIsSubmitting(true);
 
     try {
-      // Create support ticket
+      // Analyze message priority using AI
+      const priorityResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ticket-priority`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ message: formData.message }),
+        }
+      );
+
+      const { priority } = await priorityResponse.json();
+      console.log("AI detected priority:", priority);
+
+      // Create support ticket with AI-determined priority
       const { data: ticket, error: ticketError } = await supabase
         .from('support_tickets')
         .insert({
@@ -54,7 +70,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
           name: formData.name,
           subject: "Support Request",
           status: 'open',
-          priority: 'medium'
+          priority: priority || 'medium'
         })
         .select()
         .single();
@@ -75,7 +91,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
       
       toast({
         title: "Ticket Created!",
-        description: "We'll get back to you as soon as possible.",
+        description: `Priority: ${priority.toUpperCase()}. We'll get back to you soon.`,
       });
       
       onOpenChange(false);
