@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ export default function AquariumDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { units } = useAuth();
+  const { t } = useTranslation();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -50,16 +52,16 @@ export default function AquariumDetail() {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Aquarium deleted successfully",
+        title: t('common.success'),
+        description: t('dashboard.aquariumDeleted'),
       });
 
       navigate("/dashboard");
     } catch (error) {
       console.error("Error deleting aquarium:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete aquarium",
+        title: t('common.error'),
+        description: t('dashboard.failedToDelete'),
         variant: "destructive",
       });
     } finally {
@@ -80,10 +82,10 @@ export default function AquariumDetail() {
       <div className="min-h-screen">
         <AppHeader />
         <div className="container mx-auto px-4 py-12 text-center">
-          <h1 className="text-2xl font-bold mb-4">Aquarium not found</h1>
+          <h1 className="text-2xl font-bold mb-4">{t('aquarium.notFound')}</h1>
           <Button onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            {t('aquarium.backToDashboard')}
           </Button>
         </div>
       </div>
@@ -100,7 +102,7 @@ export default function AquariumDetail() {
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          {t('aquarium.backToDashboard')}
         </Button>
 
         <div className="mb-8">
@@ -119,14 +121,14 @@ export default function AquariumDetail() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
                   <Pencil className="w-4 h-4 mr-2" />
-                  Edit Aquarium
+                  {t('aquarium.editAquarium')}
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   onClick={() => setDeleteDialogOpen(true)}
                   className="text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Aquarium
+                  {t('dashboard.deleteAquarium')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -146,10 +148,10 @@ export default function AquariumDetail() {
 
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="water-tests">Water Tests</TabsTrigger>
-            <TabsTrigger value="equipment">Equipment</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="water-tests">{t('tabs.waterTests')}</TabsTrigger>
+            <TabsTrigger value="equipment">{t('tabs.equipment')}</TabsTrigger>
+            <TabsTrigger value="tasks">{t('tabs.tasks')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -180,15 +182,15 @@ export default function AquariumDetail() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Aquarium</AlertDialogTitle>
+            <AlertDialogTitle>{t('dashboard.deleteAquarium')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{aquarium.name}"? This action cannot be undone and will also delete all associated water tests, equipment, and tasks.
+              {t('dashboard.deleteConfirmation', { name: aquarium.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

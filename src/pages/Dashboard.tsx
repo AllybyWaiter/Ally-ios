@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { PreferencesOnboarding } from '@/components/PreferencesOnboarding';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const { user, units, onboardingCompleted } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [showPreferencesOnboarding, setShowPreferencesOnboarding] = useState(false);
   const [showAquariumOnboarding, setShowAquariumOnboarding] = useState(false);
@@ -88,8 +90,8 @@ export default function Dashboard() {
     } catch (error: any) {
       console.error('Error loading aquariums:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load aquariums',
+        title: t('common.error'),
+        description: t('dashboard.failedToLoad'),
         variant: 'destructive',
       });
     }
@@ -132,16 +134,16 @@ export default function Dashboard() {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Aquarium deleted successfully",
+        title: t('common.success'),
+        description: t('dashboard.aquariumDeleted'),
       });
 
       await loadAquariums();
     } catch (error) {
       console.error("Error deleting aquarium:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete aquarium",
+        title: t('common.error'),
+        description: t('dashboard.failedToDelete'),
         variant: "destructive",
       });
     } finally {
@@ -185,46 +187,46 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 pt-24">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">My Aquariums</h1>
-          <p className="text-muted-foreground">Manage your aquarium collection</p>
+          <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
+          <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* Stats Overview */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Aquariums</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.totalAquariums')}</CardTitle>
               <Droplets className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{aquariums.length}</div>
               <p className="text-xs text-muted-foreground">
-                {aquariums.filter(a => a.status === 'active').length} active
+                {aquariums.filter(a => a.status === 'active').length} {t('dashboard.active')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.totalVolume')}</CardTitle>
               <Droplets className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatVolume(aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0), units)}
               </div>
-              <p className="text-xs text-muted-foreground">Combined capacity</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.combinedCapacity')}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('dashboard.upcomingTasks')}</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{upcomingTaskCount}</div>
-              <p className="text-xs text-muted-foreground">Tasks due this week</p>
+              <p className="text-xs text-muted-foreground">{t('dashboard.tasksDueThisWeek')}</p>
             </CardContent>
           </Card>
         </div>
@@ -239,10 +241,10 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-primary-foreground mb-1">
-                    Chat with Ally
+                    {t('dashboard.chatWithAlly')}
                   </h3>
                   <p className="text-sm text-primary-foreground/80">
-                    Get personalized aquarium advice and answers to your questions
+                    {t('dashboard.chatDescription')}
                   </p>
                 </div>
               </div>
@@ -252,7 +254,7 @@ export default function Dashboard() {
                 className="gap-2"
               >
                 <MessageSquare className="h-4 w-4" />
-                Start Chat
+                {t('dashboard.startChat')}
               </Button>
             </div>
           </CardContent>
@@ -262,22 +264,22 @@ export default function Dashboard() {
         {aquariums.length === 0 ? (
           <Card className="p-12 text-center">
             <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No aquariums yet</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('dashboard.noAquariumsYet')}</h3>
             <p className="text-muted-foreground mb-4">
-              Get started by adding your first aquarium
+              {t('dashboard.getStartedMessage')}
             </p>
             <Button onClick={handleCreateAquarium}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Aquarium
+              {t('dashboard.addAquarium')}
             </Button>
           </Card>
         ) : (
           <>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold">Your Aquariums</h2>
+              <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
               <Button onClick={handleCreateAquarium}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Aquarium
+                {t('dashboard.addAquarium')}
               </Button>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -310,14 +312,14 @@ export default function Dashboard() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleEditAquarium(aquarium)}>
                               <Pencil className="w-4 h-4 mr-2" />
-                              Edit
+                              {t('common.edit')}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeleteClick(aquarium.id)}
                               className="text-destructive"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
+                              {t('common.delete')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -327,7 +329,7 @@ export default function Dashboard() {
                   <CardContent onClick={() => navigate(`/aquarium/${aquarium.id}`)} className="cursor-pointer">
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Setup Date:</span>
+                        <span className="text-muted-foreground">{t('dashboard.setupDate')}</span>
                         <span className="font-medium">
                           {new Date(aquarium.setup_date).toLocaleDateString()}
                         </span>
@@ -351,15 +353,15 @@ export default function Dashboard() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Aquarium</AlertDialogTitle>
+            <AlertDialogTitle>{t('dashboard.deleteAquarium')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this aquarium? This action cannot be undone and will also delete all associated water tests, equipment, and tasks.
+              {t('dashboard.deleteConfirmation')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
