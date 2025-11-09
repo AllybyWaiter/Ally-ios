@@ -8,10 +8,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Eye, Upload, X } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, X, Sparkles } from 'lucide-react';
 import { z } from 'zod';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const blogPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
@@ -32,6 +40,9 @@ export default function BlogEditor() {
 
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -135,6 +146,144 @@ export default function BlogEditor() {
     return publicUrl;
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiTopic.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a topic',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('blog-ai-assistant', {
+        body: { action: 'generate', input: { topic: aiTopic } },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setFormData({
+        ...formData,
+        title: data.title || '',
+        excerpt: data.excerpt || '',
+        content: data.content || '',
+        seo_title: data.seo_title || '',
+        seo_description: data.seo_description || '',
+        tags: data.tags || '',
+        slug: generateSlug(data.title || ''),
+      });
+
+      setAiDialogOpen(false);
+      setAiTopic('');
+      toast({
+        title: 'Success',
+        description: 'Blog post generated successfully',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to generate content',
+        variant: 'destructive',
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAiImprove = async () => {
+    if (!formData.content.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter some content first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('blog-ai-assistant', {
+        body: {
+          action: 'improve',
+          input: { title: formData.title, content: formData.content },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setFormData({ ...formData, content: data.content || formData.content });
+      toast({
+        title: 'Success',
+        description: 'Content improved successfully',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to improve content',
+        variant: 'destructive',
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAiSeo = async () => {
+    if (!formData.title.trim() && !formData.content.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a title or content first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('blog-ai-assistant', {
+        body: {
+          action: 'seo',
+          input: { title: formData.title, content: formData.content },
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setFormData({
+        ...formData,
+        seo_title: data.seo_title || formData.seo_title,
+        seo_description: data.seo_description || formData.seo_description,
+        tags: data.tags || formData.tags,
+      });
+
+      toast({
+        title: 'Success',
+        description: 'SEO fields generated successfully',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to generate SEO fields',
+        variant: 'destructive',
+      });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSave = async (publish: boolean = false) => {
     try {
       setSaving(true);
@@ -220,6 +369,57 @@ export default function BlogEditor() {
           Back to Posts
         </Button>
         <div className="flex gap-2">
+          <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={aiLoading}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                AI Assistant
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>AI Blog Assistant</DialogTitle>
+                <DialogDescription>
+                  Generate a complete blog post from a topic
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ai-topic">Blog Topic</Label>
+                  <Textarea
+                    id="ai-topic"
+                    value={aiTopic}
+                    onChange={(e) => setAiTopic(e.target.value)}
+                    placeholder="E.g., 'How to set up a planted aquarium for beginners'"
+                    rows={3}
+                  />
+                </div>
+                <Button
+                  onClick={handleAiGenerate}
+                  disabled={aiLoading}
+                  className="w-full"
+                >
+                  {aiLoading ? 'Generating...' : 'Generate Blog Post'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button
+            variant="outline"
+            onClick={handleAiImprove}
+            disabled={aiLoading || !formData.content}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Improve Content
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleAiSeo}
+            disabled={aiLoading || (!formData.title && !formData.content)}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Generate SEO
+          </Button>
           <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             Save Draft
