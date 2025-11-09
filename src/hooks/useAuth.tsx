@@ -10,6 +10,7 @@ interface AuthContextType {
   subscriptionTier: string | null;
   canCreateCustomTemplates: boolean;
   themePreference: string | null;
+  languagePreference: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
@@ -26,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [canCreateCustomTemplates, setCanCreateCustomTemplates] = useState(false);
   const [themePreference, setThemePreference] = useState<string | null>(null);
+  const [languagePreference, setLanguagePreference] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSubscriptionTier(null);
           setCanCreateCustomTemplates(false);
           setThemePreference(null);
+          setLanguagePreference(null);
         }
       }
     );
@@ -81,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('name, subscription_tier, theme_preference')
+      .select('name, subscription_tier, theme_preference, language_preference')
       .eq('user_id', userId)
       .maybeSingle();
     
@@ -89,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserName(data.name);
       setSubscriptionTier(data.subscription_tier);
       setThemePreference(data.theme_preference);
+      setLanguagePreference(data.language_preference);
       setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
     }
   };
@@ -124,10 +128,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setSubscriptionTier(null);
     setCanCreateCustomTemplates(false);
     setThemePreference(null);
+    setLanguagePreference(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, themePreference, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, userName, isAdmin, subscriptionTier, canCreateCustomTemplates, themePreference, languagePreference, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

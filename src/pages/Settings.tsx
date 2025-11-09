@@ -11,14 +11,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor } from "lucide-react";
+import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
 
 const Settings = () => {
   const { user, userName, subscriptionTier, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const { i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(userName || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -78,6 +80,33 @@ const Settings = () => {
       if (error) throw error;
     } catch (error: any) {
       console.error('Failed to save theme preference:', error);
+    }
+  };
+
+  const handleLanguageChange = async (newLanguage: string) => {
+    if (!user) return;
+    
+    i18n.changeLanguage(newLanguage);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ language_preference: newLanguage })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Language updated",
+        description: "Your language preference has been saved.",
+      });
+    } catch (error: any) {
+      console.error('Failed to save language preference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save language preference.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -170,7 +199,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -178,6 +207,10 @@ const Settings = () => {
             <TabsTrigger value="appearance" className="flex items-center gap-2">
               <Moon className="h-4 w-4" />
               Appearance
+            </TabsTrigger>
+            <TabsTrigger value="language" className="flex items-center gap-2">
+              <Languages className="h-4 w-4" />
+              Language
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Lock className="h-4 w-4" />
@@ -283,6 +316,48 @@ const Settings = () => {
                         </div>
                       </CardContent>
                     </Card>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="language">
+            <Card>
+              <CardHeader>
+                <CardTitle>Language & Region</CardTitle>
+                <CardDescription>
+                  Select your preferred language for the app interface
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <Label>Preferred Language</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Choose the language for menus, buttons, and other interface elements
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { code: 'en', name: 'English', flag: '🇺🇸' },
+                      { code: 'es', name: 'Español', flag: '🇪🇸' },
+                      { code: 'fr', name: 'Français', flag: '🇫🇷' },
+                      { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+                      { code: 'pt', name: 'Português', flag: '🇵🇹' },
+                      { code: 'ja', name: '日本語', flag: '🇯🇵' },
+                    ].map((lang) => (
+                      <Card 
+                        key={lang.code}
+                        className={`cursor-pointer transition-all hover:border-primary ${i18n.language === lang.code ? 'border-primary shadow-md' : ''}`}
+                        onClick={() => handleLanguageChange(lang.code)}
+                      >
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <span className="text-2xl">{lang.flag}</span>
+                          <div>
+                            <p className="font-medium">{lang.name}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 </div>
               </CardContent>
