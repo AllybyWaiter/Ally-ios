@@ -94,19 +94,28 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
 
   if (!equipment || equipment.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <Wrench className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">{t('equipment.noEquipmentYet')}</h3>
-          <p className="text-muted-foreground mb-6">
-            {t('equipment.startTracking')}
-          </p>
-          <Button onClick={handleAddNew}>
-            <Plus className="w-4 h-4 mr-2" />
-            {t('equipment.addEquipment')}
-          </Button>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Wrench className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">{t('equipment.noEquipmentYet')}</h3>
+            <p className="text-muted-foreground mb-6">
+              {t('equipment.startTracking')}
+            </p>
+            <Button onClick={handleAddNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              {t('equipment.addEquipment')}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <EquipmentDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          aquariumId={aquariumId}
+          equipment={editingEquipment}
+        />
+      </>
     );
   }
 
