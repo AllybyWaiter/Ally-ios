@@ -107,7 +107,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       _user_id: userId
     });
     
-    setPermissions(permsData || []);
+    // Extract permission names from the result
+    const permissionNames = permsData?.map((p: any) => p.permission_name || p) || [];
+    setPermissions(permissionNames);
     setLoading(false);
   };
 
