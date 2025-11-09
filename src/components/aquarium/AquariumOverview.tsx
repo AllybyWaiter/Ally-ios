@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions";
+import { formatRelativeTime } from "@/lib/formatters";
 
 interface AquariumOverviewProps {
   aquariumId: string;
@@ -104,7 +105,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
             {latestTest ? (
               <div>
                 <div className="text-2xl font-bold">
-                  {format(new Date(latestTest.test_date), "MMM d")}
+                  {formatRelativeTime(latestTest.test_date)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {latestTest.test_parameters?.length || 0} {t('overview.parametersLogged')}

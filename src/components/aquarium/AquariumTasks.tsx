@@ -25,6 +25,7 @@ import { Loader2, Plus, ListTodo, CheckCircle2, MoreVertical, Pencil, Trash2 } f
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
+import { formatRelativeTime, formatDate } from "@/lib/formatters";
 
 interface AquariumTasksProps {
   aquariumId: string;
@@ -241,7 +242,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <Badge variant="secondary">{task.task_type}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {t('tasks.due')} {format(new Date(task.due_date), "PPP")}
+                        {t('tasks.due')} {formatDate(task.due_date, 'PP')}
                       </p>
                       {task.notes && (
                         <p className="text-sm text-muted-foreground">{task.notes}</p>
@@ -310,7 +311,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <Badge variant="outline">Completed</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {t('tasks.completedDate')} {task.completed_date && format(new Date(task.completed_date), "PPP")}
+                        {t('tasks.completedDate')} {task.completed_date && formatRelativeTime(task.completed_date)}
                       </p>
                     </div>
                   </div>
