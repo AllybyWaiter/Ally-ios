@@ -35,6 +35,7 @@ interface UserWithRoles {
 }
 
 interface RoleStats {
+  super_admin: number;
   admin: number;
   moderator: number;
   editor: number;
@@ -59,7 +60,7 @@ export const RoleManager = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserWithRoles[]>([]);
-  const [roleStats, setRoleStats] = useState<RoleStats>({ admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 });
+  const [roleStats, setRoleStats] = useState<RoleStats>({ super_admin: 0, admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
@@ -120,7 +121,7 @@ export const RoleManager = () => {
       setFilteredUsers(usersWithRoles);
 
       // Calculate role statistics
-      const stats: RoleStats = { admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 };
+      const stats: RoleStats = { super_admin: 0, admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 };
       usersWithRoles.forEach(user => {
         user.roles.forEach(role => {
           if (role in stats) {
@@ -196,6 +197,20 @@ export const RoleManager = () => {
         return;
       }
 
+      // Check permissions for assigning admin/super_admin roles
+      const { data: currentUserRoles } = await (supabase as any)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id);
+
+      const isSuperAdmin = currentUserRoles?.some((r: any) => r.role === 'super_admin');
+
+      // Only super admins can assign super_admin or admin roles
+      if ((selectedRole === 'admin' || selectedRole === 'super_admin') && !isSuperAdmin) {
+        toast.error('Only super admins can assign admin or super admin roles');
+        return;
+      }
+
       // Insert new role
       const { error: insertError } = await (supabase as any)
         .from('user_roles')
@@ -230,10 +245,33 @@ export const RoleManager = () => {
     if (!selectedUser || !selectedRole || !currentUser) return;
 
     try {
+      // Check permissions for removing admin/super_admin roles
+      const { data: currentUserRoles } = await (supabase as any)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id);
+
+      const isSuperAdmin = currentUserRoles?.some((r: any) => r.role === 'super_admin');
+
+      // Only super admins can remove super_admin or admin roles
+      if ((selectedRole === 'admin' || selectedRole === 'super_admin') && !isSuperAdmin) {
+        toast.error('Only super admins can remove admin or super admin roles');
+        return;
+      }
+
+      // Check if this is the last super admin
+      if (selectedRole === 'super_admin') {
+        const superAdminCount = users.filter(u => u.roles.includes('super_admin')).length;
+        if (superAdminCount <= 1) {
+          toast.error('Cannot remove the last super admin role');
+          return;
+        }
+      }
+
       // Check if this is the last admin
       if (selectedRole === 'admin') {
         const adminCount = users.filter(u => u.roles.includes('admin')).length;
-        if (adminCount <= 1) {
+        if (adminCount <= 1 && !isSuperAdmin) {
           toast.error('Cannot remove the last admin role');
           return;
         }
@@ -279,7 +317,18 @@ export const RoleManager = () => {
   return (
     <div className="space-y-6">
       {/* Role Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Shield className="h-4 w-4 text-purple-600" />
+              Super Admins
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{roleStats.super_admin || 0}</div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -428,6 +477,7 @@ export const RoleManager = () => {
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="moderator">Moderator</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
