@@ -10,6 +10,7 @@ import { Send, Loader2, MessageSquare, Sparkles, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { TypingIndicator } from "@/components/TypingIndicator";
 
 interface Message {
   role: "user" | "assistant";
@@ -342,7 +343,7 @@ const AllyChat = () => {
             {isLoading && messages[messages.length - 1]?.content === "" && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-lg px-4 py-3 border">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <TypingIndicator />
                 </div>
               </div>
             )}
