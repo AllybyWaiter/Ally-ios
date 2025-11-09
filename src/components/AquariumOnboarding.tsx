@@ -120,13 +120,9 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
       if (aquariumError) throw aquariumError;
 
-      // Mark onboarding as complete
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ onboarding_completed: true })
-        .eq('user_id', user?.id);
-
-      if (profileError) throw profileError;
+      // Note: Preferences onboarding already set onboarding_completed to true
+      // This is just for the aquarium setup, so we don't need to update it again
+      console.log('Aquarium onboarding complete');
 
       toast({
         title: t('aquariumOnboarding.success'),

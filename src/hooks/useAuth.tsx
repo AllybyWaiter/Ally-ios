@@ -47,49 +47,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Log auth events to Sentry
         addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
         
-        // Check admin status and fetch profile
+        // Check admin status and fetch profile IMMEDIATELY (no setTimeout)
         if (session?.user) {
-          setTimeout(() => {
-            checkAdminStatus(session.user.id);
-            fetchUserProfile(session.user.id);
-          }, 0);
+          // Keep loading true while fetching profile
+          setLoading(true);
+          await checkAdminStatus(session.user.id);
+          await fetchUserProfile(session.user.id);
         } else {
           setIsAdmin(false);
           setUserName(null);
           setSubscriptionTier(null);
           setCanCreateCustomTemplates(false);
-      setThemePreference(null);
-      setLanguagePreference(null);
-      setUnitPreference(null);
-      setOnboardingCompleted(false);
+          setThemePreference(null);
+          setLanguagePreference(null);
+          setUnitPreference(null);
+          setOnboardingCompleted(false);
+          setRoles([]);
+          setPermissions([]);
           clearUserContext();
+          setLoading(false);
         }
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminStatus(session.user.id);
-        fetchUserProfile(session.user.id);
+        await checkAdminStatus(session.user.id);
+        await fetchUserProfile(session.user.id);
       } else {
         setLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
@@ -114,26 +130,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchUserProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (data) {
-      setUserName(data.name);
-      setSubscriptionTier(data.subscription_tier);
-      setThemePreference(data.theme_preference);
-      setLanguagePreference(data.language_preference);
-      setUnitPreference(data.unit_preference);
-      setOnboardingCompleted(data.onboarding_completed === true);
-      setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
+        .eq('user_id', userId)
+        .maybeSingle();
       
-      // Set user context in Sentry
-      setUserContext(userId, undefined, data.name || undefined);
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        setLoading(false);
+        return;
+      }
+      
+      if (data) {
+        setUserName(data.name);
+        setSubscriptionTier(data.subscription_tier);
+        setThemePreference(data.theme_preference);
+        setLanguagePreference(data.language_preference);
+        setUnitPreference(data.unit_preference);
+        // Explicitly check for true, treat null/undefined as false
+        setOnboardingCompleted(data.onboarding_completed === true);
+        setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
+        
+        // Set user context in Sentry
+        setUserContext(userId, undefined, data.name || undefined);
+        
+        console.log('Profile loaded - onboarding_completed:', data.onboarding_completed);
+      } else {
+        console.warn('No profile data found for user:', userId);
+      }
+    } catch (error) {
+      console.error('Exception fetching user profile:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const refreshProfile = async () => {
@@ -149,14 +180,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
     });
     
-    // Log login attempt
+    // Log login attempt (fire and forget, don't block)
     if (data?.user) {
-      setTimeout(() => {
-        logLoginHistory(data.user.id, !error, error?.message);
-        if (!error) {
-          logActivity({ actionType: 'login', userId: data.user.id });
-        }
-      }, 0);
+      logLoginHistory(data.user.id, !error, error?.message).catch(console.error);
+      if (!error) {
+        logActivity({ actionType: 'login', userId: data.user.id }).catch(console.error);
+      }
     }
     
     return { error };
@@ -185,11 +214,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     await supabase.auth.signOut();
     
-    // Log logout activity
+    // Log logout activity (fire and forget)
     if (currentUserId) {
-      setTimeout(() => {
-        logActivity({ actionType: 'logout', userId: currentUserId });
-      }, 0);
+      logActivity({ actionType: 'logout', userId: currentUserId }).catch(console.error);
     }
     
     setIsAdmin(false);
