@@ -4,12 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import { formatParameter, UnitSystem } from "@/lib/unitConversions";
 
 interface WaterTestHistoryProps {
   aquariumId: string;
 }
 
 export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
+  const { unitPreference } = useAuth();
+  
   const { data: tests, isLoading } = useQuery({
     queryKey: ["water-tests", aquariumId],
     queryFn: async () => {
@@ -78,10 +82,11 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
                 >
                   <div>
                     <p className="text-sm font-medium">{param.parameter_name}</p>
-                    <p className="text-xs text-muted-foreground">{param.unit}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold">{param.value}</p>
+                    <p className="text-lg font-bold">
+                      {formatParameter(param.value, param.unit, unitPreference as UnitSystem | null)}
+                    </p>
                     {param.status && param.status !== "normal" && (
                       <Badge variant="destructive" className="text-xs mt-1">
                         {param.status}

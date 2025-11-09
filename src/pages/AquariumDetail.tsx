@@ -16,10 +16,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { formatVolume, UnitSystem } from "@/lib/unitConversions";
 
 export default function AquariumDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { unitPreference } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -130,7 +133,7 @@ export default function AquariumDetail() {
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
             {aquarium.volume_gallons && (
-              <span>{aquarium.volume_gallons} gallons</span>
+              <span>{formatVolume(aquarium.volume_gallons, unitPreference as UnitSystem | null)}</span>
             )}
             {aquarium.setup_date && (
               <span>Setup: {format(new Date(aquarium.setup_date), "PPP")}</span>
