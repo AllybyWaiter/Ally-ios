@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { PreferencesOnboarding } from '@/components/PreferencesOnboarding';
+import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles } from 'lucide-react';
-import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import { AquariumDialog } from '@/components/aquarium/AquariumDialog';
@@ -25,11 +26,12 @@ interface Aquarium {
 }
 
 export default function Dashboard() {
-  const { user, unitPreference } = useAuth();
+  const { user, unitPreference, onboardingCompleted } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [showPreferencesOnboarding, setShowPreferencesOnboarding] = useState(false);
+  const [showAquariumOnboarding, setShowAquariumOnboarding] = useState(false);
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [upcomingTaskCount, setUpcomingTaskCount] = useState(0);
   const [aquariumDialogOpen, setAquariumDialogOpen] = useState(false);
@@ -42,39 +44,16 @@ export default function Dashboard() {
       navigate('/auth');
       return;
     }
-    checkOnboardingStatus();
-  }, [user, navigate]);
-
-  const checkOnboardingStatus = async () => {
-    try {
-      // Check if user has completed onboarding
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('onboarding_completed')
-        .eq('user_id', user?.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      if (!profile?.onboarding_completed) {
-        setNeedsOnboarding(true);
-        setLoading(false);
-        return;
-      }
-
-      // Load aquariums
-      await loadAquariums();
-    } catch (error: any) {
-      console.error('Error checking onboarding:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load dashboard',
-        variant: 'destructive',
-      });
-    } finally {
+    
+    // Check if preferences onboarding needs to be shown
+    if (!onboardingCompleted) {
+      setShowPreferencesOnboarding(true);
       setLoading(false);
+      return;
     }
-  };
+    
+    loadAquariums();
+  }, [user, navigate, onboardingCompleted]);
 
   const loadAquariums = async () => {
     try {
@@ -86,6 +65,11 @@ export default function Dashboard() {
 
       if (error) throw error;
       setAquariums(data || []);
+      
+      // Show aquarium onboarding if no aquariums exist
+      if (!data || data.length === 0) {
+        setShowAquariumOnboarding(true);
+      }
 
       // Load upcoming task count
       if (data && data.length > 0) {
@@ -111,8 +95,13 @@ export default function Dashboard() {
     }
   };
 
-  const handleOnboardingComplete = async () => {
-    setNeedsOnboarding(false);
+  const handlePreferencesComplete = async () => {
+    setShowPreferencesOnboarding(false);
+    await loadAquariums();
+  };
+
+  const handleAquariumOnboardingComplete = async () => {
+    setShowAquariumOnboarding(false);
     await loadAquariums();
   };
 
@@ -170,8 +159,23 @@ export default function Dashboard() {
     );
   }
 
-  if (needsOnboarding) {
-    return <AquariumOnboarding onComplete={handleOnboardingComplete} />;
+  // Show preferences onboarding if not completed
+  if (showPreferencesOnboarding && user) {
+    return (
+      <PreferencesOnboarding
+        userId={user.id}
+        onComplete={handlePreferencesComplete}
+      />
+    );
+  }
+
+  // Show aquarium onboarding if no aquariums
+  if (showAquariumOnboarding && user) {
+    return (
+      <AquariumOnboarding
+        onComplete={handleAquariumOnboardingComplete}
+      />
+    );
   }
 
   return (
