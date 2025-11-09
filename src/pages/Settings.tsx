@@ -24,6 +24,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(userName || "");
   const [units, setUnits] = useState(unitPreference || "imperial");
+  const [skillLevel, setSkillLevel] = useState<string>("beginner");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,6 +50,21 @@ const Settings = () => {
   }, [unitPreference]);
 
   useEffect(() => {
+    const fetchSkillLevel = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('skill_level')
+        .eq('user_id', user.id)
+        .single();
+      if (data?.skill_level) {
+        setSkillLevel(data.skill_level);
+      }
+    };
+    fetchSkillLevel();
+  }, [user]);
+
+  useEffect(() => {
     if (themePreference && theme !== themePreference) {
       setTheme(themePreference);
     }
@@ -67,7 +83,7 @@ const Settings = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ name })
+        .update({ name, skill_level: skillLevel })
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -327,7 +343,83 @@ const Settings = () => {
                   />
                 </div>
 
-                <Button 
+                <Separator />
+
+                <div className="space-y-3">
+                  <Label htmlFor="skill-level" className="text-sm font-semibold">Aquarium Experience Level</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    This helps Ally provide advice tailored to your experience level
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button
+                      onClick={() => setSkillLevel('beginner')}
+                      className={`relative group p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        skillLevel === 'beginner' 
+                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="text-2xl">🌱</div>
+                        <div className="text-center">
+                          <p className="font-semibold">Beginner</p>
+                          <p className="text-xs text-muted-foreground mt-1">Just starting out</p>
+                        </div>
+                      </div>
+                      {skillLevel === 'beginner' && (
+                        <div className="absolute top-2 right-2">
+                          <div className="h-3 w-3 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setSkillLevel('intermediate')}
+                      className={`relative group p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        skillLevel === 'intermediate' 
+                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="text-2xl">🐠</div>
+                        <div className="text-center">
+                          <p className="font-semibold">Intermediate</p>
+                          <p className="text-xs text-muted-foreground mt-1">Some experience</p>
+                        </div>
+                      </div>
+                      {skillLevel === 'intermediate' && (
+                        <div className="absolute top-2 right-2">
+                          <div className="h-3 w-3 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setSkillLevel('advanced')}
+                      className={`relative group p-4 rounded-xl border-2 transition-all hover:scale-105 ${
+                        skillLevel === 'advanced' 
+                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="text-2xl">🏆</div>
+                        <div className="text-center">
+                          <p className="font-semibold">Advanced</p>
+                          <p className="text-xs text-muted-foreground mt-1">Expert hobbyist</p>
+                        </div>
+                      </div>
+                      {skillLevel === 'advanced' && (
+                        <div className="absolute top-2 right-2">
+                          <div className="h-3 w-3 rounded-full bg-primary" />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <Button
                   onClick={handleUpdateProfile} 
                   disabled={loading}
                   className="w-full sm:w-auto h-11 px-8"
