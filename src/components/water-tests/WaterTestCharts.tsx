@@ -7,6 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Loader2 } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  fahrenheitToCelsius, 
+  getTemperatureUnit,
+  formatParameter
+} from "@/lib/unitConversions";
 
 interface WaterTestChartsProps {
   aquarium: {
@@ -19,6 +25,7 @@ interface WaterTestChartsProps {
 type DateRange = "7d" | "30d" | "90d" | "1y" | "all";
 
 export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
+  const { units } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [selectedParameter, setSelectedParameter] = useState<string>("pH");
 
@@ -50,7 +57,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Transform data for charts
+      // Transform data for charts with unit conversion
       const formattedData = data.map((test) => {
         const dataPoint: any = {
           date: format(new Date(test.test_date), "MMM dd"),
@@ -58,7 +65,15 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
         };
 
         test.test_parameters?.forEach((param: any) => {
-          dataPoint[param.parameter_name] = param.value;
+          let displayValue = param.value;
+          
+          // Convert temperature to user's preferred unit
+          if (param.unit === '°F' && units === 'metric') {
+            displayValue = fahrenheitToCelsius(param.value);
+          }
+          
+          dataPoint[param.parameter_name] = displayValue;
+          dataPoint[`${param.parameter_name}_unit`] = param.unit;
         });
 
         return dataPoint;
@@ -74,11 +89,26 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
       ? Array.from(
           new Set(
             chartData.flatMap((d) =>
-              Object.keys(d).filter((k) => k !== "date" && k !== "fullDate")
+              Object.keys(d).filter((k) => k !== "date" && k !== "fullDate" && !k.endsWith("_unit"))
             )
           )
         )
       : [];
+  
+  // Get the unit for the selected parameter
+  const getParameterUnit = () => {
+    if (!chartData || chartData.length === 0) return '';
+    const firstDataPoint = chartData.find(d => d[`${selectedParameter}_unit`]);
+    const storedUnit = firstDataPoint?.[`${selectedParameter}_unit`] || '';
+    
+    // Convert unit display based on user preference
+    if (storedUnit === '°F') {
+      return getTemperatureUnit(units);
+    }
+    return storedUnit;
+  };
+  
+  const parameterUnit = getParameterUnit();
 
   if (isLoading) {
     return (
@@ -145,7 +175,14 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
       {/* Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>{selectedParameter} Over Time</CardTitle>
+          <CardTitle>
+            {selectedParameter} Over Time
+            {parameterUnit && (
+              <span className="text-sm text-muted-foreground ml-2">
+                ({parameterUnit})
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
@@ -159,12 +196,21 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
               <YAxis
                 className="text-xs"
                 tick={{ fill: "hsl(var(--muted-foreground))" }}
+                label={{ 
+                  value: parameterUnit, 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { fill: "hsl(var(--muted-foreground))", fontSize: 12 }
+                }}
               />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "8px",
+                }}
+                formatter={(value: number) => {
+                  return [`${value.toFixed(2)} ${parameterUnit}`, selectedParameter];
                 }}
               />
               <Legend />
@@ -174,6 +220,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 dot={{ fill: "hsl(var(--primary))" }}
+                name={`${selectedParameter} (${parameterUnit})`}
               />
             </LineChart>
           </ResponsiveContainer>

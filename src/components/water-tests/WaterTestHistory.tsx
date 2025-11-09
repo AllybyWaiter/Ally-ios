@@ -12,7 +12,7 @@ interface WaterTestHistoryProps {
 }
 
 export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
-  const { unitPreference } = useAuth();
+  const { units } = useAuth();
   
   const { data: tests, isLoading } = useQuery({
     queryKey: ["water-tests", aquariumId],
@@ -85,7 +85,7 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold">
-                      {formatParameter(param.value, param.unit, unitPreference as UnitSystem | null)}
+                      {formatParameter(param.value, param.unit, units)}
                     </p>
                     {param.status && param.status !== "normal" && (
                       <Badge variant="destructive" className="text-xs mt-1">
