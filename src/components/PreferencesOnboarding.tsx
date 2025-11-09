@@ -35,13 +35,14 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
     setIsLoading(true);
 
     try {
-      // Update profile with preferences
+      // Update profile with preferences AND mark onboarding as complete
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           unit_preference: unitPreference,
           theme_preference: themePreference,
           language_preference: languagePreference,
+          onboarding_completed: true,
         })
         .eq('user_id', userId);
 
