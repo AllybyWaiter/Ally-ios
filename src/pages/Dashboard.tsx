@@ -95,6 +95,8 @@ export default function Dashboard() {
         description: t('dashboard.failedToLoad'),
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
