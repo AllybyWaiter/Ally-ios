@@ -84,8 +84,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session?.user) {
         checkAdminStatus(session.user.id);
         fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -110,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Extract permission names from the result
     const permissionNames = permsData?.map((p: any) => p.permission_name || p) || [];
     setPermissions(permissionNames);
-    setLoading(false);
   };
 
   const fetchUserProfile = async (userId: string) => {
@@ -132,6 +132,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Set user context in Sentry
       setUserContext(userId, undefined, data.name || undefined);
     }
+    
+    setLoading(false);
   };
 
   const refreshProfile = async () => {
