@@ -51,6 +51,7 @@ export default {
       backgroundImage: {
         'gradient-water': 'var(--gradient-water)',
         'gradient-hero': 'var(--gradient-hero)',
+        'gradient-primary': 'var(--gradient-primary)',
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
