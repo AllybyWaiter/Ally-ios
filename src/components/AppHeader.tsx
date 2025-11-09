@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from "react-i18next";
 import { Bell, Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
@@ -16,6 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const AppHeader = () => {
   const { user, userName, signOut } = useAuth();
   const location = useLocation();
+  const { t } = useTranslation();
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -47,7 +49,7 @@ const AppHeader = () => {
               variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
               size="sm"
             >
-              Dashboard
+              {t('navigation.dashboard')}
             </Button>
           </Link>
           <Link to="/chat">
@@ -55,7 +57,7 @@ const AppHeader = () => {
               variant={location.pathname === "/chat" ? "secondary" : "ghost"}
               size="sm"
             >
-              Chat with Ally
+              {t('navigation.chatWithAlly')}
             </Button>
           </Link>
           <Link to="/water-tests">
@@ -63,7 +65,7 @@ const AppHeader = () => {
               variant={location.pathname === "/water-tests" ? "secondary" : "ghost"}
               size="sm"
             >
-              Water Tests
+              {t('navigation.waterTests')}
             </Button>
           </Link>
           <Link to="/calendar">
@@ -71,7 +73,7 @@ const AppHeader = () => {
               variant={location.pathname === "/calendar" ? "secondary" : "ghost"}
               size="sm"
             >
-              Calendar
+              {t('navigation.calendar')}
             </Button>
           </Link>
         </nav>
@@ -105,13 +107,13 @@ const AppHeader = () => {
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  {t('navigation.settings')}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+                {t('navigation.signOut')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
