@@ -652,7 +652,10 @@ export type Database = {
           name: string | null
           onboarding_completed: boolean | null
           skill_level: string | null
+          status: string
           subscription_tier: string | null
+          suspended_until: string | null
+          suspension_reason: string | null
           theme_preference: string | null
           unit_preference: string | null
           updated_at: string
@@ -666,7 +669,10 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           skill_level?: string | null
+          status?: string
           subscription_tier?: string | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
           theme_preference?: string | null
           unit_preference?: string | null
           updated_at?: string
@@ -680,7 +686,10 @@ export type Database = {
           name?: string | null
           onboarding_completed?: boolean | null
           skill_level?: string | null
+          status?: string
           subscription_tier?: string | null
+          suspended_until?: string | null
+          suspension_reason?: string | null
           theme_preference?: string | null
           unit_preference?: string | null
           updated_at?: string
@@ -972,6 +981,7 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_user_active: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
