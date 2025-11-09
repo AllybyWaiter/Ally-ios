@@ -31,6 +31,8 @@ import { useToast } from "@/hooks/use-toast";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface Message {
   role: "user" | "assistant";
@@ -766,8 +768,49 @@ const AllyChat = () => {
                         message.role === "user" ? "text-right" : "text-left"
                       )}>
                         {message.role === "assistant" ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
+                            <ReactMarkdown
+                              components={{
+                                code({ node, inline, className, children, ...props }: any) {
+                                  const match = /language-(\w+)/.exec(className || '');
+                                  return !inline && match ? (
+                                    <SyntaxHighlighter
+                                      style={oneDark}
+                                      language={match[1]}
+                                      PreTag="div"
+                                      className="rounded-md my-2 text-sm"
+                                      customStyle={{
+                                        margin: 0,
+                                        borderRadius: '0.375rem',
+                                        fontSize: '0.875rem',
+                                      }}
+                                      {...props}
+                                    >
+                                      {String(children).replace(/\n$/, '')}
+                                    </SyntaxHighlighter>
+                                  ) : (
+                                    <code className={cn("bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono", className)} {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                },
+                                p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
+                                ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
+                                ol: ({ children }) => <ol className="space-y-1 my-2">{children}</ol>,
+                                li: ({ children }) => <li className="ml-4">{children}</li>,
+                                h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-lg font-semibold mt-3 mb-2">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
+                                strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                                blockquote: ({ children }) => (
+                                  <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2">
+                                    {children}
+                                  </blockquote>
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
                           </div>
                         ) : editingIndex === index ? (
                           <div className="space-y-2">
