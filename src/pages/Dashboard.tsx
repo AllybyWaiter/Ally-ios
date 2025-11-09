@@ -225,7 +225,7 @@ export default function Dashboard() {
         </div>
 
         {/* Chat with Ally CTA */}
-        <Card className="mb-8 bg-primary border-none">
+        <Card className="mb-8 bg-gradient-primary border-none">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

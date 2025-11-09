@@ -11,12 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Lock, CreditCard, Trash2 } from "lucide-react";
+import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const Settings = () => {
   const { user, userName, subscriptionTier, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(userName || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -151,10 +153,14 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="flex items-center gap-2">
+              <Moon className="h-4 w-4" />
+              Appearance
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Lock className="h-4 w-4" />
@@ -203,6 +209,65 @@ const Settings = () => {
                 <Button onClick={handleUpdateProfile} disabled={loading}>
                   {loading ? "Saving..." : "Save Changes"}
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="appearance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Appearance</CardTitle>
+                <CardDescription>
+                  Customize how the app looks on your device
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <Label>Theme</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Select the theme for the app interface
+                  </p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Card 
+                      className={`cursor-pointer transition-all hover:border-primary ${theme === 'light' ? 'border-primary shadow-md' : ''}`}
+                      onClick={() => setTheme('light')}
+                    >
+                      <CardContent className="p-6 flex flex-col items-center gap-3">
+                        <Sun className="h-8 w-8" />
+                        <div className="text-center">
+                          <p className="font-medium">Light</p>
+                          <p className="text-xs text-muted-foreground">Bright theme</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card 
+                      className={`cursor-pointer transition-all hover:border-primary ${theme === 'dark' ? 'border-primary shadow-md' : ''}`}
+                      onClick={() => setTheme('dark')}
+                    >
+                      <CardContent className="p-6 flex flex-col items-center gap-3">
+                        <Moon className="h-8 w-8" />
+                        <div className="text-center">
+                          <p className="font-medium">Dark</p>
+                          <p className="text-xs text-muted-foreground">Dark theme</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card 
+                      className={`cursor-pointer transition-all hover:border-primary ${theme === 'system' ? 'border-primary shadow-md' : ''}`}
+                      onClick={() => setTheme('system')}
+                    >
+                      <CardContent className="p-6 flex flex-col items-center gap-3">
+                        <Monitor className="h-8 w-8" />
+                        <div className="text-center">
+                          <p className="font-medium">System</p>
+                          <p className="text-xs text-muted-foreground">Auto theme</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
