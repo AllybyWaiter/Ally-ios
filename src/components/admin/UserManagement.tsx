@@ -28,6 +28,9 @@ interface UserProfile {
   language_preference: string;
   unit_preference: string;
   onboarding_completed: boolean;
+  status: string;
+  suspended_until: string | null;
+  suspension_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -48,6 +51,11 @@ export default function UserManagement() {
   const [bulkEmailMessage, setBulkEmailMessage] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingUser, setDeletingUser] = useState<UserProfile | null>(null);
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [suspendingUser, setSuspendingUser] = useState<UserProfile | null>(null);
+  const [suspensionType, setSuspensionType] = useState<'suspend' | 'ban'>('suspend');
+  const [suspensionReason, setSuspensionReason] = useState('');
+  const [suspensionDuration, setSuspensionDuration] = useState<string>('7');
 
   useEffect(() => {
     fetchUsers();
@@ -235,6 +243,93 @@ export default function UserManagement() {
     setDeleteDialogOpen(true);
   };
 
+  const handleSuspendUser = (user: UserProfile) => {
+    setSuspendingUser(user);
+    setSuspensionType('suspend');
+    setSuspensionReason('');
+    setSuspensionDuration('7');
+    setSuspendDialogOpen(true);
+  };
+
+  const handleBanUser = (user: UserProfile) => {
+    setSuspendingUser(user);
+    setSuspensionType('ban');
+    setSuspensionReason('');
+    setSuspendDialogOpen(true);
+  };
+
+  const handleReactivateUser = async (user: UserProfile) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          status: 'active',
+          suspended_until: null,
+          suspension_reason: null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'User reactivated successfully',
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reactivate user',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const confirmSuspendUser = async () => {
+    if (!suspendingUser) return;
+
+    try {
+      const updates: any = {
+        status: suspensionType === 'ban' ? 'banned' : 'suspended',
+        suspension_reason: suspensionReason,
+      };
+
+      if (suspensionType === 'suspend' && suspensionDuration) {
+        const days = parseInt(suspensionDuration);
+        const suspendedUntil = new Date();
+        suspendedUntil.setDate(suspendedUntil.getDate() + days);
+        updates.suspended_until = suspendedUntil.toISOString();
+      } else {
+        updates.suspended_until = null;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', suspendingUser.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `User ${suspensionType === 'ban' ? 'banned' : 'suspended'} successfully`,
+      });
+
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || `Failed to ${suspensionType} user`,
+        variant: 'destructive',
+      });
+    } finally {
+      setSuspendDialogOpen(false);
+      setSuspendingUser(null);
+      setSuspensionReason('');
+    }
+  };
+
   const confirmDeleteUser = async () => {
     if (!deletingUser) return;
 
@@ -295,6 +390,29 @@ export default function UserManagement() {
       enterprise: 'default',
     };
     return <Badge variant={variants[tier] || 'outline'}>{tier}</Badge>;
+  };
+
+  const getStatusBadge = (status: string, suspended_until: string | null) => {
+    if (status === 'active') {
+      return <Badge variant="default" className="bg-green-500">Active</Badge>;
+    } else if (status === 'suspended') {
+      const until = suspended_until ? new Date(suspended_until) : null;
+      const isPermanent = !until;
+      const isExpired = until && until <= new Date();
+      
+      if (isExpired) {
+        return <Badge variant="default" className="bg-green-500">Active</Badge>;
+      }
+      
+      return (
+        <Badge variant="destructive">
+          Suspended {isPermanent ? '(Permanent)' : `until ${formatDate(suspended_until!, 'PP')}`}
+        </Badge>
+      );
+    } else if (status === 'banned') {
+      return <Badge variant="destructive" className="bg-red-600">Banned</Badge>;
+    }
+    return <Badge variant="outline">{status}</Badge>;
   };
 
   if (loading) {
@@ -435,11 +553,11 @@ export default function UserManagement() {
                   />
                 </TableHead>
                 <TableHead>User</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Tier</TableHead>
                 <TableHead>Skill Level</TableHead>
                 <TableHead>Onboarded</TableHead>
                 <TableHead>Joined</TableHead>
-                <TableHead>Last Updated</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -456,8 +574,14 @@ export default function UserManagement() {
                     <div>
                       <div className="font-medium">{user.name || 'No name'}</div>
                       <div className="text-sm text-muted-foreground">{user.email}</div>
+                      {user.suspension_reason && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Reason: {user.suspension_reason}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
+                  <TableCell>{getStatusBadge(user.status, user.suspended_until)}</TableCell>
                   <TableCell>{getTierBadge(user.subscription_tier)}</TableCell>
                   <TableCell className="capitalize">{user.skill_level}</TableCell>
                   <TableCell>
@@ -468,9 +592,8 @@ export default function UserManagement() {
                     )}
                   </TableCell>
                   <TableCell>{formatDate(user.created_at, 'PP')}</TableCell>
-                  <TableCell>{formatDate(user.updated_at, 'PP')}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -479,14 +602,45 @@ export default function UserManagement() {
                         <Edit className="h-4 w-4" />
                       </Button>
                       {isSuperAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteUser(user)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <>
+                          {user.status === 'active' ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSuspendUser(user)}
+                                className="text-orange-500 hover:text-orange-600"
+                              >
+                                Suspend
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleBanUser(user)}
+                                className="text-red-500 hover:text-red-600"
+                              >
+                                Ban
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReactivateUser(user)}
+                              className="text-green-500 hover:text-green-600"
+                            >
+                              Reactivate
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteUser(user)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -652,6 +806,63 @@ export default function UserManagement() {
             <Button onClick={sendBulkEmail} disabled={!bulkEmailSubject || !bulkEmailMessage}>
               <Mail className="mr-2 h-4 w-4" />
               Send Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend/Ban User Dialog */}
+      <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{suspensionType === 'ban' ? 'Ban User' : 'Suspend User'}</DialogTitle>
+            <DialogDescription>
+              {suspensionType === 'ban' 
+                ? `Permanently ban ${suspendingUser?.name || suspendingUser?.email} from accessing the platform.`
+                : `Temporarily suspend ${suspendingUser?.name || suspendingUser?.email} from accessing the platform.`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {suspensionType === 'suspend' && (
+              <div className="space-y-2">
+                <Label htmlFor="duration">Suspension Duration</Label>
+                <Select value={suspensionDuration} onValueChange={setSuspensionDuration}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 day</SelectItem>
+                    <SelectItem value="3">3 days</SelectItem>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason</Label>
+              <Textarea
+                id="reason"
+                value={suspensionReason}
+                onChange={(e) => setSuspensionReason(e.target.value)}
+                placeholder="Enter reason for suspension/ban..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuspendDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={confirmSuspendUser} 
+              disabled={!suspensionReason}
+              className={suspensionType === 'ban' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'}
+            >
+              {suspensionType === 'ban' ? 'Ban User' : 'Suspend User'}
             </Button>
           </DialogFooter>
         </DialogContent>

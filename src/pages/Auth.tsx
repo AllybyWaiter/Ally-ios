@@ -86,7 +86,15 @@ export default function Auth() {
         });
         setErrors(fieldErrors);
       } else if (error?.message) {
-        if (error.message.includes('Invalid login credentials')) {
+        // Handle suspension and ban errors prominently
+        if (error.message.includes('suspended') || error.message.includes('banned')) {
+          toast({
+            title: 'Account Access Restricted',
+            description: error.message,
+            variant: 'destructive',
+            duration: 10000, // Show for longer
+          });
+        } else if (error.message.includes('Invalid login credentials')) {
           toast({
             title: 'Error',
             description: 'Invalid email or password',
