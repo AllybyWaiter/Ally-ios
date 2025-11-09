@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Loader2 } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from "@/hooks/useAuth";
+import { useTranslation } from 'react-i18next';
+import { formatDecimal } from '@/lib/formatters';
 import { 
   fahrenheitToCelsius, 
   getTemperatureUnit,
@@ -210,7 +212,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
                   borderRadius: "8px",
                 }}
                 formatter={(value: number) => {
-                  return [`${value.toFixed(2)} ${parameterUnit}`, selectedParameter];
+                  return [`${formatDecimal(value, 2)} ${parameterUnit}`, selectedParameter];
                 }}
               />
               <Legend />

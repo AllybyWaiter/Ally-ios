@@ -3,6 +3,7 @@ import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
+import { formatDecimal } from '@/lib/formatters';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -249,7 +250,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                           id={param.name}
                           type="number"
                           step="0.01"
-                          placeholder={`${displayMin.toFixed(1)} - ${displayMax.toFixed(1)}`}
+                          placeholder={`${formatDecimal(displayMin, 1)} - ${formatDecimal(displayMax, 1)}`}
                           value={value}
                           onChange={(e) =>
                             setParameters({ ...parameters, [param.name]: e.target.value })

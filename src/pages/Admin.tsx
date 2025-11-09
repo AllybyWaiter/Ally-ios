@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
+import { formatDate } from '@/lib/formatters';
 
 interface WaitlistEntry {
   id: string;
@@ -233,7 +234,7 @@ export default function Admin() {
                     {filteredWaitlist.map((entry) => (
                       <TableRow key={entry.id}>
                         <TableCell className="font-medium">{entry.email}</TableCell>
-                        <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
@@ -291,7 +292,7 @@ export default function Admin() {
                         <TableCell className="font-medium">{entry.name}</TableCell>
                         <TableCell>{entry.email}</TableCell>
                         <TableCell className="max-w-md truncate">{entry.message}</TableCell>
-                        <TableCell>{new Date(entry.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"

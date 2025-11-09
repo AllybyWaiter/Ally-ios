@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
+import { formatDecimal } from '@/lib/formatters';
 
 interface AnimatedCounterProps {
   end: number;
@@ -68,7 +69,7 @@ const AnimatedCounter = ({
   return (
     <span ref={elementRef}>
       {prefix}
-      {count.toFixed(decimals)}
+      {formatDecimal(count, decimals)}
       {suffix}
     </span>
   );
