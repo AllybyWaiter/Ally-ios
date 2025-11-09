@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
+import { formatDate } from '@/lib/formatters';
 
 interface Aquarium {
   id: string;
@@ -331,7 +332,7 @@ export default function Dashboard() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t('dashboard.setupDate')}</span>
                         <span className="font-medium">
-                          {new Date(aquarium.setup_date).toLocaleDateString()}
+                          {formatDate(aquarium.setup_date, 'PP')}
                         </span>
                       </div>
                     </div>

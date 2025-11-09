@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { formatDate } from "@/lib/formatters";
 
 const TermsOfService = () => {
   return (
@@ -7,7 +8,7 @@ const TermsOfService = () => {
       <Navbar />
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8 text-foreground">Terms of Service</h1>
-        <p className="text-muted-foreground mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+        <p className="text-muted-foreground mb-8">Last updated: {formatDate(new Date(), 'PPP')}</p>
         
         <div className="space-y-8 text-foreground/90">
           <section>

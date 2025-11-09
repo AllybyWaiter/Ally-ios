@@ -1,4 +1,5 @@
-// Unit conversion utilities
+// Unit conversion utilities for aquarium measurements
+import { formatDecimal } from './formatters';
 
 export type UnitSystem = 'metric' | 'imperial';
 
@@ -17,17 +18,17 @@ export const formatTemperature = (value: number, units: UnitSystem | null, store
   // If stored in Celsius
   if (storedUnit === 'C') {
     if (unitSystem === 'metric') {
-      return `${value.toFixed(1)}°C`;
+      return `${formatDecimal(value, 1)}°C`;
     } else {
-      return `${celsiusToFahrenheit(value).toFixed(1)}°F`;
+      return `${formatDecimal(celsiusToFahrenheit(value), 1)}°F`;
     }
   }
   
   // If stored in Fahrenheit
   if (unitSystem === 'metric') {
-    return `${fahrenheitToCelsius(value).toFixed(1)}°C`;
+    return `${formatDecimal(fahrenheitToCelsius(value), 1)}°C`;
   } else {
-    return `${value.toFixed(1)}°F`;
+    return `${formatDecimal(value, 1)}°F`;
   }
 };
 
@@ -44,9 +45,9 @@ export const formatVolume = (gallons: number, units: UnitSystem | null): string 
   const unitSystem = units || 'imperial';
   
   if (unitSystem === 'metric') {
-    return `${gallonsToLiters(gallons).toFixed(1)} L`;
+    return `${formatDecimal(gallonsToLiters(gallons), 1)} L`;
   } else {
-    return `${gallons.toFixed(1)} gal`;
+    return `${formatDecimal(gallons, 1)} gal`;
   }
 };
 
@@ -63,9 +64,9 @@ export const formatLength = (inches: number, units: UnitSystem | null): string =
   const unitSystem = units || 'imperial';
   
   if (unitSystem === 'metric') {
-    return `${inchesToCentimeters(inches).toFixed(1)} cm`;
+    return `${formatDecimal(inchesToCentimeters(inches), 1)} cm`;
   } else {
-    return `${inches.toFixed(1)} in`;
+    return `${formatDecimal(inches, 1)} in`;
   }
 };
 
@@ -102,7 +103,7 @@ export const formatParameter = (
   }
   
   // For parameters that don't need conversion (pH, ppm, etc.)
-  return `${value.toFixed(2)} ${unit}`;
+  return `${formatDecimal(value, 2)} ${unit}`;
 };
 
 // Get temperature unit label
