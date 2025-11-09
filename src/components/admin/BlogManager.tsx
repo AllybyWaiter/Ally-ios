@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/formatters';
+import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Eye, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +32,13 @@ export default function BlogManager() {
 
   useEffect(() => {
     fetchPosts();
+    
+    // Auto-refresh every minute to update scheduled posts
+    const interval = setInterval(() => {
+      fetchPosts();
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchPosts = async () => {
@@ -76,11 +84,13 @@ export default function BlogManager() {
   };
 
   const getStatusBadge = (status: string) => {
-    return status === 'published' ? (
-      <Badge variant="default">Published</Badge>
-    ) : (
-      <Badge variant="secondary">Draft</Badge>
-    );
+    if (status === 'published') {
+      return <Badge variant="default">Published</Badge>;
+    } else if (status === 'scheduled') {
+      return <Badge variant="outline">Scheduled</Badge>;
+    } else {
+      return <Badge variant="secondary">Draft</Badge>;
+    }
   };
 
   if (loading) {
@@ -95,6 +105,7 @@ export default function BlogManager() {
     total: posts.length,
     published: posts.filter(p => p.status === 'published').length,
     draft: posts.filter(p => p.status === 'draft').length,
+    scheduled: posts.filter(p => p.status === 'scheduled').length,
     totalViews: posts.reduce((sum, p) => sum + p.view_count, 0),
   };
 
@@ -128,10 +139,10 @@ export default function BlogManager() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalViews}</div>
+            <div className="text-2xl font-bold">{stats.scheduled}</div>
           </CardContent>
         </Card>
       </div>
@@ -157,7 +168,7 @@ export default function BlogManager() {
                 <TableHead>Title</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Views</TableHead>
-                <TableHead>Published</TableHead>
+                <TableHead>Date</TableHead>
                 <TableHead>Tags</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -183,7 +194,15 @@ export default function BlogManager() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {post.published_at ? formatDate(post.published_at, 'PP') : '-'}
+                    {post.status === 'scheduled' && post.published_at ? (
+                      <span className="text-orange-600 dark:text-orange-400 text-sm">
+                        {format(new Date(post.published_at), 'MMM d, yyyy h:mm a')}
+                      </span>
+                    ) : post.published_at ? (
+                      formatDate(post.published_at, 'PP')
+                    ) : (
+                      '-'
+                    )}
                   </TableCell>
                   <TableCell>
                     {post.tags && post.tags.length > 0 ? (

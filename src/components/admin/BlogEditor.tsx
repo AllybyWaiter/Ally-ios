@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Eye, Upload, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, X, Sparkles, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { z } from 'zod';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +22,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const blogPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
@@ -43,6 +51,8 @@ export default function BlogEditor() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [aiTopic, setAiTopic] = useState('');
+  const [scheduleDate, setScheduleDate] = useState<Date>();
+  const [scheduleTime, setScheduleTime] = useState('12:00');
   const [featuredImage, setFeaturedImage] = useState<File | null>(null);
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -284,7 +294,7 @@ export default function BlogEditor() {
     }
   };
 
-  const handleSave = async (publish: boolean = false) => {
+  const handleSave = async (publish: boolean = false, schedule: boolean = false) => {
     try {
       setSaving(true);
       
@@ -296,6 +306,41 @@ export default function BlogEditor() {
         ? validatedData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
         : [];
 
+      let status = 'draft';
+      let publishedAt = null;
+
+      if (schedule) {
+        if (!scheduleDate) {
+          toast({
+            title: 'Error',
+            description: 'Please select a schedule date',
+            variant: 'destructive',
+          });
+          setSaving(false);
+          return;
+        }
+        
+        const [hours, minutes] = scheduleTime.split(':');
+        const scheduledDateTime = new Date(scheduleDate);
+        scheduledDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+        if (scheduledDateTime <= new Date()) {
+          toast({
+            title: 'Error',
+            description: 'Schedule date must be in the future',
+            variant: 'destructive',
+          });
+          setSaving(false);
+          return;
+        }
+
+        status = 'scheduled';
+        publishedAt = scheduledDateTime.toISOString();
+      } else if (publish) {
+        status = 'published';
+        publishedAt = new Date().toISOString();
+      }
+
       const postData = {
         title: validatedData.title,
         slug: validatedData.slug,
@@ -305,8 +350,8 @@ export default function BlogEditor() {
         seo_title: validatedData.seo_title || null,
         seo_description: validatedData.seo_description || null,
         tags: tags.length > 0 ? tags : null,
-        status: publish ? 'published' : 'draft',
-        published_at: publish ? new Date().toISOString() : null,
+        status,
+        published_at: publishedAt,
         author_id: user?.id,
       };
 
@@ -325,9 +370,10 @@ export default function BlogEditor() {
         if (error) throw error;
       }
 
+      const actionText = schedule ? 'scheduled' : (publish ? 'published' : 'saved as draft');
       toast({
         title: 'Success',
-        description: `Post ${isEditing ? 'updated' : 'created'} successfully`,
+        description: `Post ${actionText} successfully`,
       });
 
       navigate('/admin');
@@ -420,13 +466,68 @@ export default function BlogEditor() {
             <Sparkles className="mr-2 h-4 w-4" />
             Generate SEO
           </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" disabled={saving}>
+                <Clock className="mr-2 h-4 w-4" />
+                Schedule
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Publication Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !scheduleDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {scheduleDate ? format(scheduleDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={scheduleDate}
+                        onSelect={setScheduleDate}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="schedule-time">Time</Label>
+                  <Input
+                    id="schedule-time"
+                    type="time"
+                    value={scheduleTime}
+                    onChange={(e) => setScheduleTime(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={() => handleSave(false, true)} 
+                  disabled={saving || !scheduleDate}
+                  className="w-full"
+                >
+                  Schedule Post
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             Save Draft
           </Button>
           <Button onClick={() => handleSave(true)} disabled={saving}>
             <Eye className="mr-2 h-4 w-4" />
-            Publish
+            Publish Now
           </Button>
         </div>
       </div>
