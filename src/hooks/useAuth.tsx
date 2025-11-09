@@ -17,6 +17,7 @@ interface AuthContextType {
   units: UnitSystem | null;
   onboardingCompleted: boolean;
   loading: boolean;
+  refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -115,6 +116,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshProfile = async () => {
+    if (user?.id) {
+      await fetchUserProfile(user.id);
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     addBreadcrumb('User attempting sign in', 'auth', undefined, FeatureArea.AUTH);
     const { error } = await supabase.auth.signInWithPassword({
@@ -168,7 +175,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       unitPreference, 
       units: (unitPreference as UnitSystem) || 'imperial',
       onboardingCompleted, 
-      loading, 
+      loading,
+      refreshProfile,
       signIn, 
       signUp, 
       signOut 

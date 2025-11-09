@@ -7,6 +7,7 @@ import { Settings, Thermometer, Languages, Ruler, Moon, Sun, Monitor } from 'luc
 import logo from '@/assets/logo.png';
 import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PreferencesOnboardingProps {
   userId: string;
@@ -19,6 +20,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const { toast } = useToast();
   const { setTheme } = useTheme();
   const { i18n, t } = useTranslation();
+  const { refreshProfile } = useAuth();
 
   // Preferences state
   const [unitPreference, setUnitPreference] = useState<'metric' | 'imperial'>('imperial');
@@ -51,6 +53,9 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
       // Apply preferences immediately
       setTheme(themePreference);
       i18n.changeLanguage(languagePreference);
+
+      // Refresh the auth profile to update onboarding_completed in context
+      await refreshProfile();
 
       toast({
         title: t('preferencesOnboarding.success'),
