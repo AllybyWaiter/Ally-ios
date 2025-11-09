@@ -80,7 +80,7 @@ export const MaintenanceTaskDialog = ({
   mode = "create",
 }: MaintenanceTaskDialogProps) => {
   const [loading, setLoading] = useState(false);
-  const [equipment, setEquipment] = useState<Array<{ id: string; name: string }>>([]);
+  const [equipment, setEquipment] = useState<Array<{ id: string; name: string; equipment_type: string }>>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -100,7 +100,7 @@ export const MaintenanceTaskDialog = ({
     const loadEquipment = async () => {
       const { data } = await supabase
         .from("equipment")
-        .select("id, name")
+        .select("id, name, equipment_type")
         .eq("aquarium_id", aquariumId);
       setEquipment(data || []);
     };
@@ -108,6 +108,40 @@ export const MaintenanceTaskDialog = ({
       loadEquipment();
     }
   }, [aquariumId, open]);
+
+  // Auto-associate equipment based on task type
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "task_type" && value.task_type && equipment.length > 0) {
+        const taskType = value.task_type;
+
+        // Mapping of task types to equipment types
+        const taskToEquipmentMap: Record<string, string[]> = {
+          filter_cleaning: ["Filter"],
+          dosing: ["Dosing Pump"],
+          equipment_maintenance: [], // Will show all equipment
+        };
+
+        const matchingTypes = taskToEquipmentMap[taskType];
+        if (!matchingTypes) return;
+
+        // Find equipment matching the task type
+        const matchingEquipment = equipment.filter((item) =>
+          matchingTypes.some((type) => item.equipment_type?.includes(type))
+        );
+
+        // Auto-select if there's exactly one match
+        if (matchingEquipment.length === 1) {
+          form.setValue("equipment_id", matchingEquipment[0].id);
+        } else if (matchingEquipment.length === 0 && matchingTypes.length > 0) {
+          // Clear selection if no match for specific task types
+          form.setValue("equipment_id", "");
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [equipment, form]);
 
   // Load task data if editing
   useEffect(() => {
@@ -300,7 +334,7 @@ export const MaintenanceTaskDialog = ({
                         <SelectItem value="">None</SelectItem>
                         {equipment.map((item) => (
                           <SelectItem key={item.id} value={item.id}>
-                            {item.name}
+                            {item.name} ({item.equipment_type})
                           </SelectItem>
                         ))}
                       </SelectContent>
