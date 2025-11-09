@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const userRoles = rolesData?.map(r => r.role) || [];
     setRoles(userRoles);
-    setIsAdmin(userRoles.includes('admin'));
+    setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
     
     // Fetch permissions
     const { data: permsData } = await (supabase as any).rpc('get_user_permissions', {
