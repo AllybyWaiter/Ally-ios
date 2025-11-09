@@ -16,7 +16,7 @@ import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
 const Settings = () => {
-  const { user, userName, subscriptionTier, unitPreference, signOut } = useAuth();
+  const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -45,6 +45,20 @@ const Settings = () => {
       setUnits(unitPreference);
     }
   }, [unitPreference]);
+
+  // Sync theme preference from database on mount
+  useEffect(() => {
+    if (themePreference && theme !== themePreference) {
+      setTheme(themePreference);
+    }
+  }, [themePreference]);
+
+  // Sync language preference from database on mount
+  useEffect(() => {
+    if (languagePreference && i18n.language !== languagePreference) {
+      i18n.changeLanguage(languagePreference);
+    }
+  }, [languagePreference]);
 
   const handleUpdateProfile = async () => {
     if (!user) return;
