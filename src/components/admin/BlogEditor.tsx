@@ -28,6 +28,7 @@ const blogPostSchema = z.object({
   slug: z.string().min(1, 'Slug is required').max(200, 'Slug must be less than 200 characters').regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   excerpt: z.string().max(300, 'Excerpt must be less than 300 characters').optional(),
   content: z.string().min(1, 'Content is required'),
+  author_name: z.string().min(1, 'Author name is required').max(100, 'Author name must be less than 100 characters'),
   seo_title: z.string().max(60, 'SEO title must be less than 60 characters').optional(),
   seo_description: z.string().max(160, 'SEO description must be less than 160 characters').optional(),
   tags: z.string().optional(),
@@ -54,6 +55,7 @@ export default function BlogEditor() {
     slug: '',
     excerpt: '',
     content: '',
+    author_name: '',
     featured_image_url: '',
     seo_title: '',
     seo_description: '',
@@ -95,6 +97,7 @@ export default function BlogEditor() {
         slug: data.slug,
         excerpt: data.excerpt || '',
         content: data.content,
+        author_name: data.author_name || '',
         featured_image_url: data.featured_image_url || '',
         seo_title: data.seo_title || '',
         seo_description: data.seo_description || '',
@@ -212,6 +215,7 @@ export default function BlogEditor() {
         slug: validatedData.slug,
         excerpt: validatedData.excerpt || null,
         content: validatedData.content,
+        author_name: validatedData.author_name,
         featured_image_url: imageUrl,
         seo_title: validatedData.seo_title || null,
         seo_description: validatedData.seo_description || null,
@@ -425,6 +429,17 @@ export default function BlogEditor() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="author_name">Author Name *</Label>
+                      <Input
+                        id="author_name"
+                        value={formData.author_name}
+                        onChange={(e) => setFormData({ ...formData, author_name: e.target.value })}
+                        placeholder="Enter author's name..."
+                        maxLength={100}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="excerpt">Excerpt</Label>
                       <Textarea
                         id="excerpt"
@@ -571,7 +586,7 @@ export default function BlogEditor() {
                       excerpt={formData.excerpt}
                       content={formData.content}
                       featuredImage={featuredImagePreview}
-                      author={user?.email || 'Unknown Author'}
+                      author={formData.author_name || 'Unknown Author'}
                     />
                   </TabsContent>
                 </Tabs>
@@ -585,6 +600,7 @@ export default function BlogEditor() {
               title={formData.title}
               content={formData.content}
               excerpt={formData.excerpt}
+              authorName={formData.author_name}
               seoTitle={formData.seo_title}
               seoDescription={formData.seo_description}
               featuredImage={featuredImagePreview}
