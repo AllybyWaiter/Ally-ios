@@ -396,6 +396,7 @@ export type Database = {
           language_preference: string | null
           name: string | null
           onboarding_completed: boolean | null
+          skill_level: string | null
           subscription_tier: string | null
           theme_preference: string | null
           unit_preference: string | null
@@ -409,6 +410,7 @@ export type Database = {
           language_preference?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
+          skill_level?: string | null
           subscription_tier?: string | null
           theme_preference?: string | null
           unit_preference?: string | null
@@ -422,6 +424,7 @@ export type Database = {
           language_preference?: string | null
           name?: string | null
           onboarding_completed?: boolean | null
+          skill_level?: string | null
           subscription_tier?: string | null
           theme_preference?: string | null
           unit_preference?: string | null

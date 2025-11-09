@@ -82,7 +82,50 @@ ${plants && plants.length > 0
       }
     }
 
-    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "");
+    // Get user's skill level
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    let skillLevel = 'beginner';
+    if (authUser) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('skill_level')
+        .eq('user_id', authUser.id)
+        .single();
+      
+      if (profile?.skill_level) {
+        skillLevel = profile.skill_level;
+      }
+    }
+
+    // Customize explanation style based on skill level
+    const explanationStyles: Record<string, string> = {
+      beginner: `
+Explanation Style for Beginners:
+- Use simple, everyday language and avoid jargon
+- When technical terms are necessary, explain them clearly
+- Provide step-by-step instructions with details
+- Include safety reminders and common mistakes to avoid
+- Be extra encouraging and patient
+- Explain the "why" behind recommendations to build understanding`,
+      intermediate: `
+Explanation Style for Intermediate Users:
+- Balance technical accuracy with accessibility
+- You can use common aquarium terminology
+- Provide practical tips and optimization suggestions
+- Include relevant parameter ranges and specifications
+- Share best practices and intermediate techniques`,
+      advanced: `
+Explanation Style for Advanced Users:
+- Use precise technical language and scientific terminology
+- Focus on nuanced details, advanced techniques, and edge cases
+- Provide in-depth explanations of biochemistry and biology
+- Discuss trade-offs between different approaches
+- Reference specific studies or advanced methods when relevant`
+    };
+    
+    const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
+
+    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "", `| Skill level: ${skillLevel}`);
 
     const systemPrompt = `You are Ally, an expert aquarium assistant with deep knowledge of:
 - Freshwater and saltwater aquarium care
@@ -100,11 +143,12 @@ ${plants && plants.length > 0
 Your personality:
 - Friendly, encouraging, and patient
 - Provide clear, actionable advice
-- Explain technical concepts in simple terms
 - Ask clarifying questions when needed
 - Celebrate successes and help through challenges
 - Prioritize fish health and welfare
 - Use the livestock and plants context to give specific advice about compatibility, stocking, and care
+
+${explanationStyle}
 
 ${aquariumContext}
 
@@ -118,7 +162,8 @@ Guidelines:
 - Provide species-specific care advice based on what's actually in the tank
 - When discussing water tests, be specific about ideal ranges for the inhabitants
 - Consider the needs of all inhabitants (fish, inverts, corals, plants) when giving advice
-- If you don't know something, admit it and suggest consulting a specialist`;
+- If you don't know something, admit it and suggest consulting a specialist
+- Adjust your explanation depth and technical detail based on the user's skill level`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
