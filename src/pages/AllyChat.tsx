@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Send, 
   Loader2, 
@@ -349,22 +350,30 @@ const AllyChat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <AppHeader />
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+        <AppHeader />
       
       <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
         <div className="flex gap-4 h-[calc(100vh-12rem)]">
           {/* Desktop Sidebar */}
           <Card className="hidden lg:block w-80 shadow-lg">
             <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-primary/5">
-              <Button 
-                onClick={startNewConversation} 
-                className="w-full gap-2"
-                size="lg"
-              >
-                <Plus className="h-4 w-4" />
-                New Conversation
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    onClick={startNewConversation} 
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Conversation
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Start a fresh conversation with Ally</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             
             <ScrollArea className="h-[calc(100%-8rem)]">
@@ -393,14 +402,21 @@ const AllyChat = () => {
                           {format(new Date(conv.updated_at), "MMM d, h:mm a")}
                         </p>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 h-8 w-8"
-                        onClick={(e) => deleteConversation(conv.id, e)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 h-8 w-8"
+                            onClick={(e) => deleteConversation(conv.id, e)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete conversation</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </div>
                   ))
                 )}
@@ -416,28 +432,42 @@ const AllyChat = () => {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {/* Mobile History Button */}
                   <Sheet>
-                    <SheetTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
-                      >
-                        <History className="h-5 w-5" />
-                      </Button>
-                    </SheetTrigger>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <SheetTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
+                          >
+                            <History className="h-5 w-5" />
+                          </Button>
+                        </SheetTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>View chat history</p>
+                      </TooltipContent>
+                    </Tooltip>
                     <SheetContent side="left" className="w-80">
                       <SheetHeader>
                         <SheetTitle>Chat History</SheetTitle>
                       </SheetHeader>
                       <ScrollArea className="h-[calc(100vh-8rem)] mt-6">
                         <div className="space-y-2">
-                          <Button 
-                            onClick={startNewConversation} 
-                            className="w-full gap-2 mb-4"
-                          >
-                            <Plus className="h-4 w-4" />
-                            New Conversation
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                onClick={startNewConversation} 
+                                className="w-full gap-2 mb-4"
+                              >
+                                <Plus className="h-4 w-4" />
+                                New Conversation
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Start a fresh conversation with Ally</p>
+                            </TooltipContent>
+                          </Tooltip>
                           {conversations.map((conv) => (
                             <div
                               key={conv.id}
@@ -454,6 +484,8 @@ const AllyChat = () => {
                                   {format(new Date(conv.updated_at), "MMM d, h:mm a")}
                                 </p>
                               </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -462,6 +494,11 @@ const AllyChat = () => {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete conversation</p>
+                            </TooltipContent>
+                          </Tooltip>
                             </div>
                           ))}
                         </div>
@@ -480,28 +517,37 @@ const AllyChat = () => {
                 
                 {/* Aquarium Selector */}
                 {aquariums.length > 0 && (
-                  <Select value={selectedAquarium} onValueChange={setSelectedAquarium}>
-                    <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hidden sm:flex">
-                      <Fish className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Select aquarium" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">
-                        <span className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          General Advice
-                        </span>
-                      </SelectItem>
-                      {aquariums.map((aq) => (
-                        <SelectItem key={aq.id} value={aq.id}>
-                          <span className="flex items-center gap-2">
-                            <Fish className="h-4 w-4" />
-                            {aq.name} ({aq.type})
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <Select value={selectedAquarium} onValueChange={setSelectedAquarium}>
+                          <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hidden sm:flex">
+                            <Fish className="h-4 w-4 mr-2" />
+                            <SelectValue placeholder="Select aquarium" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="general">
+                              <span className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4" />
+                                General Advice
+                              </span>
+                            </SelectItem>
+                            {aquariums.map((aq) => (
+                              <SelectItem key={aq.id} value={aq.id}>
+                                <span className="flex items-center gap-2">
+                                  <Fish className="h-4 w-4" />
+                                  {aq.name} ({aq.type})
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Get advice specific to your aquarium</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
               
@@ -555,18 +601,25 @@ const AllyChat = () => {
                         )}
                         
                         {message.role === "assistant" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-2 bottom-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-7 w-7 bg-background/80 backdrop-blur-sm"
-                            onClick={() => copyMessage(message.content, index)}
-                          >
-                            {copiedIndex === index ? (
-                              <Check className="h-3 w-3 text-green-500" />
-                            ) : (
-                              <Copy className="h-3 w-3" />
-                            )}
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-2 bottom-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity h-7 w-7 bg-background/80 backdrop-blur-sm"
+                                onClick={() => copyMessage(message.content, index)}
+                              >
+                                {copiedIndex === index ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{copiedIndex === index ? "Copied!" : "Copy message"}</p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                       </div>
                       
@@ -636,25 +689,33 @@ const AllyChat = () => {
                     disabled={isLoading}
                     className="flex-1 h-12"
                   />
-                  <Button
-                    onClick={sendMessage}
-                    disabled={!input.trim() || isLoading}
-                    size="icon"
-                    className="h-12 w-12"
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Send className="h-5 w-5" />
-                    )}
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={sendMessage}
+                        disabled={!input.trim() || isLoading}
+                        size="icon"
+                        className="h-12 w-12"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Send className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Send message</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </div>
           </Card>
         </div>
       </main>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 };
 
