@@ -11,18 +11,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages } from "lucide-react";
+import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 
 const Settings = () => {
-  const { user, userName, subscriptionTier, signOut } = useAuth();
+  const { user, userName, subscriptionTier, unitPreference, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(userName || "");
+  const [units, setUnits] = useState(unitPreference || "imperial");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,6 +39,12 @@ const Settings = () => {
       setName(userName);
     }
   }, [userName]);
+
+  useEffect(() => {
+    if (unitPreference) {
+      setUnits(unitPreference);
+    }
+  }, [unitPreference]);
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -105,6 +112,33 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to save language preference.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUnitChange = async (newUnit: string) => {
+    if (!user) return;
+    
+    setUnits(newUnit);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ unit_preference: newUnit })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Units updated",
+        description: "Your unit preference has been saved.",
+      });
+    } catch (error: any) {
+      console.error('Failed to save unit preference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save unit preference.",
         variant: "destructive",
       });
     }
@@ -199,7 +233,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -211,6 +245,10 @@ const Settings = () => {
             <TabsTrigger value="language" className="flex items-center gap-2">
               <Languages className="h-4 w-4" />
               Language
+            </TabsTrigger>
+            <TabsTrigger value="units" className="flex items-center gap-2">
+              <Ruler className="h-4 w-4" />
+              Units
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Lock className="h-4 w-4" />
@@ -358,6 +396,64 @@ const Settings = () => {
                         </CardContent>
                       </Card>
                     ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="units">
+            <Card>
+              <CardHeader>
+                <CardTitle>Units & Measurements</CardTitle>
+                <CardDescription>
+                  Choose your preferred unit system for measurements
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <Label>Unit System</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Select how measurements are displayed throughout the app
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card 
+                      className={`cursor-pointer transition-all hover:border-primary ${units === 'imperial' ? 'border-primary shadow-md' : ''}`}
+                      onClick={() => handleUnitChange('imperial')}
+                    >
+                      <CardContent className="p-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Ruler className="h-5 w-5" />
+                            <p className="font-semibold text-lg">Imperial</p>
+                          </div>
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <p>• Gallons</p>
+                            <p>• Fahrenheit (°F)</p>
+                            <p>• Inches</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card 
+                      className={`cursor-pointer transition-all hover:border-primary ${units === 'metric' ? 'border-primary shadow-md' : ''}`}
+                      onClick={() => handleUnitChange('metric')}
+                    >
+                      <CardContent className="p-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Ruler className="h-5 w-5" />
+                            <p className="font-semibold text-lg">Metric</p>
+                          </div>
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <p>• Liters</p>
+                            <p>• Celsius (°C)</p>
+                            <p>• Centimeters</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
               </CardContent>
