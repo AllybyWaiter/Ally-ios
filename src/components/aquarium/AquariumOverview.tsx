@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Droplet, Wrench, ListTodo, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions";
 
 interface AquariumOverviewProps {
   aquariumId: string;
@@ -14,6 +16,7 @@ interface AquariumOverviewProps {
 
 export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
   const navigate = useNavigate();
+  const { unitPreference } = useAuth();
 
   const { data: latestTest, isLoading: testLoading } = useQuery({
     queryKey: ["latest-test", aquariumId],
@@ -172,10 +175,11 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
                 >
                   <div>
                     <p className="text-sm font-medium">{param.parameter_name}</p>
-                    <p className="text-xs text-muted-foreground">{param.unit}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold">{param.value}</p>
+                    <p className="text-lg font-bold">
+                      {formatParameter(param.value, param.unit, unitPreference as UnitSystem | null)}
+                    </p>
                     {param.status && param.status !== "normal" && (
                       <Badge variant="destructive" className="text-xs mt-1">
                         {param.status}

@@ -12,6 +12,7 @@ import { AquariumDialog } from '@/components/aquarium/AquariumDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 
 interface Aquarium {
   id: string;
@@ -24,7 +25,7 @@ interface Aquarium {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, unitPreference } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -206,7 +207,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0)} gal
+                {formatVolume(aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0), unitPreference as UnitSystem | null)}
               </div>
               <p className="text-xs text-muted-foreground">Combined capacity</p>
             </CardContent>
@@ -289,7 +290,7 @@ export default function Dashboard() {
                       >
                         <CardTitle>{aquarium.name}</CardTitle>
                         <CardDescription className="capitalize">
-                          {aquarium.type} • {aquarium.volume_gallons} gallons
+                          {aquarium.type} • {formatVolume(aquarium.volume_gallons, unitPreference as UnitSystem | null)}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
