@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface BlogAISidebarProps {
   formData: {
     title: string;
+    excerpt: string;
     content: string;
     seo_title: string;
     seo_description: string;
@@ -69,6 +70,7 @@ export default function BlogAISidebar({ formData, onUpdate, generateSlug }: Blog
       if (action === 'generate') {
         onUpdate({
           title: data.title || '',
+          excerpt: data.excerpt || '',
           content: data.content || '',
           seo_title: data.seo_title || '',
           seo_description: data.seo_description || '',
