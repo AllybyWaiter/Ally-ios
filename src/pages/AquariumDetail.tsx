@@ -148,12 +148,12 @@ export default function AquariumDetail() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 w-full mx-auto max-w-4xl">
-            <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
-            <TabsTrigger value="livestock">Livestock & Plants</TabsTrigger>
-            <TabsTrigger value="water-tests">{t('tabs.waterTests')}</TabsTrigger>
-            <TabsTrigger value="equipment">{t('tabs.equipment')}</TabsTrigger>
-            <TabsTrigger value="tasks">{t('tabs.tasks')}</TabsTrigger>
+          <TabsList className="flex flex-wrap justify-center w-full max-w-3xl mx-auto">
+            <TabsTrigger value="overview" className="flex-1 min-w-[100px]">{t('tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="livestock" className="flex-1 min-w-[140px]">Livestock & Plants</TabsTrigger>
+            <TabsTrigger value="water-tests" className="flex-1 min-w-[100px]">{t('tabs.waterTests')}</TabsTrigger>
+            <TabsTrigger value="equipment" className="flex-1 min-w-[100px]">{t('tabs.equipment')}</TabsTrigger>
+            <TabsTrigger value="tasks" className="flex-1 min-w-[100px]">{t('tabs.tasks')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
