@@ -59,7 +59,7 @@ const AllyChat = () => {
     
     if (data && data.length > 0) {
       setAquariums(data);
-      setSelectedAquarium(data[0].id);
+      setSelectedAquarium("general");
     }
   };
 
@@ -97,7 +97,7 @@ const AllyChat = () => {
         },
         body: JSON.stringify({ 
           messages: [...messages, userMessage],
-          aquariumId: selectedAquarium || null
+          aquariumId: selectedAquarium === "general" ? null : selectedAquarium
         }),
       });
 
@@ -229,7 +229,7 @@ const AllyChat = () => {
                     <SelectValue placeholder="Select aquarium" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">General Advice</SelectItem>
+                    <SelectItem value="general">General Advice</SelectItem>
                     {aquariums.map((aq) => (
                       <SelectItem key={aq.id} value={aq.id}>
                         {aq.name} ({aq.type})
