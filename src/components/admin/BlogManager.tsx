@@ -4,12 +4,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, FileText, Calendar as CalendarIcon, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import BlogCalendar from './BlogCalendar';
 
 interface BlogPost {
   id: string;
@@ -112,7 +114,7 @@ export default function BlogManager() {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
@@ -145,10 +147,31 @@ export default function BlogManager() {
             <div className="text-2xl font-bold">{stats.scheduled}</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Blog Posts Table */}
-      <Card>
+      {/* Blog Posts Tabs */}
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            List View
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4" />
+            Calendar View
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list">
+          <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -255,6 +278,12 @@ export default function BlogManager() {
           </Table>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <BlogCalendar posts={posts} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
