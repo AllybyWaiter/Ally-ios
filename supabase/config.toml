@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.suggest-maintenance-tasks]
 verify_jwt = true
+
+[functions.analyze-water-test-photo]
+verify_jwt = true
