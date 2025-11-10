@@ -22,7 +22,7 @@ const Hero = () => {
       <div className="relative z-10 container mx-auto px-4 py-20 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6 border border-primary/20">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-primary">Powered by AI</span>
+          <span className="text-sm font-medium text-primary">Closed Beta • Limited Spots Available</span>
         </div>
         
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-water bg-clip-text text-transparent leading-tight">
@@ -41,7 +41,7 @@ const Hero = () => {
             className="text-lg px-8"
             onClick={() => setShowWaitlist(true)}
           >
-            Get Started Free
+            Join Beta Waitlist
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
           <Button 

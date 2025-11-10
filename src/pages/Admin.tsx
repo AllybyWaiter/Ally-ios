@@ -7,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
 import AnnouncementManager from '@/components/admin/AnnouncementManager';
 import BlogManager from '@/components/admin/BlogManager';
 import { RoleManager } from '@/components/admin/RoleManager';
+import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import { formatDate } from '@/lib/formatters';
 
 interface WaitlistEntry {
@@ -195,8 +196,14 @@ export default function Admin() {
           </Card>
         </div>
 
-        <Tabs defaultValue={hasPermission('manage_users') ? 'users' : hasPermission('manage_roles') ? 'roles' : hasPermission('manage_blog') ? 'blog' : 'tickets'} className="space-y-4">
+        <Tabs defaultValue={hasAnyRole(['admin']) ? 'beta' : hasPermission('manage_users') ? 'users' : hasPermission('manage_roles') ? 'roles' : hasPermission('manage_blog') ? 'blog' : 'tickets'} className="space-y-4">
           <TabsList>
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="beta">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Beta Access
+              </TabsTrigger>
+            )}
             {hasPermission('manage_users') && (
               <TabsTrigger value="users">
                 <UserCog className="mr-2 h-4 w-4" />
@@ -231,6 +238,12 @@ export default function Admin() {
               <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
             )}
           </TabsList>
+
+          {hasAnyRole(['admin']) && (
+            <TabsContent value="beta" className="space-y-4">
+              <BetaAccessManager />
+            </TabsContent>
+          )}
 
           {hasPermission('manage_users') && (
             <TabsContent value="users" className="space-y-4">

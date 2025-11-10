@@ -73,9 +73,9 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Join the Waitlist</DialogTitle>
+          <DialogTitle>Join the Closed Beta Waitlist</DialogTitle>
           <DialogDescription>
-            Be the first to know when Ally launches. We respect your privacy and won't spam you.
+            We're accepting limited beta testers. Join the waitlist and we'll randomly select users for early access. We respect your privacy and won't spam you.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
