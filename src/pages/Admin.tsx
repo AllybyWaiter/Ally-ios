@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
@@ -15,6 +15,7 @@ import AnnouncementManager from '@/components/admin/AnnouncementManager';
 import BlogManager from '@/components/admin/BlogManager';
 import { RoleManager } from '@/components/admin/RoleManager';
 import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
+import UserActivityLogs from '@/components/admin/UserActivityLogs';
 import { formatDate } from '@/lib/formatters';
 
 interface WaitlistEntry {
@@ -237,6 +238,12 @@ export default function Admin() {
             {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
               <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
             )}
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="activity">
+                <Activity className="mr-2 h-4 w-4" />
+                Activity Logs
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {hasAnyRole(['admin']) && (
@@ -388,6 +395,12 @@ export default function Admin() {
           {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
             <TabsContent value="tickets" className="space-y-4">
               <SupportTickets />
+            </TabsContent>
+          )}
+
+          {hasAnyRole(['admin']) && (
+            <TabsContent value="activity" className="space-y-4">
+              <UserActivityLogs />
             </TabsContent>
           )}
         </Tabs>
