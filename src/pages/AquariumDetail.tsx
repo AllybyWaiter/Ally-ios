@@ -12,6 +12,7 @@ import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
 import { AquariumTasks } from "@/components/aquarium/AquariumTasks";
 import { AquariumLivestock } from "@/components/aquarium/AquariumLivestock";
+import { TaskSuggestions } from "@/components/aquarium/TaskSuggestions";
 import { format } from "date-fns";
 import { AquariumDialog } from "@/components/aquarium/AquariumDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -173,7 +174,10 @@ export default function AquariumDetail() {
           </TabsContent>
 
           <TabsContent value="tasks">
-            <AquariumTasks aquariumId={id!} />
+            <div className="space-y-6">
+              <TaskSuggestions aquariumId={id!} />
+              <AquariumTasks aquariumId={id!} />
+            </div>
           </TabsContent>
         </Tabs>
       </main>
