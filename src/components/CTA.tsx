@@ -17,11 +17,11 @@ const CTA = () => {
           
           <div className="relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
-              Ready for Crystal-Clear Water?
+              Join the Closed Beta
             </h2>
             <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto mb-10">
-              Join thousands of aquarium owners who've made water care effortless with Ally.
-              Get started today with our early access program.
+              We're hand-selecting aquarium enthusiasts for our closed beta.
+              Join the waitlist and get priority access when we launch.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -48,7 +48,7 @@ const CTA = () => {
             <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
 
             <p className="mt-6 text-sm text-primary-foreground/70">
-              No credit card required • Free for early adopters • Launch in 2025
+              Closed Beta • Limited Spots • Rolling Invitations
             </p>
           </div>
         </div>

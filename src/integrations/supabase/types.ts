@@ -893,20 +893,29 @@ export type Database = {
       }
       waitlist: {
         Row: {
+          beta_access_granted: boolean | null
+          beta_access_granted_at: string | null
           created_at: string
           email: string
+          granted_by: string | null
           id: string
           metadata: Json | null
         }
         Insert: {
+          beta_access_granted?: boolean | null
+          beta_access_granted_at?: string | null
           created_at?: string
           email: string
+          granted_by?: string | null
           id?: string
           metadata?: Json | null
         }
         Update: {
+          beta_access_granted?: boolean | null
+          beta_access_granted_at?: string | null
           created_at?: string
           email?: string
+          granted_by?: string | null
           id?: string
           metadata?: Json | null
         }
@@ -973,6 +982,14 @@ export type Database = {
           permission_name: string
         }[]
       }
+      grant_random_beta_access: {
+        Args: { admin_user_id: string; count_to_grant: number }
+        Returns: {
+          email: string
+          granted_at: string
+        }[]
+      }
+      has_beta_access: { Args: { user_email: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

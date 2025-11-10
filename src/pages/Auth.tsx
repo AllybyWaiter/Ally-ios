@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { supabase } from '@/integrations/supabase/client';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -62,6 +63,20 @@ export default function Auth() {
         }
       } else {
         const validated = signupSchema.parse({ name, email, password, confirmPassword });
+        
+        // Check if user has beta access
+        const { data: hasBetaAccess, error: betaError } = await supabase.rpc('has_beta_access', {
+          user_email: validated.email.toLowerCase()
+        });
+
+        if (betaError) {
+          throw new Error('Unable to verify beta access. Please try again.');
+        }
+
+        if (!hasBetaAccess) {
+          throw new Error('Beta access required. Please join our waitlist to be notified when spots open up.');
+        }
+
         const { error } = await signUp(validated.email, validated.password, validated.name);
         
         if (error) {
@@ -135,7 +150,7 @@ export default function Auth() {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
             <CardDescription className="text-center">
-              {isLogin ? 'Sign in to access the admin dashboard' : 'Sign up to get started'}
+              {isLogin ? 'Sign in to your account' : 'Join our closed beta (requires waitlist approval)'}
             </CardDescription>
           </div>
         </CardHeader>
