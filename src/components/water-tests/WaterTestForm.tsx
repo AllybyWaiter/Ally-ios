@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, CheckCircle2, Settings } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles } from "lucide-react";
 import { getAllTemplates, validateParameter, type ParameterTemplate } from "@/lib/waterTestUtils";
 import { CustomTemplateManager } from "./CustomTemplateManager";
 import { 
@@ -40,6 +40,11 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const [tags, setTags] = useState("");
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   const { data: templates, isLoading: templatesLoading } = useQuery({
     queryKey: ["all-templates", aquarium.type, user?.id],
@@ -65,6 +70,26 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error("Not authenticated");
 
+      let uploadedPhotoUrl = photoUrl;
+
+      // Upload photo if exists
+      if (photoFile && !photoUrl) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${authUser.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('water-test-photos')
+          .upload(fileName, photoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('water-test-photos')
+          .getPublicUrl(fileName);
+
+        uploadedPhotoUrl = publicUrl;
+      }
+
       // Create water test entry
       const { data: test, error: testError } = await supabase
         .from("water_tests")
@@ -74,8 +99,9 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
           test_date: new Date().toISOString(),
           notes: notes || null,
           tags: tags ? tags.split(",").map((t) => t.trim()) : null,
-          confidence: "manual",
-          entry_method: "manual",
+          confidence: photoFile ? "ai" : "manual",
+          entry_method: photoFile ? "photo" : "manual",
+          photo_url: uploadedPhotoUrl,
         })
         .select()
         .single();
@@ -125,6 +151,10 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       setParameters({});
       setNotes("");
       setTags("");
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      setPhotoUrl(null);
+      setAnalysisResult(null);
     },
     onError: (error) => {
       toast.error(t('waterTests.failedToLog') + ": " + error.message);
@@ -142,6 +172,86 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     } else {
       setShowUpgradeDialog(true);
     }
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setPhotoFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAnalyzePhoto = async () => {
+    if (!photoPreview) return;
+
+    setAnalyzingPhoto(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-water-test-photo', {
+        body: { 
+          imageUrl: photoPreview,
+          aquariumType: aquarium.type 
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setAnalysisResult(data);
+
+      // Auto-fill parameters from analysis
+      if (data.parameters && data.parameters.length > 0) {
+        const newParams: Record<string, string> = {};
+        data.parameters.forEach((param: any) => {
+          if (param.value) {
+            newParams[param.name] = param.value.toString();
+          }
+        });
+        setParameters(newParams);
+        
+        toast.success(`Detected ${data.parameters.length} parameters from photo`, {
+          description: 'Review and edit values before saving'
+        });
+      } else {
+        toast.warning('No parameters detected', {
+          description: 'Please enter values manually'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error analyzing photo:', error);
+      toast.error('Failed to analyze photo: ' + error.message);
+    } finally {
+      setAnalyzingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setPhotoUrl(null);
+    setAnalysisResult(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -164,6 +274,112 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Photo Upload Section */}
+            <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-br from-primary/5 to-primary/10">
+              <div className="flex items-center gap-2">
+                <Camera className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">AI Photo Analysis</h3>
+                <Badge variant="secondary" className="ml-auto">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  Powered by Gemini
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Upload a photo of your test strip or liquid test results for automatic analysis
+              </p>
+
+              {!photoPreview ? (
+                <div className="flex gap-2">
+                  <label className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    <Button type="button" variant="outline" className="w-full" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Choose Photo
+                      </span>
+                    </Button>
+                  </label>
+                  <label className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handlePhotoSelect}
+                      className="hidden"
+                    />
+                    <Button type="button" className="w-full" asChild>
+                      <span>
+                        <Camera className="h-4 w-4 mr-2" />
+                        Take Photo
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative rounded-lg overflow-hidden border">
+                    <img 
+                      src={photoPreview} 
+                      alt="Water test" 
+                      className="w-full h-48 object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemovePhoto}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {!analysisResult ? (
+                    <Button
+                      type="button"
+                      onClick={handleAnalyzePhoto}
+                      disabled={analyzingPhoto}
+                      className="w-full"
+                    >
+                      {analyzingPhoto ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Analyzing with AI...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Analyze Photo
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <div className="space-y-2 p-3 bg-background rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium">Analysis Complete</span>
+                      </div>
+                      {analysisResult.notes && (
+                        <p className="text-xs text-muted-foreground">{analysisResult.notes}</p>
+                      )}
+                      <div className="flex flex-wrap gap-2">
+                        {analysisResult.parameters?.map((param: any, idx: number) => (
+                          <Badge key={idx} variant="outline">
+                            {param.name}: {param.value} {param.unit}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Template Selector */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
