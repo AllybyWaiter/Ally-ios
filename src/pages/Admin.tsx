@@ -197,18 +197,18 @@ export default function Admin() {
           </Card>
         </div>
 
-        <Tabs defaultValue={hasAnyRole(['admin']) ? 'beta' : hasPermission('manage_users') ? 'users' : hasPermission('manage_roles') ? 'roles' : hasPermission('manage_blog') ? 'blog' : 'tickets'} className="space-y-4">
-          <TabsList>
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="beta">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Beta Access
-              </TabsTrigger>
-            )}
+        <Tabs defaultValue={hasPermission('manage_users') ? 'users' : hasAnyRole(['admin']) ? 'beta' : hasPermission('manage_roles') ? 'roles' : hasPermission('manage_blog') ? 'blog' : 'tickets'} className="space-y-4">
+          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
             {hasPermission('manage_users') && (
               <TabsTrigger value="users">
                 <UserCog className="mr-2 h-4 w-4" />
                 Users
+              </TabsTrigger>
+            )}
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="beta">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Beta Access
               </TabsTrigger>
             )}
             {hasPermission('manage_roles') && (
