@@ -19,19 +19,34 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Information We Collect</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Beta Testing Data Collection</h2>
+            <p className="leading-relaxed mb-4">
+              As a closed beta service, we collect additional information to improve our platform:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>Beta waitlist information: Email addresses and submission timestamps</li>
+              <li>Feature usage analytics: How beta users interact with different features</li>
+              <li>Error logs and crash reports: Technical data to identify and fix issues</li>
+              <li>Feedback and bug reports: User-submitted information about service quality</li>
+              <li>Performance metrics: System response times and resource usage</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">3. Information We Collect</h2>
             <p className="leading-relaxed mb-4">
               We may collect information about you in a variety of ways. The information we may collect includes:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Personal Data: Name, email address, and other contact information you provide</li>
+              <li>Aquarium Data: Information about your aquariums, livestock, equipment, and water test results</li>
               <li>Usage Data: Information about how you use our website and services</li>
               <li>Cookies and Tracking Technologies: We may use cookies and similar tracking technologies</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">3. How We Use Your Information</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">4. How We Use Your Information</h2>
             <p className="leading-relaxed mb-4">
               We use the information we collect to:
             </p>
@@ -45,21 +60,21 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">4. Data Security</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Data Security</h2>
             <p className="leading-relaxed">
               We implement appropriate technical and organizational security measures to protect your personal information. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Third-Party Services</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">6. Third-Party Services</h2>
             <p className="leading-relaxed">
               We may employ third-party companies and individuals to facilitate our service, provide service on our behalf, or assist us in analyzing how our service is used. These third parties have access to your personal information only to perform these tasks on our behalf.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">6. Your Rights</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Your Rights</h2>
             <p className="leading-relaxed mb-4">
               Depending on your location, you may have the following rights regarding your personal information:
             </p>
@@ -73,21 +88,21 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Children's Privacy</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Children's Privacy</h2>
             <p className="leading-relaxed">
               Our services are not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If you become aware that a child has provided us with personal information, please contact us.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Changes to This Privacy Policy</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">9. Changes to This Privacy Policy</h2>
             <p className="leading-relaxed">
               We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">9. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">10. Contact Us</h2>
             <p className="leading-relaxed">
               If you have any questions about this Privacy Policy, please contact us through our contact form or at the email address provided on our website.
             </p>
