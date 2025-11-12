@@ -33,21 +33,37 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">3. Account Registration</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">3. Beta Program Terms</h2>
+            <p className="leading-relaxed mb-4">
+              Our service is currently in a closed beta testing phase. By participating in the beta program, you acknowledge and agree to the following:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>Beta access is by invitation only and may be granted or revoked at any time at our sole discretion</li>
+              <li>The service may contain bugs, errors, or other issues that could cause system failures or data loss</li>
+              <li>Features and functionality are subject to change without notice during the beta period</li>
+              <li>The service is provided "as-is" for testing and evaluation purposes only</li>
+              <li>We may collect feedback, usage data, and error reports to improve the service</li>
+              <li>Beta access does not guarantee future access to the service upon official launch</li>
+              <li>You agree not to disclose confidential information about unreleased features without permission</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">4. Account Registration</h2>
             <p className="leading-relaxed">
               To access certain features of our services, you may be required to register for an account. You agree to provide accurate, current, and complete information during registration and to update such information to keep it accurate, current, and complete. You are responsible for safeguarding your account credentials.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">4. User Content</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">5. User Content</h2>
             <p className="leading-relaxed">
               Our services may allow you to post, link, store, share, and otherwise make available certain information, text, graphics, or other material. You are responsible for the content that you post and for any consequences thereof. You represent that you own or have the necessary rights to use such content.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Prohibited Uses</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">6. Prohibited Uses</h2>
             <p className="leading-relaxed mb-4">
               You may not use our services:
             </p>
@@ -62,49 +78,49 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">6. Intellectual Property</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Intellectual Property</h2>
             <p className="leading-relaxed">
               The service and its original content, features, and functionality are and will remain the exclusive property of our company and its licensors. Our trademarks and trade dress may not be used in connection with any product or service without prior written consent.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Disclaimer</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Disclaimer</h2>
             <p className="leading-relaxed">
               Our services are provided on an "AS IS" and "AS AVAILABLE" basis. We make no warranties, expressed or implied, and hereby disclaim all warranties including, without limitation, implied warranties of merchantability, fitness for a particular purpose, or non-infringement of intellectual property.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Limitation of Liability</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">9. Limitation of Liability</h2>
             <p className="leading-relaxed">
               In no event shall our company, its directors, employees, or agents be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the services, whether based on warranty, contract, tort, or any other legal theory.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">9. Termination</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">10. Termination</h2>
             <p className="leading-relaxed">
               We may terminate or suspend your account and access to our services immediately, without prior notice or liability, for any reason, including without limitation if you breach these Terms. Upon termination, your right to use the services will immediately cease.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">10. Governing Law</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">11. Governing Law</h2>
             <p className="leading-relaxed">
               These Terms shall be governed by and construed in accordance with applicable laws, without regard to its conflict of law provisions. Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">11. Changes to Terms</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">12. Changes to Terms</h2>
             <p className="leading-relaxed">
               We reserve the right to modify or replace these Terms at any time at our sole discretion. If a revision is material, we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">12. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">13. Contact Us</h2>
             <p className="leading-relaxed">
               If you have any questions about these Terms of Service, please contact us through our contact form or at the email address provided on our website.
             </p>
