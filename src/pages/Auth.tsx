@@ -11,6 +11,8 @@ import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeInput } from '@/lib/utils';
+import { useRateLimit } from '@/hooks/useRateLimit';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -42,6 +44,18 @@ export default function Auth() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const { isRateLimited, checkRateLimit, resetRateLimit } = useRateLimit({
+    maxAttempts: 5,
+    windowMs: 300000, // 5 minutes
+    onLimitExceeded: () => {
+      toast({
+        title: "Too many attempts",
+        description: "Please wait 5 minutes before trying again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
@@ -51,18 +65,32 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    // Check rate limit
+    if (!checkRateLimit()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       if (isLogin) {
-        const validated = loginSchema.parse({ email, password });
+        const sanitizedEmail = sanitizeInput(email);
+        const validated = loginSchema.parse({ email: sanitizedEmail, password });
         const { error } = await signIn(validated.email, validated.password);
         
         if (error) {
           throw error;
         }
       } else {
-        const validated = signupSchema.parse({ name, email, password, confirmPassword });
+        const sanitizedName = sanitizeInput(name);
+        const sanitizedEmail = sanitizeInput(email);
+        const validated = signupSchema.parse({ 
+          name: sanitizedName, 
+          email: sanitizedEmail, 
+          password, 
+          confirmPassword 
+        });
         
         // Check if user has beta access
         const { data: hasBetaAccess, error: betaError } = await supabase.rpc('has_beta_access', {
@@ -90,6 +118,8 @@ export default function Auth() {
           description: 'Account created successfully!',
         });
       }
+      
+      resetRateLimit();
       navigate('/dashboard');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -238,7 +268,7 @@ export default function Auth() {
                 )}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || isRateLimited}>
               {isLoading ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
