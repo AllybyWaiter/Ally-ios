@@ -23,6 +23,9 @@ import {
 } from "@/lib/unitConversions";
 import { compressImage, validateImageFile, formatFileSize } from "@/lib/imageCompression";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useFeatureRateLimit } from "@/hooks/useFeatureRateLimit";
+import { measurePerformance } from "@/lib/performanceMonitor";
+import { FeatureArea } from "@/lib/sentry";
 
 interface WaterTestFormProps {
   aquarium: {
@@ -36,6 +39,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const { user, canCreateCustomTemplates, subscriptionTier, units } = useAuth();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const rateLimit = useFeatureRateLimit('water-test-photo');
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
@@ -280,14 +284,24 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const handleAnalyzePhoto = async () => {
     if (!photoPreview) return;
 
+    // Check rate limit
+    const canProceed = await rateLimit.checkLimit();
+    if (!canProceed) {
+      return;
+    }
+
     setAnalyzingPhoto(true);
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-water-test-photo', {
-        body: { 
-          imageUrl: photoPreview,
-          aquariumType: aquarium.type 
-        }
-      });
+      const { data, error } = await measurePerformance(
+        'water-test-photo-analysis',
+        () => supabase.functions.invoke('analyze-water-test-photo', {
+          body: { 
+            imageUrl: photoPreview,
+            aquariumType: aquarium.type 
+          }
+        }),
+        FeatureArea.WATER_TESTS
+      );
 
       if (error) throw error;
 
