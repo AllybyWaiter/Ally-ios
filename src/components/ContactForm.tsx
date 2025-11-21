@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { Loader2, Send } from "lucide-react";
+import { sanitizeInput } from "@/lib/utils";
+import { useRateLimit } from "@/hooks/useRateLimit";
 
 const contactSchema = z.object({
   name: z
@@ -36,14 +38,35 @@ export const ContactForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const { isRateLimited, checkRateLimit, resetRateLimit } = useRateLimit({
+    maxAttempts: 3,
+    windowMs: 300000, // 5 minutes
+    onLimitExceeded: () => {
+      toast.error("Too many attempts", {
+        description: "Please wait 5 minutes before trying again.",
+      });
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+
+    // Check rate limit
+    if (!checkRateLimit()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Validate form data
-      const validatedData = contactSchema.parse(formData);
+      // Sanitize and validate form data
+      const sanitizedData = {
+        name: sanitizeInput(formData.name),
+        email: sanitizeInput(formData.email),
+        message: sanitizeInput(formData.message),
+      };
+      const validatedData = contactSchema.parse(sanitizedData);
 
       // Insert into contacts table
       const { error: dbError } = await supabase
@@ -68,6 +91,7 @@ export const ContactForm = () => {
         description: "We'll get back to you as soon as possible.",
       });
       
+      resetRateLimit();
       setFormData({ name: "", email: "", message: "" });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -156,7 +180,7 @@ export const ContactForm = () => {
             )}
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+          <Button type="submit" className="w-full" size="lg" disabled={isLoading || isRateLimited}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
