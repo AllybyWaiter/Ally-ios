@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeWrapper } from "@/components/ThemeWrapper";
 import { LanguageWrapper } from "@/components/LanguageWrapper";
@@ -13,6 +14,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { lazy, Suspense } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
+import { FeatureArea } from "@/lib/sentry";
 
 // Eager load public pages (better UX for first visit)
 import Index from "./pages/Index";
@@ -52,19 +54,26 @@ const queryClient = new QueryClient({
   },
 });
 
+// Session monitor wrapper component
+const SessionWrapper = ({ children }: { children: React.ReactNode }) => {
+  useSessionMonitor();
+  return <>{children}</>;
+};
+
 const App = () => (
-  <ErrorBoundary>
+  <ErrorBoundary featureArea={FeatureArea.GENERAL}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <ThemeWrapper>
-            <LanguageWrapper>
-              <Toaster />
-              <Sonner />
-              <OfflineIndicator />
-              <BrowserRouter>
-                <ScrollToTop />
-                <Routes>
+        <SessionWrapper>
+          <TooltipProvider>
+            <ThemeWrapper>
+              <LanguageWrapper>
+                <Toaster />
+                <Sonner />
+                <OfflineIndicator />
+                <BrowserRouter>
+                  <ScrollToTop />
+                  <Routes>
                   <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
                   <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><About /></Suspense></PageErrorBoundary>} />
                   <Route path="/features" element={<PageErrorBoundary pageName="Features" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Features /></Suspense></PageErrorBoundary>} />
@@ -189,11 +198,12 @@ const App = () => (
                   <Route path="/blog/:slug" element={<PageErrorBoundary pageName="Blog Post" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BlogPost /></Suspense></PageErrorBoundary>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<PageErrorBoundary featureArea="general"><NotFound /></PageErrorBoundary>} />
-                </Routes>
-              </BrowserRouter>
-            </LanguageWrapper>
-          </ThemeWrapper>
-        </TooltipProvider>
+                  </Routes>
+                </BrowserRouter>
+              </LanguageWrapper>
+            </ThemeWrapper>
+          </TooltipProvider>
+        </SessionWrapper>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
