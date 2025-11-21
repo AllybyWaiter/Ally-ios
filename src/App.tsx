@@ -10,27 +10,47 @@ import { LanguageWrapper } from "@/components/LanguageWrapper";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { lazy, Suspense } from "react";
+import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
+
+// Eager load public pages (better UX for first visit)
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
-import Dashboard from "./pages/Dashboard";
-import WaterTests from "./pages/WaterTests";
-import AquariumDetail from "./pages/AquariumDetail";
-import TaskCalendar from "./pages/TaskCalendar";
-import Pricing from "./pages/Pricing";
-import About from "./pages/About";
-import Features from "./pages/Features";
-import Settings from "./pages/Settings";
-import HowItWorksPage from "./pages/HowItWorks";
-import AllyChat from "./pages/AllyChat";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import BlogEditor from "./components/admin/BlogEditor";
 
-const queryClient = new QueryClient();
+// Lazy load authenticated pages (code splitting)
+const Admin = lazy(() => import("./pages/Admin"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const WaterTests = lazy(() => import("./pages/WaterTests"));
+const AquariumDetail = lazy(() => import("./pages/AquariumDetail"));
+const TaskCalendar = lazy(() => import("./pages/TaskCalendar"));
+const Settings = lazy(() => import("./pages/Settings"));
+const AllyChat = lazy(() => import("./pages/AllyChat"));
+const BlogEditor = lazy(() => import("./components/admin/BlogEditor"));
+
+// Lazy load other public pages
+const Pricing = lazy(() => import("./pages/Pricing"));
+const About = lazy(() => import("./pages/About"));
+const Features = lazy(() => import("./pages/Features"));
+const HowItWorksPage = lazy(() => import("./pages/HowItWorks"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+
+// Configure React Query with optimized caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // Cache persists for 10 minutes (formerly cacheTime)
+      retry: 1, // Retry failed queries once
+      refetchOnWindowFocus: false, // Don't refetch on window focus to reduce API calls
+      refetchOnReconnect: true, // Refetch when coming back online
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>
@@ -41,14 +61,15 @@ const App = () => (
             <LanguageWrapper>
               <Toaster />
               <Sonner />
+              <OfflineIndicator />
               <BrowserRouter>
                 <ScrollToTop />
                 <Routes>
                   <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
-                  <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><About /></PageErrorBoundary>} />
-                  <Route path="/features" element={<PageErrorBoundary pageName="Features" featureArea="general"><Features /></PageErrorBoundary>} />
-                  <Route path="/how-it-works" element={<PageErrorBoundary pageName="How It Works" featureArea="general"><HowItWorksPage /></PageErrorBoundary>} />
-                  <Route path="/pricing" element={<PageErrorBoundary pageName="Pricing" featureArea="general"><Pricing /></PageErrorBoundary>} />
+                  <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><About /></Suspense></PageErrorBoundary>} />
+                  <Route path="/features" element={<PageErrorBoundary pageName="Features" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Features /></Suspense></PageErrorBoundary>} />
+                  <Route path="/how-it-works" element={<PageErrorBoundary pageName="How It Works" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><HowItWorksPage /></Suspense></PageErrorBoundary>} />
+                  <Route path="/pricing" element={<PageErrorBoundary pageName="Pricing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Pricing /></Suspense></PageErrorBoundary>} />
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
                   <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
@@ -57,7 +78,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Dashboard" featureArea="aquarium">
-                          <Dashboard />
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <Dashboard />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -67,7 +90,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Water Tests" featureArea="water-tests">
-                          <WaterTests />
+                          <Suspense fallback={<FormSkeleton />}>
+                            <WaterTests />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -77,7 +102,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Aquarium Details" featureArea="aquarium">
-                          <AquariumDetail />
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <AquariumDetail />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -87,7 +114,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Calendar" featureArea="maintenance">
-                          <TaskCalendar />
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <TaskCalendar />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -97,7 +126,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Settings" featureArea="settings">
-                          <Settings />
+                          <Suspense fallback={<FormSkeleton />}>
+                            <Settings />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -107,7 +138,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Chat" featureArea="chat">
-                          <AllyChat />
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <AllyChat />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -117,7 +150,9 @@ const App = () => (
                     element={
                       <ProtectedRoute requireAdmin>
                         <PageErrorBoundary pageName="Admin" featureArea="admin">
-                          <Admin />
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <Admin />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
@@ -128,7 +163,9 @@ const App = () => (
                       <ProtectedRoute requireAdmin>
                         <PageErrorBoundary pageName="Blog Editor" featureArea="admin">
                           <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-8">
-                            <BlogEditor />
+                            <Suspense fallback={<FormSkeleton />}>
+                              <BlogEditor />
+                            </Suspense>
                           </div>
                         </PageErrorBoundary>
                       </ProtectedRoute>
@@ -140,14 +177,16 @@ const App = () => (
                       <ProtectedRoute requireAdmin>
                         <PageErrorBoundary pageName="Blog Editor" featureArea="admin">
                           <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-8">
-                            <BlogEditor />
+                            <Suspense fallback={<FormSkeleton />}>
+                              <BlogEditor />
+                            </Suspense>
                           </div>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
                   />
-                  <Route path="/blog" element={<PageErrorBoundary pageName="Blog" featureArea="general"><Blog /></PageErrorBoundary>} />
-                  <Route path="/blog/:slug" element={<PageErrorBoundary pageName="Blog Post" featureArea="general"><BlogPost /></PageErrorBoundary>} />
+                  <Route path="/blog" element={<PageErrorBoundary pageName="Blog" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Blog /></Suspense></PageErrorBoundary>} />
+                  <Route path="/blog/:slug" element={<PageErrorBoundary pageName="Blog Post" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BlogPost /></Suspense></PageErrorBoundary>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<PageErrorBoundary featureArea="general"><NotFound /></PageErrorBoundary>} />
                 </Routes>
