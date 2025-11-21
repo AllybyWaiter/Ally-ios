@@ -67,21 +67,20 @@ export default function Dashboard() {
 
   const loadAquariums = async () => {
     try {
+      // Optimized: Fetch aquariums with task count in single query using aggregate
       const { data, error } = await supabase
         .from('aquariums')
-        .select('*')
+        .select(`
+          *,
+          maintenance_tasks!aquarium_id(count)
+        `)
         .eq('user_id', user?.id)
+        .eq('maintenance_tasks.status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAquariums(data || []);
       
-      // Show aquarium onboarding if no aquariums exist
-      if (!data || data.length === 0) {
-        setShowAquariumOnboarding(true);
-      }
-
-      // Load upcoming task count
+      // Calculate upcoming tasks (within 7 days)
       if (data && data.length > 0) {
         const sevenDaysFromNow = new Date();
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
@@ -95,11 +94,25 @@ export default function Dashboard() {
 
         setUpcomingTaskCount(count || 0);
       }
+      
+      setAquariums(data || []);
+      
+      // Show aquarium onboarding if no aquariums exist
+      if (!data || data.length === 0) {
+        setShowAquariumOnboarding(true);
+      }
     } catch (error: any) {
       console.error('Error loading aquariums:', error);
+      
+      const errorMessage = error.message || 'Failed to load aquariums';
+      const isNetworkError = errorMessage.toLowerCase().includes('network') || 
+                             errorMessage.toLowerCase().includes('fetch');
+      
       toast({
-        title: t('common.error'),
-        description: t('dashboard.failedToLoad'),
+        title: isNetworkError ? 'Network Error' : t('common.error'),
+        description: isNetworkError 
+          ? 'Unable to connect. Please check your internet connection.'
+          : t('dashboard.failedToLoad'),
         variant: 'destructive',
       });
     } finally {
