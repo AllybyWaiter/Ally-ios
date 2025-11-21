@@ -250,6 +250,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Log login attempt (fire and forget, don't block)
       if (data?.user) {
+        addBreadcrumb(
+          error ? 'Sign in failed' : 'Sign in successful',
+          'auth',
+          { userId: data.user.id, error: error?.message },
+          FeatureArea.AUTH
+        );
+        setUserContext(data.user.id, data.user.email, userName || undefined);
         logLoginHistory(data.user.id, !error, error?.message).catch(console.error);
         if (!error) {
           logActivity({ actionType: 'login', userId: data.user.id }).catch(console.error);
@@ -258,6 +265,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       return { error };
     } catch (error: any) {
+      addBreadcrumb('Sign in error', 'auth', { error: error.message }, FeatureArea.AUTH);
       // Catch suspension/ban errors from fetchUserProfile
       return { error };
     }
@@ -267,7 +275,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     addBreadcrumb('User attempting sign up', 'auth', { name }, FeatureArea.AUTH);
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -277,6 +285,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     });
+    
+    // Log signup result
+    if (error) {
+      addBreadcrumb('Sign up failed', 'auth', { error: error.message }, FeatureArea.AUTH);
+      if (data?.user) {
+        logLoginHistory(data.user.id, false, error.message).catch(console.error);
+      }
+    } else if (data?.user) {
+      addBreadcrumb('Sign up successful', 'auth', { userId: data.user.id }, FeatureArea.AUTH);
+      setUserContext(data.user.id, data.user.email, name);
+      logLoginHistory(data.user.id, true).catch(console.error);
+      logActivity({ actionType: 'login', userId: data.user.id, actionDetails: { type: 'signup' } }).catch(console.error);
+    }
+    
     return { error };
   };
 
