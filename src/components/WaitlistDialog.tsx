@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
+import { sanitizeInput } from "@/lib/utils";
+import { useRateLimit } from "@/hooks/useRateLimit";
 
 const emailSchema = z.object({
   email: z
@@ -27,14 +29,31 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const { isRateLimited, checkRateLimit, resetRateLimit } = useRateLimit({
+    maxAttempts: 3,
+    windowMs: 60000, // 1 minute
+    onLimitExceeded: () => {
+      toast.error("Too many attempts", {
+        description: "Please wait a minute before trying again.",
+      });
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Check rate limit
+    if (!checkRateLimit()) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Validate email
-      const validatedData = emailSchema.parse({ email });
+      // Sanitize and validate email
+      const sanitizedEmail = sanitizeInput(email);
+      const validatedData = emailSchema.parse({ email: sanitizedEmail });
 
       // Insert into database
       const { error: dbError } = await supabase
@@ -54,6 +73,7 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
         description: "We'll notify you as soon as we launch.",
       });
       
+      resetRateLimit();
       setEmail("");
       setTimeout(() => onOpenChange(false), 1500);
     } catch (err) {
@@ -98,7 +118,7 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
               <p className="text-sm text-destructive">{error}</p>
             )}
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || isRateLimited}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
