@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from '@/components/ui/badge';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 import { formatDate } from '@/lib/formatters';
+import { DashboardSkeleton } from '@/components/ui/loading-skeleton';
 
 interface Aquarium {
   id: string;
@@ -164,9 +165,7 @@ export default function Dashboard() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <DashboardSkeleton />
     );
   }
 

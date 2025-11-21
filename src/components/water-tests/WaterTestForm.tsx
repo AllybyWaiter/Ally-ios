@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles, Save } from "lucide-react";
 import { getAllTemplates, validateParameter, type ParameterTemplate } from "@/lib/waterTestUtils";
 import { CustomTemplateManager } from "./CustomTemplateManager";
 import { 
@@ -21,6 +21,8 @@ import {
   fahrenheitToCelsius, 
   getTemperatureUnit 
 } from "@/lib/unitConversions";
+import { compressImage, validateImageFile, formatFileSize } from "@/lib/imageCompression";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 interface WaterTestFormProps {
   aquarium: {
@@ -45,6 +47,41 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  // Auto-save draft functionality
+  const autoSaveData = {
+    parameters,
+    notes,
+    tags,
+  };
+
+  const { isSaving: isAutoSaving, lastSaved } = useAutoSave({
+    data: autoSaveData,
+    onSave: async (data) => {
+      // Save to localStorage as draft
+      localStorage.setItem(`water-test-draft-${aquarium.id}`, JSON.stringify(data));
+    },
+    delay: 5000, // Auto-save every 5 seconds
+    enabled: Object.keys(parameters).length > 0 || notes.length > 0,
+  });
+
+  // Load draft on mount
+  useEffect(() => {
+    const draft = localStorage.getItem(`water-test-draft-${aquarium.id}`);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        setParameters(parsed.parameters || {});
+        setNotes(parsed.notes || "");
+        setTags(parsed.tags || "");
+        toast.success("Draft restored", {
+          description: "Your unsaved changes have been restored",
+        });
+      } catch (error) {
+        console.error("Failed to parse draft:", error);
+      }
+    }
+  }, [aquarium.id]);
 
   const { data: templates, isLoading: templatesLoading } = useQuery({
     queryKey: ["all-templates", aquarium.type, user?.id],
@@ -147,7 +184,14 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["water-tests"] });
       queryClient.invalidateQueries({ queryKey: ["all-templates"] });
-      toast.success(t('waterTests.testLogged'));
+      
+      // Clear draft on successful save
+      localStorage.removeItem(`water-test-draft-${aquarium.id}`);
+      
+      toast.success(t('waterTests.testLogged'), {
+        description: 'Your water test parameters have been successfully recorded',
+      });
+      
       setParameters({});
       setNotes("");
       setTags("");
@@ -157,7 +201,14 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       setAnalysisResult(null);
     },
     onError: (error) => {
-      toast.error(t('waterTests.failedToLog') + ": " + error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error('Failed to save water test', {
+        description: errorMessage,
+        action: {
+          label: 'Retry',
+          onClick: () => createTestMutation.mutate(),
+        },
+      });
     },
   });
 
@@ -178,26 +229,52 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.isValid) {
+      toast.error(validation.error || 'Invalid image file');
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
-      return;
-    }
+    try {
+      // Show initial file size
+      toast.info('Compressing image...', {
+        description: `Original size: ${formatFileSize(file.size)}`,
+      });
 
-    setPhotoFile(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+      // Compress image
+      const compressedFile = await compressImage(file, 1, 1920, 0.8);
+
+      // Show compression result
+      const savedBytes = file.size - compressedFile.size;
+      if (savedBytes > 0) {
+        toast.success('Image compressed', {
+          description: `Reduced by ${formatFileSize(savedBytes)} (${Math.round((savedBytes / file.size) * 100)}%)`,
+        });
+      }
+
+      setPhotoFile(compressedFile);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error('Compression error:', error);
+      toast.error('Failed to process image', {
+        description: 'Using original file instead',
+      });
+
+      // Fall back to original file
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAnalyzePhoto = async () => {
@@ -241,7 +318,30 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       }
     } catch (error: any) {
       console.error('Error analyzing photo:', error);
-      toast.error('Failed to analyze photo: ' + error.message);
+      
+      const errorMessage = error.message || 'Unable to analyze the photo';
+      const isRateLimitError = errorMessage.toLowerCase().includes('rate limit') || 
+                               errorMessage.toLowerCase().includes('too many requests');
+      const isNetworkError = errorMessage.toLowerCase().includes('network') || 
+                             errorMessage.toLowerCase().includes('connection');
+      
+      if (isRateLimitError) {
+        toast.error('AI analysis temporarily unavailable', {
+          description: 'Too many requests. Please try again in a few minutes.',
+        });
+      } else if (isNetworkError) {
+        toast.error('Network error', {
+          description: 'Please check your internet connection and try again.',
+        });
+      } else {
+        toast.error('Failed to analyze photo', {
+          description: errorMessage,
+          action: {
+            label: 'Retry',
+            onClick: handleAnalyzePhoto,
+          },
+        });
+      }
     } finally {
       setAnalyzingPhoto(false);
     }
@@ -256,6 +356,8 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Clear draft on successful submit
+    localStorage.removeItem(`water-test-draft-${aquarium.id}`);
     createTestMutation.mutate();
   };
 
@@ -270,6 +372,18 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                 {aquarium.type}
               </Badge>
             </div>
+            {isAutoSaving && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Save className="h-4 w-4 animate-pulse" />
+                <span>Saving draft...</span>
+              </div>
+            )}
+            {!isAutoSaving && lastSaved && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span>Draft saved {new Date(lastSaved).toLocaleTimeString()}</span>
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -277,29 +391,30 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             {/* Photo Upload Section */}
             <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-br from-primary/5 to-primary/10">
               <div className="flex items-center gap-2">
-                <Camera className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">AI Photo Analysis</h3>
-                <Badge variant="secondary" className="ml-auto">
-                  <Sparkles className="h-3 w-3 mr-1" />
+                <Camera className="h-5 w-5 text-primary" aria-hidden="true" />
+                <h3 className="font-semibold" id="photo-analysis-heading">AI Photo Analysis</h3>
+                <Badge variant="secondary" className="ml-auto" aria-label="Powered by Google Gemini AI">
+                  <Sparkles className="h-3 w-3 mr-1" aria-hidden="true" />
                   Powered by Gemini
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground" id="photo-analysis-description">
                 Upload a photo of your test strip or liquid test results for automatic analysis
               </p>
 
               {!photoPreview ? (
-                <div className="flex gap-2">
+                <div className="flex gap-2" role="group" aria-labelledby="photo-analysis-heading">
                   <label className="flex-1">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoSelect}
                       className="hidden"
+                      aria-label="Choose photo from device"
                     />
                     <Button type="button" variant="outline" className="w-full" asChild>
                       <span>
-                        <Upload className="h-4 w-4 mr-2" />
+                        <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
                         Choose Photo
                       </span>
                     </Button>
@@ -311,10 +426,11 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                       capture="environment"
                       onChange={handlePhotoSelect}
                       className="hidden"
+                      aria-label="Take photo with camera"
                     />
                     <Button type="button" className="w-full" asChild>
                       <span>
-                        <Camera className="h-4 w-4 mr-2" />
+                        <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
                         Take Photo
                       </span>
                     </Button>
