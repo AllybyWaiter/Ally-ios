@@ -1,9 +1,7 @@
 import appMockup from "@/assets/app-mockup.png";
 import { Badge } from "@/components/ui/badge";
-
 const AppShowcase = () => {
-  return (
-    <section className="py-20 px-4 bg-gradient-hero">
+  return <section className="py-20 px-4 bg-gradient-hero">
       <div className="container mx-auto">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div>
@@ -13,10 +11,7 @@ const AppShowcase = () => {
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               The Tesla of Water Care in Your Pocket
             </h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Our sleek, intuitive app puts professional-grade water analysis at your fingertips. 
-              Designed for simplicity, powered by cutting-edge AI.
-            </p>
+            <p className="text-xl text-muted-foreground mb-8">Our sleek, intuitive app puts professional grade water analysis at your fingertips. Designed for simplicity, powered by cutting edge AI.</p>
             
             <div className="space-y-4">
               <div className="flex items-start gap-3">
@@ -26,7 +21,7 @@ const AppShowcase = () => {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-1">Real-Time Monitoring</h4>
+                  <h4 className="font-semibold mb-1">Real Time Monitoring</h4>
                   <p className="text-muted-foreground">Track all parameters in one beautiful dashboard</p>
                 </div>
               </div>
@@ -59,16 +54,10 @@ const AppShowcase = () => {
 
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-water blur-3xl opacity-20 rounded-full" />
-            <img 
-              src={appMockup} 
-              alt="Ally App Interface" 
-              className="relative w-full max-w-md mx-auto drop-shadow-2xl"
-            />
+            <img src={appMockup} alt="Ally App Interface" className="relative w-full max-w-md mx-auto drop-shadow-2xl" />
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default AppShowcase;
