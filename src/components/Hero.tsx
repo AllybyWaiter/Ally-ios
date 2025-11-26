@@ -22,8 +22,8 @@ const Hero = () => {
           <span className="text-sm font-medium text-primary">Closed Beta • Limited Spots Available</span>
         </div>
         
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-water bg-clip-text text-transparent leading-tight">Crystal Clear Water,
-Effortlessly Maintained<br />Effortlessly Maintained
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-water bg-clip-text text-transparent leading-tight">Crystal Clear Water, Effortlessly Maintained
+        <br />Effortlessly Maintained
         </h1>
         
         <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">Meet, Ally by WA.I.TER  your AI powered water care assistant.
