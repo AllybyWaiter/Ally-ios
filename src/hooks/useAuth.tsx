@@ -49,15 +49,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     let isInitialLoad = true;
+    let safetyTimeoutCleared = false;
     console.log('🔵 Auth: useEffect initializing');
 
     // Safety timeout to ensure loading is set to false
     const safetyTimeout = setTimeout(() => {
-      if (mounted) {
+      if (mounted && !safetyTimeoutCleared) {
         console.warn('⚠️ Auth: Safety timeout triggered, forcing loading = false');
         setLoading(false);
       }
     }, 15000); // 15 seconds max
+    
+    const clearSafetyTimeout = () => {
+      safetyTimeoutCleared = true;
+      clearTimeout(safetyTimeout);
+    };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -122,6 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (error) {
           console.error('🔴 Auth: Error getting session:', error);
           setLoading(false);
+          clearSafetyTimeout();
           return;
         }
         
@@ -138,17 +145,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ]);
             console.log('🟢 Auth: Initial profile fetch complete');
             isInitialLoad = false; // Mark initial load complete
+            clearSafetyTimeout();
           } catch (error) {
             console.error('🔴 Auth: Error in initial fetch:', error);
             setLoading(false);
+            clearSafetyTimeout();
           }
         } else {
           setLoading(false);
+          clearSafetyTimeout();
           console.log('🟢 Auth: No existing session, loading = false');
         }
       } catch (error) {
         console.error('🔴 Auth: Exception in initializeAuth:', error);
         setLoading(false);
+        clearSafetyTimeout();
       }
     };
 
