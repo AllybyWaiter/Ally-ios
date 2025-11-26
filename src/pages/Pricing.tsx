@@ -327,7 +327,7 @@ const Pricing = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="hero" asChild>
-                <Link to="/#faq">View FAQs</Link>
+                <Link to="/faq">View FAQs</Link>
               </Button>
               <Button variant="heroOutline" asChild>
                 <a href="#contact">Contact Us</a>
