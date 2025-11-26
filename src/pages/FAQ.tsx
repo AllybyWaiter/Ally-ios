@@ -47,11 +47,11 @@ const FAQ = () => {
       questions: [
         {
           q: "How accurate is the AI?",
-          a: "Ally's AI achieves an average 98% accuracy in interpreting water test results when readings are entered correctly or photos are clear and well-lit. Our AI has been trained on thousands of test kit images and is constantly improving. The AI excels at recognizing patterns, suggesting maintenance schedules, and providing personalized care recommendations based on your aquarium's history."
+          a: "Ally's AI achieves an average 98% accuracy in interpreting water test results when readings are entered correctly or photos are clear and well lit. Our AI has been trained on thousands of test kit images and is constantly improving. The AI excels at recognizing patterns, suggesting maintenance schedules, and providing personalized care recommendations based on your aquarium's history."
         },
         {
           q: "Which test kits work with photo analysis?",
-          a: "Ally supports both test strips and liquid reagent kits from standard brands including API Master Test Kits, Tetra EasyStrips, Seachem MultiTest, Salifert marine kits, and Aquaforest test kits. Most conventional color-based test kits will work. Digital meters or kits with unconventional color gradients may not be compatible for photo analysis, but you can always manually enter values."
+          a: "Ally supports both test strips and liquid reagent kits from standard brands including API Master Test Kits, Tetra EasyStrips, Seachem MultiTest, Salifert marine kits, and Aquaforest test kits. Most conventional color based test kits will work. Digital meters or kits with unconventional color gradients may not be compatible for photo analysis, but you can always manually enter values."
         },
         {
           q: "What if my photo doesn't analyze correctly?",
@@ -59,7 +59,7 @@ const FAQ = () => {
         },
         {
           q: "How does Ally interpret water test results?",
-          a: "Ally compares your test results against ideal ranges for your specific aquarium type (freshwater, saltwater, brackish). The AI considers your livestock, tank age, and historical trends to provide context-aware recommendations. If parameters are out of range, Ally provides specific dosing instructions, water change recommendations, and explains what's happening in your aquarium."
+          a: "Ally compares your test results against ideal ranges for your specific aquarium type (freshwater, saltwater, brackish). The AI considers your livestock, tank age, and historical trends to provide context aware recommendations. If parameters are out of range, Ally provides specific dosing instructions, water change recommendations, and explains what's happening in your aquarium."
         }
       ]
     },
