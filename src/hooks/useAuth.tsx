@@ -51,6 +51,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let isInitialLoad = true;
     console.log('🔵 Auth: useEffect initializing');
 
+    // Safety timeout to ensure loading is set to false
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('⚠️ Auth: Safety timeout triggered, forcing loading = false');
+        setLoading(false);
+      }
+    }, 15000); // 15 seconds max
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -106,30 +114,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for existing session
     const initializeAuth = async () => {
       console.log('🔵 Auth: Checking for existing session');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!mounted) return;
-      
-      console.log('🔵 Auth: Existing session:', !!session);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log('🔵 Auth: Initializing with existing session');
-        try {
-          await Promise.all([
-            checkAdminStatus(session.user.id),
-            fetchUserProfile(session.user.id)
-          ]);
-          console.log('🟢 Auth: Initial profile fetch complete');
-          isInitialLoad = false; // Mark initial load complete
-        } catch (error) {
-          console.error('🔴 Auth: Error in initial fetch:', error);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error('🔴 Auth: Error getting session:', error);
           setLoading(false);
+          return;
         }
-      } else {
+        
+        console.log('🔵 Auth: Existing session:', !!session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log('🔵 Auth: Initializing with existing session');
+          try {
+            await Promise.all([
+              checkAdminStatus(session.user.id),
+              fetchUserProfile(session.user.id)
+            ]);
+            console.log('🟢 Auth: Initial profile fetch complete');
+            isInitialLoad = false; // Mark initial load complete
+          } catch (error) {
+            console.error('🔴 Auth: Error in initial fetch:', error);
+            setLoading(false);
+          }
+        } else {
+          setLoading(false);
+          console.log('🟢 Auth: No existing session, loading = false');
+        }
+      } catch (error) {
+        console.error('🔴 Auth: Exception in initializeAuth:', error);
         setLoading(false);
-        console.log('🟢 Auth: No existing session, loading = false');
       }
     };
 
@@ -138,6 +157,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       console.log('🔵 Auth: useEffect cleanup');
       mounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -145,7 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAdminStatus = async (userId: string) => {
     console.log('🔵 Auth: checkAdminStatus starting for:', userId);
     try {
-      // Fetch roles and permissions in parallel with timeout
+      // Fetch roles and permissions in parallel with reduced timeout
       const rolesPromise = supabase
         .from('user_roles')
         .select('role')
@@ -155,18 +175,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         _user_id: userId
       });
 
-      // Add timeout wrapper (10 seconds for initial connection)
+      // Reduced timeout (5 seconds)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), 10000)
+        setTimeout(() => reject(new Error('Query timeout')), 5000)
       );
 
-      const [rolesResult, permsResult] = await Promise.race([
+      const results = await Promise.race([
         Promise.all([rolesPromise, permsPromise]),
         timeoutPromise
       ]) as any;
       
-      console.log('🔵 Auth: Roles result:', rolesResult?.data, 'Error:', rolesResult?.error);
-      console.log('🔵 Auth: Perms result:', permsResult?.data, 'Error:', permsResult?.error);
+      const [rolesResult, permsResult] = results;
+      
+      console.log('🔵 Auth: Roles result:', rolesResult?.data);
+      console.log('🔵 Auth: Perms result:', permsResult?.data);
       
       const userRoles = rolesResult?.data?.map((r: any) => r.role) || [];
       setRoles(userRoles);
@@ -176,9 +198,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const permissionNames = permsResult?.data?.map((p: any) => p.permission_name || p) || [];
       setPermissions(permissionNames);
       
-      console.log('🟢 Auth: checkAdminStatus complete');
+      console.log('🟢 Auth: checkAdminStatus complete - roles:', userRoles.length, 'perms:', permissionNames.length);
     } catch (error: any) {
-      console.error('🔴 Auth: Error in checkAdminStatus:', error);
+      console.error('🔴 Auth: Error in checkAdminStatus:', error.message);
       // Don't throw - allow auth to continue with empty roles/permissions
       setRoles([]);
       setPermissions([]);
@@ -189,24 +211,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     console.log('🔵 Auth: fetchUserProfile starting for:', userId);
     try {
-      // Add timeout wrapper
-      const queryPromise = supabase
+      // Simplified query without timeout wrapper - let Supabase handle timeouts
+      const { data, error } = await supabase
         .from('profiles')
         .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
         .eq('user_id', userId)
         .maybeSingle();
-
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile query timeout')), 10000)
-      );
-
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
       
-      console.log('🔵 Auth: Profile data:', data);
-      console.log('🔵 Auth: Profile error:', error);
+      console.log('🔵 Auth: Profile query result - data:', !!data, 'error:', error?.message);
       
       if (error) {
-        console.error('🔴 Auth: Error fetching user profile:', error);
+        console.error('🔴 Auth: Error fetching user profile:', error.message);
+        // Set loading false and return - don't block auth flow
         setLoading(false);
         return;
       }
@@ -222,12 +238,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setUserContext(userId, undefined, data.name || undefined);
         
-        console.log('🟢 Auth: Profile loaded successfully');
+        console.log('🟢 Auth: Profile loaded - name:', data.name, 'onboarding:', data.onboarding_completed);
       } else {
         console.warn('⚠️ Auth: No profile data found for user:', userId);
+        // Still consider auth complete even without profile
       }
     } catch (error: any) {
-      console.error('🔴 Auth: Exception in fetchUserProfile:', error);
+      console.error('🔴 Auth: Exception in fetchUserProfile:', error.message);
     } finally {
       setLoading(false);
       console.log('🟢 Auth: fetchUserProfile complete, loading = false');
