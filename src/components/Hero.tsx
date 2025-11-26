@@ -4,17 +4,14 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-aquarium.jpg";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { useNavigate } from "react-router-dom";
-
 const Hero = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const navigate = useNavigate();
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background with overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
+      <div className="absolute inset-0 bg-cover bg-center z-0" style={{
+      backgroundImage: `url(${heroImage})`
+    }}>
         <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/80 to-background/95" />
       </div>
 
@@ -29,27 +26,17 @@ const Hero = () => {
           Crystal-Clear Water,<br />Effortlessly Maintained
         </h1>
         
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">
-          Meet <span className="font-semibold text-foreground">Ally by WA.I.TER</span> — your AI-powered water care assistant. 
+        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">Meet Ally by WA.I.TER  your AI powered water care assistant.
+No expertise needed. Just smart, personalized care for your aquarium.<span className="font-semibold text-foreground">Ally by WA.I.TER</span> — your AI-powered water care assistant. 
           No expertise needed. Just smart, personalized care for your aquarium.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button 
-            variant="hero" 
-            size="lg" 
-            className="text-lg px-8"
-            onClick={() => setShowWaitlist(true)}
-          >
+          <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
             Join Beta Waitlist
             <ArrowRight className="ml-2 w-5 h-5" />
           </Button>
-          <Button 
-            variant="heroOutline" 
-            size="lg" 
-            className="text-lg px-8"
-            onClick={() => navigate("/how-it-works")}
-          >
+          <Button variant="heroOutline" size="lg" className="text-lg px-8" onClick={() => navigate("/how-it-works")}>
             See How It Works
           </Button>
         </div>
@@ -72,8 +59,6 @@ const Hero = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Hero;
