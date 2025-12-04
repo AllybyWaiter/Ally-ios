@@ -94,22 +94,39 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     },
   });
 
-  useEffect(() => {
-    if (templates && templates.length > 0 && !selectedTemplate) {
-      // Auto-select default template or first template
-      const defaultTemplate = templates.find((t) => 'isDefault' in t && (t as any).isDefault);
-      setSelectedTemplate(defaultTemplate?.id || templates[0].id);
-    }
-  }, [templates, selectedTemplate]);
-
   const activeTemplate = templates?.find((t) => t.id === selectedTemplate);
   const systemTemplates = templates?.filter((t) => !t.isCustom) || [];
   const customTemplates = templates?.filter((t) => t.isCustom) || [];
 
-  // Helper function to get valid parameter entries
+  useEffect(() => {
+    if (templates && templates.length > 0 && !selectedTemplate) {
+      // Auto-select default template or first template
+      const defaultTemplate = templates.find((t) => 'isDefault' in t && (t as any).isDefault);
+      const templateToSelect = defaultTemplate || templates[0];
+      setSelectedTemplate(templateToSelect.id);
+      
+      // Clear parameters that don't belong to the newly selected template
+      const templateParamNames = templateToSelect.parameters.map(p => p.name);
+      setParameters(prev => {
+        const filtered = Object.fromEntries(
+          Object.entries(prev).filter(([key]) => templateParamNames.includes(key))
+        );
+        return filtered;
+      });
+    }
+  }, [templates, selectedTemplate]);
+
+  // Helper function to get valid parameter entries - ONLY from current template
   const getValidParameterEntries = () => {
+    // Must have an active template to validate against
+    if (!activeTemplate) return [];
+    
+    const templateParamNames = activeTemplate.parameters.map(p => p.name);
+    
     return Object.entries(parameters)
-      .filter(([_, value]) => {
+      .filter(([paramName, value]) => {
+        // Only consider parameters from current template
+        if (!templateParamNames.includes(paramName)) return false;
         if (value === "" || value === undefined || value === null) return false;
         const parsed = parseFloat(value);
         return !isNaN(parsed);
