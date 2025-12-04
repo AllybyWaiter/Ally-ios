@@ -12,9 +12,13 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== analyze-water-test-photo invoked ===');
+    
     const { imageUrl, aquariumType } = await req.json();
+    console.log('Request received - aquariumType:', aquariumType, 'imageUrl length:', imageUrl?.length || 0);
     
     if (!imageUrl) {
+      console.error('Missing imageUrl in request');
       return new Response(
         JSON.stringify({ error: 'Image URL is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -22,6 +26,7 @@ serve(async (req) => {
     }
 
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    console.log('LOVABLE_API_KEY present:', !!lovableApiKey);
 
     const systemPrompt = `You are an expert aquarium water test analyzer. Analyze the provided image of water test strips or liquid test results.
 
@@ -156,13 +161,17 @@ Status should be: "normal", "warning", or "critical" based on typical aquarium r
     );
 
   } catch (error) {
-    console.error('Error in analyze-water-test-photo:', error);
+    console.error('=== Error in analyze-water-test-photo ===');
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error',
         parameters: [],
         testType: "unknown",
-        notes: "Error analyzing image"
+        notes: "Error analyzing image. Please try again or enter values manually."
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
