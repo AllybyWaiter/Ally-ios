@@ -212,7 +212,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             parameter_name: paramName,
             value: storedValue,
             unit: storedUnit,
-            status: validation.isValid ? "normal" : "warning",
+            status: validation.isValid ? "good" : "warning",
           };
         });
 
