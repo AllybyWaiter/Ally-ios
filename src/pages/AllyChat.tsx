@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -69,7 +70,7 @@ const AllyChat = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     initializeChat();
@@ -971,15 +972,23 @@ const AllyChat = () => {
             {/* Input */}
             <div className="p-6 border-t bg-muted/30 flex-shrink-0">
               <div className="max-w-3xl mx-auto">
-                <div className="flex gap-2">
-                  <Input
+                <div className="flex gap-2 items-end">
+                  <Textarea
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (input.trim() && !isLoading) {
+                          sendMessage();
+                        }
+                      }
+                    }}
                     placeholder="Ask Ally anything about your aquarium..."
                     disabled={isLoading}
-                    className="flex-1 h-12"
+                    className="flex-1 min-h-[48px] max-h-[200px] resize-none"
+                    rows={1}
                   />
                   <Tooltip>
                     <TooltipTrigger asChild>
