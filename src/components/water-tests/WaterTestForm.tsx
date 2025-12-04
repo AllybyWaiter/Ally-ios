@@ -106,10 +106,34 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const systemTemplates = templates?.filter((t) => !t.isCustom) || [];
   const customTemplates = templates?.filter((t) => t.isCustom) || [];
 
+  // Helper function to get valid parameter entries
+  const getValidParameterEntries = () => {
+    return Object.entries(parameters)
+      .filter(([_, value]) => {
+        if (value === "" || value === undefined || value === null) return false;
+        const parsed = parseFloat(value);
+        return !isNaN(parsed);
+      })
+      .map(([paramName, value]) => ({
+        paramName,
+        value: parseFloat(value),
+      }));
+  };
+
+  // Check if form has valid parameters
+  const validParameters = getValidParameterEntries();
+  const hasValidParameters = validParameters.length > 0;
+
   const createTestMutation = useMutation({
     mutationFn: async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error("Not authenticated");
+
+      // Validate that we have at least one valid parameter
+      const validEntries = getValidParameterEntries();
+      if (validEntries.length === 0) {
+        throw new Error("Please enter at least one valid parameter value");
+      }
 
       let uploadedPhotoUrl = photoUrl;
 
@@ -149,12 +173,12 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
 
       if (testError) throw testError;
 
-      // Create parameter entries
-      const parameterEntries = Object.entries(parameters)
-        .filter(([_, value]) => value !== "")
-        .map(([paramName, value]) => {
+      // Create parameter entries with validated values
+      const skippedParams: string[] = [];
+      const parameterEntries = validEntries
+        .map(({ paramName, value }) => {
           const param = activeTemplate?.parameters.find((p) => p.name === paramName);
-          let storedValue = parseFloat(value);
+          let storedValue = value;
           let storedUnit = param?.unit || "";
           
           // Convert temperature to Fahrenheit for storage if user entered in Celsius
@@ -183,9 +207,14 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
         if (paramsError) throw paramsError;
       }
 
-      return test;
+      // Warn about skipped parameters
+      if (skippedParams.length > 0) {
+        console.warn('Skipped invalid parameters:', skippedParams);
+      }
+
+      return { test, savedParams: parameterEntries.length, skippedParams };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["water-tests"] });
       queryClient.invalidateQueries({ queryKey: ["all-templates"] });
       
@@ -193,7 +222,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       localStorage.removeItem(`water-test-draft-${aquarium.id}`);
       
       toast.success(t('waterTests.testLogged'), {
-        description: 'Your water test parameters have been successfully recorded',
+        description: `${result.savedParams} parameter(s) saved successfully`,
       });
       
       setParameters({});
@@ -206,9 +235,22 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error('Failed to save water test', {
-        description: errorMessage,
-        action: {
+      
+      // Provide more specific error messages
+      let title = 'Failed to save water test';
+      let description = errorMessage;
+      
+      if (errorMessage.includes('valid parameter')) {
+        title = 'No parameters entered';
+        description = 'Please enter at least one water test value before saving.';
+      } else if (errorMessage.includes('authenticated')) {
+        title = 'Authentication required';
+        description = 'Please log in to save water tests.';
+      }
+      
+      toast.error(title, {
+        description,
+        action: errorMessage.includes('valid parameter') ? undefined : {
           label: 'Retry',
           onClick: () => createTestMutation.mutate(),
         },
@@ -645,11 +687,19 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
               </div>
             </div>
 
+            {/* Validation message */}
+            {!hasValidParameters && activeTemplate && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted text-muted-foreground">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span className="text-sm">Enter at least one parameter value to save your test</span>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled={!selectedTemplate || createTestMutation.isPending}
+                disabled={!selectedTemplate || !hasValidParameters || createTestMutation.isPending}
                 className="flex-1"
               >
                 {createTestMutation.isPending && (
