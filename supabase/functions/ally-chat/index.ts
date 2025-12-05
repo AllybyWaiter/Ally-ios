@@ -162,24 +162,49 @@ ${plants && plants.length > 0
       }
     }
 
-    // Fetch user's memories (water-type specific + universal)
-    const { data: memories } = await supabase
-      .from('user_memories')
-      .select('*')
-      .eq('user_id', authUser.id)
-      .or(`water_type.eq.${currentWaterType},water_type.eq.universal,water_type.is.null`)
-      .order('created_at', { ascending: false });
-
+    // Fetch user's memories only if they have memory access (Plus, Gold, Business tiers)
+    // Note: hasMemoryAccess is determined later, so we fetch conditionally in the system prompt building
+    let memories: any[] = [];
     let memoryContext = '';
-    if (memories && memories.length > 0) {
-      const groupedMemories: Record<string, string[]> = {};
-      memories.forEach(m => {
-        const key = m.memory_key || 'other';
-        if (!groupedMemories[key]) groupedMemories[key] = [];
-        groupedMemories[key].push(`${m.memory_value}${m.water_type && m.water_type !== 'universal' ? ` (${m.water_type} only)` : ''}`);
-      });
 
-      memoryContext = `
+    // Get user's skill level and subscription tier
+    let skillLevel = 'beginner';
+    let subscriptionTier = 'free';
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('skill_level, subscription_tier')
+      .eq('user_id', authUser.id)
+      .single();
+    
+    if (profile?.skill_level) {
+      skillLevel = profile.skill_level;
+    }
+    if (profile?.subscription_tier) {
+      subscriptionTier = profile.subscription_tier;
+    }
+    
+    // Check if user has memory access (Plus, Gold, Business tiers)
+    const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
+
+    // Only fetch memories if user has access
+    if (hasMemoryAccess) {
+      const { data: memoryData } = await supabase
+        .from('user_memories')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .or(`water_type.eq.${currentWaterType},water_type.eq.universal,water_type.is.null`)
+        .order('created_at', { ascending: false });
+
+      if (memoryData && memoryData.length > 0) {
+        memories = memoryData;
+        const groupedMemories: Record<string, string[]> = {};
+        memoryData.forEach(m => {
+          const key = m.memory_key || 'other';
+          if (!groupedMemories[key]) groupedMemories[key] = [];
+          groupedMemories[key].push(`${m.memory_value}${m.water_type && m.water_type !== 'universal' ? ` (${m.water_type} only)` : ''}`);
+        });
+
+        memoryContext = `
 
 User's Known Setup & Preferences (from previous conversations):
 ${Object.entries(groupedMemories).map(([key, values]) => 
@@ -188,18 +213,7 @@ ${Object.entries(groupedMemories).map(([key, values]) =>
 
 Use this information to provide personalized advice. You don't need to ask about things you already know.
 `;
-    }
-
-    // Get user's skill level
-    let skillLevel = 'beginner';
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('skill_level')
-      .eq('user_id', authUser.id)
-      .single();
-    
-    if (profile?.skill_level) {
-      skillLevel = profile.skill_level;
+      }
     }
 
     // Customize explanation style based on skill level
@@ -230,7 +244,7 @@ Explanation Style for Advanced Users:
     
     const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
 
-    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "", `| Skill level: ${skillLevel}`, `| Memories: ${memories?.length || 0}`);
+    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "", `| Skill level: ${skillLevel}`, `| Tier: ${subscriptionTier}`, `| Memory access: ${hasMemoryAccess}`, `| Memories: ${memories?.length || 0}`);
 
     const systemPrompt = `You are Ally, an expert aquarium assistant with deep knowledge of:
 - Freshwater and saltwater aquarium care
@@ -253,14 +267,14 @@ Your personality:
 - Prioritize fish health and welfare
 - Use the livestock and plants context to give specific advice about compatibility, stocking, and care
 
-MEMORY & LEARNING CAPABILITIES:
+${hasMemoryAccess ? `MEMORY & LEARNING CAPABILITIES:
 You have the ability to remember important facts about the user's setup using the save_memory tool.
 - When users share information about their equipment, products, water source, feeding habits, maintenance routines, or preferences, USE THE save_memory TOOL to remember it.
 - Be proactive about saving useful information that will help you give better advice in the future.
 - You can also add equipment to their tank profile using the add_equipment tool.
 - When you save a memory, briefly acknowledge it naturally in conversation (e.g., "I'll remember that you use RO/DI water").
 - Don't ask about things you already know from the memory context.
-${aquariumId ? `- Current aquarium ID for add_equipment tool: ${aquariumId}` : '- No aquarium selected, so you cannot add equipment but you can still save memories.'}
+${aquariumId ? `- Current aquarium ID for add_equipment tool: ${aquariumId}` : '- No aquarium selected, so you cannot add equipment but you can still save memories.'}` : `NOTE: This user is on the Basic plan. You can provide personalized advice based on their current aquarium data, but you cannot save memories or add equipment for them. If they share useful information, respond helpfully but do not mention saving it.`}
 
 FORMATTING GUIDELINES (CRITICAL):
 - Use clear spacing and line breaks between different points
@@ -299,22 +313,28 @@ Guidelines:
 - Adjust your explanation depth and technical detail based on the user's skill level
 - PRIORITIZE READABILITY: Use formatting to make information scannable and digestible`;
 
-    // Initial API call with tools
+    // Initial API call - only include tools if user has memory access
+    const apiBody: any = {
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ],
+      stream: false, // First call without streaming to check for tool calls
+    };
+    
+    // Only include tools for users with memory access
+    if (hasMemoryAccess) {
+      apiBody.tools = tools;
+    }
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        tools: tools,
-        stream: false, // First call without streaming to check for tool calls
-      }),
+      body: JSON.stringify(apiBody),
     });
 
     if (!response.ok) {
