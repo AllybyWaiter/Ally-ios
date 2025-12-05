@@ -26,8 +26,7 @@ const Hero = () => {
         <br />Effortlessly Maintained
         </h1>
         
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">Meet, Ally by WA.I.TER  your AI powered water care assistant.
-No expertise needed. Just smart, personalized care for your aquarium.<span className="font-semibold text-foreground">Ally by WA.I.TER</span> — your AI-powered water care assistant. 
+        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">Meet, Ally by WA.I.TER  your AI powered water care assistant. No expertise needed. Just smart, personalized care for your aquarium.<span className="font-semibold text-foreground">Ally by WA.I.TER</span> — your AI-powered water care assistant. 
           No expertise needed. Just smart, personalized care for your aquarium.
         </p>
 
