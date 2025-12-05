@@ -6,6 +6,72 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Tool definitions for Ally's memory capabilities
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "save_memory",
+      description: "Save an important fact about the user's aquarium setup, preferences, products they use, or practices. Use this when the user shares information worth remembering for future conversations. Examples: water source (RO/DI, tap), products they use, feeding schedules, equipment brands, maintenance routines.",
+      parameters: {
+        type: "object",
+        properties: {
+          memory_key: { 
+            type: "string", 
+            enum: ["equipment", "product", "water_source", "feeding", "maintenance", "preference", "livestock_care", "other"],
+            description: "Category of the memory"
+          },
+          memory_value: { 
+            type: "string", 
+            description: "The fact to remember (e.g., 'Uses BRS 4-stage RO/DI system for water purification')"
+          },
+          water_type: { 
+            type: "string", 
+            enum: ["freshwater", "saltwater", "brackish", "universal"],
+            description: "Which water type this applies to. Use 'universal' if it applies to all their tanks."
+          }
+        },
+        required: ["memory_key", "memory_value", "water_type"],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: "function", 
+    function: {
+      name: "add_equipment",
+      description: "Add a piece of equipment to the user's aquarium. Use when user mentions they have specific equipment that should be formally tracked in their tank profile.",
+      parameters: {
+        type: "object",
+        properties: {
+          aquarium_id: { type: "string", description: "ID of the aquarium to add equipment to" },
+          name: { type: "string", description: "Name of the equipment" },
+          equipment_type: { 
+            type: "string", 
+            enum: ["Filter", "Heater", "Light", "Pump", "Skimmer", "CO2 System", "Air Pump", "Wavemaker", "RO/DI System", "Auto Top Off", "Dosing Pump", "Reactor", "UV Sterilizer", "Chiller", "Controller", "Other"],
+            description: "Type of equipment"
+          },
+          brand: { type: "string", description: "Brand name if mentioned" },
+          model: { type: "string", description: "Model name/number if mentioned" },
+          notes: { type: "string", description: "Any additional details" }
+        },
+        required: ["aquarium_id", "name", "equipment_type"],
+        additionalProperties: false
+      }
+    }
+  }
+];
+
+// Map aquarium types to water types
+function getWaterType(aquariumType: string): string {
+  const saltwaterTypes = ['reef', 'marine', 'saltwater', 'fowlr'];
+  const brackishTypes = ['brackish'];
+  
+  if (saltwaterTypes.includes(aquariumType?.toLowerCase())) return 'saltwater';
+  if (brackishTypes.includes(aquariumType?.toLowerCase())) return 'brackish';
+  return 'freshwater';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -36,14 +102,25 @@ serve(async (req) => {
       }
     );
 
+    // Get authenticated user
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) {
+      throw new Error("Not authenticated");
+    }
+
     // Get user's aquarium context if aquariumId provided
     let aquariumContext = '';
+    let currentWaterType = 'freshwater';
+    let aquariumData: any = null;
+    
     if (aquariumId) {
       const { data: aquarium } = await supabase
         .from('aquariums')
         .select('*, water_tests(*), equipment(*)')
         .eq('id', aquariumId)
         .single();
+
+      aquariumData = aquarium;
 
       // Fetch livestock and plants for this aquarium
       const { data: livestock } = await supabase
@@ -57,11 +134,14 @@ serve(async (req) => {
         .eq('aquarium_id', aquariumId);
 
       if (aquarium) {
+        currentWaterType = getWaterType(aquarium.type);
+        
         aquariumContext = `
 
 Current Aquarium Context:
 - Name: ${aquarium.name}
 - Type: ${aquarium.type}
+- Water Type: ${currentWaterType}
 - Volume: ${aquarium.volume_gallons} gallons
 - Status: ${aquarium.status}
 ${aquarium.notes ? `- Notes: ${aquarium.notes}` : ''}
@@ -82,19 +162,44 @@ ${plants && plants.length > 0
       }
     }
 
+    // Fetch user's memories (water-type specific + universal)
+    const { data: memories } = await supabase
+      .from('user_memories')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .or(`water_type.eq.${currentWaterType},water_type.eq.universal,water_type.is.null`)
+      .order('created_at', { ascending: false });
+
+    let memoryContext = '';
+    if (memories && memories.length > 0) {
+      const groupedMemories: Record<string, string[]> = {};
+      memories.forEach(m => {
+        const key = m.memory_key || 'other';
+        if (!groupedMemories[key]) groupedMemories[key] = [];
+        groupedMemories[key].push(`${m.memory_value}${m.water_type && m.water_type !== 'universal' ? ` (${m.water_type} only)` : ''}`);
+      });
+
+      memoryContext = `
+
+User's Known Setup & Preferences (from previous conversations):
+${Object.entries(groupedMemories).map(([key, values]) => 
+  `[${key.toUpperCase()}]\n${values.map(v => `  • ${v}`).join('\n')}`
+).join('\n\n')}
+
+Use this information to provide personalized advice. You don't need to ask about things you already know.
+`;
+    }
+
     // Get user's skill level
-    const { data: { user: authUser } } = await supabase.auth.getUser();
     let skillLevel = 'beginner';
-    if (authUser) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('skill_level')
-        .eq('user_id', authUser.id)
-        .single();
-      
-      if (profile?.skill_level) {
-        skillLevel = profile.skill_level;
-      }
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('skill_level')
+      .eq('user_id', authUser.id)
+      .single();
+    
+    if (profile?.skill_level) {
+      skillLevel = profile.skill_level;
     }
 
     // Customize explanation style based on skill level
@@ -125,7 +230,7 @@ Explanation Style for Advanced Users:
     
     const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
 
-    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "", `| Skill level: ${skillLevel}`);
+    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "", `| Skill level: ${skillLevel}`, `| Memories: ${memories?.length || 0}`);
 
     const systemPrompt = `You are Ally, an expert aquarium assistant with deep knowledge of:
 - Freshwater and saltwater aquarium care
@@ -148,6 +253,15 @@ Your personality:
 - Prioritize fish health and welfare
 - Use the livestock and plants context to give specific advice about compatibility, stocking, and care
 
+MEMORY & LEARNING CAPABILITIES:
+You have the ability to remember important facts about the user's setup using the save_memory tool.
+- When users share information about their equipment, products, water source, feeding habits, maintenance routines, or preferences, USE THE save_memory TOOL to remember it.
+- Be proactive about saving useful information that will help you give better advice in the future.
+- You can also add equipment to their tank profile using the add_equipment tool.
+- When you save a memory, briefly acknowledge it naturally in conversation (e.g., "I'll remember that you use RO/DI water").
+- Don't ask about things you already know from the memory context.
+${aquariumId ? `- Current aquarium ID for add_equipment tool: ${aquariumId}` : '- No aquarium selected, so you cannot add equipment but you can still save memories.'}
+
 FORMATTING GUIDELINES (CRITICAL):
 - Use clear spacing and line breaks between different points
 - Use **bold** for important terms and key actions
@@ -168,7 +282,7 @@ Example format:
 - Step 3
 
 ${explanationStyle}
-
+${memoryContext}
 ${aquariumContext}
 
 Guidelines:
@@ -185,6 +299,7 @@ Guidelines:
 - Adjust your explanation depth and technical detail based on the user's skill level
 - PRIORITIZE READABILITY: Use formatting to make information scannable and digestible`;
 
+    // Initial API call with tools
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -197,7 +312,8 @@ Guidelines:
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        stream: true,
+        tools: tools,
+        stream: false, // First call without streaming to check for tool calls
       }),
     });
 
@@ -233,7 +349,169 @@ Guidelines:
       );
     }
 
-    return new Response(response.body, {
+    const initialResult = await response.json();
+    const assistantMessage = initialResult.choices?.[0]?.message;
+
+    // Check if there are tool calls
+    if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
+      console.log("Tool calls detected:", assistantMessage.tool_calls.length);
+      
+      const toolResults: any[] = [];
+      
+      for (const toolCall of assistantMessage.tool_calls) {
+        const functionName = toolCall.function.name;
+        let functionArgs;
+        
+        try {
+          functionArgs = JSON.parse(toolCall.function.arguments);
+        } catch (e) {
+          console.error("Failed to parse tool arguments:", e);
+          continue;
+        }
+
+        console.log(`Executing tool: ${functionName}`, functionArgs);
+
+        if (functionName === "save_memory") {
+          try {
+            const { error } = await supabase
+              .from('user_memories')
+              .insert({
+                user_id: authUser.id,
+                memory_key: functionArgs.memory_key,
+                memory_value: functionArgs.memory_value,
+                water_type: functionArgs.water_type === 'universal' ? null : functionArgs.water_type,
+                source: 'conversation',
+                confidence: 'confirmed'
+              });
+
+            if (error) {
+              console.error("Failed to save memory:", error);
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({ success: false, error: error.message })
+              });
+            } else {
+              console.log("Memory saved successfully");
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({ success: true, message: `Memory saved: ${functionArgs.memory_value}` })
+              });
+            }
+          } catch (e) {
+            console.error("Error saving memory:", e);
+            toolResults.push({
+              tool_call_id: toolCall.id,
+              role: "tool",
+              content: JSON.stringify({ success: false, error: "Failed to save memory" })
+            });
+          }
+        } else if (functionName === "add_equipment") {
+          try {
+            const { error } = await supabase
+              .from('equipment')
+              .insert({
+                aquarium_id: functionArgs.aquarium_id,
+                name: functionArgs.name,
+                equipment_type: functionArgs.equipment_type,
+                brand: functionArgs.brand || null,
+                model: functionArgs.model || null,
+                notes: functionArgs.notes || null
+              });
+
+            if (error) {
+              console.error("Failed to add equipment:", error);
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({ success: false, error: error.message })
+              });
+            } else {
+              console.log("Equipment added successfully");
+              toolResults.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                content: JSON.stringify({ success: true, message: `Equipment added: ${functionArgs.name}` })
+              });
+            }
+          } catch (e) {
+            console.error("Error adding equipment:", e);
+            toolResults.push({
+              tool_call_id: toolCall.id,
+              role: "tool",
+              content: JSON.stringify({ success: false, error: "Failed to add equipment" })
+            });
+          }
+        }
+      }
+
+      // Make follow-up call with tool results to get final response
+      const followUpMessages = [
+        { role: "system", content: systemPrompt },
+        ...messages,
+        assistantMessage,
+        ...toolResults
+      ];
+
+      const followUpResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: followUpMessages,
+          stream: true,
+        }),
+      });
+
+      if (!followUpResponse.ok) {
+        console.error("Follow-up AI gateway error:", followUpResponse.status);
+        return new Response(
+          JSON.stringify({ error: "Failed to process follow-up request" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      return new Response(followUpResponse.body, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // No tool calls - stream the response directly
+    const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ],
+        stream: true,
+      }),
+    });
+
+    if (!streamResponse.ok) {
+      console.error("Stream AI gateway error:", streamResponse.status);
+      return new Response(
+        JSON.stringify({ error: "Failed to process stream request" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return new Response(streamResponse.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {

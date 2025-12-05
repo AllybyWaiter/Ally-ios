@@ -835,6 +835,42 @@ export type Database = {
           },
         ]
       }
+      user_memories: {
+        Row: {
+          confidence: string | null
+          created_at: string | null
+          id: string
+          memory_key: string
+          memory_value: string
+          source: string | null
+          updated_at: string | null
+          user_id: string
+          water_type: string | null
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string | null
+          id?: string
+          memory_key: string
+          memory_value: string
+          source?: string | null
+          updated_at?: string | null
+          user_id: string
+          water_type?: string | null
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string | null
+          id?: string
+          memory_key?: string
+          memory_value?: string
+          source?: string | null
+          updated_at?: string | null
+          user_id?: string
+          water_type?: string | null
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           announcement_id: string
