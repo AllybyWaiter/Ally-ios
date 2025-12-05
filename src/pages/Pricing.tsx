@@ -169,7 +169,7 @@ const Pricing = () => {
                     <CardDescription>{plan.description}</CardDescription>
                     <div className="mt-4">
                       <span className="text-4xl font-bold">
-                        ${isAnnual ? plan.yearlyPrice : plan.monthlyPrice}
+                        ${(isAnnual ? plan.yearlyPrice : plan.monthlyPrice).toFixed(2)}
                       </span>
                       <span className="text-muted-foreground">
                         /{isAnnual ? 'year' : 'month'}
