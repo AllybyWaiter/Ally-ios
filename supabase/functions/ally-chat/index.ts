@@ -88,8 +88,11 @@ serve(async (req) => {
     // Get auth token from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error("Ally chat error: No authorization header provided");
       throw new Error("No authorization header");
     }
+
+    console.log("Auth header present, creating Supabase client...");
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -103,10 +106,19 @@ serve(async (req) => {
     );
 
     // Get authenticated user
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error("Ally chat auth error:", authError.message);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+    
     if (!authUser) {
+      console.error("Ally chat error: No user returned from getUser()");
       throw new Error("Not authenticated");
     }
+    
+    console.log("User authenticated:", authUser.id);
 
     // Get user's aquarium context if aquariumId provided
     let aquariumContext = '';
