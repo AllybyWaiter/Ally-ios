@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2 } from "lucide-react";
+import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2, Lock, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Memory {
   id: string;
@@ -51,6 +52,7 @@ export default function MemoryManager() {
   const [loading, setLoading] = useState(true);
   const [filterWaterType, setFilterWaterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   
   // Add/Edit dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,9 +66,29 @@ export default function MemoryManager() {
 
   useEffect(() => {
     if (user) {
+      fetchSubscriptionTier();
       fetchMemories();
     }
   }, [user]);
+
+  const fetchSubscriptionTier = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!error && data?.subscription_tier) {
+        setSubscriptionTier(data.subscription_tier);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription tier:", error);
+    }
+  };
+
+  const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
 
   const fetchMemories = async () => {
     if (!user) return;
@@ -211,6 +233,47 @@ export default function MemoryManager() {
       </Badge>
     );
   };
+
+  // Show upgrade prompt for free/basic users
+  if (!hasMemoryAccess) {
+    return (
+      <Card className="border-2 shadow-lg">
+        <CardHeader className="text-center space-y-4 pb-6">
+          <div className="mx-auto p-4 rounded-full bg-primary/10">
+            <Lock className="h-10 w-10 text-primary" />
+          </div>
+          <div>
+            <CardTitle className="text-2xl">Ally's Memory</CardTitle>
+            <CardDescription className="text-base mt-2 max-w-md mx-auto">
+              Upgrade to Plus or higher to unlock Ally's memory feature. Ally will remember your equipment, preferences, and practices across all conversations.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="text-center space-y-4 pb-6">
+          <div className="flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="h-3 w-3" /> Equipment preferences
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="h-3 w-3" /> Water source info
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="h-3 w-3" /> Feeding routines
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="h-3 w-3" /> Maintenance habits
+            </Badge>
+          </div>
+          <Button asChild className="gap-2">
+            <Link to="/pricing">
+              <Sparkles className="h-4 w-4" />
+              View Plans
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 shadow-lg">

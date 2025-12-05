@@ -37,6 +37,7 @@ const Pricing = () => {
         "3 aquatic spaces",
         "Unlimited test logs",
         "AI recommendations",
+        "Ally remembers your setup",
         "Smart scheduling",
         "Equipment tracking",
         "Custom notifications",
@@ -83,6 +84,7 @@ const Pricing = () => {
     {
       category: "Advanced Features",
       features: [
+        { name: "Ally Chat Memory", basic: false, plus: true, gold: true, business: true },
         { name: "Multi-tank management", basic: false, plus: false, gold: true, business: true },
         { name: "AI habit learning", basic: false, plus: false, gold: true, business: true },
         { name: "Connected device integration", basic: false, plus: false, gold: "Coming Soon", business: true },
