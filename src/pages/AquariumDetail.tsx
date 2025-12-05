@@ -149,12 +149,12 @@ export default function AquariumDetail() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="flex flex-wrap justify-center w-full max-w-3xl mx-auto">
-            <TabsTrigger value="overview" className="flex-1 min-w-[100px]">{t('tabs.overview')}</TabsTrigger>
-            <TabsTrigger value="livestock" className="flex-1 min-w-[140px]">Livestock & Plants</TabsTrigger>
-            <TabsTrigger value="water-tests" className="flex-1 min-w-[100px]">{t('tabs.waterTests')}</TabsTrigger>
-            <TabsTrigger value="equipment" className="flex-1 min-w-[100px]">{t('tabs.equipment')}</TabsTrigger>
-            <TabsTrigger value="tasks" className="flex-1 min-w-[100px]">{t('tabs.tasks')}</TabsTrigger>
+          <TabsList className="flex overflow-x-auto w-full max-w-3xl mx-auto gap-1 scrollbar-hide">
+            <TabsTrigger value="overview" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="livestock" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Livestock & Plants</TabsTrigger>
+            <TabsTrigger value="water-tests" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.waterTests')}</TabsTrigger>
+            <TabsTrigger value="equipment" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.equipment')}</TabsTrigger>
+            <TabsTrigger value="tasks" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.tasks')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
