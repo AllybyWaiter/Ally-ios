@@ -35,7 +35,7 @@ const coreDifferentiators = [
   {
     icon: Camera,
     title: "AI Water Test Interpretation",
-    description: "Instantly reads photos or manual values from any test kit with near-lab accuracy. No more guessing — just snap and know.",
+    description: "Instantly reads photos or manual values from any test kit with near lab accuracy. No more guessing, just snap and know.",
   },
   {
     icon: Calendar,
