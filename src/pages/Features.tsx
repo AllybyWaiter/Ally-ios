@@ -45,17 +45,17 @@ const coreDifferentiators = [
   {
     icon: Bell,
     title: "Smart Scheduling & Equipment Tracking",
-    description: "Reminds you when to test, clean, or replace equipment — no guessing, no forgotten maintenance.",
+    description: "Reminds you when to test, clean, or replace equipment. No guessing, no forgotten maintenance.",
   },
   {
     icon: Sparkles,
     title: "Space-Aware Intelligence",
-    description: "Every recommendation adapts to your unique aquatic space — type, size, and livestock all considered.",
+    description: "Every recommendation adapts to your unique aquatic space. Type, size, and livestock all considered.",
   },
   {
     icon: Cpu,
     title: "Future Hardware Integration",
-    description: "Designed to sync with Ally's upcoming auto-tester and auto-doser, completing the hands-free water care loop.",
+    description: "Designed to sync with Ally's upcoming auto tester and auto doser, completing the hands free water care loop.",
     comingSoon: true,
   },
 ];
@@ -64,12 +64,12 @@ const testingFeatures = [
   {
     icon: Camera,
     title: "Photo Scan or Manual Entry",
-    description: "Test your way — snap a photo of test strips or enter values manually.",
+    description: "Test your way. Snap a photo of test strips or enter values manually.",
   },
   {
     icon: Brain,
     title: "AI Parameter Detection",
-    description: "Advanced AI analyzes your results with professional-level precision.",
+    description: "Advanced AI analyzes your results with professional level precision.",
   },
   {
     icon: Target,
@@ -86,7 +86,7 @@ const monitoringFeatures = [
   },
   {
     icon: Activity,
-    title: "Space-Specific Thresholds",
+    title: "Space Specific Thresholds",
     description: "Custom alerts based on your unique water parameters and goals.",
   },
   {
@@ -109,7 +109,7 @@ const insightFeatures = [
   },
   {
     icon: Fish,
-    title: "Livestock-Aware Recommendations",
+    title: "Livestock Aware Recommendations",
     description: "Coming soon: Care plans that consider your fish and plants.",
     comingSoon: true,
   },
@@ -118,14 +118,14 @@ const insightFeatures = [
 const hardwareFeatures = [
   {
     icon: Box,
-    title: "Auto-Tester",
-    description: "Automatic water testing on your schedule — hands-free accuracy.",
+    title: "Auto Tester",
+    description: "Automatic water testing on your schedule. Hands free accuracy.",
     comingSoon: true,
   },
   {
     icon: Settings,
-    title: "Auto-Doser",
-    description: "Precise chemical dosing based on real-time water analysis.",
+    title: "Auto Doser",
+    description: "Precise chemical dosing based on real time water analysis.",
     comingSoon: true,
   },
 ];
@@ -193,15 +193,15 @@ const Features = () => {
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">Real-Time Monitoring</h3>
+                    <h3 className="font-semibold text-foreground mb-1">Real Time Monitoring</h3>
                     <p>Track water parameters with beautiful, intuitive charts</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">Step-by-Step Plans</h3>
-                    <p>Follow personalized 14-day plans to achieve crystal clear water</p>
+                    <h3 className="font-semibold text-foreground mb-1">Step by Step Plans</h3>
+                    <p>Follow personalized 14 day plans to achieve crystal clear water</p>
                   </div>
                 </div>
               </div>
@@ -360,7 +360,7 @@ const Features = () => {
               Actionable Insights
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Turn data into action with personalized, step-by-step guidance.
+              Turn data into action with personalized, step by step guidance.
             </p>
           </div>
 
@@ -402,7 +402,7 @@ const Features = () => {
               Hardware Integration
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The future of hands-free water care is coming — designed to work seamlessly with Ally's intelligence.
+              The future of hands free water care is coming. Designed to work seamlessly with Ally's intelligence.
             </p>
           </div>
 
