@@ -92,7 +92,10 @@ serve(async (req) => {
       throw new Error("No authorization header");
     }
 
-    console.log("Auth header present, creating Supabase client...");
+    // Extract JWT token from Bearer header
+    const token = authHeader.replace('Bearer ', '');
+
+    console.log("Auth token present, creating Supabase client...");
 
     // Initialize Supabase client
     const supabase = createClient(
@@ -105,8 +108,8 @@ serve(async (req) => {
       }
     );
 
-    // Get authenticated user
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    // Get authenticated user by passing the JWT token directly
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError) {
       console.error("Ally chat auth error:", authError.message);
