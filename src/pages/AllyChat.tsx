@@ -40,6 +40,8 @@ interface Message {
   content: string;
   timestamp?: Date;
   id?: string;
+  aquariumContext?: string | null;
+  aquariumName?: string;
 }
 
 interface Aquarium {
@@ -265,8 +267,16 @@ const AllyChat = () => {
       let assistantMessage = "";
       let textBuffer = "";
       let streamDone = false;
+      const currentAquariumName = getSelectedAquariumName();
+      const currentAquariumContext = selectedAquarium;
 
-      setMessages((prev) => [...prev, { role: "assistant", content: "", timestamp: new Date() }]);
+      setMessages((prev) => [...prev, { 
+        role: "assistant", 
+        content: "", 
+        timestamp: new Date(),
+        aquariumContext: currentAquariumContext,
+        aquariumName: currentAquariumName
+      }]);
 
       while (!streamDone) {
         const { done, value } = await reader.read();
@@ -299,7 +309,9 @@ const AllyChat = () => {
                 newMessages[newMessages.length - 1] = {
                   role: "assistant",
                   content: assistantMessage,
-                  timestamp: new Date()
+                  timestamp: new Date(),
+                  aquariumContext: currentAquariumContext,
+                  aquariumName: currentAquariumName
                 };
                 return newMessages;
               });
@@ -934,14 +946,22 @@ const AllyChat = () => {
                         )}
                       </div>
                       
-                      {message.timestamp && (
-                        <p className={cn(
-                          "text-xs text-muted-foreground/60",
-                          message.role === "user" && "text-right"
-                        )}>
-                          {format(message.timestamp, "h:mm a")}
-                        </p>
-                      )}
+                      <div className={cn(
+                        "flex items-center gap-2 flex-wrap",
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      )}>
+                        {message.timestamp && (
+                          <p className="text-xs text-muted-foreground/60">
+                            {format(message.timestamp, "h:mm a")}
+                          </p>
+                        )}
+                        {message.role === "assistant" && message.aquariumName && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            <Fish className="h-3 w-3" />
+                            {message.aquariumName}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
                     {message.role === "user" && (
