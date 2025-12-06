@@ -731,14 +731,32 @@ const AllyChat = () => {
                 )}
               </div>
               
-              {/* Mobile aquarium display */}
+              {/* Mobile aquarium selector */}
               {aquariums.length > 0 && (
                 <div className="mt-3 sm:hidden">
                   <p className="text-xs text-primary-foreground/70 mb-1">Current context:</p>
-                  <div className="text-sm text-primary-foreground bg-primary-foreground/10 px-3 py-2 rounded flex items-center gap-2">
-                    <Fish className="h-4 w-4" />
-                    {getSelectedAquariumName()}
-                  </div>
+                  <Select value={selectedAquarium} onValueChange={setSelectedAquarium}>
+                    <SelectTrigger className="w-full bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20">
+                      <Fish className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Select aquarium" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">
+                        <span className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          General Advice
+                        </span>
+                      </SelectItem>
+                      {aquariums.map((aq) => (
+                        <SelectItem key={aq.id} value={aq.id}>
+                          <span className="flex items-center gap-2">
+                            <Fish className="h-4 w-4" />
+                            {aq.name} ({aq.type})
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
             </div>
