@@ -238,3 +238,8 @@ All colors MUST be HSL.
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Safe area padding for mobile devices with home indicators */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
