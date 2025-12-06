@@ -829,7 +829,7 @@ const Settings = () => {
                             <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
                               <span className="text-green-600 font-bold">✓</span>
                             </div>
-                            <p className="text-sm">Up to 10 aquariums</p>
+                            <p className="text-sm">Up to 3 aquariums</p>
                           </div>
                           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                             <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -851,7 +851,7 @@ const Settings = () => {
                             <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
                               <span className="text-green-600 font-bold">✓</span>
                             </div>
-                            <p className="text-sm">Unlimited aquariums</p>
+                            <p className="text-sm">Up to 10 aquariums</p>
                           </div>
                           <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                             <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
