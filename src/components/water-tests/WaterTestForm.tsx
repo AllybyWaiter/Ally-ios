@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles, Save } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles, Save, Lock } from "lucide-react";
 import { getAllTemplates, validateParameter, type ParameterTemplate } from "@/lib/waterTestUtils";
 import { CustomTemplateManager } from "./CustomTemplateManager";
 import { 
@@ -26,6 +26,8 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { useFeatureRateLimit } from "@/hooks/useFeatureRateLimit";
 import { measurePerformance } from "@/lib/performanceMonitor";
 import { FeatureArea } from "@/lib/sentry";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface WaterTestFormProps {
   aquarium: {
@@ -40,6 +42,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const rateLimit = useFeatureRateLimit('water-test-photo');
+  const { canLogTest, getRemainingTests, limits, tier, getUpgradeSuggestion } = usePlanLimits();
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [parameters, setParameters] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
@@ -51,6 +54,9 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+
+  const isAtTestLimit = !canLogTest();
+  const remainingTests = getRemainingTests();
 
   // Auto-save draft functionality
   const autoSaveData = {
@@ -429,6 +435,16 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check test limit before submitting
+    if (isAtTestLimit) {
+      const suggestedPlan = getUpgradeSuggestion();
+      toast.error("Monthly test limit reached", {
+        description: `Your ${tier} plan allows ${limits.maxTestLogsPerMonth} tests per month. Upgrade to ${suggestedPlan || 'a higher plan'} for more.`,
+      });
+      return;
+    }
+    
     // Clear draft on successful submit
     localStorage.removeItem(`water-test-draft-${aquarium.id}`);
     createTestMutation.mutate();
@@ -460,6 +476,24 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Test Limit Warning */}
+          {isAtTestLimit && (
+            <Alert variant="destructive" className="mb-6">
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                You've reached your monthly limit of {limits.maxTestLogsPerMonth} water tests. 
+                Upgrade to {getUpgradeSuggestion() || 'a higher plan'} for unlimited tests.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* Remaining Tests Info */}
+          {!isAtTestLimit && limits.maxTestLogsPerMonth !== null && (
+            <div className="mb-4 text-sm text-muted-foreground">
+              {remainingTests} of {limits.maxTestLogsPerMonth} tests remaining this month
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Photo Upload Section */}
             <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-br from-primary/5 to-primary/10">
@@ -716,12 +750,13 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled={!selectedTemplate || !hasValidParameters || createTestMutation.isPending}
+                disabled={!selectedTemplate || !hasValidParameters || createTestMutation.isPending || isAtTestLimit}
                 className="flex-1"
               >
                 {createTestMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
+                {isAtTestLimit && <Lock className="w-4 h-4 mr-2" />}
                 {t('waterTests.saveTest')}
               </Button>
             </div>
