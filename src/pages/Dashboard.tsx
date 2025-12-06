@@ -8,7 +8,7 @@ import { PreferencesOnboarding } from '@/components/PreferencesOnboarding';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles, Shield } from 'lucide-react';
+import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles, Shield, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import { AquariumDialog } from '@/components/aquarium/AquariumDialog';
@@ -18,6 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 import { formatDate } from '@/lib/formatters';
 import { DashboardSkeleton } from '@/components/ui/loading-skeleton';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Aquarium {
   id: string;
@@ -34,6 +36,7 @@ export default function Dashboard() {
   const { user, isAdmin, userName, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier } = usePlanLimits();
   const [loading, setLoading] = useState(true);
   const [showPreferencesOnboarding, setShowPreferencesOnboarding] = useState(false);
   const [showAquariumOnboarding, setShowAquariumOnboarding] = useState(false);
@@ -131,6 +134,15 @@ export default function Dashboard() {
   };
 
   const handleCreateAquarium = () => {
+    if (!canCreateAquarium(aquariums.length)) {
+      const upgradeTier = getUpgradeSuggestion();
+      toast({
+        title: 'Aquarium Limit Reached',
+        description: `Your ${tier} plan allows up to ${limits.maxAquariums} aquarium${limits.maxAquariums !== 1 ? 's' : ''}. ${upgradeTier ? `Upgrade to ${upgradeTier.charAt(0).toUpperCase() + upgradeTier.slice(1)} for more.` : ''}`,
+        variant: 'destructive',
+      });
+      return;
+    }
     setEditingAquarium(undefined);
     setAquariumDialogOpen(true);
   };
@@ -311,11 +323,39 @@ export default function Dashboard() {
         ) : (
           <>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
-              <Button onClick={handleCreateAquarium}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t('dashboard.addAquarium')}
-              </Button>
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
+                {limits.maxAquariums !== Infinity && (
+                  <Badge variant="secondary" className="text-xs">
+                    {aquariums.length}/{limits.maxAquariums}
+                  </Badge>
+                )}
+              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button 
+                        onClick={handleCreateAquarium}
+                        disabled={!canCreateAquarium(aquariums.length)}
+                        className={!canCreateAquarium(aquariums.length) ? 'opacity-50' : ''}
+                      >
+                        {!canCreateAquarium(aquariums.length) ? (
+                          <Lock className="mr-2 h-4 w-4" />
+                        ) : (
+                          <Plus className="mr-2 h-4 w-4" />
+                        )}
+                        {t('dashboard.addAquarium')}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!canCreateAquarium(aquariums.length) && (
+                    <TooltipContent>
+                      <p>Upgrade your plan to add more aquariums</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {aquariums.map((aquarium) => (
