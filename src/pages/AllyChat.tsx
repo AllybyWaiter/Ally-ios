@@ -543,11 +543,13 @@ const AllyChat = () => {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <AppHeader />
+      <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-background via-background to-primary/5 overflow-hidden">
+        <div className="hidden lg:block">
+          <AppHeader />
+        </div>
       
-      <main className="container mx-auto px-4 py-8 pt-24 max-w-7xl">
-        <div className="flex gap-4 h-[calc(100vh-12rem)]">
+      <main className="flex-1 lg:container lg:mx-auto lg:px-4 lg:py-8 lg:pt-24 lg:max-w-7xl overflow-hidden">
+        <div className="flex gap-4 h-full lg:h-[calc(100vh-12rem)]">
           {/* Desktop Sidebar */}
           <Card className="hidden lg:block w-80 shadow-lg">
             <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-primary/5">
@@ -617,9 +619,9 @@ const AllyChat = () => {
           </Card>
 
           {/* Main Chat Area */}
-          <Card className="flex-1 shadow-lg flex flex-col">
+          <Card className="flex-1 shadow-lg flex flex-col rounded-none lg:rounded-lg border-0 lg:border">
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-6 border-b flex-shrink-0">
+            <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-4 lg:p-6 border-b flex-shrink-0">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   {/* Mobile History Button */}
@@ -774,7 +776,7 @@ const AllyChat = () => {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-6">
+            <ScrollArea className="flex-1 p-4 lg:p-6">
               <div className="space-y-8 max-w-4xl mx-auto">
                 {messages.map((message, index) => (
                   <div
@@ -989,7 +991,7 @@ const AllyChat = () => {
 
             {/* Quick Questions */}
             {messages.length <= 2 && !isLoading && (
-              <div className="px-6 pb-4 flex flex-wrap gap-2 max-w-3xl mx-auto w-full">
+              <div className="px-4 lg:px-6 pb-3 lg:pb-4 flex flex-wrap gap-2 max-w-3xl mx-auto w-full flex-shrink-0">
                 {quickQuestions.map((question, index) => (
                   <Button
                     key={index}
@@ -1008,7 +1010,7 @@ const AllyChat = () => {
             )}
 
             {/* Input */}
-            <div className="p-6 border-t bg-muted/30 flex-shrink-0">
+            <div className="p-3 lg:p-6 border-t bg-muted/30 flex-shrink-0 pb-safe">
               <div className="max-w-3xl mx-auto">
                 <div className="flex gap-2 items-end">
                   <Textarea
@@ -1025,7 +1027,7 @@ const AllyChat = () => {
                     }}
                     placeholder="Ask Ally anything about your aquarium..."
                     disabled={isLoading}
-                    className="flex-1 min-h-[48px] max-h-[200px] resize-none"
+                    className="flex-1 min-h-[44px] max-h-[120px] lg:max-h-[200px] resize-none text-base"
                     rows={1}
                   />
                   <Tooltip>
