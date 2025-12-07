@@ -136,7 +136,7 @@ export default function AquariumDetail() {
             </DropdownMenu>
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            {aquarium.volume_gallons && (
+            {aquarium.volume_gallons != null && aquarium.volume_gallons > 0 && (
               <span>{formatVolume(aquarium.volume_gallons, units)}</span>
             )}
             {aquarium.setup_date && (

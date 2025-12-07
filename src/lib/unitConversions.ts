@@ -12,7 +12,8 @@ export const fahrenheitToCelsius = (fahrenheit: number): number => {
   return (fahrenheit - 32) * 5/9;
 };
 
-export const formatTemperature = (value: number, units: UnitSystem | null, storedUnit: 'C' | 'F' = 'F'): string => {
+export const formatTemperature = (value: number | null | undefined, units: UnitSystem | null, storedUnit: 'C' | 'F' = 'F'): string => {
+  if (value === null || value === undefined || isNaN(value)) return '';
   const unitSystem = units || 'imperial';
   
   // If stored in Celsius
@@ -41,7 +42,8 @@ export const litersToGallons = (liters: number): number => {
   return liters / 3.78541;
 };
 
-export const formatVolume = (gallons: number, units: UnitSystem | null): string => {
+export const formatVolume = (gallons: number | null | undefined, units: UnitSystem | null): string => {
+  if (gallons === null || gallons === undefined || isNaN(gallons)) return '';
   const unitSystem = units || 'imperial';
   
   if (unitSystem === 'metric') {
@@ -60,7 +62,8 @@ export const centimetersToInches = (cm: number): number => {
   return cm / 2.54;
 };
 
-export const formatLength = (inches: number, units: UnitSystem | null): string => {
+export const formatLength = (inches: number | null | undefined, units: UnitSystem | null): string => {
+  if (inches === null || inches === undefined || isNaN(inches)) return '';
   const unitSystem = units || 'imperial';
   
   if (unitSystem === 'metric') {
@@ -72,10 +75,11 @@ export const formatLength = (inches: number, units: UnitSystem | null): string =
 
 // Generic parameter formatting with units
 export const formatParameter = (
-  value: number, 
+  value: number | null | undefined, 
   unit: string, 
   unitSystem: UnitSystem | null
 ): string => {
+  if (value === null || value === undefined || isNaN(value)) return '-';
   // Temperature parameters
   if (unit === '°F' || unit === 'F') {
     return formatTemperature(value, unitSystem, 'F');
