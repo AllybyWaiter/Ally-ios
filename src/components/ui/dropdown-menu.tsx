@@ -4,7 +4,24 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const DropdownMenu = DropdownMenuPrimitive.Root;
+// Wrapper to fix Radix UI pointer-events conflict with dialogs
+const DropdownMenu = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>
+>(({ onOpenChange, ...props }, ref) => {
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      // Clean up pointer-events when dropdown closes
+      setTimeout(() => {
+        document.body.style.removeProperty('pointer-events');
+      }, 0);
+    }
+    onOpenChange?.(open);
+  }, [onOpenChange]);
+
+  return <DropdownMenuPrimitive.Root onOpenChange={handleOpenChange} {...props} />;
+});
+DropdownMenu.displayName = "DropdownMenu";
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
