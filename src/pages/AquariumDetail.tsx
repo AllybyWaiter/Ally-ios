@@ -38,7 +38,7 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
 export default function AquariumDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { units } = useAuth();
+  const { user, loading: authLoading, units } = useAuth();
   const { t } = useTranslation();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -55,6 +55,8 @@ export default function AquariumDetail() {
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user && !!id,
+    retry: 2,
   });
 
   const handleDeleteConfirm = async () => {
@@ -84,7 +86,8 @@ export default function AquariumDetail() {
     }
   };
 
-  if (isLoading) {
+  // Show loading while auth is initializing or data is loading
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
