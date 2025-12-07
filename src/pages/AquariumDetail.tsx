@@ -98,7 +98,7 @@ export default function AquariumDetail() {
     return (
       <div className="min-h-screen">
         <AppHeader />
-        <div className="container mx-auto px-4 py-12 pt-28 text-center">
+        <div className="container mx-auto px-4 py-12 pt-24 mt-safe text-center">
           <h1 className="text-2xl font-bold mb-4">Error loading aquarium</h1>
           <p className="text-muted-foreground mb-4">{error.message}</p>
           <Button onClick={() => navigate("/dashboard")}>
@@ -114,7 +114,7 @@ export default function AquariumDetail() {
     return (
       <div className="min-h-screen">
         <AppHeader />
-        <div className="container mx-auto px-4 py-12 pt-28 text-center">
+        <div className="container mx-auto px-4 py-12 pt-24 mt-safe text-center">
           <h1 className="text-2xl font-bold mb-4">{t('aquarium.notFound')}</h1>
           <Button onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -130,7 +130,7 @@ export default function AquariumDetail() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container mx-auto px-4 py-8 pt-28">
+      <main className="container mx-auto px-4 py-8 pt-24 mt-safe">
         <Button
           variant="ghost"
           onClick={() => navigate("/dashboard")}

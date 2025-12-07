@@ -217,7 +217,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <AppHeader />
       
-      <main className="container mx-auto px-4 py-8 pt-28">
+      <main className="container mx-auto px-4 py-8 pt-24 mt-safe">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>

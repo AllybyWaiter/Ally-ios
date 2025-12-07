@@ -253,3 +253,8 @@ All colors MUST be HSL.
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0);
 }
+
+/* Safe area margin for top (Dynamic Island/Notch) */
+.mt-safe {
+  margin-top: env(safe-area-inset-top, 0);
+}
