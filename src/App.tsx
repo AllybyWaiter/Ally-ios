@@ -66,12 +66,12 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
+import AquariumDetail from "./pages/AquariumDetail"; // Eagerly loaded to prevent iOS PWA module resolution errors
 
 // Lazy load authenticated pages with retry logic (code splitting)
 const Admin = lazyWithRetry(() => import("./pages/Admin"));
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const WaterTests = lazyWithRetry(() => import("./pages/WaterTests"));
-const AquariumDetail = lazyWithRetry(() => import("./pages/AquariumDetail"));
 const TaskCalendar = lazyWithRetry(() => import("./pages/TaskCalendar"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
 const AllyChat = lazyWithRetry(() => import("./pages/AllyChat"));
@@ -157,9 +157,7 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Aquarium Details" featureArea="aquarium">
-                          <Suspense fallback={<DashboardSkeleton />}>
-                            <AquariumDetail />
-                          </Suspense>
+                          <AquariumDetail />
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     } 
