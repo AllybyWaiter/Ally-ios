@@ -261,13 +261,19 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <CheckCircle2 className="w-4 h-4 mr-2" />
                         {t('tasks.complete')}
                       </Button>
-                      <DropdownMenu>
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            type="button"
+                            className="h-8 w-8 p-0"
+                          >
                             <MoreVertical className="w-4 h-4" />
+                            <span className="sr-only">Open menu</span>
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="z-[100]">
                           <DropdownMenuItem onClick={() => handleEditTask(task.id)}>
                             <Pencil className="w-4 h-4 mr-2" />
                             {t('common.edit')}
