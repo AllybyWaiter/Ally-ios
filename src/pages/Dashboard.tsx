@@ -36,7 +36,7 @@ export default function Dashboard() {
   const { user, isAdmin, userName, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier } = usePlanLimits();
+  const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier, loading: limitsLoading } = usePlanLimits();
   const [loading, setLoading] = useState(true);
   const [showPreferencesOnboarding, setShowPreferencesOnboarding] = useState(false);
   const [showAquariumOnboarding, setShowAquariumOnboarding] = useState(false);
@@ -325,7 +325,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
-                {limits.maxAquariums !== Infinity && (
+                {!limitsLoading && limits.maxAquariums !== Infinity && (
                   <Badge variant="secondary" className="text-xs">
                     {aquariums.length}/{limits.maxAquariums}
                   </Badge>
