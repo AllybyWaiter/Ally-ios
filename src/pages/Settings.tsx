@@ -253,8 +253,8 @@ const Settings = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pt-safe">
+      <div className="container mx-auto px-4 py-8 pt-12 pb-safe max-w-5xl">
         <div className="flex items-center justify-between mb-8">
           <Button
             variant="ghost"
