@@ -13,7 +13,7 @@ import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
 import { AquariumTasks } from "@/components/aquarium/AquariumTasks";
 import { AquariumLivestock } from "@/components/aquarium/AquariumLivestock";
 import { TaskSuggestions } from "@/components/aquarium/TaskSuggestions";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { AquariumDialog } from "@/components/aquarium/AquariumDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -21,6 +21,19 @@ import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatVolume, UnitSystem } from "@/lib/unitConversions";
+
+// Safe date formatter to prevent crashes
+const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (!isValid(date)) return 'Invalid date';
+    return format(date, formatStr);
+  } catch (error) {
+    console.error('Date formatting error:', error);
+    return 'Invalid date';
+  }
+};
 
 export default function AquariumDetail() {
   const { id } = useParams();
@@ -30,7 +43,7 @@ export default function AquariumDetail() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const { data: aquarium, isLoading, refetch } = useQuery({
+  const { data: aquarium, isLoading, error, refetch } = useQuery({
     queryKey: ["aquarium", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -75,6 +88,24 @@ export default function AquariumDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Handle query errors
+  if (error) {
+    console.error('AquariumDetail query error:', error);
+    return (
+      <div className="min-h-screen">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-12 pt-28 text-center">
+          <h1 className="text-2xl font-bold mb-4">Error loading aquarium</h1>
+          <p className="text-muted-foreground mb-4">{error.message}</p>
+          <Button onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('aquarium.backToDashboard')}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -140,7 +171,7 @@ export default function AquariumDetail() {
               <span>{formatVolume(aquarium.volume_gallons, units)}</span>
             )}
             {aquarium.setup_date && (
-              <span>Setup: {format(new Date(aquarium.setup_date), "PPP")}</span>
+              <span>Setup: {safeFormatDate(aquarium.setup_date, "PPP")}</span>
             )}
           </div>
           {aquarium.notes && (

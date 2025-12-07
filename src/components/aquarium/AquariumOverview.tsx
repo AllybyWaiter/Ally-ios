@@ -5,14 +5,27 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Droplet, Wrench, ListTodo, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, Droplet, Wrench, ListTodo, Plus, AlertCircle } from "lucide-react";
+import { format, isValid } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions";
 import { formatRelativeTime } from "@/lib/formatters";
 import { EquipmentDialog } from "./EquipmentDialog";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
+
+// Safe date formatter to prevent crashes
+const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "MMM d"): string => {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (!isValid(date)) return 'Invalid date';
+    return format(date, formatStr);
+  } catch (error) {
+    console.error('Date formatting error in AquariumOverview:', error);
+    return '';
+  }
+};
 
 interface AquariumOverviewProps {
   aquariumId: string;
@@ -147,14 +160,15 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
             <p className="text-sm text-muted-foreground">{t('overview.tasksPending')}</p>
             {upcomingTasks && upcomingTasks.length > 0 && (
               <div className="mt-4 space-y-2">
-                {upcomingTasks.slice(0, 3).map((task) => {
+              {(upcomingTasks || []).slice(0, 3).map((task) => {
+                  if (!task?.id || !task?.due_date) return null;
                   const dueDateStatus = getTaskDueDateStatus(task.due_date);
                   return (
                     <div key={task.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{task.task_name}</p>
+                        <p className="text-sm font-medium truncate">{task.task_name || 'Unnamed task'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(task.due_date), "MMM d")}
+                          {safeFormatDate(task.due_date, "MMM d")}
                         </p>
                       </div>
                       <Badge variant={dueDateStatus.variant} className="ml-2 text-xs">
@@ -225,22 +239,25 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                >
-                  <div>
-                    <p className="font-medium">{task.task_name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {task.task_type}
-                    </p>
+              {(upcomingTasks || []).map((task) => {
+                if (!task?.id) return null;
+                return (
+                  <div
+                    key={task.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div>
+                      <p className="font-medium">{task.task_name || 'Unnamed task'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {task.task_type || ''}
+                      </p>
+                    </div>
+                    <Badge variant="outline">
+                      {safeFormatDate(task.due_date, "MMM d")}
+                    </Badge>
                   </div>
-                  <Badge variant="outline">
-                    {format(new Date(task.due_date), "MMM d")}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
