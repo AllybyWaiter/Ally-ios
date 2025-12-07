@@ -58,6 +58,18 @@ export default defineConfig(({ mode }) => ({
               },
             },
           },
+          {
+            urlPattern: /\.js$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "js-cache",
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+              networkTimeoutSeconds: 10,
+            },
+          },
         ],
       },
       manifest: false, // Use existing manifest.webmanifest
