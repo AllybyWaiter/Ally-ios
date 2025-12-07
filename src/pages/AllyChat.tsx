@@ -24,7 +24,8 @@ import {
   Fish,
   Edit2,
   X,
-  RotateCw
+  RotateCw,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -621,9 +622,19 @@ const AllyChat = () => {
           {/* Main Chat Area */}
           <Card className="flex-1 shadow-lg flex flex-col rounded-none lg:rounded-lg border-0 lg:border">
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-4 lg:p-6 border-b flex-shrink-0">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-3 lg:p-6 pt-safe border-b flex-shrink-0">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Mobile Back Button */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                  
                   {/* Mobile History Button */}
                   <Sheet>
                     <Tooltip>
