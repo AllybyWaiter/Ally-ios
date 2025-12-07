@@ -65,9 +65,11 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   };
 
   const handleEditTask = (taskId: string) => {
-    setDialogMode("edit");
-    setEditingTaskId(taskId);
-    setDialogOpen(true);
+    setTimeout(() => {
+      setDialogMode("edit");
+      setEditingTaskId(taskId);
+      setDialogOpen(true);
+    }, 0);
   };
 
   const handleDeleteTask = async () => {
@@ -274,8 +276,10 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              setTaskToDelete(task.id);
-                              setDeleteConfirmOpen(true);
+                              setTimeout(() => {
+                                setTaskToDelete(task.id);
+                                setDeleteConfirmOpen(true);
+                              }, 0);
                             }}
                             className="text-destructive"
                           >
