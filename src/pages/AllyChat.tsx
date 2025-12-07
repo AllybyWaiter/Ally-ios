@@ -549,7 +549,7 @@ const AllyChat = () => {
           <AppHeader />
         </div>
       
-      <main className="flex-1 lg:container lg:mx-auto lg:px-4 lg:py-8 lg:pt-24 lg:max-w-7xl overflow-hidden">
+      <main className="flex-1 lg:container lg:mx-auto lg:px-4 lg:py-8 lg:pt-28 lg:max-w-7xl overflow-hidden">
         <div className="flex gap-4 h-full lg:h-[calc(100vh-12rem)]">
           {/* Desktop Sidebar */}
           <Card className="hidden lg:block w-80 shadow-lg">
