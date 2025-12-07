@@ -125,8 +125,10 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   };
 
   const handleEditLivestock = (item: Livestock) => {
-    setEditingLivestock(item);
-    setLivestockDialogOpen(true);
+    setTimeout(() => {
+      setEditingLivestock(item);
+      setLivestockDialogOpen(true);
+    }, 0);
   };
 
   const handleAddLivestock = () => {
@@ -135,8 +137,10 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   };
 
   const handleEditPlant = (item: Plant) => {
-    setEditingPlant(item);
-    setPlantDialogOpen(true);
+    setTimeout(() => {
+      setEditingPlant(item);
+      setPlantDialogOpen(true);
+    }, 0);
   };
 
   const handleAddPlant = () => {
@@ -145,9 +149,11 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   };
 
   const handleDeleteClick = (id: string, type: 'livestock' | 'plant') => {
-    setDeletingId(id);
-    setDeletingType(type);
-    setDeleteDialogOpen(true);
+    setTimeout(() => {
+      setDeletingId(id);
+      setDeletingType(type);
+      setDeleteDialogOpen(true);
+    }, 0);
   };
 
   const handleDeleteConfirm = async () => {
@@ -267,7 +273,13 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                                     </CardDescription>
                                   </div>
                                 </div>
-                                <DropdownMenu>
+                                <DropdownMenu
+                                  onOpenChange={(open) => {
+                                    if (!open) {
+                                      document.body.style.removeProperty('pointer-events');
+                                    }
+                                  }}
+                                >
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
                                       <MoreVertical className="h-4 w-4" />
@@ -374,7 +386,13 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                                   </CardDescription>
                                 </div>
                               </div>
-                              <DropdownMenu>
+                              <DropdownMenu
+                                onOpenChange={(open) => {
+                                  if (!open) {
+                                    document.body.style.removeProperty('pointer-events');
+                                  }
+                                }}
+                              >
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <MoreVertical className="h-4 w-4" />
