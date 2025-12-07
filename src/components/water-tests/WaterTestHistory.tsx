@@ -81,26 +81,41 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              {test.test_parameters?.map((param: any) => (
-                <div
-                  key={param.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{param.parameter_name}</p>
+              {test.test_parameters?.map((param: any) => {
+                const getStatusBadgeClass = (status: string) => {
+                  switch (status) {
+                    case 'good':
+                      return 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30';
+                    case 'warning':
+                      return 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30';
+                    case 'critical':
+                      return 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30';
+                    default:
+                      return 'bg-muted text-muted-foreground border-border';
+                  }
+                };
+
+                return (
+                  <div
+                    key={param.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{param.parameter_name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold">
+                        {formatParameter(param.value, param.unit, units)}
+                      </p>
+                      {param.status && (
+                        <Badge className={`text-xs mt-1 border ${getStatusBadgeClass(param.status)}`}>
+                          {param.status}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">
-                      {formatParameter(param.value, param.unit, units)}
-                    </p>
-                    {param.status && param.status !== "normal" && (
-                      <Badge variant="destructive" className="text-xs mt-1">
-                        {param.status}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {test.notes && (
               <div className="mt-4 p-3 rounded-lg bg-muted/30">
