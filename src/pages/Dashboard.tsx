@@ -54,12 +54,12 @@ export default function Dashboard() {
     }
     
     // Wait for auth to finish loading before checking onboarding status
-    if (authLoading) {
+    if (authLoading || onboardingCompleted === null) {
       return;
     }
     
-    // Check if preferences onboarding needs to be shown
-    if (!onboardingCompleted) {
+    // Check if preferences onboarding needs to be shown (explicitly false, not null)
+    if (onboardingCompleted === false) {
       setShowPreferencesOnboarding(true);
       setLoading(false);
       return;
