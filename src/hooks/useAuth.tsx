@@ -18,7 +18,7 @@ interface AuthContextType {
   languagePreference: string | null;
   unitPreference: string | null;
   units: UnitSystem | null;
-  onboardingCompleted: boolean;
+  onboardingCompleted: boolean | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [themePreference, setThemePreference] = useState<string | null>(null);
   const [languagePreference, setLanguagePreference] = useState<string | null>(null);
   const [unitPreference, setUnitPreference] = useState<string | null>(null);
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
