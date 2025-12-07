@@ -315,28 +315,37 @@ export type Database = {
       }
       contacts: {
         Row: {
+          company: string | null
           created_at: string
           email: string
           id: string
+          inquiry_type: string | null
           message: string
           name: string
           status: string | null
+          subject: string | null
         }
         Insert: {
+          company?: string | null
           created_at?: string
           email: string
           id?: string
+          inquiry_type?: string | null
           message: string
           name: string
           status?: string | null
+          subject?: string | null
         }
         Update: {
+          company?: string | null
           created_at?: string
           email?: string
           id?: string
+          inquiry_type?: string | null
           message?: string
           name?: string
           status?: string | null
+          subject?: string | null
         }
         Relationships: []
       }

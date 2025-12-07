@@ -86,6 +86,7 @@ const HowItWorksPage = lazyWithRetry(() => import("./pages/HowItWorks"));
 const Blog = lazyWithRetry(() => import("./pages/Blog"));
 const BlogPost = lazyWithRetry(() => import("./pages/BlogPost"));
 const FAQ = lazyWithRetry(() => import("./pages/FAQ"));
+const Contact = lazyWithRetry(() => import("./pages/Contact"));
 
 // Configure React Query with optimized caching
 const queryClient = new QueryClient({
@@ -127,6 +128,7 @@ const App = () => (
                   <Route path="/how-it-works" element={<PageErrorBoundary pageName="How It Works" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><HowItWorksPage /></Suspense></PageErrorBoundary>} />
                   <Route path="/pricing" element={<PageErrorBoundary pageName="Pricing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Pricing /></Suspense></PageErrorBoundary>} />
                   <Route path="/faq" element={<PageErrorBoundary pageName="FAQ" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><FAQ /></Suspense></PageErrorBoundary>} />
+                  <Route path="/contact" element={<PageErrorBoundary pageName="Contact" featureArea="general"><Suspense fallback={<FormSkeleton />}><Contact /></Suspense></PageErrorBoundary>} />
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
                   <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
