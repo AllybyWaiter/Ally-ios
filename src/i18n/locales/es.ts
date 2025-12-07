@@ -184,6 +184,11 @@ export const es = {
       completeConfirmation: "¿Marcar esta tarea como completada?",
       taskCompletedAndNext: "Tarea completada y próxima ocurrencia creada",
       taskMarkedComplete: "Tarea marcada como completada",
+      filterAll: "Todas",
+      filterOverdue: "Atrasadas",
+      filterToday: "Hoy",
+      filterUpcoming: "Próximas",
+      noTasksMatchFilter: "No hay tareas que coincidan con este filtro",
     },
     onboarding: {
       preferences: {

@@ -184,6 +184,11 @@ export const fr = {
       completeConfirmation: "Marquer cette tâche comme terminée ?",
       taskCompletedAndNext: "Tâche terminée et prochaine occurrence créée",
       taskMarkedComplete: "Tâche marquée comme terminée",
+      filterAll: "Toutes",
+      filterOverdue: "En retard",
+      filterToday: "Aujourd'hui",
+      filterUpcoming: "À venir",
+      noTasksMatchFilter: "Aucune tâche ne correspond à ce filtre",
     },
     onboarding: {
       preferences: {
