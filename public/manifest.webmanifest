@@ -50,27 +50,44 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/favicon.png", "sizes": "32x32" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Chat with Ally",
       "short_name": "Ally Chat",
       "url": "/ally-chat",
-      "icons": [{ "src": "/favicon.png", "sizes": "32x32" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Log Water Test",
       "short_name": "Water Test",
       "url": "/water-tests",
-      "icons": [{ "src": "/favicon.png", "sizes": "32x32" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Task Calendar",
       "short_name": "Calendar",
       "url": "/calendar",
-      "icons": [{ "src": "/favicon.png", "sizes": "32x32" }]
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Ally Dashboard - Desktop View"
+    },
+    {
+      "src": "/screenshot-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Ally Dashboard - Mobile View"
     }
   ],
   "categories": ["lifestyle", "utilities"],
-  "lang": "en"
+  "lang": "en",
+  "prefer_related_applications": false
 }
