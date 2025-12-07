@@ -64,6 +64,7 @@ const AllyChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [selectedAquarium, setSelectedAquarium] = useState<string>("general");
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -74,6 +75,11 @@ const AllyChat = () => {
   const [editingContent, setEditingContent] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Token batching refs for smoother streaming
+  const tokenBufferRef = useRef<string>("");
+  const lastUpdateRef = useRef<number>(0);
+  const UPDATE_INTERVAL = 30; // ms between state updates
 
   useEffect(() => {
     initializeChat();
@@ -271,6 +277,11 @@ const AllyChat = () => {
       const currentAquariumName = getSelectedAquariumName();
       const currentAquariumContext = selectedAquarium;
 
+      // Reset token batching
+      tokenBufferRef.current = "";
+      lastUpdateRef.current = Date.now();
+      setIsStreaming(true);
+
       setMessages((prev) => [...prev, { 
         role: "assistant", 
         content: "", 
@@ -278,6 +289,29 @@ const AllyChat = () => {
         aquariumContext: currentAquariumContext,
         aquariumName: currentAquariumName
       }]);
+
+      // Batched update function
+      const flushTokenBuffer = (forceFlush = false) => {
+        const now = Date.now();
+        if (forceFlush || now - lastUpdateRef.current >= UPDATE_INTERVAL) {
+          if (tokenBufferRef.current) {
+            assistantMessage += tokenBufferRef.current;
+            tokenBufferRef.current = "";
+            lastUpdateRef.current = now;
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              newMessages[newMessages.length - 1] = {
+                role: "assistant",
+                content: assistantMessage,
+                timestamp: new Date(),
+                aquariumContext: currentAquariumContext,
+                aquariumName: currentAquariumName
+              };
+              return newMessages;
+            });
+          }
+        }
+      };
 
       while (!streamDone) {
         const { done, value } = await reader.read();
@@ -304,18 +338,8 @@ const AllyChat = () => {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
-              assistantMessage += content;
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                newMessages[newMessages.length - 1] = {
-                  role: "assistant",
-                  content: assistantMessage,
-                  timestamp: new Date(),
-                  aquariumContext: currentAquariumContext,
-                  aquariumName: currentAquariumName
-                };
-                return newMessages;
-              });
+              tokenBufferRef.current += content;
+              flushTokenBuffer();
             }
           } catch {
             textBuffer = line + "\n" + textBuffer;
@@ -323,6 +347,10 @@ const AllyChat = () => {
           }
         }
       }
+
+      // Final flush to ensure all tokens are rendered
+      flushTokenBuffer(true);
+      setIsStreaming(false);
 
       // Save conversation
       const finalAssistantMessage = {
@@ -454,7 +482,32 @@ const AllyChat = () => {
       let textBuffer = "";
       let streamDone = false;
 
+      // Reset token batching
+      tokenBufferRef.current = "";
+      lastUpdateRef.current = Date.now();
+      setIsStreaming(true);
+
       setMessages((prev) => [...prev, { role: "assistant", content: "", timestamp: new Date() }]);
+
+      // Batched update function
+      const flushTokenBuffer = (forceFlush = false) => {
+        const now = Date.now();
+        if (forceFlush || now - lastUpdateRef.current >= UPDATE_INTERVAL) {
+          if (tokenBufferRef.current) {
+            assistantMessage += tokenBufferRef.current;
+            tokenBufferRef.current = "";
+            lastUpdateRef.current = now;
+            setMessages((prev) => {
+              const updated = [...prev];
+              updated[updated.length - 1] = {
+                ...updated[updated.length - 1],
+                content: assistantMessage
+              };
+              return updated;
+            });
+          }
+        }
+      };
 
       while (!streamDone) {
         const { done, value } = await reader.read();
@@ -481,21 +534,18 @@ const AllyChat = () => {
             const data = JSON.parse(jsonStr);
             const content = data.choices[0]?.delta?.content || "";
             if (content) {
-              assistantMessage += content;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  ...updated[updated.length - 1],
-                  content: assistantMessage
-                };
-                return updated;
-              });
+              tokenBufferRef.current += content;
+              flushTokenBuffer();
             }
           } catch (e) {
             console.error("Error parsing SSE:", e);
           }
         }
       }
+
+      // Final flush
+      flushTokenBuffer(true);
+      setIsStreaming(false);
 
       // Save to database
       if (currentConversationId) {
@@ -813,48 +863,56 @@ const AllyChat = () => {
                       )}>
                         {message.role === "assistant" ? (
                           <div className="prose prose-sm dark:prose-invert max-w-none text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
-                            <ReactMarkdown
-                              components={{
-                                code({ node, inline, className, children, ...props }: any) {
-                                  const match = /language-(\w+)/.exec(className || '');
-                                  return !inline && match ? (
-                                    <SyntaxHighlighter
-                                      style={oneDark}
-                                      language={match[1]}
-                                      PreTag="div"
-                                      className="rounded-md my-2 text-sm"
-                                      customStyle={{
-                                        margin: 0,
-                                        borderRadius: '0.375rem',
-                                        fontSize: '0.875rem',
-                                      }}
-                                      {...props}
-                                    >
-                                      {String(children).replace(/\n$/, '')}
-                                    </SyntaxHighlighter>
-                                  ) : (
-                                    <code className={cn("bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono", className)} {...props}>
+                            {/* Show plain text with cursor while streaming, full markdown when done */}
+                            {isStreaming && index === messages.length - 1 ? (
+                              <p className="whitespace-pre-wrap leading-relaxed">
+                                {message.content}
+                                <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
+                              </p>
+                            ) : (
+                              <ReactMarkdown
+                                components={{
+                                  code({ node, inline, className, children, ...props }: any) {
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    return !inline && match ? (
+                                      <SyntaxHighlighter
+                                        style={oneDark}
+                                        language={match[1]}
+                                        PreTag="div"
+                                        className="rounded-md my-2 text-sm"
+                                        customStyle={{
+                                          margin: 0,
+                                          borderRadius: '0.375rem',
+                                          fontSize: '0.875rem',
+                                        }}
+                                        {...props}
+                                      >
+                                        {String(children).replace(/\n$/, '')}
+                                      </SyntaxHighlighter>
+                                    ) : (
+                                      <code className={cn("bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono", className)} {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  },
+                                  p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
+                                  ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
+                                  ol: ({ children }) => <ol className="space-y-1 my-2">{children}</ol>,
+                                  li: ({ children }) => <li className="ml-4">{children}</li>,
+                                  h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
+                                  h2: ({ children }) => <h2 className="text-lg font-semibold mt-3 mb-2">{children}</h2>,
+                                  h3: ({ children }) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
+                                  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                                  blockquote: ({ children }) => (
+                                    <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2">
                                       {children}
-                                    </code>
-                                  );
-                                },
-                                p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
-                                ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
-                                ol: ({ children }) => <ol className="space-y-1 my-2">{children}</ol>,
-                                li: ({ children }) => <li className="ml-4">{children}</li>,
-                                h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
-                                h2: ({ children }) => <h2 className="text-lg font-semibold mt-3 mb-2">{children}</h2>,
-                                h3: ({ children }) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
-                                strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                                blockquote: ({ children }) => (
-                                  <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2">
-                                    {children}
-                                  </blockquote>
-                                ),
-                              }}
-                            >
-                              {message.content}
-                            </ReactMarkdown>
+                                    </blockquote>
+                                  ),
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
+                            )}
                           </div>
                         ) : editingIndex === index ? (
                           <div className="space-y-2">
