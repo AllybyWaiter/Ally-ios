@@ -193,19 +193,18 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     }
   };
 
-  // Show loading while auth is initializing or data is loading
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  const today = startOfDay(new Date());
+  // All hooks MUST be called before any early returns (React Rules of Hooks)
+  const today = useMemo(() => startOfDay(new Date()), []);
   
-  const pendingTasks = tasks?.filter((t) => t.status === "pending") || [];
-  const completedTasks = tasks?.filter((t) => t.status === "completed") || [];
+  const pendingTasks = useMemo(
+    () => tasks?.filter((t) => t.status === "pending") || [],
+    [tasks]
+  );
+  
+  const completedTasks = useMemo(
+    () => tasks?.filter((t) => t.status === "completed") || [],
+    [tasks]
+  );
   
   // Filter pending tasks based on selected filter
   const filteredPendingTasks = useMemo(() => {
@@ -240,6 +239,15 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     });
     return counts;
   }, [pendingTasks, today]);
+
+  // Show loading while auth is initializing or data is loading (AFTER all hooks)
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!tasks || tasks.length === 0) {
     return (
