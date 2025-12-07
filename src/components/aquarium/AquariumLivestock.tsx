@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, MoreVertical, Pencil, Trash2, Fish, Bug, Flower2, HelpCircle, Activity, Leaf } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Fish, Bug, Flower2, HelpCircle, Activity, Leaf, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LivestockDialog } from './LivestockDialog';
 import { PlantDialog } from './PlantDialog';
@@ -65,6 +66,7 @@ const conditionColors = {
 } as const;
 
 export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [livestock, setLivestock] = useState<Livestock[]>([]);
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -78,9 +80,13 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   const [deletingType, setDeletingType] = useState<'livestock' | 'plant'>('livestock');
 
   useEffect(() => {
+    // Wait for auth to be ready before loading data
+    if (authLoading || !user || !aquariumId) {
+      return;
+    }
     loadLivestock();
     loadPlants();
-  }, [aquariumId]);
+  }, [aquariumId, authLoading, user]);
 
   const loadLivestock = async () => {
     try {
@@ -207,8 +213,13 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
     return acc;
   }, {} as Record<string, Plant[]>);
 
-  if (loading) {
-    return <div className="animate-pulse space-y-4">Loading livestock...</div>;
+  // Show loading while auth is initializing or data is loading
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
