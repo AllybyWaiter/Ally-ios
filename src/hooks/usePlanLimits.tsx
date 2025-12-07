@@ -64,10 +64,12 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
 };
 
 export function usePlanLimits() {
-  const { subscriptionTier, user } = useAuth();
+  const { subscriptionTier, user, loading: authLoading } = useAuth();
   
-  const tier = subscriptionTier || 'free';
-  const limits = PLAN_LIMITS[tier] || PLAN_LIMITS.free;
+  // Only resolve tier once auth is complete and subscriptionTier is loaded
+  const isLoading = authLoading || (user && subscriptionTier === null);
+  const tier = isLoading ? null : (subscriptionTier || 'free');
+  const limits = tier ? (PLAN_LIMITS[tier] || PLAN_LIMITS.free) : PLAN_LIMITS.free;
 
   // Query for monthly test log count
   const { data: monthlyTestCount = 0 } = useQuery({
@@ -125,6 +127,7 @@ export function usePlanLimits() {
   return {
     tier,
     limits,
+    loading: isLoading,
     canCreateAquarium,
     getRemainingAquariums,
     canLogTest,
