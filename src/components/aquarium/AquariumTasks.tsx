@@ -266,9 +266,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            type="button"
-                            className="touch-manipulation"
-                            onTouchEnd={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="w-4 h-4" />
                             <span className="sr-only">Open menu</span>
