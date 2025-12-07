@@ -12,6 +12,7 @@ import FAQ from "@/components/FAQ";
 import { ContactForm } from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
+import InstallPromptBanner from "@/components/InstallPromptBanner";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ const Index = () => {
       </main>
       <Footer />
       <AllySupportChat />
+      <InstallPromptBanner />
     </div>
   );
 };
