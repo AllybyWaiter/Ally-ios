@@ -107,6 +107,11 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Radix UI pointer-events fix - prevent stuck state after dropdown/dialog interactions */
+  body:not([data-scroll-locked]) {
+    pointer-events: auto !important;
+  }
 }
 
 /* Custom styles for the rich text editor */
