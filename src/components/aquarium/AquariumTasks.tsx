@@ -22,10 +22,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Plus, ListTodo, CheckCircle2, MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { formatRelativeTime, formatDate } from "@/lib/formatters";
+
+// Safe date formatter to prevent crashes
+const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
+  if (!dateValue) return '';
+  try {
+    const date = new Date(dateValue);
+    if (!isValid(date)) return 'Invalid date';
+    return format(date, formatStr);
+  } catch (error) {
+    console.error('Date formatting error in AquariumTasks:', error);
+    return '';
+  }
+};
 
 interface AquariumTasksProps {
   aquariumId: string;
@@ -241,10 +254,10 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-semibold">{task.task_name}</h4>
-                        <Badge variant="secondary">{task.task_type}</Badge>
+                        <Badge variant="secondary">{task.task_type || ''}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {t('tasks.due')} {formatDate(task.due_date, 'PP')}
+                        {t('tasks.due')} {safeFormatDate(task.due_date, 'PP')}
                       </p>
                       {task.notes && (
                         <p className="text-sm text-muted-foreground">{task.notes}</p>
