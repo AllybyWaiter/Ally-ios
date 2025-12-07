@@ -263,7 +263,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()}>
+                          <Button size="sm" variant="ghost">
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
