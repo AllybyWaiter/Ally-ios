@@ -12,9 +12,31 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, ComponentType } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
 import { FeatureArea } from "@/lib/sentry";
+
+// Lazy loader with retry logic for mobile network issues
+const lazyWithRetry = <T extends ComponentType<unknown>>(
+  componentImport: () => Promise<{ default: T }>
+) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
+
+    try {
+      const component = await componentImport();
+      sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.location.reload();
+      }
+      throw error;
+    }
+  });
 
 // Eager load public pages (better UX for first visit)
 import Index from "./pages/Index";
@@ -23,24 +45,24 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Auth from "./pages/Auth";
 
-// Lazy load authenticated pages (code splitting)
-const Admin = lazy(() => import("./pages/Admin"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const WaterTests = lazy(() => import("./pages/WaterTests"));
-const AquariumDetail = lazy(() => import("./pages/AquariumDetail"));
-const TaskCalendar = lazy(() => import("./pages/TaskCalendar"));
-const Settings = lazy(() => import("./pages/Settings"));
-const AllyChat = lazy(() => import("./pages/AllyChat"));
-const BlogEditor = lazy(() => import("./components/admin/BlogEditor"));
+// Lazy load authenticated pages with retry logic (code splitting)
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
+const WaterTests = lazyWithRetry(() => import("./pages/WaterTests"));
+const AquariumDetail = lazyWithRetry(() => import("./pages/AquariumDetail"));
+const TaskCalendar = lazyWithRetry(() => import("./pages/TaskCalendar"));
+const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const AllyChat = lazyWithRetry(() => import("./pages/AllyChat"));
+const BlogEditor = lazyWithRetry(() => import("./components/admin/BlogEditor"));
 
-// Lazy load other public pages
-const Pricing = lazy(() => import("./pages/Pricing"));
-const About = lazy(() => import("./pages/About"));
-const Features = lazy(() => import("./pages/Features"));
-const HowItWorksPage = lazy(() => import("./pages/HowItWorks"));
-const Blog = lazy(() => import("./pages/Blog"));
-const BlogPost = lazy(() => import("./pages/BlogPost"));
-const FAQ = lazy(() => import("./pages/FAQ"));
+// Lazy load other public pages with retry logic
+const Pricing = lazyWithRetry(() => import("./pages/Pricing"));
+const About = lazyWithRetry(() => import("./pages/About"));
+const Features = lazyWithRetry(() => import("./pages/Features"));
+const HowItWorksPage = lazyWithRetry(() => import("./pages/HowItWorks"));
+const Blog = lazyWithRetry(() => import("./pages/Blog"));
+const BlogPost = lazyWithRetry(() => import("./pages/BlogPost"));
+const FAQ = lazyWithRetry(() => import("./pages/FAQ"));
 
 // Configure React Query with optimized caching
 const queryClient = new QueryClient({

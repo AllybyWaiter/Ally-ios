@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ErrorBoundary from './ErrorBoundary';
@@ -28,10 +28,14 @@ const PageErrorFallback = ({ pageName }: { pageName?: string }) => (
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex gap-2">
           <Button onClick={() => window.history.back()} variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Go Back
+          </Button>
+          <Button onClick={() => window.location.reload()}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Retry
           </Button>
         </CardContent>
       </Card>
