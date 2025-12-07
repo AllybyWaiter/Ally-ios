@@ -7,6 +7,7 @@ import { Loader2, Sparkles, Plus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TaskSuggestion {
   title: string;
@@ -40,6 +41,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, loading: authLoading } = useAuth();
   const [suggestions, setSuggestions] = useState<TaskSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [creatingTaskId, setCreatingTaskId] = useState<number | null>(null);
@@ -133,13 +135,13 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
         </div>
         <Button
           onClick={handleGetSuggestions}
-          disabled={isLoading}
+          disabled={isLoading || authLoading || !user}
           size="sm"
         >
-          {isLoading ? (
+          {isLoading || authLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
+              {authLoading ? "Loading..." : "Analyzing..."}
             </>
           ) : (
             <>
