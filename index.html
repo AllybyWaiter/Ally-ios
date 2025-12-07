@@ -64,11 +64,11 @@
     <meta property="og:title" content="Ally by WA.I.TER - AI-Powered Aquarium Water Care" />
     <meta property="og:description" content="Transform your aquarium care with Ally, the AI-powered water care assistant. Get personalized care plans and crystal-clear water effortlessly." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/og-image.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:site" content="@allybywaiter" />
+    <meta name="twitter:image" content="/og-image.png" />
     
     <!-- Splash Screen Styling -->
     <style>
@@ -129,18 +129,20 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Hide splash screen once React app loads
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          var splash = document.getElementById('splash-screen');
-          if (splash) {
-            splash.classList.add('fade-out');
-            setTimeout(function() {
-              splash.style.display = 'none';
-            }, 300);
-          }
-        }, 500);
-      });
+      // Hide splash screen when React app signals it's ready
+      function hideSplash() {
+        var splash = document.getElementById('splash-screen');
+        if (splash && !splash.classList.contains('fade-out')) {
+          splash.classList.add('fade-out');
+          setTimeout(function() {
+            splash.remove();
+          }, 300);
+        }
+      }
+      // Expose globally for React to call
+      window.hideSplash = hideSplash;
+      // Fallback: hide after max 3 seconds if React hasn't loaded
+      setTimeout(hideSplash, 3000);
     </script>
   </body>
 </html>
