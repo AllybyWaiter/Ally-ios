@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png"],
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
         runtimeCaching: [
           {
@@ -67,7 +70,7 @@ export default defineConfig(({ mode }) => ({
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24, // 1 day
               },
-              networkTimeoutSeconds: 10,
+              networkTimeoutSeconds: 5,
             },
           },
         ],
