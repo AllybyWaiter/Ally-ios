@@ -263,14 +263,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <CheckCircle2 className="w-4 h-4 mr-2" />
                         {t('tasks.complete')}
                       </Button>
-                        <DropdownMenu
-                          onOpenChange={(open) => {
-                            if (!open) {
-                              // Workaround for Radix dismissable-layer bug
-                              document.body.style.removeProperty('pointer-events');
-                            }
-                          }}
-                        >
+                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreVertical className="h-4 w-4" />
