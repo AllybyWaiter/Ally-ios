@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ interface AquariumTasksProps {
 }
 
 export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
+  const { user, loading: authLoading } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
   const [dialogMode, setDialogMode] = useState<"create" | "edit">("create");
@@ -67,6 +69,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user && !!aquariumId,
+    retry: 2,
   });
 
   const handleCreateTask = () => {
@@ -189,7 +193,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     }
   };
 
-  if (isLoading) {
+  // Show loading while auth is initializing or data is loading
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
