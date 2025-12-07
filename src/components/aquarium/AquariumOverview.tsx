@@ -33,15 +33,19 @@ interface AquariumOverviewProps {
 }
 
 export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
+  console.log('🔵 AquariumOverview: Mounting with aquariumId =', aquariumId);
+  console.log('🔵 AquariumOverview: Aquarium prop =', JSON.stringify(aquarium, null, 2));
   const navigate = useNavigate();
   const { units } = useAuth();
+  console.log('🔵 AquariumOverview: units =', units);
   const { t } = useTranslation();
   const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
-  const { data: latestTest, isLoading: testLoading } = useQuery({
+  const { data: latestTest, isLoading: testLoading, error: testError } = useQuery({
     queryKey: ["latest-test", aquariumId],
     queryFn: async () => {
+      console.log('🔵 AquariumOverview: Fetching latest test for aquariumId =', aquariumId);
       const { data, error } = await supabase
         .from("water_tests")
         .select(`
@@ -53,10 +57,16 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔴 AquariumOverview: Latest test query error:', error);
+        throw error;
+      }
+      console.log('🟢 AquariumOverview: Latest test data:', JSON.stringify(data, null, 2));
       return data;
     },
   });
+
+  console.log('🔵 AquariumOverview: testLoading =', testLoading, 'testError =', testError);
 
   const { data: equipmentCount, isLoading: equipmentLoading } = useQuery({
     queryKey: ["equipment-count", aquariumId],
@@ -71,9 +81,10 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
     },
   });
 
-  const { data: upcomingTasks, isLoading: tasksLoading } = useQuery({
+  const { data: upcomingTasks, isLoading: tasksLoading, error: tasksError } = useQuery({
     queryKey: ["upcomingTasks", aquariumId],
     queryFn: async () => {
+      console.log('🔵 AquariumOverview: Fetching upcoming tasks for aquariumId =', aquariumId);
       const { data, error } = await supabase
         .from("maintenance_tasks")
         .select("*")
@@ -82,12 +93,19 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
         .order("due_date", { ascending: true })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔴 AquariumOverview: Tasks query error:', error);
+        throw error;
+      }
+      console.log('🟢 AquariumOverview: Upcoming tasks data:', JSON.stringify(data, null, 2));
       return data;
     },
   });
 
+  console.log('🔵 AquariumOverview: tasksLoading =', tasksLoading, 'tasksError =', tasksError);
+
   const getTaskDueDateStatus = (dueDate: string) => {
+    console.log('🔵 AquariumOverview: getTaskDueDateStatus called with:', dueDate);
     const due = new Date(dueDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
