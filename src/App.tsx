@@ -12,11 +12,20 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { lazy, Suspense, ComponentType } from "react";
+import { lazy, Suspense, ComponentType, useEffect } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
 import { FeatureArea } from "@/lib/sentry";
 
-// Lazy loader with retry logic for mobile network issues
+// Force service worker update check on app load
+const checkForServiceWorkerUpdate = () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.ready.then((registration) => {
+      registration.update().catch(() => {});
+    }).catch(() => {});
+  }
+};
+
+// Lazy loader with retry logic and cache clearing for mobile network issues
 const lazyWithRetry = <T extends ComponentType<unknown>>(
   componentImport: () => Promise<{ default: T }>
 ) =>
@@ -31,12 +40,25 @@ const lazyWithRetry = <T extends ComponentType<unknown>>(
       return component;
     } catch (error) {
       if (!pageHasAlreadyBeenForceRefreshed) {
+        // Clear JS cache before reload to fix module resolution errors
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            const jsCache = keys.find(k => k.includes('js-cache'));
+            if (jsCache) await caches.delete(jsCache);
+          } catch (e) {
+            console.error('Failed to clear cache:', e);
+          }
+        }
         sessionStorage.setItem('page-has-been-force-refreshed', 'true');
         window.location.reload();
       }
       throw error;
     }
   });
+
+// Trigger service worker update check
+checkForServiceWorkerUpdate();
 
 // Eager load public pages (better UX for first visit)
 import Index from "./pages/Index";

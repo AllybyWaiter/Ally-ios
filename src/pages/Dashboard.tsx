@@ -362,6 +362,10 @@ export default function Dashboard() {
                 <Card 
                   key={aquarium.id} 
                   className="hover:shadow-lg transition-shadow"
+                  onMouseEnter={() => {
+                    // Preload AquariumDetail page on hover to prevent lazy loading failures
+                    import('./AquariumDetail').catch(() => {});
+                  }}
                 >
                   <CardHeader>
                     <div className="flex justify-between items-start">
