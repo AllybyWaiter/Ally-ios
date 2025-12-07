@@ -261,13 +261,14 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <CheckCircle2 className="w-4 h-4 mr-2" />
                         {t('tasks.complete')}
                       </Button>
-                      <DropdownMenu modal={false}>
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 
-                            size="sm" 
                             variant="ghost" 
+                            size="icon"
                             type="button"
-                            className="h-8 w-8 p-0"
+                            className="touch-manipulation"
+                            onTouchEnd={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="w-4 h-4" />
                             <span className="sr-only">Open menu</span>
