@@ -118,9 +118,9 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <OfflineIndicator />
-                <CookieConsent />
                 <BrowserRouter>
                   <ScrollToTop />
+                  <CookieConsent />
                   <Routes>
                   <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
                   <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><About /></Suspense></PageErrorBoundary>} />
