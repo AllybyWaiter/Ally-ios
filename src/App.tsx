@@ -12,6 +12,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import CookieConsent from "@/components/CookieConsent";
 import { lazy, Suspense, ComponentType, useEffect } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
 import { FeatureArea } from "@/lib/sentry";
@@ -116,6 +117,7 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <OfflineIndicator />
+                <CookieConsent />
                 <BrowserRouter>
                   <ScrollToTop />
                   <Routes>
