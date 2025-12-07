@@ -6,12 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -21,11 +15,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Plus, ListTodo, CheckCircle2, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, ListTodo, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { format, isValid } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
-import { formatRelativeTime, formatDate } from "@/lib/formatters";
+import { formatRelativeTime } from "@/lib/formatters";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
@@ -263,12 +257,30 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                         <p className="text-sm text-muted-foreground">{task.notes}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => handleEditTask(task.id)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => {
+                          setTaskToDelete(task.id);
+                          setDeleteConfirmOpen(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={() => {
                           setTaskToComplete(task.id);
                           setCompleteConfirmOpen(true);
                         }}
@@ -300,12 +312,23 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
                       <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-semibold">{task.task_name}</h4>
                         <Badge variant="secondary">{task.task_type}</Badge>
-                        <Badge variant="outline">Completed</Badge>
+                        <Badge variant="outline">{t('tasks.completed')}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {t('tasks.completedDate')} {task.completed_date && formatRelativeTime(task.completed_date)}
                       </p>
                     </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => {
+                        setTaskToDelete(task.id);
+                        setDeleteConfirmOpen(true);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
