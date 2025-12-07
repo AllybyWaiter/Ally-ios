@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ interface AquariumEquipmentProps {
 }
 
 export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
+  const { user, loading: authLoading } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -44,6 +46,8 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user && !!aquariumId,
+    retry: 2,
   });
 
   const deleteMutation = useMutation({
@@ -84,7 +88,8 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
     setDialogOpen(true);
   };
 
-  if (isLoading) {
+  // Show loading while auth is initializing or data is loading
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

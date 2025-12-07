@@ -34,7 +34,7 @@ interface AquariumOverviewProps {
 
 export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
   const navigate = useNavigate();
-  const { units } = useAuth();
+  const { user, loading: authLoading, units } = useAuth();
   const { t } = useTranslation();
   const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
@@ -56,6 +56,8 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user && !!aquariumId,
+    retry: 2,
   });
 
   const { data: equipmentCount, isLoading: equipmentLoading } = useQuery({
@@ -69,6 +71,8 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       if (error) throw error;
       return count || 0;
     },
+    enabled: !authLoading && !!user && !!aquariumId,
+    retry: 2,
   });
 
   const { data: upcomingTasks, isLoading: tasksLoading } = useQuery({
@@ -85,6 +89,8 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user && !!aquariumId,
+    retry: 2,
   });
 
   const getTaskDueDateStatus = (dueDate: string) => {
@@ -101,7 +107,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
     return { label: t('overview.upcoming'), variant: "outline" as const };
   };
 
-  const isLoading = testLoading || equipmentLoading || tasksLoading;
+  const isLoading = authLoading || testLoading || equipmentLoading || tasksLoading;
 
   if (isLoading) {
     return (
