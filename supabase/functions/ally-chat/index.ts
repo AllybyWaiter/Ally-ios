@@ -162,7 +162,11 @@ Current Aquarium Context:
 ${aquarium.notes ? `- Notes: ${aquarium.notes}` : ''}
 
 Recent Water Tests: ${aquarium.water_tests?.length || 0} tests on record
-Equipment: ${aquarium.equipment?.length || 0} items tracked
+
+Equipment (${aquarium.equipment?.length || 0} total):
+${aquarium.equipment && aquarium.equipment.length > 0 
+  ? aquarium.equipment.map((e: any) => `  - ${e.name} (${e.equipment_type})${e.brand ? ', Brand: ' + e.brand : ''}${e.model ? ', Model: ' + e.model : ''}${e.maintenance_interval_days ? ', Maintenance every ' + e.maintenance_interval_days + ' days' : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')
+  : '  None added yet'}
 
 Livestock (${livestock?.length || 0} total):
 ${livestock && livestock.length > 0 
