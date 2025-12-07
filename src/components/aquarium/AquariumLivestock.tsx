@@ -273,13 +273,7 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                                     </CardDescription>
                                   </div>
                                 </div>
-                                <DropdownMenu
-                                  onOpenChange={(open) => {
-                                    if (!open) {
-                                      document.body.style.removeProperty('pointer-events');
-                                    }
-                                  }}
-                                >
+                                <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8">
                                       <MoreVertical className="h-4 w-4" />
@@ -386,13 +380,7 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                                   </CardDescription>
                                 </div>
                               </div>
-                              <DropdownMenu
-                                onOpenChange={(open) => {
-                                  if (!open) {
-                                    document.body.style.removeProperty('pointer-events');
-                                  }
-                                }}
-                              >
+                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <MoreVertical className="h-4 w-4" />
