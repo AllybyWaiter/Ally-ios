@@ -36,9 +36,12 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
 };
 
 export default function AquariumDetail() {
+  console.log('🔵 AquariumDetail: Component mounting');
   const { id } = useParams();
+  console.log('🔵 AquariumDetail: Route param id =', id);
   const navigate = useNavigate();
   const { units } = useAuth();
+  console.log('🔵 AquariumDetail: units =', units);
   const { t } = useTranslation();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -46,16 +49,23 @@ export default function AquariumDetail() {
   const { data: aquarium, isLoading, error, refetch } = useQuery({
     queryKey: ["aquarium", id],
     queryFn: async () => {
+      console.log('🔵 AquariumDetail: Fetching aquarium data for id =', id);
       const { data, error } = await supabase
         .from("aquariums")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('🔴 AquariumDetail: Supabase query error:', error);
+        throw error;
+      }
+      console.log('🟢 AquariumDetail: Aquarium data received:', JSON.stringify(data, null, 2));
       return data;
     },
   });
+
+  console.log('🔵 AquariumDetail: Render state - isLoading:', isLoading, 'error:', error, 'aquarium:', aquarium ? 'exists' : 'null');
 
   const handleDeleteConfirm = async () => {
     try {
@@ -125,6 +135,8 @@ export default function AquariumDetail() {
     );
   }
 
+  console.log('🟢 AquariumDetail: Rendering main content with aquarium:', aquarium?.name);
+  
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
