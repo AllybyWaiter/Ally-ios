@@ -184,6 +184,11 @@ export const en = {
       completeConfirmation: "Mark this task as complete?",
       taskCompletedAndNext: "Task completed and next occurrence created",
       taskMarkedComplete: "Task marked as complete",
+      filterAll: "All",
+      filterOverdue: "Overdue",
+      filterToday: "Due Today",
+      filterUpcoming: "Upcoming",
+      noTasksMatchFilter: "No tasks match this filter",
     },
     onboarding: {
       preferences: {
