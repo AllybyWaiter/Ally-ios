@@ -200,7 +200,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold">
-                        {formatParameter(param.value, param.unit, units)}
+                        {param.value != null ? formatParameter(param.value, param.unit, units) : '-'}
                       </p>
                       {param.status && (
                         <Badge 

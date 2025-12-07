@@ -80,7 +80,8 @@ export const formatTime = (date: Date | string | number): string => {
 /**
  * Format a relative time (e.g., "2 hours ago", "in 3 days")
  */
-export const formatRelativeTime = (date: Date | string | number): string => {
+export const formatRelativeTime = (date: Date | string | number | null | undefined): string => {
+  if (!date) return '';
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   
   if (!isValid(dateObj)) {
@@ -105,7 +106,8 @@ export const formatNumber = (value: number, options?: Intl.NumberFormatOptions):
 /**
  * Format a decimal number with a specific number of decimal places
  */
-export const formatDecimal = (value: number, decimals: number = 2): string => {
+export const formatDecimal = (value: number | null | undefined, decimals: number = 2): string => {
+  if (value === null || value === undefined || isNaN(value)) return '';
   const lang = getCurrentLanguage();
   return new Intl.NumberFormat(lang, {
     minimumFractionDigits: decimals,
