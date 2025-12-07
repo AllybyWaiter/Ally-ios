@@ -204,8 +204,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
                       </p>
                       {param.status && (
                         <Badge 
-                          variant="outline" 
-                          className={`text-xs mt-1 ${getStatusBadgeClass(param.status)}`}
+                          className={`text-xs mt-1 border ${getStatusBadgeClass(param.status)}`}
                         >
                           {param.status}
                         </Badge>
