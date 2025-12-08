@@ -47,6 +47,17 @@ export default function Dashboard() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAquariumId, setDeletingAquariumId] = useState<string | null>(null);
 
+  // Hard maximum loading timeout - prevents infinite skeleton state
+  useEffect(() => {
+    const maxLoadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Dashboard: Max 4s loading timeout, forcing completion');
+        setLoading(false);
+      }
+    }, 4000);
+    return () => clearTimeout(maxLoadingTimeout);
+  }, []);
+
   // Fallback timeout for stuck onboardingCompleted state
   useEffect(() => {
     if (onboardingCompleted === null && !authLoading && user) {
