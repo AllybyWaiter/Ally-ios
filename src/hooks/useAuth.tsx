@@ -93,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error('🔴 Auth: Error fetching user profile:', error.message);
+        setOnboardingCompleted(false);
         return;
       }
       
@@ -110,6 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('🟢 Auth: Profile loaded - name:', data.name);
       } else {
         console.warn('⚠️ Auth: No profile data for user:', userId);
+        setOnboardingCompleted(false);
       }
     } catch (error: any) {
       console.error('🔴 Auth: Exception in fetchUserProfile:', error.message);
