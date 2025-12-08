@@ -389,8 +389,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  
+  // Handle edge case where context is undefined during iOS PWA cold starts
+  // This prevents "Right side of assignment cannot be destructured" errors
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return a safe default object instead of throwing
+    // This allows the component to render and re-attempt once context is ready
+    return {
+      user: null,
+      session: null,
+      userName: null,
+      isAdmin: false,
+      roles: [] as string[],
+      permissions: [] as string[],
+      subscriptionTier: null,
+      canCreateCustomTemplates: false,
+      themePreference: null,
+      languagePreference: null,
+      unitPreference: null,
+      units: 'imperial' as UnitSystem,
+      onboardingCompleted: null,
+      loading: true, // Important: indicate we're still loading
+      refreshProfile: async () => {},
+      signIn: async () => ({ error: new Error('Auth not initialized') as any }),
+      signUp: async () => ({ error: new Error('Auth not initialized') as any }),
+      signOut: async () => {},
+      hasRole: () => false,
+      hasPermission: () => false,
+      hasAnyRole: () => false,
+    };
   }
+  
   return context;
 };

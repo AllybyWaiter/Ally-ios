@@ -31,6 +31,15 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
+    // Detect the specific iOS PWA cold-start destructuring error
+    // Auto-recover by clearing caches and reloading
+    if (error.message?.includes('Right side of assignment cannot be destructured') ||
+        error.message?.includes('Cannot destructure property')) {
+      console.warn('🔄 Detected iOS PWA cold-start error, auto-recovering...');
+      this.handleClearCacheAndReload();
+      return;
+    }
+    
     // Log to Sentry with feature area and high severity
     logError(error, {
       componentStack: errorInfo.componentStack,
@@ -47,6 +56,28 @@ class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
   }
+  
+  private handleClearCacheAndReload = async () => {
+    try {
+      // Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+        console.log('🧹 Cleared', cacheNames.length, 'caches');
+      }
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(reg => reg.unregister()));
+        console.log('🧹 Unregistered', registrations.length, 'service workers');
+      }
+      // Force reload from server
+      window.location.reload();
+    } catch (e) {
+      console.error('Cache clear failed:', e);
+      window.location.reload();
+    }
+  };
 
   private handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
