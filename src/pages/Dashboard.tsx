@@ -38,6 +38,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier, loading: limitsLoading } = usePlanLimits();
   const [loading, setLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
   const [showPreferencesOnboarding, setShowPreferencesOnboarding] = useState(false);
   const [showAquariumOnboarding, setShowAquariumOnboarding] = useState(false);
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
@@ -47,16 +48,19 @@ export default function Dashboard() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAquariumId, setDeletingAquariumId] = useState<string | null>(null);
 
-  // Hard maximum loading timeout - prevents infinite skeleton state
+  // Hard maximum loading timeout - triggers data load if not fetched yet
   useEffect(() => {
     const maxLoadingTimeout = setTimeout(() => {
-      if (loading) {
-        console.warn('Dashboard: Max 4s loading timeout, forcing completion');
+      if (loading && user && !dataFetched) {
+        console.warn('Dashboard: Max 4s timeout - forcing data load');
+        loadAquariums();
+      } else if (loading) {
+        console.warn('Dashboard: Max 4s timeout - forcing completion');
         setLoading(false);
       }
     }, 4000);
     return () => clearTimeout(maxLoadingTimeout);
-  }, []);
+  }, [user, dataFetched]);
 
   // Fallback timeout for stuck onboardingCompleted state
   useEffect(() => {
@@ -70,7 +74,7 @@ export default function Dashboard() {
     }
   }, [onboardingCompleted, authLoading, user]);
 
-  // iOS PWA wake-up recovery - force reload if stuck loading after visibility change
+  // iOS PWA wake-up recovery - refresh data if showing empty after visibility change
   useEffect(() => {
     let stuckCheckTimeout: NodeJS.Timeout | null = null;
     
@@ -81,13 +85,17 @@ export default function Dashboard() {
         // Clear any existing timeout
         if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
         
-        // After 2.5 seconds, if still loading, force reload
+        // After 2 seconds, check if we need to refresh data
         stuckCheckTimeout = setTimeout(() => {
           if (loading || authLoading) {
             console.warn('Dashboard: Still loading after wake-up, forcing reload');
             window.location.reload();
+          } else if (user && aquariums.length === 0 && dataFetched) {
+            // Data was fetched but showing empty - try refreshing
+            console.log('Dashboard: Showing empty after wake-up, refreshing data');
+            loadAquariums();
           }
-        }, 2500);
+        }, 2000);
       }
     };
     
@@ -96,7 +104,7 @@ export default function Dashboard() {
       document.removeEventListener('visibilitychange', handleVisibility);
       if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
     };
-  }, [loading, authLoading]);
+  }, [loading, authLoading, user, aquariums.length, dataFetched]);
 
   useEffect(() => {
     if (!user) {
@@ -150,6 +158,7 @@ export default function Dashboard() {
       }
       
       setAquariums(data || []);
+      setDataFetched(true);
       
       // Show aquarium onboarding if no aquariums exist
       if (!data || data.length === 0) {
