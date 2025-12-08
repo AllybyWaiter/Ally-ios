@@ -54,6 +54,10 @@ export default function Dashboard() {
       if (loading && user && !dataFetched) {
         console.warn('Dashboard: Max 4s timeout - forcing data load with userId:', user.id);
         loadAquariums(user.id);
+      } else if (loading && user && onboardingCompleted === null) {
+        // Onboarding state still unknown after 4s - assume completed and load data
+        console.warn('Dashboard: Onboarding state unknown after 4s, assuming completed and loading');
+        loadAquariums(user.id);
       } else if (loading) {
         console.warn('Dashboard: Max 4s timeout - forcing completion');
         setLoading(false);
