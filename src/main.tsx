@@ -28,11 +28,44 @@ const ensureServiceWorkerFresh = async () => {
   }
 };
 
+// Cache-busting recovery for module-level errors (iOS PWA cold-start fix)
+const handleModuleError = async () => {
+  console.warn('🔄 Module error detected, clearing caches and reloading...');
+  try {
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    }
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(reg => reg.unregister()));
+    }
+  } catch (e) {
+    console.error('Cache clear failed:', e);
+  }
+  // Reload with cache-busting parameter
+  window.location.href = window.location.pathname + '?_cb=' + Date.now();
+};
+
 // Start the app and ensure service worker is fresh
 ensureServiceWorkerFresh();
 
-createRoot(document.getElementById("root")!).render(
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-    <App />
-  </ThemeProvider>
-);
+// Wrap render in try-catch to catch module-level errors before React mounts
+try {
+  createRoot(document.getElementById("root")!).render(
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <App />
+    </ThemeProvider>
+  );
+} catch (error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  // Detect iOS PWA stale module errors
+  if (errorMessage.includes('destructured') || 
+      errorMessage.includes('Importing binding') ||
+      errorMessage.includes('Cannot resolve module')) {
+    handleModuleError();
+  } else {
+    // Re-throw other errors
+    throw error;
+  }
+}
