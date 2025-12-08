@@ -59,7 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
   
   private handleClearCacheAndReload = async () => {
     try {
-      // Clear all caches
+      // Clear all Cache Storage API caches
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
@@ -71,11 +71,15 @@ class ErrorBoundary extends Component<Props, State> {
         await Promise.all(registrations.map(reg => reg.unregister()));
         console.log('🧹 Unregistered', registrations.length, 'service workers');
       }
-      // Force reload from server
-      window.location.reload();
+      // Force bypass ALL cache layers (including iOS Safari HTTP cache) 
+      // by using a cache-busting query parameter
+      const url = new URL(window.location.href);
+      url.searchParams.set('_cb', Date.now().toString());
+      window.location.replace(url.toString());
     } catch (e) {
       console.error('Cache clear failed:', e);
-      window.location.reload();
+      // Fallback: force reload with cache bypass
+      window.location.href = window.location.pathname + '?_cb=' + Date.now();
     }
   };
 

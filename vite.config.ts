@@ -22,7 +22,9 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        // IMPORTANT: Do NOT include .js in globPatterns - causes stale module issues on iOS PWA
+        // JavaScript is handled via NetworkFirst runtime caching below
+        globPatterns: ["**/*.{css,html,ico,png,svg,woff,woff2}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -64,15 +66,16 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
-            urlPattern: /\.js$/,
+            // CRITICAL: NetworkFirst for JavaScript prevents iOS PWA stale module errors
+            urlPattern: /\.(?:js|mjs)$/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "js-cache",
               expiration: {
-                maxEntries: 50,
+                maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24, // 1 day
               },
-              networkTimeoutSeconds: 3, // Reduced from 5 to 3 seconds
+              networkTimeoutSeconds: 2, // Quick fallback to cache if offline
             },
           },
         ],
