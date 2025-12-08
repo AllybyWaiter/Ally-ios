@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { setUserContext, clearUserContext, addBreadcrumb, FeatureArea } from '@/lib/sentry';
@@ -31,6 +31,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Timeout constants for iOS PWA optimization
+const SAFETY_TIMEOUT_MS = 5000; // Max wait time for auth to complete
+const PROFILE_TIMEOUT_MS = 3000; // Max wait for profile fetch before continuing
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -46,19 +50,145 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const checkAdminStatus = useCallback(async (userId: string) => {
+    console.log('🔵 Auth: checkAdminStatus starting for:', userId);
+    try {
+      const rolesPromise = supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      const permsPromise = (supabase as any).rpc('get_user_permissions', {
+        _user_id: userId
+      });
+
+      const [rolesResult, permsResult] = await Promise.all([rolesPromise, permsPromise]);
+      
+      console.log('🔵 Auth: Roles result:', rolesResult?.data);
+      
+      const userRoles = rolesResult?.data?.map((r: any) => r.role) || [];
+      setRoles(userRoles);
+      setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
+      
+      const permissionNames = permsResult?.data?.map((p: any) => p.permission_name || p) || [];
+      setPermissions(permissionNames);
+      
+      console.log('🟢 Auth: checkAdminStatus complete - roles:', userRoles.length);
+    } catch (error: any) {
+      console.error('🔴 Auth: Error in checkAdminStatus:', error.message);
+      setRoles([]);
+      setPermissions([]);
+      setIsAdmin(false);
+    }
+  }, []);
+
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    console.log('🔵 Auth: fetchUserProfile starting for:', userId);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('🔴 Auth: Error fetching user profile:', error.message);
+        return;
+      }
+      
+      if (data) {
+        setUserName(data.name);
+        setSubscriptionTier(data.subscription_tier);
+        setThemePreference(data.theme_preference);
+        setLanguagePreference(data.language_preference);
+        setUnitPreference(data.unit_preference);
+        setOnboardingCompleted(data.onboarding_completed === true);
+        setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
+        
+        setUserContext(userId, undefined, data.name || undefined);
+        
+        console.log('🟢 Auth: Profile loaded - name:', data.name);
+      } else {
+        console.warn('⚠️ Auth: No profile data for user:', userId);
+      }
+    } catch (error: any) {
+      console.error('🔴 Auth: Exception in fetchUserProfile:', error.message);
+    }
+  }, []);
+
+  // Visibility-based session recovery for iOS PWA
+  const handleVisibilityChange = useCallback(async () => {
+    if (document.visibilityState !== 'visible') return;
+    
+    console.log('🔵 Auth: App became visible, checking session...');
+    
+    try {
+      // Quick session check - set a timeout to abort if stuck
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.warn('⚠️ Auth: Visibility check timeout, forcing loading = false');
+          setLoading(false);
+        }
+      }, 2000);
+      
+      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+      clearTimeout(timeoutId);
+      
+      if (error) {
+        console.error('🔴 Auth: Visibility session check error:', error);
+        return;
+      }
+      
+      // If we have a session but loading is stuck, force complete
+      if (currentSession?.user && loading) {
+        console.log('🔵 Auth: Forcing loading complete on visibility change');
+        setSession(currentSession);
+        setUser(currentSession.user);
+        setLoading(false);
+        
+        // Fetch profile in background (don't await)
+        fetchUserProfile(currentSession.user.id).catch(console.error);
+        checkAdminStatus(currentSession.user.id).catch(console.error);
+      }
+      
+      // If session changed, update state
+      if (currentSession?.user?.id !== user?.id) {
+        console.log('🔵 Auth: Session changed on visibility');
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (!currentSession) {
+          setLoading(false);
+          setIsAdmin(false);
+          setUserName(null);
+          setSubscriptionTier(null);
+          setRoles([]);
+          setPermissions([]);
+          clearUserContext();
+        }
+      }
+    } catch (error) {
+      console.error('🔴 Auth: Visibility check error:', error);
+      // On error, just ensure we're not stuck loading
+      if (loading) {
+        setLoading(false);
+      }
+    }
+  }, [user?.id, loading, fetchUserProfile, checkAdminStatus]);
+
   useEffect(() => {
     let mounted = true;
     let isInitialLoad = true;
     let safetyTimeoutCleared = false;
     console.log('🔵 Auth: useEffect initializing');
 
-    // Safety timeout to ensure loading is set to false
+    // Reduced safety timeout (5 seconds instead of 15)
     const safetyTimeout = setTimeout(() => {
       if (mounted && !safetyTimeoutCleared) {
         console.warn('⚠️ Auth: Safety timeout triggered, forcing loading = false');
         setLoading(false);
       }
-    }, 15000); // 15 seconds max
+    }, SAFETY_TIMEOUT_MS);
     
     const clearSafetyTimeout = () => {
       safetyTimeoutCleared = true;
@@ -81,13 +211,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Log auth events to Sentry
         addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
         
         // Only fetch profile on non-initial auth changes
         if (session?.user && event !== 'INITIAL_SESSION') {
           console.log('🔵 Auth: Fetching profile for user:', session.user.id);
           setLoading(true);
+          
+          // Use Promise.race to ensure loading completes within timeout
+          const profileTimeout = setTimeout(() => {
+            if (mounted) {
+              console.warn('⚠️ Auth: Profile fetch timeout, continuing...');
+              setLoading(false);
+            }
+          }, PROFILE_TIMEOUT_MS);
+          
           try {
             await Promise.all([
               checkAdminStatus(session.user.id),
@@ -96,7 +234,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log('🟢 Auth: Profile fetch complete');
           } catch (error) {
             console.error('🔴 Auth: Error in parallel fetch:', error);
-            setLoading(false);
+          } finally {
+            clearTimeout(profileTimeout);
+            if (mounted) setLoading(false);
           }
         } else if (!session) {
           console.log('🔵 Auth: No session, clearing state');
@@ -138,17 +278,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (session?.user) {
           console.log('🔵 Auth: Initializing with existing session');
+          
+          // Set a hard deadline for profile fetch
+          const profileDeadline = setTimeout(() => {
+            if (mounted) {
+              console.warn('⚠️ Auth: Profile deadline reached, continuing...');
+              setLoading(false);
+              clearSafetyTimeout();
+            }
+          }, PROFILE_TIMEOUT_MS);
+          
           try {
             await Promise.all([
               checkAdminStatus(session.user.id),
               fetchUserProfile(session.user.id)
             ]);
             console.log('🟢 Auth: Initial profile fetch complete');
-            isInitialLoad = false; // Mark initial load complete
-            clearSafetyTimeout();
+            isInitialLoad = false;
           } catch (error) {
             console.error('🔴 Auth: Error in initial fetch:', error);
-            setLoading(false);
+          } finally {
+            clearTimeout(profileDeadline);
+            if (mounted) setLoading(false);
             clearSafetyTimeout();
           }
         } else {
@@ -158,109 +309,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error('🔴 Auth: Exception in initializeAuth:', error);
-        setLoading(false);
+        if (mounted) setLoading(false);
         clearSafetyTimeout();
       }
     };
 
     initializeAuth();
+    
+    // Add visibility change listener for iOS PWA recovery
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       console.log('🔵 Auth: useEffect cleanup');
       mounted = false;
       clearTimeout(safetyTimeout);
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
-
-  const checkAdminStatus = async (userId: string) => {
-    console.log('🔵 Auth: checkAdminStatus starting for:', userId);
-    try {
-      // Fetch roles and permissions in parallel with reduced timeout
-      const rolesPromise = supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-      
-      const permsPromise = (supabase as any).rpc('get_user_permissions', {
-        _user_id: userId
-      });
-
-      // Reduced timeout (5 seconds)
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Query timeout')), 5000)
-      );
-
-      const results = await Promise.race([
-        Promise.all([rolesPromise, permsPromise]),
-        timeoutPromise
-      ]) as any;
-      
-      const [rolesResult, permsResult] = results;
-      
-      console.log('🔵 Auth: Roles result:', rolesResult?.data);
-      console.log('🔵 Auth: Perms result:', permsResult?.data);
-      
-      const userRoles = rolesResult?.data?.map((r: any) => r.role) || [];
-      setRoles(userRoles);
-      setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
-      
-      // Extract permission names from the result
-      const permissionNames = permsResult?.data?.map((p: any) => p.permission_name || p) || [];
-      setPermissions(permissionNames);
-      
-      console.log('🟢 Auth: checkAdminStatus complete - roles:', userRoles.length, 'perms:', permissionNames.length);
-    } catch (error: any) {
-      console.error('🔴 Auth: Error in checkAdminStatus:', error.message);
-      // Don't throw - allow auth to continue with empty roles/permissions
-      setRoles([]);
-      setPermissions([]);
-      setIsAdmin(false);
-    }
-  };
-
-  const fetchUserProfile = async (userId: string) => {
-    console.log('🔵 Auth: fetchUserProfile starting for:', userId);
-    try {
-      // Simplified query without timeout wrapper - let Supabase handle timeouts
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      console.log('🔵 Auth: Profile query result - data:', !!data, 'error:', error?.message);
-      
-      if (error) {
-        console.error('🔴 Auth: Error fetching user profile:', error.message);
-        // Set loading false and return - don't block auth flow
-        setLoading(false);
-        return;
-      }
-      
-      if (data) {
-        setUserName(data.name);
-        setSubscriptionTier(data.subscription_tier);
-        setThemePreference(data.theme_preference);
-        setLanguagePreference(data.language_preference);
-        setUnitPreference(data.unit_preference);
-        setOnboardingCompleted(data.onboarding_completed === true);
-        setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
-        
-        setUserContext(userId, undefined, data.name || undefined);
-        
-        console.log('🟢 Auth: Profile loaded - name:', data.name, 'onboarding:', data.onboarding_completed);
-      } else {
-        console.warn('⚠️ Auth: No profile data found for user:', userId);
-        // Still consider auth complete even without profile
-      }
-    } catch (error: any) {
-      console.error('🔴 Auth: Exception in fetchUserProfile:', error.message);
-    } finally {
-      setLoading(false);
-      console.log('🟢 Auth: fetchUserProfile complete, loading = false');
-    }
-  };
+  }, [checkAdminStatus, fetchUserProfile, handleVisibilityChange]);
 
   const refreshProfile = async () => {
     if (user?.id) {
@@ -276,7 +342,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password,
       });
       
-      // Log login attempt (fire and forget, don't block)
       if (data?.user) {
         addBreadcrumb(
           error ? 'Sign in failed' : 'Sign in successful',
@@ -294,7 +359,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error };
     } catch (error: any) {
       addBreadcrumb('Sign in error', 'auth', { error: error.message }, FeatureArea.AUTH);
-      // Catch suspension/ban errors from fetchUserProfile
       return { error };
     }
   };
@@ -314,7 +378,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
     
-    // Log signup result
     if (error) {
       addBreadcrumb('Sign up failed', 'auth', { error: error.message }, FeatureArea.AUTH);
       if (data?.user) {
@@ -336,7 +399,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     await supabase.auth.signOut();
     
-    // Log logout activity (fire and forget)
     if (currentUserId) {
       logActivity({ actionType: 'logout', userId: currentUserId }).catch(console.error);
     }
@@ -391,10 +453,7 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
   
   // Handle edge case where context is undefined during iOS PWA cold starts
-  // This prevents "Right side of assignment cannot be destructured" errors
   if (context === undefined) {
-    // Return a safe default object instead of throwing
-    // This allows the component to render and re-attempt once context is ready
     return {
       user: null,
       session: null,
@@ -409,7 +468,7 @@ export const useAuth = () => {
       unitPreference: null,
       units: 'imperial' as UnitSystem,
       onboardingCompleted: null,
-      loading: true, // Important: indicate we're still loading
+      loading: true,
       refreshProfile: async () => {},
       signIn: async () => ({ error: new Error('Auth not initialized') as any }),
       signUp: async () => ({ error: new Error('Auth not initialized') as any }),
