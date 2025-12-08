@@ -113,6 +113,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error: any) {
       console.error('🔴 Auth: Exception in fetchUserProfile:', error.message);
+      // Set default value to prevent stuck loading
+      setOnboardingCompleted(false);
     }
   }, []);
 
@@ -144,6 +146,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('🔵 Auth: Forcing loading complete on visibility change');
         setSession(currentSession);
         setUser(currentSession.user);
+        setOnboardingCompleted(prev => prev === null ? false : prev);
         setLoading(false);
         
         // Fetch profile in background (don't await)
@@ -283,6 +286,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const profileDeadline = setTimeout(() => {
             if (mounted) {
               console.warn('⚠️ Auth: Profile deadline reached, continuing...');
+              setOnboardingCompleted(prev => prev === null ? false : prev);
               setLoading(false);
               clearSafetyTimeout();
             }

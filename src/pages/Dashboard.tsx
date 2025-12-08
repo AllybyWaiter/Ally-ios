@@ -47,6 +47,18 @@ export default function Dashboard() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAquariumId, setDeletingAquariumId] = useState<string | null>(null);
 
+  // Fallback timeout for stuck onboardingCompleted state
+  useEffect(() => {
+    if (onboardingCompleted === null && !authLoading && user) {
+      const fallbackTimer = setTimeout(() => {
+        console.log('Dashboard: onboardingCompleted fallback triggered');
+        setShowPreferencesOnboarding(true);
+        setLoading(false);
+      }, 3000);
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [onboardingCompleted, authLoading, user]);
+
   useEffect(() => {
     if (!user) {
       navigate('/auth');
