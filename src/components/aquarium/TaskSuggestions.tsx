@@ -113,7 +113,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
       setSuggestions(prev => prev.filter((_, i) => i !== index));
       
       // Refresh tasks list
-      queryClient.invalidateQueries({ queryKey: ['maintenance-tasks', aquariumId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks", aquariumId] });
     } catch (error: any) {
       console.error('Error creating task:', error);
       toast({
