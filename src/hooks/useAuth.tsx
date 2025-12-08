@@ -124,62 +124,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleVisibilityChange = useCallback(async () => {
     if (document.visibilityState !== 'visible') return;
     
-    console.log('🔵 Auth: App became visible, checking session...');
+    console.log('🔵 Auth: App became visible, initiating recovery...');
+    
+    // Set a hard timeout - if we're still loading after 1.5s, force completion
+    const recoveryTimeout = setTimeout(() => {
+      console.warn('⚠️ Auth: Recovery timeout, forcing completion');
+      setLoading(false);
+      setOnboardingCompleted(prev => prev === null ? false : prev);
+    }, 1500);
     
     try {
-      // Quick session check - set a timeout to abort if stuck
-      const timeoutId = setTimeout(() => {
-        if (loading) {
-          console.warn('⚠️ Auth: Visibility check timeout, forcing loading = false');
-          setLoading(false);
-        }
-      }, 2000);
+      // First, try to refresh the session to ensure it's valid
+      console.log('🔵 Auth: Refreshing session on visibility change...');
+      const { error: refreshError } = await supabase.auth.refreshSession();
       
+      if (refreshError) {
+        console.warn('⚠️ Auth: Session refresh failed:', refreshError.message);
+      } else {
+        console.log('🟢 Auth: Session refresh successful');
+      }
+      
+      // Now get the session
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-      clearTimeout(timeoutId);
       
       if (error) {
         console.error('🔴 Auth: Visibility session check error:', error);
+        clearTimeout(recoveryTimeout);
+        setLoading(false);
         return;
       }
       
-      // If we have a session but loading is stuck, force complete
-      if (currentSession?.user && loading) {
-        console.log('🔵 Auth: Forcing loading complete on visibility change');
-        setSession(currentSession);
-        setUser(currentSession.user);
-        setOnboardingCompleted(prev => prev === null ? false : prev);
-        setLoading(false);
+      // Update session state
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user) {
+        console.log('🔵 Auth: Session valid, fetching profile in background');
         
-        // Fetch profile in background (don't await)
-        fetchUserProfile(currentSession.user.id).catch(console.error);
-        checkAdminStatus(currentSession.user.id).catch(console.error);
+        // Fetch profile quickly - don't block on it
+        Promise.all([
+          fetchUserProfile(currentSession.user.id),
+          checkAdminStatus(currentSession.user.id)
+        ]).catch(err => {
+          console.error('🔴 Auth: Background profile fetch error:', err);
+        });
+        
+        // Ensure onboarding has a value
+        setOnboardingCompleted(prev => prev === null ? false : prev);
+      } else {
+        // No session - clear state
+        console.log('🔵 Auth: No session on visibility change');
+        setIsAdmin(false);
+        setUserName(null);
+        setSubscriptionTier(null);
+        setRoles([]);
+        setPermissions([]);
+        setOnboardingCompleted(false);
+        clearUserContext();
       }
       
-      // If session changed, update state
-      if (currentSession?.user?.id !== user?.id) {
-        console.log('🔵 Auth: Session changed on visibility');
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (!currentSession) {
-          setLoading(false);
-          setIsAdmin(false);
-          setUserName(null);
-          setSubscriptionTier(null);
-          setRoles([]);
-          setPermissions([]);
-          clearUserContext();
-        }
-      }
+      clearTimeout(recoveryTimeout);
+      setLoading(false);
+      console.log('🟢 Auth: Visibility recovery complete');
     } catch (error) {
-      console.error('🔴 Auth: Visibility check error:', error);
-      // On error, just ensure we're not stuck loading
-      if (loading) {
-        setLoading(false);
-      }
+      console.error('🔴 Auth: Visibility recovery error:', error);
+      clearTimeout(recoveryTimeout);
+      setLoading(false);
+      setOnboardingCompleted(prev => prev === null ? false : prev);
     }
-  }, [user?.id, loading, fetchUserProfile, checkAdminStatus]);
+  }, [fetchUserProfile, checkAdminStatus]);
 
   useEffect(() => {
     let mounted = true;
