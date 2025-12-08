@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -53,6 +53,18 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   const [taskToComplete, setTaskToComplete] = useState<string | null>(null);
   const [filter, setFilter] = useState<TaskFilter>("all");
   
+  // Fallback timer to prevent auth loading from blocking indefinitely
+  const [authFallbackReady, setAuthFallbackReady] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAuthFallbackReady(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Use fallback if auth loading takes too long
+  const effectiveAuthLoading = authLoading && !authFallbackReady;
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -69,7 +81,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       if (error) throw error;
       return data;
     },
-    enabled: !authLoading && !!user && !!aquariumId,
+    enabled: (!effectiveAuthLoading && !!user) || (authFallbackReady && !!aquariumId),
+    staleTime: 10000,
     retry: 2,
   });
 
@@ -241,7 +254,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   }, [pendingTasks, today]);
 
   // Show loading while auth is initializing or data is loading (AFTER all hooks)
-  if (authLoading || isLoading) {
+  if (effectiveAuthLoading || isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
