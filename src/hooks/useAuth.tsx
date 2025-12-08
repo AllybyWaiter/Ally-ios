@@ -207,14 +207,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         console.log('🔵 Auth: State change event:', event, 'Session exists:', !!session);
         
-        // Skip profile fetch on initial SIGNED_IN since initializeAuth handles it
-        if (event === 'SIGNED_IN' && isInitialLoad) {
-          console.log('🔵 Auth: Skipping duplicate fetch on initial SIGNED_IN');
-          return;
-        }
-        
+        // ALWAYS update session and user state first - this enables navigation in Auth.tsx
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Skip profile fetch on initial SIGNED_IN since initializeAuth handles it
+        // But we've already updated the user state above, so navigation will work
+        if (event === 'SIGNED_IN' && isInitialLoad) {
+          console.log('🔵 Auth: Skipping duplicate profile fetch on initial SIGNED_IN');
+          return;
+        }
         
         addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
         

@@ -57,11 +57,30 @@ export default function Auth() {
     },
   });
 
+  // Redirect to dashboard if already logged in
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
     }
   }, [user, navigate]);
+  
+  // Timeout fallback for stuck authentication state
+  useEffect(() => {
+    if (!isAuthenticating) return;
+    
+    const timeout = setTimeout(async () => {
+      // Fallback: check session directly and force navigate
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        navigate('/dashboard');
+      } else {
+        setIsAuthenticating(false);
+        setIsLoading(false);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timeout);
+  }, [isAuthenticating, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
