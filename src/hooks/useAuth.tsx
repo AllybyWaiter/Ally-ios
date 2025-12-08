@@ -166,18 +166,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        console.log('🔵 Auth: Session valid, fetching profile in background');
+        console.log('🔵 Auth: Session valid, awaiting profile fetch');
         
-        // Fetch profile quickly - don't block on it
-        Promise.all([
-          fetchUserProfile(currentSession.user.id),
-          checkAdminStatus(currentSession.user.id)
-        ]).catch(err => {
-          console.error('🔴 Auth: Background profile fetch error:', err);
-        });
-        
-        // Ensure onboarding has a value
-        setOnboardingCompleted(prev => prev === null ? false : prev);
+        // AWAIT the profile fetch so onboardingCompleted is set correctly before we clear loading
+        try {
+          await Promise.all([
+            fetchUserProfile(currentSession.user.id),
+            checkAdminStatus(currentSession.user.id)
+          ]);
+          console.log('🟢 Auth: Profile fetch completed in visibility handler');
+        } catch (err) {
+          console.error('🔴 Auth: Profile fetch error in visibility handler:', err);
+          // Only default to false if fetch failed AND we don't have a previous value
+          setOnboardingCompleted(prev => prev === null ? false : prev);
+        }
+        // Don't force onboardingCompleted to false here - let fetchUserProfile set it correctly
       } else {
         // No session - clear state
         console.log('🔵 Auth: No session on visibility change');
@@ -197,7 +200,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('🔴 Auth: Visibility recovery error:', error);
       clearTimeout(recoveryTimeout);
       setLoading(false);
-      setOnboardingCompleted(prev => prev === null ? false : prev);
+      // Preserve existing onboardingCompleted if we have it, only default if truly unknown
+      setOnboardingCompleted(prev => prev !== null ? prev : false);
     }
   }, [fetchUserProfile, checkAdminStatus, isInitialAuthComplete]);
 
