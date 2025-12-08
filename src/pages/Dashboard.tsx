@@ -52,8 +52,8 @@ export default function Dashboard() {
   useEffect(() => {
     const maxLoadingTimeout = setTimeout(() => {
       if (loading && user && !dataFetched) {
-        console.warn('Dashboard: Max 4s timeout - forcing data load');
-        loadAquariums();
+        console.warn('Dashboard: Max 4s timeout - forcing data load with userId:', user.id);
+        loadAquariums(user.id);
       } else if (loading) {
         console.warn('Dashboard: Max 4s timeout - forcing completion');
         setLoading(false);
@@ -92,8 +92,8 @@ export default function Dashboard() {
             window.location.reload();
           } else if (user && aquariums.length === 0 && dataFetched) {
             // Data was fetched but showing empty - try refreshing
-            console.log('Dashboard: Showing empty after wake-up, refreshing data');
-            loadAquariums();
+            console.log('Dashboard: Showing empty after wake-up, refreshing data with userId:', user.id);
+            loadAquariums(user.id);
           }
         }, 2000);
       }
@@ -124,10 +124,21 @@ export default function Dashboard() {
       return;
     }
     
-    loadAquariums();
+    console.log('Dashboard: Main useEffect calling loadAquariums with userId:', user.id);
+    loadAquariums(user.id);
   }, [user, navigate, onboardingCompleted, authLoading]);
 
-  const loadAquariums = async () => {
+  const loadAquariums = async (userId?: string) => {
+    const effectiveUserId = userId || user?.id;
+    
+    if (!effectiveUserId) {
+      console.warn('loadAquariums: No user ID available, skipping');
+      setLoading(false);
+      return;
+    }
+    
+    console.log('loadAquariums: Fetching with userId:', effectiveUserId);
+    
     try {
       // Optimized: Fetch aquariums with task count in single query using aggregate
       const { data, error } = await supabase
@@ -136,7 +147,7 @@ export default function Dashboard() {
           *,
           maintenance_tasks!aquarium_id(count)
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .eq('maintenance_tasks.status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -185,12 +196,12 @@ export default function Dashboard() {
 
   const handlePreferencesComplete = async () => {
     setShowPreferencesOnboarding(false);
-    await loadAquariums();
+    await loadAquariums(user?.id);
   };
 
   const handleAquariumOnboardingComplete = async () => {
     setShowAquariumOnboarding(false);
-    await loadAquariums();
+    await loadAquariums(user?.id);
   };
 
   const handleCreateAquarium = () => {
@@ -233,7 +244,7 @@ export default function Dashboard() {
         description: t('dashboard.aquariumDeleted'),
       });
 
-      await loadAquariums();
+      await loadAquariums(user?.id);
     } catch (error) {
       console.error("Error deleting aquarium:", error);
       toast({
