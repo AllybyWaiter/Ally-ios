@@ -49,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [unitPreference, setUnitPreference] = useState<string | null>(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialAuthComplete, setIsInitialAuthComplete] = useState(false);
 
   const checkAdminStatus = useCallback(async (userId: string) => {
     console.log('🔵 Auth: checkAdminStatus starting for:', userId);
@@ -124,6 +125,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleVisibilityChange = useCallback(async () => {
     if (document.visibilityState !== 'visible') return;
     
+    // Skip visibility handler during initial auth - let initializeAuth handle it
+    if (!isInitialAuthComplete) {
+      console.log('🔵 Auth: Skipping visibility handler - initial auth still in progress');
+      return;
+    }
+    
     console.log('🔵 Auth: App became visible, initiating recovery...');
     
     // Set a hard timeout - if we're still loading after 1.5s, force completion
@@ -192,7 +199,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       setOnboardingCompleted(prev => prev === null ? false : prev);
     }
-  }, [fetchUserProfile, checkAdminStatus]);
+  }, [fetchUserProfile, checkAdminStatus, isInitialAuthComplete]);
 
   useEffect(() => {
     let mounted = true;
@@ -318,18 +325,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             isInitialLoad = false;
           } catch (error) {
             console.error('🔴 Auth: Error in initial fetch:', error);
+            // Ensure onboardingCompleted is set even on error
+            setOnboardingCompleted(prev => prev === null ? false : prev);
           } finally {
             clearTimeout(profileDeadline);
-            if (mounted) setLoading(false);
+            if (mounted) {
+              setLoading(false);
+              setIsInitialAuthComplete(true);
+            }
             clearSafetyTimeout();
           }
         } else {
           setLoading(false);
+          setIsInitialAuthComplete(true);
           clearSafetyTimeout();
           console.log('🟢 Auth: No existing session, loading = false');
         }
       } catch (error) {
         console.error('🔴 Auth: Exception in initializeAuth:', error);
+        // Ensure onboardingCompleted is set even on exception
+        if (mounted) setOnboardingCompleted(prev => prev === null ? false : prev);
         if (mounted) setLoading(false);
         clearSafetyTimeout();
       }
