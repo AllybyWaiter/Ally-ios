@@ -38,6 +38,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
   
   const { signIn, signUp, user } = useAuth();
@@ -120,7 +121,10 @@ export default function Auth() {
       }
       
       resetRateLimit();
-      navigate('/dashboard');
+      // Don't navigate manually - let the useEffect handle it when user state updates
+      // Keep authenticating state to show "Redirecting..." and prevent form flash
+      setIsAuthenticating(true);
+      return; // Exit early, don't set isLoading to false
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const fieldErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
@@ -268,8 +272,13 @@ export default function Auth() {
                 )}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading || isRateLimited}>
-              {isLoading ? (
+            <Button type="submit" className="w-full" disabled={isLoading || isAuthenticating || isRateLimited}>
+              {isAuthenticating ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Redirecting...
+                </>
+              ) : isLoading ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
                   {isLogin ? 'Signing in...' : 'Creating account...'}
