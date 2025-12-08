@@ -109,27 +109,12 @@ export const useSessionMonitor = () => {
     // Initial check
     checkAndRefreshSession();
 
-    // Set up interval for periodic checks
+    // Set up interval for periodic checks only
+    // NOTE: Visibility change handling is now consolidated in useAuth.tsx to prevent race conditions
     const intervalId = setInterval(() => checkAndRefreshSession(false), SESSION_CHECK_INTERVAL);
-
-    // Listen for visibility changes to check session when user returns
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const now = Date.now();
-        // Debounce: only check if more than 1 second since last check
-        if (now - lastVisibilityCheck.current > 1000) {
-          lastVisibilityCheck.current = now;
-          console.log('🔵 Session: App became visible, checking session...');
-          checkAndRefreshSession(true);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [checkAndRefreshSession]);
 };
