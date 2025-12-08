@@ -59,6 +59,34 @@ export default function Dashboard() {
     }
   }, [onboardingCompleted, authLoading, user]);
 
+  // iOS PWA wake-up recovery - force reload if stuck loading after visibility change
+  useEffect(() => {
+    let stuckCheckTimeout: NodeJS.Timeout | null = null;
+    
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Dashboard: Visibility changed to visible, checking state...');
+        
+        // Clear any existing timeout
+        if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
+        
+        // After 2.5 seconds, if still loading, force reload
+        stuckCheckTimeout = setTimeout(() => {
+          if (loading || authLoading) {
+            console.warn('Dashboard: Still loading after wake-up, forcing reload');
+            window.location.reload();
+          }
+        }, 2500);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
+    };
+  }, [loading, authLoading]);
+
   useEffect(() => {
     if (!user) {
       navigate('/auth');
