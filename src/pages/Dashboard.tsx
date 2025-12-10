@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,9 @@ import { formatDate } from '@/lib/formatters';
 import { DashboardSkeleton } from '@/components/ui/loading-skeleton';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
 
 interface Aquarium {
   id: string;
@@ -47,6 +50,26 @@ export default function Dashboard() {
   const [editingAquarium, setEditingAquarium] = useState<Aquarium | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingAquariumId, setDeletingAquariumId] = useState<string | null>(null);
+  
+  // Pull-to-refresh
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
+  
+  const handlePullRefresh = async () => {
+    if (user) {
+      await loadAquariums(user.id);
+      toast({ 
+        title: 'Dashboard refreshed',
+        description: `Updated ${new Date().toLocaleTimeString()}`
+      });
+    }
+  };
+  
+  const { isRefreshing, pullDistance, isPastThreshold } = usePullToRefresh(containerRef, {
+    onRefresh: handlePullRefresh,
+    threshold: 60,
+    disabled: loading || authLoading || !isMobile
+  });
 
   // Hard maximum loading timeout - triggers data load if not fetched yet
   // IMPORTANT: Don't show preferences onboarding here - only load data and let the result determine UI
@@ -279,8 +302,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pull-refresh-container">
       <AppHeader />
+      
+      {/* Pull-to-refresh indicator */}
+      <PullToRefreshIndicator 
+        pullDistance={pullDistance}
+        isPastThreshold={isPastThreshold}
+        isRefreshing={isRefreshing}
+      />
       
       <main className="container mx-auto px-4 py-8 pt-24 mt-safe">
         {/* Header */}
