@@ -49,14 +49,16 @@ export default function Dashboard() {
   const [deletingAquariumId, setDeletingAquariumId] = useState<string | null>(null);
 
   // Hard maximum loading timeout - triggers data load if not fetched yet
+  // IMPORTANT: Don't show preferences onboarding here - only load data and let the result determine UI
   useEffect(() => {
     const maxLoadingTimeout = setTimeout(() => {
       if (loading && user && !dataFetched) {
         console.warn('Dashboard: Max 4s timeout - forcing data load with userId:', user.id);
         loadAquariums(user.id);
       } else if (loading && user && onboardingCompleted === null) {
-        // Onboarding state still unknown after 4s - assume completed and load data
-        console.warn('Dashboard: Onboarding state unknown after 4s, assuming completed and loading');
+        // Onboarding state still unknown after 4s - try loading data anyway
+        // If user is truly new, they'll have no aquariums and we'll show aquarium onboarding
+        console.warn('Dashboard: Onboarding state unknown after 4s, attempting to load data');
         loadAquariums(user.id);
       } else if (loading) {
         console.warn('Dashboard: Max 4s timeout - forcing completion');
@@ -64,19 +66,7 @@ export default function Dashboard() {
       }
     }, 4000);
     return () => clearTimeout(maxLoadingTimeout);
-  }, [user, dataFetched]);
-
-  // Fallback timeout for stuck onboardingCompleted state
-  useEffect(() => {
-    if (onboardingCompleted === null && !authLoading && user) {
-      const fallbackTimer = setTimeout(() => {
-        console.log('Dashboard: onboardingCompleted fallback triggered');
-        setShowPreferencesOnboarding(true);
-        setLoading(false);
-      }, 3000);
-      return () => clearTimeout(fallbackTimer);
-    }
-  }, [onboardingCompleted, authLoading, user]);
+  }, [user, dataFetched, onboardingCompleted]);
 
   // iOS PWA wake-up recovery - refresh data if showing empty after visibility change
   useEffect(() => {
