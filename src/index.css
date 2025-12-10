@@ -258,3 +258,36 @@ All colors MUST be HSL.
 .mt-safe {
   margin-top: env(safe-area-inset-top, 0);
 }
+
+/* Pull-to-refresh styles */
+.pull-refresh-container {
+  overscroll-behavior-y: contain;
+}
+
+.pull-indicator {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 4rem);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.pull-indicator-arrow {
+  transition: transform 0.2s ease;
+}
+
+.pull-indicator-arrow.flipped {
+  transform: rotate(180deg);
+}
+
+@keyframes spin-refresh {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-refresh {
+  animation: spin-refresh 1s linear infinite;
+}
