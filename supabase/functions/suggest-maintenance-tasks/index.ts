@@ -74,6 +74,8 @@ serve(async (req) => {
       equipment: equipment?.map(eq => ({
         type: eq.equipment_type,
         name: eq.name,
+        brand: eq.brand,
+        model: eq.model,
         lastMaintenance: eq.last_maintenance_date,
         maintenanceInterval: eq.maintenance_interval_days,
       })),
@@ -90,22 +92,65 @@ serve(async (req) => {
       })),
     };
 
+    const today = new Date().toISOString().split('T')[0];
+
     const systemPrompt = `You are an expert aquarium maintenance advisor. Analyze the provided aquarium data and suggest 3-5 actionable maintenance tasks.
 
-Consider:
-- Water parameter trends (look for concerning patterns)
-- Equipment maintenance schedules (suggest maintenance based on intervals)
-- Tank type and livestock needs
-- Seasonal maintenance requirements
-- Recent completed tasks (avoid duplicates)
+ANALYSIS PRIORITIES:
+1. Water parameter trends - Look for concerning patterns (rising nitrates, pH drift, ammonia spikes)
+2. Equipment maintenance schedules - Suggest maintenance based on intervals and last service dates
+3. Tank type and livestock needs - Consider species-specific requirements
+4. Seasonal considerations - Temperature stability, algae prevention
+5. Recent task history - Avoid duplicating recently completed tasks
 
-For each suggestion, categorize as: water_change, cleaning, equipment_maintenance, testing, feeding, or other.
-Prioritize tasks as: low, medium, or high based on urgency.`;
+TASK CATEGORIES:
+- water_change: Partial water changes (suggest % based on parameters)
+- cleaning: Glass cleaning, gravel vacuuming, decoration cleaning
+- equipment_maintenance: Filter cleaning, impeller check, light bulb replacement
+- testing: Water parameter testing (specify which parameters)
+- feeding: Feeding schedule adjustments, food variety
+- other: Plant trimming, quarantine checks, etc.
 
-    const userPrompt = `Analyze this aquarium and suggest maintenance tasks:\n\n${JSON.stringify(context, null, 2)}`;
+PRIORITY GUIDELINES:
+- high: Immediate action needed (elevated ammonia/nitrite, overdue equipment service, health issues)
+- medium: Should be done within the week (routine maintenance, mildly elevated parameters)
+- low: Nice to do when convenient (optimization, aesthetic improvements)
+
+FEW-SHOT EXAMPLES:
+
+Example 1 - High nitrates, filter overdue:
+{
+  "title": "25% Water Change",
+  "description": "Nitrate levels at 45ppm - perform a 25% water change to bring levels back to safe range under 20ppm",
+  "priority": "high",
+  "category": "water_change",
+  "reasoning": "Nitrate trending upward over last 3 tests, now at concerning levels for tropical fish"
+}
+
+Example 2 - Equipment maintenance:
+{
+  "title": "Clean Fluval 407 Filter Media",
+  "description": "Rinse mechanical media in tank water. Check impeller for debris. Replace carbon if present.",
+  "priority": "medium",
+  "category": "equipment_maintenance",
+  "reasoning": "Filter last maintained 35 days ago, interval is 30 days"
+}
+
+Example 3 - Routine testing:
+{
+  "title": "Full Parameter Test",
+  "description": "Test pH, ammonia, nitrite, nitrate, and temperature. Record results to track trends.",
+  "priority": "low",
+  "category": "testing",
+  "reasoning": "No water tests recorded in the past 7 days"
+}
+
+Today's date is ${today}. Use this for calculating days since last maintenance and setting recommended dates.`;
+
+    const userPrompt = `Analyze this aquarium and suggest 3-5 specific, actionable maintenance tasks:\n\n${JSON.stringify(context, null, 2)}`;
 
     const body: any = {
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -115,7 +160,7 @@ Prioritize tasks as: low, medium, or high based on urgency.`;
           type: "function",
           function: {
             name: "suggest_tasks",
-            description: "Return 3-5 actionable task suggestions.",
+            description: "Return 3-5 actionable task suggestions based on aquarium analysis.",
             parameters: {
               type: "object",
               properties: {
@@ -124,14 +169,34 @@ Prioritize tasks as: low, medium, or high based on urgency.`;
                   items: {
                     type: "object",
                     properties: {
-                      title: { type: "string" },
-                      description: { type: "string" },
-                      priority: { type: "string", enum: ["low", "medium", "high"] },
-                      category: { type: "string", enum: ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"] },
-                      recommendedDate: { type: "string", description: "ISO date string for when to do this task" },
-                      reasoning: { type: "string" }
+                      title: { 
+                        type: "string",
+                        description: "Clear, action-oriented task title"
+                      },
+                      description: { 
+                        type: "string",
+                        description: "Detailed instructions for completing the task"
+                      },
+                      priority: { 
+                        type: "string", 
+                        enum: ["low", "medium", "high"],
+                        description: "Urgency level"
+                      },
+                      category: { 
+                        type: "string", 
+                        enum: ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"],
+                        description: "Task category"
+                      },
+                      recommendedDate: { 
+                        type: "string", 
+                        description: "ISO date string for when to do this task (YYYY-MM-DD)"
+                      },
+                      reasoning: { 
+                        type: "string",
+                        description: "Why this task is recommended based on the data"
+                      }
                     },
-                    required: ["title", "description", "priority", "category"],
+                    required: ["title", "description", "priority", "category", "reasoning"],
                     additionalProperties: false
                   }
                 }
@@ -142,10 +207,11 @@ Prioritize tasks as: low, medium, or high based on urgency.`;
           }
         }
       ],
-      tool_choice: { type: "function", function: { name: "suggest_tasks" } }
+      tool_choice: { type: "function", function: { name: "suggest_tasks" } },
+      temperature: 0.3
     };
 
-    console.log('Calling Lovable AI for task suggestions...');
+    console.log('Calling Lovable AI (gemini-2.5-pro) for task suggestions...');
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',

@@ -286,6 +286,44 @@ Your personality:
 - Prioritize fish health and welfare
 - Use the livestock, plants, AND EQUIPMENT context to give specific advice about compatibility, stocking, care, and maintenance
 
+WATER PARAMETER REFERENCE RANGES:
+
+FRESHWATER (Tropical):
+- pH: 6.5-7.5 (ideal), 6.0-8.0 (acceptable)
+- Ammonia: 0 ppm (any detectable is harmful)
+- Nitrite: 0 ppm (any detectable is harmful)
+- Nitrate: <20 ppm (ideal), <40 ppm (acceptable)
+- Temperature: 75-80°F (24-27°C)
+- GH: 4-12 dGH
+- KH: 3-8 dKH
+
+FRESHWATER (Livebearers/African Cichlids):
+- pH: 7.5-8.5
+- GH: 10-20 dGH
+- KH: 10-15 dKH
+
+SALTWATER/FOWLR:
+- pH: 8.1-8.4
+- Ammonia: 0 ppm
+- Nitrite: 0 ppm
+- Nitrate: <20 ppm (ideal), <40 ppm (acceptable)
+- Salinity: 1.020-1.025 SG (35 ppt)
+- Temperature: 75-80°F (24-27°C)
+
+REEF:
+- pH: 8.1-8.4
+- Ammonia: 0 ppm
+- Nitrite: 0 ppm
+- Nitrate: <5 ppm (SPS), <10 ppm (LPS/soft corals)
+- Phosphate: <0.03 ppm
+- Salinity: 1.024-1.026 SG (35 ppt)
+- Alkalinity: 8-12 dKH
+- Calcium: 400-450 ppm
+- Magnesium: 1300-1450 ppm
+- Temperature: 76-78°F (ideal for corals)
+
+Use these ranges to assess water test results and provide specific advice.
+
 ${hasMemoryAccess ? `MEMORY & LEARNING CAPABILITIES:
 You have the ability to remember important facts about the user's setup using the save_memory tool.
 - When users share information about their equipment, products, water source, feeding habits, maintenance routines, or preferences, USE THE save_memory TOOL to remember it.
@@ -337,12 +375,13 @@ Guidelines:
 
     // Initial API call - only include tools if user has memory access
     const apiBody: any = {
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages: [
         { role: "system", content: systemPrompt },
         ...messages,
       ],
       stream: false, // First call without streaming to check for tool calls
+      temperature: 0.7,
     };
     
     // Only include tools for users with memory access
@@ -503,9 +542,10 @@ Guidelines:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-2.5-pro",
           messages: followUpMessages,
           stream: true,
+          temperature: 0.7,
         }),
       });
 
@@ -533,12 +573,13 @@ Guidelines:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ],
         stream: true,
+        temperature: 0.7,
       }),
     });
 
