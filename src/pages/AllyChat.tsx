@@ -27,6 +27,7 @@ import {
   RotateCw,
   ArrowLeft
 } from "lucide-react";
+import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -980,26 +981,33 @@ const AllyChat = () => {
                           </p>
                         )}
                         
-                        {message.role === "assistant" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute -right-8 top-0 opacity-0 group-hover/message:opacity-100 transition-opacity h-6 w-6"
-                                onClick={() => copyMessage(message.content, index)}
-                              >
-                                {copiedIndex === index ? (
-                                  <Check className="h-3 w-3 text-green-500" />
-                                ) : (
-                                  <Copy className="h-3 w-3" />
-                                )}
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{copiedIndex === index ? "Copied!" : "Copy message"}</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        {message.role === "assistant" && !isStreaming && index > 0 && (
+                          <div className="absolute -right-20 top-0 opacity-0 group-hover/message:opacity-100 transition-opacity flex items-center gap-1">
+                            <FeedbackButtons
+                              feature="chat"
+                              context={{ message: message.content.slice(0, 500), aquariumContext: message.aquariumContext }}
+                              size="sm"
+                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => copyMessage(message.content, index)}
+                                >
+                                  {copiedIndex === index ? (
+                                    <Check className="h-3 w-3 text-green-500" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{copiedIndex === index ? "Copied!" : "Copy message"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                         )}
                         
                         {message.role === "user" && editingIndex !== index && index !== 0 && (
