@@ -1,15 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('publish-scheduled-posts');
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -18,6 +21,9 @@ serve(async (req) => {
 
     // Find all scheduled posts where published_at is now or in the past
     const now = new Date().toISOString();
+    
+    logger.info('Checking for scheduled posts', { currentTime: now });
+
     const { data: scheduledPosts, error: fetchError } = await supabase
       .from('blog_posts')
       .select('id, title, published_at')
@@ -25,16 +31,13 @@ serve(async (req) => {
       .lte('published_at', now);
 
     if (fetchError) {
-      console.error('Error fetching scheduled posts:', fetchError);
+      logger.error('Error fetching scheduled posts', fetchError);
       throw fetchError;
     }
 
     if (!scheduledPosts || scheduledPosts.length === 0) {
-      console.log('No posts to publish at this time');
-      return new Response(
-        JSON.stringify({ message: 'No posts to publish', count: 0 }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      logger.info('No posts to publish');
+      return createSuccessResponse({ message: 'No posts to publish', count: 0 });
     }
 
     // Publish all scheduled posts
@@ -45,30 +48,22 @@ serve(async (req) => {
       .in('id', postIds);
 
     if (updateError) {
-      console.error('Error publishing posts:', updateError);
+      logger.error('Error publishing posts', updateError);
       throw updateError;
     }
 
-    console.log(`Successfully published ${scheduledPosts.length} posts:`, 
-      scheduledPosts.map(p => p.title).join(', '));
+    logger.info('Posts published successfully', {
+      count: scheduledPosts.length,
+      titles: scheduledPosts.map(p => p.title),
+    });
 
-    return new Response(
-      JSON.stringify({ 
-        message: 'Posts published successfully', 
-        count: scheduledPosts.length,
-        posts: scheduledPosts 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse({ 
+      message: 'Posts published successfully', 
+      count: scheduledPosts.length,
+      posts: scheduledPosts 
+    });
 
   } catch (error) {
-    console.error('Error in publish-scheduled-posts:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    return createErrorResponse(error, logger);
   }
 });

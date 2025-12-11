@@ -1,24 +1,62 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateString,
+  validateArray,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  handleAIGatewayError,
+  createErrorResponse,
+  createStreamResponse,
+} from "../_shared/mod.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('chat-support');
 
   try {
-    const { messages, userName } = await req.json();
+    const body = await req.json();
+    const { messages, userName } = body;
+
+    // Input validation
+    const errors = collectErrors(
+      validateArray(messages, 'messages', { minLength: 1, maxLength: 50 }),
+      validateString(userName, 'userName', { required: false, maxLength: 100 })
+    );
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
+    }
+
+    // Rate limiting (20 requests per minute for public endpoint)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 20,
+      windowMs: 60 * 1000,
+      identifier: `chat-support:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Processing chat request with", messages.length, "messages", userName ? `for user: ${userName}` : "");
+    logger.info('Processing chat request', {
+      messageCount: messages.length,
+      userName: userName || 'anonymous',
+    });
 
     const systemPrompt = userName 
       ? `You are Ally Support, the friendly AI assistant for Ally - an intelligent aquarium management platform. You are chatting with ${userName}.
@@ -90,49 +128,13 @@ Keep responses conversational, concise (2-3 paragraphs max), and helpful. If you
       }),
     });
 
-    if (!response.ok) {
-      console.error("AI gateway error:", response.status, await response.text());
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Service temporarily unavailable. Please try again later." }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
+    const aiError = handleAIGatewayError(response, logger);
+    if (aiError) return aiError;
 
-      return new Response(
-        JSON.stringify({ error: "Failed to process request" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
+    logger.info('Streaming response started');
+    return createStreamResponse(response.body);
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
   } catch (error) {
-    console.error("Chat support error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return createErrorResponse(error, logger);
   }
 });
