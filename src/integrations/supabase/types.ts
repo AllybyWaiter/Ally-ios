@@ -635,6 +635,50 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_analysis_corrections: {
+        Row: {
+          ai_confidence: number | null
+          ai_detected_value: number
+          correction_delta: number
+          created_at: string
+          id: string
+          parameter_name: string
+          user_corrected_value: number
+          user_id: string
+          water_test_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_detected_value: number
+          correction_delta: number
+          created_at?: string
+          id?: string
+          parameter_name: string
+          user_corrected_value: number
+          user_id: string
+          water_test_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_detected_value?: number
+          correction_delta?: number
+          created_at?: string
+          id?: string
+          parameter_name?: string
+          user_corrected_value?: number
+          user_id?: string
+          water_test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_analysis_corrections_water_test_id_fkey"
+            columns: ["water_test_id"]
+            isOneToOne: false
+            referencedRelation: "water_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plants: {
         Row: {
           aquarium_id: string
