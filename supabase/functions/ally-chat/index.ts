@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, handleCors } from '../_shared/cors.ts';
+import { createLogger } from '../_shared/logger.ts';
+import { validateString, validateUuid, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
+import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
+import { createErrorResponse, createSuccessResponse, createStreamResponse } from '../_shared/errorHandler.ts';
 
 // Tool definitions for Ally's memory capabilities
 const tools = [
@@ -73,30 +73,49 @@ function getWaterType(aquariumType: string): string {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('ally-chat');
 
   try {
-    const { messages, aquariumId } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const body = await req.json();
+    const { messages, aquariumId } = body;
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    // Input validation
+    const errors = collectErrors(
+      validateUuid(aquariumId, 'aquariumId', { required: false })
+    );
+    
+    // Validate messages array
+    if (!Array.isArray(messages) || messages.length === 0) {
+      errors.push({ field: 'messages', message: 'messages must be a non-empty array' });
+    } else {
+      // Validate each message has role and content
+      messages.forEach((msg, index) => {
+        if (!msg.role || !['user', 'assistant', 'system'].includes(msg.role)) {
+          errors.push({ field: `messages[${index}].role`, message: 'Invalid message role' });
+        }
+        if (!msg.content && typeof msg.content !== 'string') {
+          errors.push({ field: `messages[${index}].content`, message: 'Message content is required' });
+        }
+      });
+    }
+    
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
     }
 
     // Get auth token from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error("Ally chat error: No authorization header provided");
-      throw new Error("No authorization header");
+      logger.error('No authorization header provided');
+      return createErrorResponse('Authentication required', logger, { status: 401 });
     }
 
-    // Extract JWT token from Bearer header
     const token = authHeader.replace('Bearer ', '');
-
-    console.log("Auth token present, creating Supabase client...");
-
+    
     // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -108,20 +127,34 @@ serve(async (req) => {
       }
     );
 
-    // Get authenticated user by passing the JWT token directly
+    // Get authenticated user
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
     
-    if (authError) {
-      console.error("Ally chat auth error:", authError.message);
-      throw new Error(`Authentication failed: ${authError.message}`);
+    if (authError || !authUser) {
+      logger.error('Authentication failed', { error: authError?.message });
+      return createErrorResponse('Authentication failed', logger, { status: 401 });
     }
     
-    if (!authUser) {
-      console.error("Ally chat error: No user returned from getUser()");
-      throw new Error("Not authenticated");
+    logger.info('User authenticated', { userId: authUser.id });
+    logger.setUserId(authUser.id);
+
+    // Rate limiting - 10 requests per minute per user
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 10,
+      windowMs: 60 * 1000,
+      identifier: extractIdentifier(req, authUser.id),
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      logger.warn('Rate limit exceeded', { userId: authUser.id });
+      return rateLimitExceededResponse(rateLimitResult);
     }
-    
-    console.log("User authenticated:", authUser.id);
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      logger.error('LOVABLE_API_KEY not configured');
+      return createErrorResponse('AI service not configured', logger, { status: 500 });
+    }
 
     // Get user's aquarium context if aquariumId provided
     let aquariumContext = '';
@@ -181,12 +214,10 @@ ${plants && plants.length > 0
       }
     }
 
-    // Fetch user's memories only if they have memory access (Plus, Gold, Business tiers)
-    // Note: hasMemoryAccess is determined later, so we fetch conditionally in the system prompt building
+    // Fetch user's memories and profile
     let memories: any[] = [];
     let memoryContext = '';
 
-    // Get user's skill level and subscription tier
     let skillLevel = 'beginner';
     let subscriptionTier = 'free';
     const { data: profile } = await supabase
@@ -202,10 +233,8 @@ ${plants && plants.length > 0
       subscriptionTier = profile.subscription_tier;
     }
     
-    // Check if user has memory access (Plus, Gold, Business tiers)
     const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
 
-    // Only fetch memories if user has access
     if (hasMemoryAccess) {
       const { data: memoryData } = await supabase
         .from('user_memories')
@@ -263,7 +292,14 @@ Explanation Style for Advanced Users:
     
     const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
 
-    console.log("Processing Ally chat request", aquariumId ? `for aquarium: ${aquariumId}` : "", `| Skill level: ${skillLevel}`, `| Tier: ${subscriptionTier}`, `| Memory access: ${hasMemoryAccess}`, `| Memories: ${memories?.length || 0}`);
+    logger.info('Processing chat request', { 
+      aquariumId: aquariumId || 'none',
+      skillLevel,
+      subscriptionTier,
+      hasMemoryAccess,
+      memoryCount: memories?.length || 0,
+      messageCount: messages.length
+    });
 
     const systemPrompt = `You are Ally, an expert aquarium assistant with deep knowledge of:
 - Freshwater and saltwater aquarium care
@@ -380,14 +416,15 @@ Guidelines:
         { role: "system", content: systemPrompt },
         ...messages,
       ],
-      stream: false, // First call without streaming to check for tool calls
+      stream: false,
       temperature: 0.7,
     };
     
-    // Only include tools for users with memory access
     if (hasMemoryAccess) {
       apiBody.tools = tools;
     }
+
+    logger.debug('Calling AI gateway (initial)', { hasTools: hasMemoryAccess });
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -399,35 +436,24 @@ Guidelines:
     });
 
     if (!response.ok) {
-      console.error("AI gateway error:", response.status, await response.text());
+      const errorText = await response.text();
+      logger.error('AI gateway error', { status: response.status, error: errorText });
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Service temporarily unavailable. Please try again later." }),
-          {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ error: 'Service temporarily unavailable. Please try again later.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-
-      return new Response(
-        JSON.stringify({ error: "Failed to process request" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      
+      return createErrorResponse('Failed to process AI request', logger, { status: 502 });
     }
 
     const initialResult = await response.json();
@@ -435,7 +461,7 @@ Guidelines:
 
     // Check if there are tool calls
     if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
-      console.log("Tool calls detected:", assistantMessage.tool_calls.length);
+      logger.info('Processing tool calls', { count: assistantMessage.tool_calls.length });
       
       const toolResults: any[] = [];
       
@@ -446,11 +472,11 @@ Guidelines:
         try {
           functionArgs = JSON.parse(toolCall.function.arguments);
         } catch (e) {
-          console.error("Failed to parse tool arguments:", e);
+          logger.error('Failed to parse tool arguments', { toolName: functionName, error: e });
           continue;
         }
 
-        console.log(`Executing tool: ${functionName}`, functionArgs);
+        logger.debug('Executing tool', { toolName: functionName, args: functionArgs });
 
         if (functionName === "save_memory") {
           try {
@@ -466,14 +492,14 @@ Guidelines:
               });
 
             if (error) {
-              console.error("Failed to save memory:", error);
+              logger.error('Failed to save memory', { error: error.message });
               toolResults.push({
                 tool_call_id: toolCall.id,
                 role: "tool",
                 content: JSON.stringify({ success: false, error: error.message })
               });
             } else {
-              console.log("Memory saved successfully");
+              logger.info('Memory saved successfully', { memoryKey: functionArgs.memory_key });
               toolResults.push({
                 tool_call_id: toolCall.id,
                 role: "tool",
@@ -481,7 +507,7 @@ Guidelines:
               });
             }
           } catch (e) {
-            console.error("Error saving memory:", e);
+            logger.error('Error saving memory', { error: e });
             toolResults.push({
               tool_call_id: toolCall.id,
               role: "tool",
@@ -502,14 +528,14 @@ Guidelines:
               });
 
             if (error) {
-              console.error("Failed to add equipment:", error);
+              logger.error('Failed to add equipment', { error: error.message });
               toolResults.push({
                 tool_call_id: toolCall.id,
                 role: "tool",
                 content: JSON.stringify({ success: false, error: error.message })
               });
             } else {
-              console.log("Equipment added successfully");
+              logger.info('Equipment added successfully', { equipmentName: functionArgs.name });
               toolResults.push({
                 tool_call_id: toolCall.id,
                 role: "tool",
@@ -517,7 +543,7 @@ Guidelines:
               });
             }
           } catch (e) {
-            console.error("Error adding equipment:", e);
+            logger.error('Error adding equipment', { error: e });
             toolResults.push({
               tool_call_id: toolCall.id,
               role: "tool",
@@ -535,6 +561,8 @@ Guidelines:
         ...toolResults
       ];
 
+      logger.debug('Calling AI gateway (follow-up with tool results)');
+
       const followUpResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -550,22 +578,18 @@ Guidelines:
       });
 
       if (!followUpResponse.ok) {
-        console.error("Follow-up AI gateway error:", followUpResponse.status);
-        return new Response(
-          JSON.stringify({ error: "Failed to process follow-up request" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
+        const errorText = await followUpResponse.text();
+        logger.error('Follow-up AI gateway error', { status: followUpResponse.status, error: errorText });
+        return createErrorResponse('Failed to process follow-up request', logger, { status: 502 });
       }
 
-      return new Response(followUpResponse.body, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
+      logger.info('Streaming follow-up response');
+      return createStreamResponse(followUpResponse.body);
     }
 
     // No tool calls - stream the response directly
+    logger.debug('Calling AI gateway (streaming, no tools)');
+    
     const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -584,27 +608,15 @@ Guidelines:
     });
 
     if (!streamResponse.ok) {
-      console.error("Stream AI gateway error:", streamResponse.status);
-      return new Response(
-        JSON.stringify({ error: "Failed to process stream request" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      const errorText = await streamResponse.text();
+      logger.error('Stream AI gateway error', { status: streamResponse.status, error: errorText });
+      return createErrorResponse('Failed to process stream request', logger, { status: 502 });
     }
 
-    return new Response(streamResponse.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    logger.info('Streaming response');
+    return createStreamResponse(streamResponse.body);
   } catch (error) {
-    console.error("Ally chat error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    logger.error('Unexpected error', { error: error instanceof Error ? error.message : 'Unknown error' });
+    return createErrorResponse(error, logger);
   }
 });
