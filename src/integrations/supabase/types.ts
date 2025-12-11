@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_feedback: {
+        Row: {
+          context: Json | null
+          created_at: string
+          feature: string
+          feedback_text: string | null
+          id: string
+          message_id: string | null
+          rating: string
+          user_id: string
+          water_test_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          feature: string
+          feedback_text?: string | null
+          id?: string
+          message_id?: string | null
+          rating: string
+          user_id: string
+          water_test_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          feature?: string
+          feedback_text?: string | null
+          id?: string
+          message_id?: string | null
+          rating?: string
+          user_id?: string
+          water_test_id?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           created_at: string
