@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles, Save, Lock } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles, Save, Lock, ThumbsUp, ThumbsDown } from "lucide-react";
 import { getAllTemplates, validateParameter, type ParameterTemplate } from "@/lib/waterTestUtils";
 import { CustomTemplateManager } from "./CustomTemplateManager";
 import { 
@@ -54,6 +54,8 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [aiDetectedValues, setAiDetectedValues] = useState<Record<string, number>>({});
 
   const isAtTestLimit = !canLogTest();
   const remainingTests = getRemainingTests();
@@ -380,12 +382,16 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       // Auto-fill parameters from analysis
       if (data.parameters && data.parameters.length > 0) {
         const newParams: Record<string, string> = {};
+        const detectedValues: Record<string, number> = {};
         data.parameters.forEach((param: any) => {
           if (param.value) {
             newParams[param.name] = param.value.toString();
+            detectedValues[param.name] = param.value;
           }
         });
         setParameters(newParams);
+        setAiDetectedValues(detectedValues);
+        setFeedbackGiven(false);
         
         toast.success(`Detected ${data.parameters.length} parameters from photo`, {
           description: 'Review and edit values before saving'
@@ -431,6 +437,33 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     setPhotoPreview(null);
     setPhotoUrl(null);
     setAnalysisResult(null);
+    setFeedbackGiven(false);
+    setAiDetectedValues({});
+  };
+
+  const handlePhotoFeedback = async (rating: "positive" | "negative") => {
+    if (feedbackGiven) return;
+    
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      await supabase.from("ai_feedback").insert({
+        user_id: authUser.id,
+        feature: "photo_analysis",
+        rating,
+        context: {
+          aquariumType: aquarium.type,
+          detectedParameters: analysisResult?.parameters || [],
+          photoAnalyzed: true,
+        },
+      });
+
+      setFeedbackGiven(true);
+      toast.success(rating === "positive" ? "Thanks for the feedback!" : "Thanks! We'll work to improve.");
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -582,7 +615,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                       )}
                     </Button>
                   ) : (
-                    <div className="space-y-2 p-3 bg-background rounded-lg border">
+                    <div className="space-y-3 p-3 bg-background rounded-lg border">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
                         <span className="text-sm font-medium">Analysis Complete</span>
@@ -597,6 +630,40 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                           </Badge>
                         ))}
                       </div>
+                      
+                      {/* Feedback prompt */}
+                      {!feedbackGiven ? (
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="text-xs text-muted-foreground">Was this analysis accurate?</span>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 gap-1 hover:text-green-500 hover:bg-green-500/10"
+                              onClick={() => handlePhotoFeedback("positive")}
+                            >
+                              <ThumbsUp className="h-3 w-3" />
+                              Yes
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 gap-1 hover:text-amber-500 hover:bg-amber-500/10"
+                              onClick={() => handlePhotoFeedback("negative")}
+                            >
+                              <ThumbsDown className="h-3 w-3" />
+                              No
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 pt-2 border-t text-xs text-muted-foreground">
+                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          Thanks for your feedback!
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
