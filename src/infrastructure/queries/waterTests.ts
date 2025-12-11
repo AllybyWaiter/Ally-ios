@@ -1,0 +1,156 @@
+/**
+ * Water Tests Data Access Layer
+ * 
+ * Centralized Supabase queries for water test-related data.
+ */
+
+import { supabase } from '@/integrations/supabase/client';
+
+export interface WaterTest {
+  id: string;
+  aquarium_id: string;
+  user_id: string;
+  test_date: string;
+  notes: string | null;
+  tags: string[] | null;
+  confidence: string | null;
+  entry_method: string | null;
+  photo_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestParameter {
+  id: string;
+  test_id: string;
+  parameter_name: string;
+  value: number;
+  unit: string;
+  status: string | null;
+  created_at: string;
+}
+
+export interface WaterTestWithParameters extends WaterTest {
+  test_parameters: TestParameter[];
+}
+
+// Fetch water tests for an aquarium
+export async function fetchWaterTests(aquariumId: string, limit?: number) {
+  let query = supabase
+    .from('water_tests')
+    .select('*, test_parameters(*)')
+    .eq('aquarium_id', aquariumId)
+    .order('test_date', { ascending: false });
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data as WaterTestWithParameters[];
+}
+
+// Fetch a single water test
+export async function fetchWaterTest(testId: string) {
+  const { data, error } = await supabase
+    .from('water_tests')
+    .select('*, test_parameters(*)')
+    .eq('id', testId)
+    .single();
+
+  if (error) throw error;
+  return data as WaterTestWithParameters;
+}
+
+// Create a water test with parameters
+export async function createWaterTest(
+  test: {
+    aquarium_id: string;
+    user_id: string;
+    test_date?: string;
+    notes?: string;
+    tags?: string[];
+    confidence?: string;
+    entry_method?: string;
+    photo_url?: string;
+  },
+  parameters: Array<{
+    parameter_name: string;
+    value: number;
+    unit: string;
+    status?: string;
+  }>
+) {
+  // Create the water test
+  const { data: testData, error: testError } = await supabase
+    .from('water_tests')
+    .insert({
+      ...test,
+      test_date: test.test_date || new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (testError) throw testError;
+
+  // Create parameters if any
+  if (parameters.length > 0) {
+    const { error: paramsError } = await supabase
+      .from('test_parameters')
+      .insert(
+        parameters.map((p) => ({
+          test_id: testData.id,
+          ...p,
+        }))
+      );
+
+    if (paramsError) throw paramsError;
+  }
+
+  return testData as WaterTest;
+}
+
+// Delete a water test
+export async function deleteWaterTest(testId: string) {
+  const { error } = await supabase
+    .from('water_tests')
+    .delete()
+    .eq('id', testId);
+
+  if (error) throw error;
+}
+
+// Fetch monthly test count for a user
+export async function fetchMonthlyTestCount(userId: string) {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const { count, error } = await supabase
+    .from('water_tests')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('test_date', startOfMonth.toISOString());
+
+  if (error) throw error;
+  return count || 0;
+}
+
+// Upload photo for water test
+export async function uploadWaterTestPhoto(userId: string, file: File) {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('water-test-photos')
+    .upload(fileName, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage
+    .from('water-test-photos')
+    .getPublicUrl(fileName);
+
+  return data.publicUrl;
+}
