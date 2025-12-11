@@ -1,25 +1,77 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateUuid,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  handleAIGatewayError,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const DEFAULT_SUGGESTIONS = [
+  {
+    title: "Weekly Water Change",
+    description: "Perform routine 25% water change to maintain water quality",
+    priority: "medium",
+    category: "water_change",
+    reasoning: "Standard maintenance practice"
+  },
+  {
+    title: "Test Water Parameters",
+    description: "Check pH, ammonia, nitrite, and nitrate levels",
+    priority: "high",
+    category: "testing",
+    reasoning: "Regular testing is essential for tank health"
+  }
+];
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('suggest-maintenance-tasks');
 
   try {
-    const { aquariumId } = await req.json();
-    
+    const body = await req.json();
+    const { aquariumId } = body;
+
+    // Input validation
+    const errors = collectErrors(
+      validateUuid(aquariumId, 'aquariumId')
+    );
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
+    }
+
+    // Rate limiting (5 requests per minute - AI intensive)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 5,
+      windowMs: 60 * 1000,
+      identifier: `maintenance-tasks:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    logger.info('Fetching aquarium data', { aquariumId });
 
     // Fetch aquarium details
     const { data: aquarium } = await supabase
@@ -94,6 +146,12 @@ serve(async (req) => {
 
     const today = new Date().toISOString().split('T')[0];
 
+    logger.info('Calling AI for task suggestions', {
+      aquariumType: aquarium?.type,
+      waterTestCount: waterTests?.length || 0,
+      equipmentCount: equipment?.length || 0,
+    });
+
     const systemPrompt = `You are an expert aquarium maintenance advisor. Analyze the provided aquarium data and suggest 3-5 actionable maintenance tasks.
 
 ANALYSIS PRIORITIES:
@@ -116,40 +174,11 @@ PRIORITY GUIDELINES:
 - medium: Should be done within the week (routine maintenance, mildly elevated parameters)
 - low: Nice to do when convenient (optimization, aesthetic improvements)
 
-FEW-SHOT EXAMPLES:
-
-Example 1 - High nitrates, filter overdue:
-{
-  "title": "25% Water Change",
-  "description": "Nitrate levels at 45ppm - perform a 25% water change to bring levels back to safe range under 20ppm",
-  "priority": "high",
-  "category": "water_change",
-  "reasoning": "Nitrate trending upward over last 3 tests, now at concerning levels for tropical fish"
-}
-
-Example 2 - Equipment maintenance:
-{
-  "title": "Clean Fluval 407 Filter Media",
-  "description": "Rinse mechanical media in tank water. Check impeller for debris. Replace carbon if present.",
-  "priority": "medium",
-  "category": "equipment_maintenance",
-  "reasoning": "Filter last maintained 35 days ago, interval is 30 days"
-}
-
-Example 3 - Routine testing:
-{
-  "title": "Full Parameter Test",
-  "description": "Test pH, ammonia, nitrite, nitrate, and temperature. Record results to track trends.",
-  "priority": "low",
-  "category": "testing",
-  "reasoning": "No water tests recorded in the past 7 days"
-}
-
 Today's date is ${today}. Use this for calculating days since last maintenance and setting recommended dates.`;
 
     const userPrompt = `Analyze this aquarium and suggest 3-5 specific, actionable maintenance tasks:\n\n${JSON.stringify(context, null, 2)}`;
 
-    const body: any = {
+    const aiBody = {
       model: "google/gemini-2.5-pro",
       messages: [
         { role: "system", content: systemPrompt },
@@ -169,32 +198,12 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
                   items: {
                     type: "object",
                     properties: {
-                      title: { 
-                        type: "string",
-                        description: "Clear, action-oriented task title"
-                      },
-                      description: { 
-                        type: "string",
-                        description: "Detailed instructions for completing the task"
-                      },
-                      priority: { 
-                        type: "string", 
-                        enum: ["low", "medium", "high"],
-                        description: "Urgency level"
-                      },
-                      category: { 
-                        type: "string", 
-                        enum: ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"],
-                        description: "Task category"
-                      },
-                      recommendedDate: { 
-                        type: "string", 
-                        description: "ISO date string for when to do this task (YYYY-MM-DD)"
-                      },
-                      reasoning: { 
-                        type: "string",
-                        description: "Why this task is recommended based on the data"
-                      }
+                      title: { type: "string", description: "Clear, action-oriented task title" },
+                      description: { type: "string", description: "Detailed instructions for completing the task" },
+                      priority: { type: "string", enum: ["low", "medium", "high"], description: "Urgency level" },
+                      category: { type: "string", enum: ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"], description: "Task category" },
+                      recommendedDate: { type: "string", description: "ISO date string for when to do this task (YYYY-MM-DD)" },
+                      reasoning: { type: "string", description: "Why this task is recommended based on the data" }
                     },
                     required: ["title", "description", "priority", "category", "reasoning"],
                     additionalProperties: false
@@ -211,40 +220,20 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
       temperature: 0.3
     };
 
-    console.log('Calling Lovable AI (gemini-2.5-pro) for task suggestions...');
-
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(aiBody),
     });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
-      
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Payment required. Please add credits to your workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
-    }
+    const aiError = handleAIGatewayError(aiResponse, logger);
+    if (aiError) return aiError;
 
     const aiData = await aiResponse.json();
-    console.log('AI Response:', JSON.stringify(aiData, null, 2));
+    logger.debug('AI response received');
 
     let suggestions = [];
     
@@ -254,7 +243,7 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
         const parsed = JSON.parse(aiData.choices[0].message.tool_calls[0].function.arguments);
         suggestions = parsed.suggestions || [];
       } catch (e) {
-        console.error('Error parsing tool call arguments:', e);
+        logger.error('Error parsing tool call arguments', e);
       }
     }
 
@@ -268,39 +257,20 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
           suggestions = parsed.suggestions || [];
         }
       } catch (e) {
-        console.error('Error parsing content:', e);
+        logger.warn('Error parsing content', e);
       }
     }
 
     if (suggestions.length === 0) {
-      suggestions = [
-        {
-          title: "Weekly Water Change",
-          description: "Perform routine 25% water change to maintain water quality",
-          priority: "medium",
-          category: "water_change",
-          reasoning: "Standard maintenance practice"
-        },
-        {
-          title: "Test Water Parameters",
-          description: "Check pH, ammonia, nitrite, and nitrate levels",
-          priority: "high",
-          category: "testing",
-          reasoning: "Regular testing is essential for tank health"
-        }
-      ];
+      logger.warn('No AI suggestions generated, using defaults');
+      suggestions = DEFAULT_SUGGESTIONS;
     }
 
-    return new Response(
-      JSON.stringify({ suggestions }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    logger.info('Task suggestions generated', { count: suggestions.length });
+
+    return createSuccessResponse({ suggestions });
 
   } catch (error) {
-    console.error('Error in suggest-maintenance-tasks:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createErrorResponse(error, logger);
   }
 });

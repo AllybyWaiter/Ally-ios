@@ -1,24 +1,59 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateString,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  handleAIGatewayError,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('analyze-ticket-priority');
 
   try {
-    const { message } = await req.json();
+    const body = await req.json();
+    const { message } = body;
+
+    // Input validation
+    const errors = collectErrors(
+      validateString(message, 'message', { minLength: 1, maxLength: 5000 })
+    );
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
+    }
+
+    // Rate limiting (30 requests per minute)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 30,
+      windowMs: 60 * 1000,
+      identifier: `ticket-priority:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Analyzing ticket priority for message:", message.substring(0, 100));
+    logger.info('Analyzing ticket priority', {
+      messagePreview: message.substring(0, 100),
+    });
 
     const systemPrompt = `You are a support ticket priority analyzer. Analyze the user's message and determine the appropriate priority level based on urgency, impact, and severity.
 
@@ -75,36 +110,10 @@ Return ONLY one word: urgent, high, medium, or low`;
       }),
     });
 
+    // Handle AI gateway errors with fallback to medium priority
     if (!response.ok) {
-      console.error("AI gateway error:", response.status);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ priority: "medium", error: "Rate limit exceeded" }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ priority: "medium", error: "Service temporarily unavailable" }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({ priority: "medium", error: "Failed to analyze priority" }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      logger.warn('AI gateway error, defaulting to medium priority', { status: response.status });
+      return createSuccessResponse({ priority: "medium" });
     }
 
     const data = await response.json();
@@ -112,21 +121,15 @@ Return ONLY one word: urgent, high, medium, or low`;
     
     // Validate and normalize priority
     const validPriorities = ["urgent", "high", "medium", "low"];
-    let priority = validPriorities.includes(priorityText) ? priorityText : "medium";
+    const priority = validPriorities.includes(priorityText) ? priorityText : "medium";
     
-    console.log("Determined priority:", priority);
+    logger.info('Priority determined', { priority });
 
-    return new Response(JSON.stringify({ priority }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return createSuccessResponse({ priority });
+
   } catch (error) {
-    console.error("Priority analysis error:", error);
-    return new Response(
-      JSON.stringify({ priority: "medium", error: error instanceof Error ? error.message : "Unknown error" }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    logger.error('Priority analysis failed', error);
+    // Return medium priority as fallback instead of error
+    return createSuccessResponse({ priority: "medium" });
   }
 });

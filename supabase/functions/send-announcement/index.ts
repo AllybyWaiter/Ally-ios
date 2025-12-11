@@ -1,25 +1,29 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "https://esm.sh/resend@4.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-interface SendAnnouncementRequest {
-  announcementId: string;
-}
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateUuid,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('send-announcement');
 
   try {
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -30,9 +34,32 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-    const { announcementId }: SendAnnouncementRequest = await req.json();
+    const body = await req.json();
+    const { announcementId } = body;
 
-    console.log("Processing announcement:", announcementId);
+    // Input validation
+    const errors = collectErrors(
+      validateUuid(announcementId, 'announcementId')
+    );
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
+    }
+
+    // Rate limiting (5 announcements per minute - prevent spam)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 5,
+      windowMs: 60 * 1000,
+      identifier: `announcement:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
+    logger.info('Processing announcement', { announcementId });
 
     // Fetch announcement details
     const { data: announcement, error: announcementError } = await supabaseClient
@@ -45,7 +72,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Announcement not found: ${announcementError?.message}`);
     }
 
-    console.log("Announcement:", announcement.title, "Target:", announcement.target_audience);
+    logger.info('Announcement loaded', {
+      title: announcement.title,
+      targetAudience: announcement.target_audience,
+    });
 
     // Build query for target users
     let query = supabaseClient
@@ -57,7 +87,6 @@ const handler = async (req: Request): Promise<Response> => {
       if (announcement.target_audience === "custom" && announcement.custom_user_ids) {
         query = query.in("user_id", announcement.custom_user_ids);
       } else {
-        // Target by subscription tier
         query = query.eq("subscription_tier", announcement.target_audience);
       }
     }
@@ -68,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to fetch target users: ${usersError.message}`);
     }
 
-    console.log(`Found ${targetUsers?.length || 0} target users`);
+    logger.info('Target users found', { count: targetUsers?.length || 0 });
 
     const results = {
       emailsSent: 0,
@@ -96,10 +125,11 @@ const handler = async (req: Request): Promise<Response> => {
             `,
           });
           results.emailsSent++;
-          console.log(`Email sent to ${user.email}`);
-        } catch (error: any) {
-          console.error(`Failed to send email to ${user.email}:`, error);
-          results.errors.push(`Email to ${user.email}: ${error.message}`);
+          logger.debug('Email sent', { email: user.email });
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Failed to send email', { email: user.email, error });
+          results.errors.push(`Email to ${user.email}: ${errorMsg}`);
         }
       }
     }
@@ -117,11 +147,11 @@ const handler = async (req: Request): Promise<Response> => {
         .insert(notifications);
 
       if (notifError) {
-        console.error("Failed to create notifications:", notifError);
+        logger.error('Failed to create notifications', notifError);
         results.errors.push(`Notifications: ${notifError.message}`);
       } else {
         results.notificationsCreated = notifications.length;
-        console.log(`Created ${notifications.length} in-app notifications`);
+        logger.info('Notifications created', { count: notifications.length });
       }
     }
 
@@ -135,28 +165,16 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", announcementId);
 
     if (updateError) {
-      console.error("Failed to update announcement status:", updateError);
+      logger.error('Failed to update announcement status', updateError);
       results.errors.push(`Status update: ${updateError.message}`);
     }
 
-    console.log("Announcement sent successfully:", results);
+    logger.info('Announcement sent successfully', results);
 
-    return new Response(JSON.stringify(results), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error in send-announcement function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return createSuccessResponse(results);
+
+  } catch (error) {
+    return createErrorResponse(error, logger);
   }
 };
 

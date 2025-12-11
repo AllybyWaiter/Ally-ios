@@ -1,28 +1,75 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateString,
+  validateEnum,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  handleAIGatewayError,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('blog-ai-assistant');
 
   try {
-    const { action, input } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const body = await req.json();
+    const { action, input } = body;
 
+    // Input validation
+    const errors = collectErrors(
+      validateEnum(action, 'action', ['generate', 'improve', 'seo'])
+    );
+
+    // Validate input based on action
+    if (action === 'generate') {
+      errors.push(...collectErrors(
+        validateString(input?.topic, 'input.topic', { minLength: 3, maxLength: 500 })
+      ));
+    } else if (action === 'improve' || action === 'seo') {
+      errors.push(...collectErrors(
+        validateString(input?.title, 'input.title', { minLength: 1, maxLength: 500 }),
+        validateString(input?.content, 'input.content', { minLength: 10, maxLength: 100000 })
+      ));
+    }
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
+    }
+
+    // Rate limiting (10 requests per minute - more intensive AI operations)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 10,
+      windowMs: 60 * 1000,
+      identifier: `blog-ai:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    logger.info('Processing blog AI request', { action });
+
     let systemPrompt = '';
     let userPrompt = '';
-
-    let tools: any[] = [];
-    let toolChoice: any = undefined;
+    let tools: unknown[] = [];
+    let toolChoice: unknown = undefined;
 
     switch (action) {
       case 'generate':
@@ -52,30 +99,12 @@ Write an engaging, well-structured article with:
             parameters: {
               type: "object",
               properties: {
-                title: { 
-                  type: "string",
-                  description: "Engaging blog post title (max 200 chars)"
-                },
-                excerpt: { 
-                  type: "string",
-                  description: "Compelling summary (max 300 chars)"
-                },
-                content: { 
-                  type: "string",
-                  description: "Full article content with HTML formatting"
-                },
-                seo_title: { 
-                  type: "string",
-                  description: "SEO-optimized title (max 60 chars)"
-                },
-                seo_description: { 
-                  type: "string",
-                  description: "SEO description (max 160 chars)"
-                },
-                tags: { 
-                  type: "string",
-                  description: "Comma-separated tags (4-5 tags)"
-                }
+                title: { type: "string", description: "Engaging blog post title (max 200 chars)" },
+                excerpt: { type: "string", description: "Compelling summary (max 300 chars)" },
+                content: { type: "string", description: "Full article content with HTML formatting" },
+                seo_title: { type: "string", description: "SEO-optimized title (max 60 chars)" },
+                seo_description: { type: "string", description: "SEO description (max 160 chars)" },
+                tags: { type: "string", description: "Comma-separated tags (4-5 tags)" }
               },
               required: ["title", "excerpt", "content", "seo_title", "seo_description", "tags"],
               additionalProperties: false
@@ -98,12 +127,7 @@ IMPROVEMENT FOCUS:
 Title: ${input.title}
 Current Content: ${input.content}
 
-Enhance with:
-- Better structure and flow
-- More engaging language
-- Additional helpful details
-- Clean HTML formatting (<h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>)
-
+Enhance with better structure, engaging language, and clean HTML formatting.
 Return only the improved HTML content.`;
 
         tools = [{
@@ -114,10 +138,7 @@ Return only the improved HTML content.`;
             parameters: {
               type: "object",
               properties: {
-                content: { 
-                  type: "string",
-                  description: "Improved HTML content"
-                }
+                content: { type: "string", description: "Improved HTML content" }
               },
               required: ["content"],
               additionalProperties: false
@@ -139,10 +160,7 @@ SEO BEST PRACTICES:
 Title: ${input.title}
 Content: ${input.content}
 
-Create:
-- SEO title (max 60 chars)
-- SEO description (max 160 chars)
-- 4-5 relevant tags (comma-separated)`;
+Create SEO title (max 60 chars), SEO description (max 160 chars), and 4-5 relevant tags.`;
 
         tools = [{
           type: "function",
@@ -152,18 +170,9 @@ Create:
             parameters: {
               type: "object",
               properties: {
-                seo_title: { 
-                  type: "string",
-                  description: "SEO title (max 60 chars)"
-                },
-                seo_description: { 
-                  type: "string",
-                  description: "SEO description (max 160 chars)"
-                },
-                tags: { 
-                  type: "string",
-                  description: "Comma-separated tags (4-5 tags)"
-                }
+                seo_title: { type: "string", description: "SEO title (max 60 chars)" },
+                seo_description: { type: "string", description: "SEO description (max 160 chars)" },
+                tags: { type: "string", description: "Comma-separated tags (4-5 tags)" }
               },
               required: ["seo_title", "seo_description", "tags"],
               additionalProperties: false
@@ -177,7 +186,7 @@ Create:
         throw new Error('Invalid action');
     }
 
-    const requestBody: any = {
+    const requestBody: Record<string, unknown> = {
       model: 'google/gemini-2.5-flash',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -200,34 +209,18 @@ Create:
       body: JSON.stringify(requestBody),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required. Please add credits to your workspace.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error('AI gateway error');
-    }
+    const aiError = handleAIGatewayError(response, logger);
+    if (aiError) return aiError;
 
     const data = await response.json();
     const message = data.choices[0].message;
 
-    // Extract structured output from tool call
     let result;
     if (message.tool_calls && message.tool_calls[0]) {
       const toolCall = message.tool_calls[0];
       result = JSON.parse(toolCall.function.arguments);
+      logger.debug('Parsed result from tool call');
     } else if (message.content) {
-      // Fallback to content parsing
       try {
         result = JSON.parse(message.content);
       } catch {
@@ -237,18 +230,11 @@ Create:
       throw new Error('No valid response from AI');
     }
 
-    return new Response(JSON.stringify(result), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    logger.info('Blog AI request completed', { action });
+
+    return createSuccessResponse(result);
 
   } catch (error) {
-    console.error('Error in blog-ai-assistant:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return createErrorResponse(error, logger);
   }
 });
