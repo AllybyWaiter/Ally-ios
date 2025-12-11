@@ -1,10 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, handleCors } from '../_shared/cors.ts';
+import { createLogger } from '../_shared/logger.ts';
+import { validateUrl, validateString, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
+import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
+import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
 
 // Valid parameter ranges for validation
 const validRanges: Record<string, { min: number; max: number }> = {
@@ -92,26 +92,50 @@ const analyzeWaterTestTool = {
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('analyze-water-test-photo');
 
   try {
-    console.log('=== analyze-water-test-photo invoked ===');
+    logger.info('Function invoked');
     
-    const { imageUrl, aquariumType } = await req.json();
-    console.log('Request received - aquariumType:', aquariumType, 'imageUrl length:', imageUrl?.length || 0);
+    const body = await req.json();
+    const { imageUrl, aquariumType } = body;
     
-    if (!imageUrl) {
-      console.error('Missing imageUrl in request');
-      return new Response(
-        JSON.stringify({ error: 'Image URL is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Input validation
+    const errors = collectErrors(
+      validateUrl(imageUrl, 'imageUrl', { required: true }),
+      validateString(aquariumType, 'aquariumType', { required: false, maxLength: 50 })
+    );
+    
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
     }
 
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
-    console.log('LOVABLE_API_KEY present:', !!lovableApiKey);
+    logger.info('Request validated', { 
+      aquariumType: aquariumType || 'freshwater',
+      imageUrlLength: imageUrl?.length || 0
+    });
+
+    // Rate limiting - 5 requests per minute (photo analysis is resource-intensive)
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 5,
+      windowMs: 60 * 1000,
+      identifier: extractIdentifier(req),
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      logger.warn('Rate limit exceeded');
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      logger.error('LOVABLE_API_KEY not configured');
+      return createErrorResponse('AI service not configured', logger, { status: 500 });
+    }
 
     const systemPrompt = `You are an expert aquarium water test analyzer with extensive experience reading test strips and liquid test kits. Analyze the provided image carefully and extract all parameter values.
 
@@ -162,7 +186,7 @@ For a liquid test kit with amber nitrate vial:
 
 Use the analyze_water_test tool to return your analysis.`;
 
-    console.log('Calling Lovable AI (gemini-2.5-pro) for water test analysis...');
+    logger.debug('Calling AI gateway for water test analysis');
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -196,7 +220,7 @@ Use the analyze_water_test tool to return your analysis.`;
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
+      logger.error('AI gateway error', { status: aiResponse.status, error: errorText });
       
       if (aiResponse.status === 429) {
         return new Response(
@@ -212,11 +236,14 @@ Use the analyze_water_test tool to return your analysis.`;
         );
       }
       
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
+      return createErrorResponse('AI Gateway error', logger, { status: 502 });
     }
 
     const aiData = await aiResponse.json();
-    console.log('AI Response:', JSON.stringify(aiData, null, 2));
+    logger.debug('AI response received', { 
+      hasToolCalls: !!aiData.choices?.[0]?.message?.tool_calls,
+      hasContent: !!aiData.choices?.[0]?.message?.content
+    });
 
     let result;
     
@@ -224,9 +251,9 @@ Use the analyze_water_test tool to return your analysis.`;
     if (aiData.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments) {
       try {
         result = JSON.parse(aiData.choices[0].message.tool_calls[0].function.arguments);
-        console.log('Parsed from tool call successfully');
+        logger.debug('Parsed from tool call successfully');
       } catch (e) {
-        console.error('Error parsing tool call arguments:', e);
+        logger.error('Error parsing tool call arguments', { error: e });
       }
     }
     
@@ -235,7 +262,12 @@ Use the analyze_water_test tool to return your analysis.`;
       const content = aiData.choices?.[0]?.message?.content;
       
       if (!content) {
-        throw new Error('No content in AI response');
+        logger.error('No content in AI response');
+        return createSuccessResponse({
+          parameters: [],
+          testType: "unknown",
+          notes: "Unable to analyze image. Please try again or enter values manually."
+        });
       }
 
       // Clean up the response - remove markdown code blocks if present
@@ -249,8 +281,7 @@ Use the analyze_water_test tool to return your analysis.`;
       try {
         result = JSON.parse(cleanContent);
       } catch (parseError) {
-        console.error('JSON parse error:', parseError);
-        console.error('Content that failed to parse:', cleanContent);
+        logger.error('JSON parse error', { error: parseError, content: cleanContent.substring(0, 200) });
         
         // Fallback response
         result = {
@@ -268,20 +299,22 @@ Use the analyze_water_test tool to return your analysis.`;
     }
     
     // Apply validation layer to filter out invalid readings
+    const originalCount = result.parameters.length;
     result.parameters = validateWaterParameters(result.parameters);
     
-    console.log('Final validated result:', JSON.stringify(result, null, 2));
+    logger.info('Analysis complete', { 
+      parameterCount: result.parameters.length,
+      filteredOut: originalCount - result.parameters.length,
+      testType: result.testType
+    });
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse(result);
 
   } catch (error) {
-    console.error('=== Error in analyze-water-test-photo ===');
-    console.error('Error type:', error?.constructor?.name);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    logger.error('Unexpected error', { 
+      errorType: error?.constructor?.name,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
     return new Response(
       JSON.stringify({ 
