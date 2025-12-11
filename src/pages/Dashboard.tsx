@@ -1,28 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { PermissionGuard } from '@/components/PermissionGuard';
 import { useTranslation } from 'react-i18next';
 import { PreferencesOnboarding } from '@/components/PreferencesOnboarding';
 import { AquariumOnboarding } from '@/components/AquariumOnboarding';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Droplets, Calendar, AlertCircle, MoreVertical, Pencil, Trash2, MessageSquare, Sparkles, Shield, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import { AquariumDialog } from '@/components/aquarium/AquariumDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { formatVolume, UnitSystem } from '@/lib/unitConversions';
-import { formatDate } from '@/lib/formatters';
 import { DashboardSkeleton } from '@/components/ui/loading-skeleton';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
+import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData } from '@/components/dashboard';
 
 interface Aquarium {
   id: string;
@@ -36,16 +27,25 @@ interface Aquarium {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, isAdmin, userName, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading } = useAuth();
+  const { user, isAdmin, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier, loading: limitsLoading } = usePlanLimits();
-  const [loading, setLoading] = useState(true);
-  const [dataFetched, setDataFetched] = useState(false);
+  
+  const {
+    loading,
+    setLoading,
+    dataFetched,
+    aquariums,
+    upcomingTaskCount,
+    totalVolume,
+    activeCount,
+    loadAquariums,
+    deleteAquarium,
+  } = useDashboardData();
+  
   const [showPreferencesOnboarding, setShowPreferencesOnboarding] = useState(false);
   const [showAquariumOnboarding, setShowAquariumOnboarding] = useState(false);
-  const [aquariums, setAquariums] = useState<Aquarium[]>([]);
-  const [upcomingTaskCount, setUpcomingTaskCount] = useState(0);
   const [aquariumDialogOpen, setAquariumDialogOpen] = useState(false);
   const [editingAquarium, setEditingAquarium] = useState<Aquarium | undefined>();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -71,16 +71,15 @@ export default function Dashboard() {
     disabled: loading || authLoading || !isMobile
   });
 
-  // Hard maximum loading timeout - triggers data load if not fetched yet
-  // IMPORTANT: Don't show preferences onboarding here - only load data and let the result determine UI
+  const hasStaffRole = hasAnyRole(['admin', 'moderator', 'editor']) || hasPermission('moderate_support');
+
+  // Hard maximum loading timeout
   useEffect(() => {
     const maxLoadingTimeout = setTimeout(() => {
       if (loading && user && !dataFetched) {
         console.warn('Dashboard: Max 4s timeout - forcing data load with userId:', user.id);
         loadAquariums(user.id);
       } else if (loading && user && onboardingCompleted === null) {
-        // Onboarding state still unknown after 4s - try loading data anyway
-        // If user is truly new, they'll have no aquariums and we'll show aquarium onboarding
         console.warn('Dashboard: Onboarding state unknown after 4s, attempting to load data');
         loadAquariums(user.id);
       } else if (loading) {
@@ -89,9 +88,9 @@ export default function Dashboard() {
       }
     }, 4000);
     return () => clearTimeout(maxLoadingTimeout);
-  }, [user, dataFetched, onboardingCompleted]);
+  }, [user, dataFetched, onboardingCompleted, loading, loadAquariums, setLoading]);
 
-  // iOS PWA wake-up recovery - refresh data if showing empty after visibility change
+  // iOS PWA wake-up recovery
   useEffect(() => {
     let stuckCheckTimeout: NodeJS.Timeout | null = null;
     
@@ -99,16 +98,13 @@ export default function Dashboard() {
       if (document.visibilityState === 'visible') {
         console.log('Dashboard: Visibility changed to visible, checking state...');
         
-        // Clear any existing timeout
         if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
         
-        // After 2 seconds, check if we need to refresh data
         stuckCheckTimeout = setTimeout(() => {
           if (loading || authLoading) {
             console.warn('Dashboard: Still loading after wake-up, forcing reload');
             window.location.reload();
           } else if (user && aquariums.length === 0 && dataFetched) {
-            // Data was fetched but showing empty - try refreshing
             console.log('Dashboard: Showing empty after wake-up, refreshing data with userId:', user.id);
             loadAquariums(user.id);
           }
@@ -121,20 +117,19 @@ export default function Dashboard() {
       document.removeEventListener('visibilitychange', handleVisibility);
       if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
     };
-  }, [loading, authLoading, user, aquariums.length, dataFetched]);
+  }, [loading, authLoading, user, aquariums.length, dataFetched, loadAquariums]);
 
+  // Main data loading effect
   useEffect(() => {
     if (!user) {
       navigate('/auth');
       return;
     }
     
-    // Wait for auth to finish loading before checking onboarding status
     if (authLoading || onboardingCompleted === null) {
       return;
     }
     
-    // Check if preferences onboarding needs to be shown (explicitly false, not null)
     if (onboardingCompleted === false) {
       setShowPreferencesOnboarding(true);
       setLoading(false);
@@ -143,73 +138,14 @@ export default function Dashboard() {
     
     console.log('Dashboard: Main useEffect calling loadAquariums with userId:', user.id);
     loadAquariums(user.id);
-  }, [user, navigate, onboardingCompleted, authLoading]);
+  }, [user, navigate, onboardingCompleted, authLoading, loadAquariums, setLoading]);
 
-  const loadAquariums = async (userId?: string) => {
-    const effectiveUserId = userId || user?.id;
-    
-    if (!effectiveUserId) {
-      console.warn('loadAquariums: No user ID available, skipping');
-      setLoading(false);
-      return;
+  // Show aquarium onboarding when no aquariums exist
+  useEffect(() => {
+    if (dataFetched && aquariums.length === 0 && !showPreferencesOnboarding) {
+      setShowAquariumOnboarding(true);
     }
-    
-    console.log('loadAquariums: Fetching with userId:', effectiveUserId);
-    
-    try {
-      // Optimized: Fetch aquariums with task count in single query using aggregate
-      const { data, error } = await supabase
-        .from('aquariums')
-        .select(`
-          *,
-          maintenance_tasks!aquarium_id(count)
-        `)
-        .eq('user_id', effectiveUserId)
-        .eq('maintenance_tasks.status', 'pending')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Calculate upcoming tasks (within 7 days)
-      if (data && data.length > 0) {
-        const sevenDaysFromNow = new Date();
-        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-        const { count } = await supabase
-          .from('maintenance_tasks')
-          .select('*', { count: 'exact', head: true })
-          .in('aquarium_id', data.map(a => a.id))
-          .eq('status', 'pending')
-          .lte('due_date', sevenDaysFromNow.toISOString());
-
-        setUpcomingTaskCount(count || 0);
-      }
-      
-      setAquariums(data || []);
-      setDataFetched(true);
-      
-      // Show aquarium onboarding if no aquariums exist
-      if (!data || data.length === 0) {
-        setShowAquariumOnboarding(true);
-      }
-    } catch (error: any) {
-      console.error('Error loading aquariums:', error);
-      
-      const errorMessage = error.message || 'Failed to load aquariums';
-      const isNetworkError = errorMessage.toLowerCase().includes('network') || 
-                             errorMessage.toLowerCase().includes('fetch');
-      
-      toast({
-        title: isNetworkError ? 'Network Error' : t('common.error'),
-        description: isNetworkError 
-          ? 'Unable to connect. Please check your internet connection.'
-          : t('dashboard.failedToLoad'),
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [dataFetched, aquariums.length, showPreferencesOnboarding]);
 
   const handlePreferencesComplete = async () => {
     setShowPreferencesOnboarding(false);
@@ -247,42 +183,15 @@ export default function Dashboard() {
 
   const handleDeleteConfirm = async () => {
     if (!deletingAquariumId) return;
-
-    try {
-      const { error } = await supabase
-        .from("aquariums")
-        .delete()
-        .eq("id", deletingAquariumId);
-
-      if (error) throw error;
-
-      toast({
-        title: t('common.success'),
-        description: t('dashboard.aquariumDeleted'),
-      });
-
-      await loadAquariums(user?.id);
-    } catch (error) {
-      console.error("Error deleting aquarium:", error);
-      toast({
-        title: t('common.error'),
-        description: t('dashboard.failedToDelete'),
-        variant: "destructive",
-      });
-    } finally {
-      setDeleteDialogOpen(false);
-      setDeletingAquariumId(null);
-    }
+    await deleteAquarium(deletingAquariumId, user?.id);
+    setDeleteDialogOpen(false);
+    setDeletingAquariumId(null);
   };
 
-
   if (loading || authLoading) {
-    return (
-      <DashboardSkeleton />
-    );
+    return <DashboardSkeleton />;
   }
 
-  // Show preferences onboarding if not completed
   if (showPreferencesOnboarding && user) {
     return (
       <PreferencesOnboarding
@@ -292,7 +201,6 @@ export default function Dashboard() {
     );
   }
 
-  // Show aquarium onboarding if no aquariums
   if (showAquariumOnboarding && user) {
     return (
       <AquariumOnboarding
@@ -305,7 +213,6 @@ export default function Dashboard() {
     <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pull-refresh-container">
       <AppHeader />
       
-      {/* Pull-to-refresh indicator */}
       <PullToRefreshIndicator 
         pullDistance={pullDistance}
         isPastThreshold={isPastThreshold}
@@ -320,201 +227,30 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.totalAquariums')}</CardTitle>
-              <Droplets className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{aquariums.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {aquariums.filter(a => a.status === 'active').length} {t('dashboard.active')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.totalVolume')}</CardTitle>
-              <Droplets className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatVolume(aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0), units)}
-              </div>
-              <p className="text-xs text-muted-foreground">{t('dashboard.combinedCapacity')}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t('dashboard.upcomingTasks')}</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{upcomingTaskCount}</div>
-              <p className="text-xs text-muted-foreground">{t('dashboard.tasksDueThisWeek')}</p>
-            </CardContent>
-          </Card>
-
-          {(hasAnyRole(['admin', 'moderator', 'editor']) || hasPermission('moderate_support')) && (
-            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10" onClick={() => navigate('/admin')}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  {isAdmin ? 'Admin Panel' : 'Dashboard'}
-                </CardTitle>
-                <CardDescription>
-                  {isAdmin ? 'Manage users, content, and system settings' : 'Access your management tools'}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
-        </div>
+        <DashboardStats
+          aquariumCount={aquariums.length}
+          activeCount={activeCount}
+          totalVolume={totalVolume}
+          upcomingTaskCount={upcomingTaskCount}
+          units={units}
+          isAdmin={isAdmin}
+          hasStaffRole={hasStaffRole}
+        />
 
         {/* Chat with Ally CTA */}
-        <Card className="mb-8 bg-gradient-primary border-none">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-primary-foreground mb-1">
-                    {t('dashboard.chatWithAlly')}
-                  </h3>
-                  <p className="text-sm text-primary-foreground/80">
-                    {t('dashboard.chatDescription')}
-                  </p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => navigate('/chat')}
-                variant="secondary"
-                className="gap-2"
-              >
-                <MessageSquare className="h-4 w-4" />
-                {t('dashboard.startChat')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <AllyCTA />
 
         {/* Aquariums Grid */}
-        {aquariums.length === 0 ? (
-          <Card className="p-12 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">{t('dashboard.noAquariumsYet')}</h3>
-            <p className="text-muted-foreground mb-4">
-              {t('dashboard.getStartedMessage')}
-            </p>
-            <Button onClick={handleCreateAquarium}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('dashboard.addAquarium')}
-            </Button>
-          </Card>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
-                {!limitsLoading && limits.maxAquariums !== Infinity && (
-                  <Badge variant="secondary" className="text-xs">
-                    {aquariums.length}/{limits.maxAquariums}
-                  </Badge>
-                )}
-              </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button 
-                        onClick={handleCreateAquarium}
-                        disabled={!canCreateAquarium(aquariums.length)}
-                        className={!canCreateAquarium(aquariums.length) ? 'opacity-50' : ''}
-                      >
-                        {!canCreateAquarium(aquariums.length) ? (
-                          <Lock className="mr-2 h-4 w-4" />
-                        ) : (
-                          <Plus className="mr-2 h-4 w-4" />
-                        )}
-                        {t('dashboard.addAquarium')}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  {!canCreateAquarium(aquariums.length) && (
-                    <TooltipContent>
-                      <p>Upgrade your plan to add more aquariums</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aquariums.map((aquarium) => (
-                <Card 
-                  key={aquarium.id} 
-                  className="hover:shadow-lg transition-shadow"
-                  onMouseEnter={() => {
-                    // Preload AquariumDetail page on hover to prevent lazy loading failures
-                    import('./AquariumDetail').catch(() => {});
-                  }}
-                >
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div 
-                        className="flex-1 cursor-pointer"
-                        onClick={() => navigate(`/aquarium/${aquarium.id}`)}
-                      >
-                        <CardTitle>{aquarium.name}</CardTitle>
-                        <CardDescription className="capitalize">
-                          {aquarium.type} • {formatVolume(aquarium.volume_gallons, units)}
-                        </CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={aquarium.status === 'active' ? 'default' : 'secondary'}>
-                          {aquarium.status}
-                        </Badge>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditAquarium(aquarium)}>
-                              <Pencil className="w-4 h-4 mr-2" />
-                              {t('common.edit')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteClick(aquarium.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              {t('common.delete')}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent onClick={() => navigate(`/aquarium/${aquarium.id}`)} className="cursor-pointer">
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t('dashboard.setupDate')}</span>
-                        <span className="font-medium">
-                          {formatDate(aquarium.setup_date, 'PP')}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </>
-        )}
+        <AquariumGrid
+          aquariums={aquariums}
+          units={units}
+          canCreate={canCreateAquarium(aquariums.length)}
+          maxAquariums={limits.maxAquariums}
+          limitsLoading={limitsLoading}
+          onCreateAquarium={handleCreateAquarium}
+          onEditAquarium={handleEditAquarium}
+          onDeleteAquarium={handleDeleteClick}
+        />
       </main>
 
       <AquariumDialog
