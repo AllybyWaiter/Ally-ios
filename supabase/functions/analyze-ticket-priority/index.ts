@@ -28,11 +28,33 @@ Priority Levels:
 - medium: Feature not working as expected, usability issues, general questions with some urgency
 - low: General inquiries, feature requests, minor issues with workarounds available
 
-Analyze the message sentiment, keywords, and context to determine priority. Consider:
-- Urgency indicators: "urgent", "critical", "asap", "emergency", "immediately"
-- Impact: "can't access", "broken", "not working", "error", "crash"
-- Business impact: "losing money", "affecting customers", "deadline"
-- Security: "hack", "breach", "unauthorized", "security"
+ANALYSIS CRITERIA:
+
+1. Urgency Indicators (weight: high)
+   - "urgent", "critical", "asap", "emergency", "immediately" → likely urgent
+   - "soon", "when possible", "at your convenience" → likely low/medium
+
+2. Impact Assessment (weight: high)
+   - "can't access", "broken", "not working", "error", "crash" → likely high
+   - "would be nice", "suggestion", "wondering" → likely low
+
+3. Business Impact (weight: very high)
+   - "losing money", "affecting customers", "deadline", "presentation" → likely urgent/high
+   - "losing data", "fish dying", "tank emergency" → likely urgent
+
+4. Security Concerns (weight: very high)
+   - "hack", "breach", "unauthorized", "security", "stolen" → urgent
+
+5. User Emotion (weight: medium)
+   - Frustrated tone with blocked workflow → consider bumping priority
+   - Casual inquiry → likely low
+
+FEW-SHOT EXAMPLES:
+
+"I can't log into my account and I have dying fish that need parameter checks!" → urgent
+"The app crashes every time I try to add a new aquarium" → high
+"Water test photo analysis is giving weird results sometimes" → medium
+"Would love to see a dark mode option" → low
 
 Return ONLY one word: urgent, high, medium, or low`;
 
@@ -48,7 +70,7 @@ Return ONLY one word: urgent, high, medium, or low`;
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze this support message and return only the priority level (urgent, high, medium, or low):\n\n${message}` }
         ],
-        temperature: 0.3,
+        temperature: 0.2,
         max_tokens: 10
       }),
     });
