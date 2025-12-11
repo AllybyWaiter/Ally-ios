@@ -1,10 +1,18 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateString,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
 function processBase64Chunks(base64String: string, chunkSize = 32768) {
   const chunks: Uint8Array[] = [];
@@ -36,18 +44,40 @@ function processBase64Chunks(base64String: string, chunkSize = 32768) {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('transcribe-audio');
 
   try {
-    const { audio } = await req.json();
-    
-    if (!audio) {
-      throw new Error('No audio data provided');
+    const body = await req.json();
+    const { audio } = body;
+
+    // Input validation
+    const errors = collectErrors(
+      validateString(audio, 'audio', { minLength: 100, maxLength: 10000000 })
+    );
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
     }
 
-    console.log('Processing audio transcription request');
+    // Rate limiting (10 transcriptions per minute)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 10,
+      windowMs: 60 * 1000,
+      identifier: `transcribe:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
+    logger.info('Processing audio transcription', {
+      audioSize: audio.length,
+    });
     
     const binaryAudio = processBase64Chunks(audio);
     
@@ -66,27 +96,18 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
+      logger.error('OpenAI API error', { status: response.status, error: errorText });
       throw new Error(`OpenAI API error: ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('Transcription successful');
+    logger.info('Transcription successful', {
+      textLength: result.text?.length || 0,
+    });
 
-    return new Response(
-      JSON.stringify({ text: result.text }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return createSuccessResponse({ text: result.text });
 
   } catch (error) {
-    console.error('Transcription error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return createErrorResponse(error, logger);
   }
 });

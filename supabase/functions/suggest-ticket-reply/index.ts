@@ -1,9 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  handleCors,
+  createLogger,
+  validateString,
+  validateArray,
+  validateEnum,
+  collectErrors,
+  validationErrorResponse,
+  checkRateLimit,
+  rateLimitExceededResponse,
+  extractIdentifier,
+  createErrorResponse,
+  createSuccessResponse,
+} from "../_shared/mod.ts";
 
 // Tool definition for structured reply template output
 const suggestRepliesTool = {
@@ -39,22 +49,53 @@ const suggestRepliesTool = {
   }
 };
 
+const DEFAULT_TEMPLATE = {
+  title: "Default Response",
+  content: "Thank you for reaching out. We're reviewing your request and will respond as soon as possible."
+};
+
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
+  const logger = createLogger('suggest-ticket-reply');
 
   try {
-    const { ticketContent, priority, messages } = await req.json();
+    const body = await req.json();
+    const { ticketContent, priority, messages } = body;
+
+    // Input validation
+    const errors = collectErrors(
+      validateString(ticketContent, 'ticketContent', { minLength: 1, maxLength: 10000 }),
+      validateEnum(priority, 'priority', ['urgent', 'high', 'medium', 'low']),
+      validateArray(messages, 'messages', { required: false, maxLength: 100 })
+    );
+
+    if (errors.length > 0) {
+      logger.warn('Validation failed', { errors });
+      return validationErrorResponse(errors);
+    }
+
+    // Rate limiting (15 requests per minute)
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 15,
+      windowMs: 60 * 1000,
+      identifier: `ticket-reply:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("Generating reply suggestions for priority:", priority);
+    logger.info('Generating reply suggestions', { priority });
 
-    const conversationHistory = messages.map((msg: any) => 
+    const conversationHistory = (messages || []).map((msg: { sender_type: string; message: string }) => 
       `${msg.sender_type === 'user' ? 'Customer' : 'Admin'}: ${msg.message}`
     ).join('\n\n');
 
@@ -76,26 +117,6 @@ TEMPLATE VARIETY:
 1. Direct Solution - Provide immediate actionable steps
 2. Information Request - Ask for clarifying details needed to help
 3. Empathetic Follow-up - Acknowledge concern, provide reassurance, outline next steps
-
-FEW-SHOT EXAMPLES:
-
-For HIGH priority "Can't log in" ticket:
-{
-  "templates": [
-    {
-      "title": "Password Reset Steps",
-      "content": "Hi [Name],\\n\\nI understand how frustrating it is to be locked out of your account. Let's get you back in right away.\\n\\nPlease try these steps:\\n1. Go to the login page and click \\"Forgot Password\\"\\n2. Enter your email address\\n3. Check your inbox (and spam folder) for the reset link\\n4. Create a new password\\n\\nIf you don't receive the email within 5 minutes, please let me know and I'll manually reset it for you.\\n\\nBest regards"
-    },
-    {
-      "title": "Request Account Details",
-      "content": "Hi [Name],\\n\\nI'm sorry you're having trouble accessing your account. I'd like to help resolve this quickly.\\n\\nCould you please confirm:\\n- The email address associated with your account\\n- When you last successfully logged in\\n- Any error messages you're seeing\\n\\nOnce I have these details, I can investigate further and get you back into your account.\\n\\nThank you for your patience!"
-    },
-    {
-      "title": "Escalation Notice",
-      "content": "Hi [Name],\\n\\nThank you for reaching out. I can see this is preventing you from accessing your aquarium data, and I want to resolve this as quickly as possible.\\n\\nI'm escalating your case to our technical team for immediate investigation. You should hear back within the next 2 hours with a solution.\\n\\nIn the meantime, please don't hesitate to reply if you have any questions.\\n\\nWarm regards"
-    }
-  ]
-}
 
 Use the suggest_replies tool to return exactly 3 templates.`;
 
@@ -127,26 +148,8 @@ Generate 3 professional reply templates using the suggest_replies tool.`;
     });
 
     if (!response.ok) {
-      console.error("AI gateway error:", response.status);
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ 
-            templates: [
-              {
-                title: "Default Response",
-                content: "Thank you for contacting us. We've received your request and will get back to you shortly."
-              }
-            ]
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-      
-      throw new Error(`AI gateway responded with ${response.status}`);
+      logger.warn('AI gateway error, returning default template', { status: response.status });
+      return createSuccessResponse({ templates: [DEFAULT_TEMPLATE] });
     }
 
     const data = await response.json();
@@ -158,9 +161,9 @@ Generate 3 professional reply templates using the suggest_replies tool.`;
       try {
         const parsed = JSON.parse(data.choices[0].message.tool_calls[0].function.arguments);
         templates = parsed.templates || [];
-        console.log('Parsed templates from tool call');
+        logger.debug('Parsed templates from tool call');
       } catch (e) {
-        console.error('Error parsing tool call arguments:', e);
+        logger.error('Error parsing tool call arguments', e);
       }
     }
     
@@ -170,15 +173,13 @@ Generate 3 professional reply templates using the suggest_replies tool.`;
       
       if (content) {
         try {
-          // Remove markdown code blocks if present
           const jsonMatch = content.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || 
                            content.match(/(\{[\s\S]*\})/);
           const jsonStr = jsonMatch ? jsonMatch[1] : content;
           const parsed = JSON.parse(jsonStr);
           templates = parsed.templates || [];
         } catch (parseError) {
-          console.error("Failed to parse JSON, attempting recovery:", parseError);
-          // Fallback: create a single template from the content
+          logger.warn('Failed to parse JSON, using fallback', parseError);
           templates = [{
             title: "Suggested Reply",
             content: content.substring(0, 500)
@@ -189,33 +190,15 @@ Generate 3 professional reply templates using the suggest_replies tool.`;
 
     // Ensure we have at least one template
     if (templates.length === 0) {
-      templates = [{
-        title: "Default Response",
-        content: "Thank you for reaching out. We're reviewing your request and will respond as soon as possible."
-      }];
+      templates = [DEFAULT_TEMPLATE];
     }
 
-    console.log("Generated", templates.length, "reply suggestions");
+    logger.info('Generated reply suggestions', { count: templates.length });
 
-    return new Response(JSON.stringify({ templates }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return createSuccessResponse({ templates });
+
   } catch (error) {
-    console.error("Reply suggestion error:", error);
-    return new Response(
-      JSON.stringify({ 
-        templates: [
-          {
-            title: "Error - Default Response",
-            content: "Thank you for reaching out. We're reviewing your request and will respond as soon as possible."
-          }
-        ],
-        error: error instanceof Error ? error.message : "Unknown error" 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    logger.error('Reply suggestion failed', error);
+    return createSuccessResponse({ templates: [DEFAULT_TEMPLATE] });
   }
 });
