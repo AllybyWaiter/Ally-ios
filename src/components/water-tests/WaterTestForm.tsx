@@ -55,7 +55,12 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
-  const [aiDetectedValues, setAiDetectedValues] = useState<Record<string, number>>({});
+  // Store AI-detected params with value and confidence for correction tracking
+  interface AiDetectedParam {
+    value: number;
+    confidence: number;
+  }
+  const [aiDetectedParams, setAiDetectedParams] = useState<Record<string, AiDetectedParam>>({});
 
   const isAtTestLimit = !canLogTest();
   const remainingTests = getRemainingTests();
@@ -237,6 +242,40 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
         console.warn('Skipped invalid parameters:', skippedParams);
       }
 
+      // Track AI corrections if photo analysis was used
+      if (Object.keys(aiDetectedParams).length > 0) {
+        const corrections = [];
+        
+        for (const [paramName, aiData] of Object.entries(aiDetectedParams)) {
+          const userValue = parseFloat(parameters[paramName] || '');
+          
+          // Only log if user changed the value from what AI detected
+          if (!isNaN(userValue) && userValue !== aiData.value) {
+            corrections.push({
+              water_test_id: test.id,
+              user_id: authUser.id,
+              parameter_name: paramName,
+              ai_detected_value: aiData.value,
+              ai_confidence: aiData.confidence,
+              user_corrected_value: userValue,
+              correction_delta: Math.abs(userValue - aiData.value),
+            });
+          }
+        }
+        
+        if (corrections.length > 0) {
+          const { error: correctionsError } = await supabase
+            .from('photo_analysis_corrections')
+            .insert(corrections);
+          
+          if (correctionsError) {
+            console.error('Failed to log AI corrections:', correctionsError);
+          } else {
+            console.log(`Logged ${corrections.length} AI correction(s) for analysis`);
+          }
+        }
+      }
+
       return { test, savedParams: parameterEntries.length, skippedParams };
     },
     onSuccess: (result) => {
@@ -257,6 +296,8 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       setPhotoPreview(null);
       setPhotoUrl(null);
       setAnalysisResult(null);
+      setAiDetectedParams({});
+      setFeedbackGiven(false);
     },
     onError: (error) => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -382,15 +423,18 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
       // Auto-fill parameters from analysis
       if (data.parameters && data.parameters.length > 0) {
         const newParams: Record<string, string> = {};
-        const detectedValues: Record<string, number> = {};
+        const detectedParams: Record<string, AiDetectedParam> = {};
         data.parameters.forEach((param: any) => {
-          if (param.value) {
+          if (param.value != null) {
             newParams[param.name] = param.value.toString();
-            detectedValues[param.name] = param.value;
+            detectedParams[param.name] = {
+              value: param.value,
+              confidence: param.confidence ?? 0.5,
+            };
           }
         });
         setParameters(newParams);
-        setAiDetectedValues(detectedValues);
+        setAiDetectedParams(detectedParams);
         setFeedbackGiven(false);
         
         toast.success(`Detected ${data.parameters.length} parameters from photo`, {
@@ -438,7 +482,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     setPhotoUrl(null);
     setAnalysisResult(null);
     setFeedbackGiven(false);
-    setAiDetectedValues({});
+    setAiDetectedParams({});
   };
 
   const handlePhotoFeedback = async (rating: "positive" | "negative") => {
