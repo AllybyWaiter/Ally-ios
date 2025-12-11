@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,10 +15,12 @@ import {
   Camera, 
   MessageSquare, 
   TrendingUp, 
+  TrendingDown,
   AlertTriangle,
   Download,
   Target,
-  Activity
+  Activity,
+  LineChart as LineChartIcon
 } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
 import {
@@ -27,7 +29,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, LineChart, Line, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid, Legend, Tooltip } from 'recharts';
+import { subDays, format, startOfDay, eachDayOfInterval } from 'date-fns';
 
 interface FeedbackStats {
   feature: string;
@@ -61,6 +64,23 @@ interface RecentCorrection {
   correction_delta: number;
   ai_confidence: number | null;
   created_at: string;
+}
+
+interface DailyTrend {
+  date: string;
+  fullDate: string;
+  satisfactionRate: number | null;
+  positiveCount: number;
+  negativeCount: number;
+  totalFeedback: number;
+}
+
+interface DailyAccuracy {
+  date: string;
+  fullDate: string;
+  accuracyRate: number | null;
+  photoTests: number;
+  corrections: number;
 }
 
 const featureLabels: Record<string, string> = {
@@ -178,7 +198,183 @@ export default function AIAnalytics() {
     }
   });
 
-  // Calculate KPIs
+  // Fetch feedback trends (last 30 days)
+  const { data: feedbackTrendsRaw } = useQuery({
+    queryKey: ['ai-feedback-trends'],
+    queryFn: async () => {
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      const { data, error } = await supabase
+        .from('ai_feedback')
+        .select('rating, created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch correction trends (last 30 days)
+  const { data: correctionTrendsRaw } = useQuery({
+    queryKey: ['correction-trends'],
+    queryFn: async () => {
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      const { data, error } = await supabase
+        .from('photo_analysis_corrections')
+        .select('created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fetch photo test trends (last 30 days)
+  const { data: photoTestTrendsRaw } = useQuery({
+    queryKey: ['photo-test-trends'],
+    queryFn: async () => {
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      const { data, error } = await supabase
+        .from('water_tests')
+        .select('created_at')
+        .eq('entry_method', 'photo')
+        .gte('created_at', thirtyDaysAgo.toISOString());
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Aggregate feedback trends by day
+  const satisfactionTrends = useMemo((): DailyTrend[] => {
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const days = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() });
+    
+    const dayMap: Record<string, { positive: number; negative: number }> = {};
+    days.forEach(day => {
+      dayMap[format(day, 'yyyy-MM-dd')] = { positive: 0, negative: 0 };
+    });
+    
+    feedbackTrendsRaw?.forEach(item => {
+      const dayKey = format(new Date(item.created_at), 'yyyy-MM-dd');
+      if (dayMap[dayKey]) {
+        if (item.rating === 'positive') {
+          dayMap[dayKey].positive++;
+        } else {
+          dayMap[dayKey].negative++;
+        }
+      }
+    });
+    
+    return days.map(day => {
+      const dayKey = format(day, 'yyyy-MM-dd');
+      const stats = dayMap[dayKey];
+      const total = stats.positive + stats.negative;
+      return {
+        date: format(day, 'MMM d'),
+        fullDate: dayKey,
+        satisfactionRate: total > 0 ? Math.round((stats.positive / total) * 100) : null,
+        positiveCount: stats.positive,
+        negativeCount: stats.negative,
+        totalFeedback: total
+      };
+    });
+  }, [feedbackTrendsRaw]);
+
+  // Aggregate accuracy trends by day
+  const accuracyTrends = useMemo((): DailyAccuracy[] => {
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const days = eachDayOfInterval({ start: thirtyDaysAgo, end: new Date() });
+    
+    const dayMap: Record<string, { photoTests: number; corrections: number }> = {};
+    days.forEach(day => {
+      dayMap[format(day, 'yyyy-MM-dd')] = { photoTests: 0, corrections: 0 };
+    });
+    
+    photoTestTrendsRaw?.forEach(item => {
+      const dayKey = format(new Date(item.created_at), 'yyyy-MM-dd');
+      if (dayMap[dayKey]) {
+        dayMap[dayKey].photoTests++;
+      }
+    });
+    
+    correctionTrendsRaw?.forEach(item => {
+      const dayKey = format(new Date(item.created_at), 'yyyy-MM-dd');
+      if (dayMap[dayKey]) {
+        dayMap[dayKey].corrections++;
+      }
+    });
+    
+    return days.map(day => {
+      const dayKey = format(day, 'yyyy-MM-dd');
+      const stats = dayMap[dayKey];
+      return {
+        date: format(day, 'MMM d'),
+        fullDate: dayKey,
+        accuracyRate: stats.photoTests > 0 
+          ? Math.round(((stats.photoTests - stats.corrections) / stats.photoTests) * 100)
+          : null,
+        photoTests: stats.photoTests,
+        corrections: stats.corrections
+      };
+    });
+  }, [photoTestTrendsRaw, correctionTrendsRaw]);
+
+  // Calculate trend statistics
+  const trendStats = useMemo(() => {
+    const last7Days = satisfactionTrends.slice(-7);
+    const prev7Days = satisfactionTrends.slice(-14, -7);
+    
+    const last7Satisfaction = last7Days.filter(d => d.satisfactionRate !== null);
+    const prev7Satisfaction = prev7Days.filter(d => d.satisfactionRate !== null);
+    
+    const avgLast7 = last7Satisfaction.length > 0
+      ? Math.round(last7Satisfaction.reduce((sum, d) => sum + (d.satisfactionRate || 0), 0) / last7Satisfaction.length)
+      : null;
+    const avgPrev7 = prev7Satisfaction.length > 0
+      ? Math.round(prev7Satisfaction.reduce((sum, d) => sum + (d.satisfactionRate || 0), 0) / prev7Satisfaction.length)
+      : null;
+    
+    const satisfactionTrend = avgLast7 !== null && avgPrev7 !== null 
+      ? avgLast7 - avgPrev7 
+      : null;
+    
+    // Accuracy trends
+    const last7Accuracy = accuracyTrends.slice(-7).filter(d => d.accuracyRate !== null);
+    const prev7Accuracy = accuracyTrends.slice(-14, -7).filter(d => d.accuracyRate !== null);
+    
+    const avgLast7Accuracy = last7Accuracy.length > 0
+      ? Math.round(last7Accuracy.reduce((sum, d) => sum + (d.accuracyRate || 0), 0) / last7Accuracy.length)
+      : null;
+    const avgPrev7Accuracy = prev7Accuracy.length > 0
+      ? Math.round(prev7Accuracy.reduce((sum, d) => sum + (d.accuracyRate || 0), 0) / prev7Accuracy.length)
+      : null;
+    
+    const accuracyTrendVal = avgLast7Accuracy !== null && avgPrev7Accuracy !== null 
+      ? avgLast7Accuracy - avgPrev7Accuracy 
+      : null;
+    
+    // Overall averages
+    const allSatisfaction = satisfactionTrends.filter(d => d.satisfactionRate !== null);
+    const overallAvgSatisfaction = allSatisfaction.length > 0
+      ? Math.round(allSatisfaction.reduce((sum, d) => sum + (d.satisfactionRate || 0), 0) / allSatisfaction.length)
+      : null;
+    
+    const allAccuracy = accuracyTrends.filter(d => d.accuracyRate !== null);
+    const overallAvgAccuracy = allAccuracy.length > 0
+      ? Math.round(allAccuracy.reduce((sum, d) => sum + (d.accuracyRate || 0), 0) / allAccuracy.length)
+      : null;
+    
+    return {
+      satisfactionTrend,
+      accuracyTrend: accuracyTrendVal,
+      avgSatisfaction: overallAvgSatisfaction,
+      avgAccuracy: overallAvgAccuracy,
+      totalFeedbackPeriod: satisfactionTrends.reduce((sum, d) => sum + d.totalFeedback, 0),
+      totalPhotoTestsPeriod: accuracyTrends.reduce((sum, d) => sum + d.photoTests, 0)
+    };
+  }, [satisfactionTrends, accuracyTrends]);
+
+
   const totalFeedback = feedbackData?.reduce((sum, f) => sum + f.total, 0) || 0;
   const totalPositive = feedbackData?.reduce((sum, f) => sum + f.positive, 0) || 0;
   const overallSatisfaction = totalFeedback > 0 ? Math.round((totalPositive / totalFeedback) * 100) : 0;
@@ -351,6 +547,10 @@ export default function AIAnalytics() {
           <TabsTrigger value="photo">
             <Camera className="mr-2 h-4 w-4" />
             Photo Analysis
+          </TabsTrigger>
+          <TabsTrigger value="trends">
+            <LineChartIcon className="mr-2 h-4 w-4" />
+            Trends
           </TabsTrigger>
           <TabsTrigger value="recent">
             <Activity className="mr-2 h-4 w-4" />
@@ -591,6 +791,276 @@ export default function AIAnalytics() {
                   No correction data available for confidence analysis
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Trends Tab */}
+        <TabsContent value="trends" className="space-y-4">
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground mb-1">Avg Satisfaction</div>
+                  <div className="text-2xl font-bold">
+                    {trendStats.avgSatisfaction !== null ? `${trendStats.avgSatisfaction}%` : '-'}
+                  </div>
+                  {trendStats.satisfactionTrend !== null && (
+                    <div className={`flex items-center justify-center text-xs ${
+                      trendStats.satisfactionTrend >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {trendStats.satisfactionTrend >= 0 ? (
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 mr-1" />
+                      )}
+                      {trendStats.satisfactionTrend >= 0 ? '+' : ''}{trendStats.satisfactionTrend}% vs prev 7d
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground mb-1">Avg Accuracy</div>
+                  <div className="text-2xl font-bold">
+                    {trendStats.avgAccuracy !== null ? `${trendStats.avgAccuracy}%` : '-'}
+                  </div>
+                  {trendStats.accuracyTrend !== null && (
+                    <div className={`flex items-center justify-center text-xs ${
+                      trendStats.accuracyTrend >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {trendStats.accuracyTrend >= 0 ? (
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 mr-1" />
+                      )}
+                      {trendStats.accuracyTrend >= 0 ? '+' : ''}{trendStats.accuracyTrend}% vs prev 7d
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground mb-1">Feedback (30d)</div>
+                  <div className="text-2xl font-bold">{trendStats.totalFeedbackPeriod}</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div className="text-sm text-muted-foreground mb-1">Photo Tests (30d)</div>
+                  <div className="text-2xl font-bold">{trendStats.totalPhotoTestsPeriod}</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Satisfaction Rate Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Satisfaction Rate Over Time</CardTitle>
+              <CardDescription>Daily user satisfaction rate for the past 30 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {satisfactionTrends.some(d => d.totalFeedback > 0) ? (
+                <ChartContainer 
+                  config={{
+                    satisfactionRate: { label: 'Satisfaction Rate', color: 'hsl(var(--chart-1))' },
+                    positiveCount: { label: 'Positive', color: 'hsl(var(--chart-1))' },
+                    negativeCount: { label: 'Negative', color: 'hsl(var(--chart-2))' },
+                  }} 
+                  className="h-[300px]"
+                >
+                  <AreaChart data={satisfactionTrends}>
+                    <defs>
+                      <linearGradient id="satisfactionGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 10 }} 
+                      interval={4}
+                      className="text-muted-foreground"
+                    />
+                    <YAxis 
+                      domain={[0, 100]} 
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(value) => `${value}%`}
+                      className="text-muted-foreground"
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload as DailyTrend;
+                          return (
+                            <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                              <p className="font-medium">{data.date}</p>
+                              {data.satisfactionRate !== null ? (
+                                <>
+                                  <p className="text-sm text-muted-foreground">
+                                    Satisfaction: <span className="font-medium text-foreground">{data.satisfactionRate}%</span>
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {data.positiveCount} positive, {data.negativeCount} negative
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No data</p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="satisfactionRate" 
+                      stroke="hsl(var(--chart-1))" 
+                      strokeWidth={2}
+                      fill="url(#satisfactionGradient)"
+                      connectNulls
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Brain className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No feedback data available for the past 30 days</p>
+                    <p className="text-sm mt-1">Start collecting feedback to see trends here</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Accuracy Rate Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Photo Analysis Accuracy Over Time</CardTitle>
+              <CardDescription>Daily accuracy rate for AI photo analysis</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {accuracyTrends.some(d => d.photoTests > 0) ? (
+                <ChartContainer 
+                  config={{
+                    accuracyRate: { label: 'Accuracy Rate', color: 'hsl(var(--chart-3))' },
+                    photoTests: { label: 'Photo Tests', color: 'hsl(var(--chart-3))' },
+                    corrections: { label: 'Corrections', color: 'hsl(var(--chart-2))' },
+                  }} 
+                  className="h-[300px]"
+                >
+                  <AreaChart data={accuracyTrends}>
+                    <defs>
+                      <linearGradient id="accuracyGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 10 }} 
+                      interval={4}
+                      className="text-muted-foreground"
+                    />
+                    <YAxis 
+                      domain={[0, 100]} 
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(value) => `${value}%`}
+                      className="text-muted-foreground"
+                    />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload as DailyAccuracy;
+                          return (
+                            <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                              <p className="font-medium">{data.date}</p>
+                              {data.accuracyRate !== null ? (
+                                <>
+                                  <p className="text-sm text-muted-foreground">
+                                    Accuracy: <span className="font-medium text-foreground">{data.accuracyRate}%</span>
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {data.photoTests} tests, {data.corrections} corrections
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">No data</p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="accuracyRate" 
+                      stroke="hsl(var(--chart-3))" 
+                      strokeWidth={2}
+                      fill="url(#accuracyGradient)"
+                      connectNulls
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <Camera className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No photo analysis data available for the past 30 days</p>
+                    <p className="text-sm mt-1">Start using photo analysis to see accuracy trends</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Volume Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Interactions Volume</CardTitle>
+              <CardDescription>Daily volume of AI interactions over the past 30 days</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer 
+                config={{
+                  totalFeedback: { label: 'Feedback Entries', color: 'hsl(var(--chart-1))' },
+                  photoTests: { label: 'Photo Analyses', color: 'hsl(var(--chart-3))' },
+                }} 
+                className="h-[250px]"
+              >
+                <BarChart 
+                  data={satisfactionTrends.map((item, i) => ({
+                    date: item.date,
+                    totalFeedback: item.totalFeedback,
+                    photoTests: accuracyTrends[i]?.photoTests || 0
+                  }))}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 10 }} 
+                    interval={4}
+                    className="text-muted-foreground"
+                  />
+                  <YAxis tick={{ fontSize: 10 }} className="text-muted-foreground" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="totalFeedback" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="photoTests" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </TabsContent>
