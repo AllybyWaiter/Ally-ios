@@ -26,7 +26,14 @@ serve(async (req) => {
 
     switch (action) {
       case 'generate':
-        systemPrompt = 'You are a professional blog writer specializing in aquarium care and fishkeeping. Write engaging, informative, and SEO-friendly blog posts.';
+        systemPrompt = `You are a professional blog writer specializing in aquarium care and fishkeeping. Write engaging, informative, and SEO-friendly blog posts.
+
+WRITING STYLE:
+- Conversational yet authoritative
+- Use concrete examples and practical advice
+- Break up content with clear sections and subheadings
+- Include actionable takeaways for readers
+- Avoid overly technical jargon unless explained`;
         userPrompt = `Write a complete blog post about: ${input.topic}
 
 Write an engaging, well-structured article with:
@@ -79,7 +86,13 @@ Write an engaging, well-structured article with:
         break;
 
       case 'improve':
-        systemPrompt = 'You are a professional blog editor specializing in aquarium content. Improve and enhance existing blog posts while maintaining their core message.';
+        systemPrompt = `You are a professional blog editor specializing in aquarium content. Improve and enhance existing blog posts while maintaining their core message.
+
+IMPROVEMENT FOCUS:
+- Better structure and flow
+- More engaging language
+- Additional helpful details
+- Clean HTML formatting`;
         userPrompt = `Improve this blog post content:
 
 Title: ${input.title}
@@ -115,7 +128,12 @@ Return only the improved HTML content.`;
         break;
 
       case 'seo':
-        systemPrompt = 'You are an SEO expert specializing in blog optimization.';
+        systemPrompt = `You are an SEO expert specializing in blog optimization for aquarium and fishkeeping content.
+
+SEO BEST PRACTICES:
+- Include primary keyword in title and description
+- Write compelling meta descriptions that encourage clicks
+- Use relevant, searchable tags`;
         userPrompt = `Generate SEO-optimized fields for this blog post:
 
 Title: ${input.title}
@@ -165,6 +183,7 @@ Create:
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
+      temperature: 0.7,
     };
 
     if (tools.length > 0) {
