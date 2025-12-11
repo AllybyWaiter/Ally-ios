@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
@@ -16,6 +16,7 @@ import BlogManager from '@/components/admin/BlogManager';
 import { RoleManager } from '@/components/admin/RoleManager';
 import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import UserActivityLogs from '@/components/admin/UserActivityLogs';
+import AIAnalytics from '@/components/admin/AIAnalytics';
 import { formatDate } from '@/lib/formatters';
 
 interface WaitlistEntry {
@@ -244,6 +245,12 @@ export default function Admin() {
                 Activity Logs
               </TabsTrigger>
             )}
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="ai-analytics">
+                <Brain className="mr-2 h-4 w-4" />
+                AI Analytics
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {hasAnyRole(['admin']) && (
@@ -401,6 +408,12 @@ export default function Admin() {
           {hasAnyRole(['admin']) && (
             <TabsContent value="activity" className="space-y-4">
               <UserActivityLogs />
+            </TabsContent>
+          )}
+
+          {hasAnyRole(['admin']) && (
+            <TabsContent value="ai-analytics" className="space-y-4">
+              <AIAnalytics />
             </TabsContent>
           )}
         </Tabs>
