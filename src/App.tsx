@@ -90,16 +90,10 @@ const FAQ = lazyWithRetry(() => import("./pages/FAQ"));
 const Contact = lazyWithRetry(() => import("./pages/Contact"));
 
 // Configure React Query with optimized caching
+import { defaultQueryOptions } from "@/lib/queryConfig";
+
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
-      gcTime: 10 * 60 * 1000, // Cache persists for 10 minutes (formerly cacheTime)
-      retry: 1, // Retry failed queries once
-      refetchOnWindowFocus: false, // Don't refetch on window focus to reduce API calls
-      refetchOnReconnect: true, // Refetch when coming back online
-    },
-  },
+  defaultOptions: defaultQueryOptions,
 });
 
 // Session monitor wrapper component
