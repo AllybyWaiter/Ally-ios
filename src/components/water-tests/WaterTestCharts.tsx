@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/unitConversions";
 import { queryKeys } from "@/lib/queryKeys";
 import { fetchWaterTestsForChart } from "@/infrastructure/queries";
+import { queryPresets } from "@/lib/queryConfig";
 
 interface WaterTestChartsProps {
   aquarium: {
@@ -61,34 +62,33 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
 
       return formattedData;
     },
+    ...queryPresets.waterTests,
   });
 
-  // Get unique parameters from data
-  const availableParameters =
-    chartData && chartData.length > 0
-      ? Array.from(
-          new Set(
-            chartData.flatMap((d) =>
-              Object.keys(d).filter((k) => k !== "date" && k !== "fullDate" && !k.endsWith("_unit"))
-            )
-          )
+  // Memoize available parameters extraction
+  const availableParameters = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [];
+    return Array.from(
+      new Set(
+        chartData.flatMap((d: Record<string, unknown>) =>
+          Object.keys(d).filter((k) => k !== "date" && k !== "fullDate" && !k.endsWith("_unit"))
         )
-      : [];
+      )
+    );
+  }, [chartData]);
   
-  // Get the unit for the selected parameter
-  const getParameterUnit = () => {
+  // Memoize parameter unit computation
+  const parameterUnit = useMemo(() => {
     if (!chartData || chartData.length === 0) return '';
-    const firstDataPoint = chartData.find(d => d[`${selectedParameter}_unit`]);
+    const firstDataPoint = chartData.find((d: Record<string, unknown>) => d[`${selectedParameter}_unit`]);
     const storedUnit = firstDataPoint?.[`${selectedParameter}_unit`] || '';
     
     // Convert unit display based on user preference
     if (storedUnit === '°F') {
       return getTemperatureUnit(units);
     }
-    return storedUnit;
-  };
-  
-  const parameterUnit = getParameterUnit();
+    return storedUnit as string;
+  }, [chartData, selectedParameter, units]);
 
   if (isLoading) {
     return (

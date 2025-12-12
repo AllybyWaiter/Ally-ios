@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, LineChart, Line, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid, Legend, Tooltip } from 'recharts';
 import { subDays, format, startOfDay, eachDayOfInterval } from 'date-fns';
+import { queryPresets } from '@/lib/queryConfig';
 
 interface FeedbackStats {
   feature: string;
@@ -138,7 +139,8 @@ export default function AIAnalytics() {
       }));
 
       return result;
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch photo analysis corrections
@@ -151,7 +153,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return data;
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch total photo analyses
@@ -165,7 +168,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return count || 0;
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch recent feedback
@@ -180,7 +184,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return data as RecentFeedback[];
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch recent corrections
@@ -195,7 +200,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return data as RecentCorrection[];
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch feedback trends (last 30 days)
@@ -210,7 +216,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return data;
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch correction trends (last 30 days)
@@ -225,7 +232,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return data;
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Fetch photo test trends (last 30 days)
@@ -241,7 +249,8 @@ export default function AIAnalytics() {
       
       if (error) throw error;
       return data;
-    }
+    },
+    ...queryPresets.analytics,
   });
 
   // Aggregate feedback trends by day
