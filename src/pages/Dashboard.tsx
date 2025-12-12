@@ -14,6 +14,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
 import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData } from '@/components/dashboard';
+import { SectionErrorBoundary } from '@/components/error-boundaries';
+import { FeatureArea } from '@/lib/sentry';
 
 interface Aquarium {
   id: string;
@@ -227,30 +229,36 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Overview */}
-        <DashboardStats
-          aquariumCount={aquariums.length}
-          activeCount={activeCount}
-          totalVolume={totalVolume}
-          upcomingTaskCount={upcomingTaskCount}
-          units={units}
-          isAdmin={isAdmin}
-          hasStaffRole={hasStaffRole}
-        />
+        <SectionErrorBoundary fallbackTitle="Failed to load stats" featureArea={FeatureArea.AQUARIUM}>
+          <DashboardStats
+            aquariumCount={aquariums.length}
+            activeCount={activeCount}
+            totalVolume={totalVolume}
+            upcomingTaskCount={upcomingTaskCount}
+            units={units}
+            isAdmin={isAdmin}
+            hasStaffRole={hasStaffRole}
+          />
+        </SectionErrorBoundary>
 
         {/* Chat with Ally CTA */}
-        <AllyCTA />
+        <SectionErrorBoundary fallbackTitle="Failed to load chat CTA" featureArea={FeatureArea.CHAT}>
+          <AllyCTA />
+        </SectionErrorBoundary>
 
         {/* Aquariums Grid */}
-        <AquariumGrid
-          aquariums={aquariums}
-          units={units}
-          canCreate={canCreateAquarium(aquariums.length)}
-          maxAquariums={limits.maxAquariums}
-          limitsLoading={limitsLoading}
-          onCreateAquarium={handleCreateAquarium}
-          onEditAquarium={handleEditAquarium}
-          onDeleteAquarium={handleDeleteClick}
-        />
+        <SectionErrorBoundary fallbackTitle="Failed to load aquariums" featureArea={FeatureArea.AQUARIUM}>
+          <AquariumGrid
+            aquariums={aquariums}
+            units={units}
+            canCreate={canCreateAquarium(aquariums.length)}
+            maxAquariums={limits.maxAquariums}
+            limitsLoading={limitsLoading}
+            onCreateAquarium={handleCreateAquarium}
+            onEditAquarium={handleEditAquarium}
+            onDeleteAquarium={handleDeleteClick}
+          />
+        </SectionErrorBoundary>
       </main>
 
       <AquariumDialog
