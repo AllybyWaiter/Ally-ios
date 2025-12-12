@@ -1,33 +1,20 @@
-import { useState, useEffect } from "react";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
-import { formatDecimal } from '@/lib/formatters';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { Loader2, AlertCircle, CheckCircle2, Settings, Camera, Upload, X, Sparkles, Save, Lock, ThumbsUp, ThumbsDown } from "lucide-react";
-import { getAllTemplates, validateParameter, type ParameterTemplate } from "@/lib/waterTestUtils";
+import { Loader2, AlertCircle, CheckCircle2, Settings, Save, Lock } from "lucide-react";
 import { CustomTemplateManager } from "./CustomTemplateManager";
-import { 
-  celsiusToFahrenheit, 
-  fahrenheitToCelsius, 
-  getTemperatureUnit 
-} from "@/lib/unitConversions";
-import { compressImage, validateImageFile, formatFileSize } from "@/lib/imageCompression";
-import { useAutoSave } from "@/hooks/useAutoSave";
-import { useFeatureRateLimit } from "@/hooks/useFeatureRateLimit";
-import { measurePerformance } from "@/lib/performanceMonitor";
-import { FeatureArea } from "@/lib/sentry";
-import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useWaterTestForm, usePhotoAnalysis } from "./hooks";
+import { PhotoUploadSection } from "./PhotoUploadSection";
+import { ParameterInputGrid } from "./ParameterInputGrid";
 
 interface WaterTestFormProps {
   aquarium: {
@@ -38,296 +25,56 @@ interface WaterTestFormProps {
 }
 
 export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
-  const { user, canCreateCustomTemplates, subscriptionTier, units } = useAuth();
-  const queryClient = useQueryClient();
+  const { canCreateCustomTemplates, units } = useAuth();
   const { t } = useTranslation();
-  const rateLimit = useFeatureRateLimit('water-test-photo');
-  const { canLogTest, getRemainingTests, limits, tier, getUpgradeSuggestion } = usePlanLimits();
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  const [parameters, setParameters] = useState<Record<string, string>>({});
-  const [notes, setNotes] = useState("");
-  const [tags, setTags] = useState("");
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
-  // Store AI-detected params with value and confidence for correction tracking
-  interface AiDetectedParam {
-    value: number;
-    confidence: number;
-  }
-  const [aiDetectedParams, setAiDetectedParams] = useState<Record<string, AiDetectedParam>>({});
 
-  const isAtTestLimit = !canLogTest();
-  const remainingTests = getRemainingTests();
-
-  // Auto-save draft functionality
-  const autoSaveData = {
+  // Use form hook for all form state and logic
+  const {
+    selectedTemplate,
     parameters,
+    setParameters,
     notes,
+    setNotes,
     tags,
-  };
+    setTags,
+    setAiDetectedParams,
+    setFeedbackGiven,
+    templatesLoading,
+    activeTemplate,
+    systemTemplates,
+    customTemplates,
+    hasValidParameters,
+    isAutoSaving,
+    lastSaved,
+    isAtTestLimit,
+    remainingTests,
+    limits,
+    getUpgradeSuggestion,
+    handleTemplateChange,
+    handleSubmit,
+    isPending,
+  } = useWaterTestForm({ aquarium });
 
-  const { isSaving: isAutoSaving, lastSaved } = useAutoSave({
-    data: autoSaveData,
-    onSave: async (data) => {
-      // Save to localStorage as draft
-      localStorage.setItem(`water-test-draft-${aquarium.id}`, JSON.stringify(data));
-    },
-    delay: 5000, // Auto-save every 5 seconds
-    enabled: Object.keys(parameters).length > 0 || notes.length > 0,
-  });
-
-  // Load draft on mount
-  useEffect(() => {
-    const draft = localStorage.getItem(`water-test-draft-${aquarium.id}`);
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft);
-        setParameters(parsed.parameters || {});
-        setNotes(parsed.notes || "");
-        setTags(parsed.tags || "");
-        toast.success("Draft restored", {
-          description: "Your unsaved changes have been restored",
-        });
-      } catch (error) {
-        console.error("Failed to parse draft:", error);
-      }
-    }
-  }, [aquarium.id]);
-
-  const { data: templates, isLoading: templatesLoading } = useQuery({
-    queryKey: ["all-templates", aquarium.type, user?.id],
-    queryFn: async () => {
-      return await getAllTemplates(aquarium.type, user?.id);
-    },
-  });
-
-  const activeTemplate = templates?.find((t) => t.id === selectedTemplate);
-  const systemTemplates = templates?.filter((t) => !t.isCustom) || [];
-  const customTemplates = templates?.filter((t) => t.isCustom) || [];
-
-  useEffect(() => {
-    if (templates && templates.length > 0 && !selectedTemplate) {
-      // Auto-select default template or first template
-      const defaultTemplate = templates.find((t) => 'isDefault' in t && (t as any).isDefault);
-      const templateToSelect = defaultTemplate || templates[0];
-      setSelectedTemplate(templateToSelect.id);
-      
-      // Clear parameters that don't belong to the newly selected template
-      const templateParamNames = templateToSelect.parameters.map(p => p.name);
-      setParameters(prev => {
-        const filtered = Object.fromEntries(
-          Object.entries(prev).filter(([key]) => templateParamNames.includes(key))
-        );
-        return filtered;
-      });
-    }
-  }, [templates, selectedTemplate]);
-
-  // Helper function to get valid parameter entries - ONLY from current template
-  const getValidParameterEntries = () => {
-    // Must have an active template to validate against
-    if (!activeTemplate) return [];
-    
-    const templateParamNames = activeTemplate.parameters.map(p => p.name);
-    
-    return Object.entries(parameters)
-      .filter(([paramName, value]) => {
-        // Only consider parameters from current template
-        if (!templateParamNames.includes(paramName)) return false;
-        if (value === "" || value === undefined || value === null) return false;
-        const parsed = parseFloat(value);
-        return !isNaN(parsed);
-      })
-      .map(([paramName, value]) => ({
-        paramName,
-        value: parseFloat(value),
-      }));
-  };
-
-  // Check if form has valid parameters
-  const validParameters = getValidParameterEntries();
-  const hasValidParameters = validParameters.length > 0;
-
-  const createTestMutation = useMutation({
-    mutationFn: async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) throw new Error("Not authenticated");
-
-      // Validate that we have at least one valid parameter
-      const validEntries = getValidParameterEntries();
-      if (validEntries.length === 0) {
-        throw new Error("Please enter at least one valid parameter value");
-      }
-
-      let uploadedPhotoUrl = photoUrl;
-
-      // Upload photo if exists
-      if (photoFile && !photoUrl) {
-        const fileExt = photoFile.name.split('.').pop();
-        const fileName = `${authUser.id}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from('water-test-photos')
-          .upload(fileName, photoFile);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('water-test-photos')
-          .getPublicUrl(fileName);
-
-        uploadedPhotoUrl = publicUrl;
-      }
-
-      // Create water test entry
-      const { data: test, error: testError } = await supabase
-        .from("water_tests")
-        .insert({
-          aquarium_id: aquarium.id,
-          user_id: authUser.id,
-          test_date: new Date().toISOString(),
-          notes: notes || null,
-          tags: tags ? tags.split(",").map((t) => t.trim()) : null,
-          confidence: photoFile ? "ai" : "manual",
-          entry_method: photoFile ? "photo" : "manual",
-          photo_url: uploadedPhotoUrl,
-        })
-        .select()
-        .single();
-
-      if (testError) throw testError;
-
-      // Create parameter entries with validated values
-      const skippedParams: string[] = [];
-      const parameterEntries = validEntries
-        .map(({ paramName, value }) => {
-          const param = activeTemplate?.parameters.find((p) => p.name === paramName);
-          let storedValue = value;
-          let storedUnit = param?.unit || "";
-          
-          // Convert temperature to Fahrenheit for storage if user entered in Celsius
-          if (param?.unit === '°F' && units === 'metric') {
-            storedValue = celsiusToFahrenheit(storedValue);
-            storedUnit = '°F';
-          }
-          
-          // Validate using the stored value
-          const validation = validateParameter(paramName, storedValue, aquarium.type);
-          
-          return {
-            test_id: test.id,
-            parameter_name: paramName,
-            value: storedValue,
-            unit: storedUnit,
-            status: validation.isValid ? "good" : "warning",
-          };
-        });
-
-      if (parameterEntries.length > 0) {
-        const { error: paramsError } = await supabase
-          .from("test_parameters")
-          .insert(parameterEntries);
-
-        if (paramsError) throw paramsError;
-      }
-
-      // Warn about skipped parameters
-      if (skippedParams.length > 0) {
-        console.warn('Skipped invalid parameters:', skippedParams);
-      }
-
-      // Track AI corrections if photo analysis was used
-      if (Object.keys(aiDetectedParams).length > 0) {
-        const corrections = [];
-        
-        for (const [paramName, aiData] of Object.entries(aiDetectedParams)) {
-          const userValue = parseFloat(parameters[paramName] || '');
-          
-          // Only log if user changed the value from what AI detected
-          if (!isNaN(userValue) && userValue !== aiData.value) {
-            corrections.push({
-              water_test_id: test.id,
-              user_id: authUser.id,
-              parameter_name: paramName,
-              ai_detected_value: aiData.value,
-              ai_confidence: aiData.confidence,
-              user_corrected_value: userValue,
-              correction_delta: Math.abs(userValue - aiData.value),
-            });
-          }
-        }
-        
-        if (corrections.length > 0) {
-          const { error: correctionsError } = await supabase
-            .from('photo_analysis_corrections')
-            .insert(corrections);
-          
-          if (correctionsError) {
-            console.error('Failed to log AI corrections:', correctionsError);
-          } else {
-            console.log(`Logged ${corrections.length} AI correction(s) for analysis`);
-          }
-        }
-      }
-
-      return { test, savedParams: parameterEntries.length, skippedParams };
-    },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["water-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["all-templates"] });
-      
-      // Clear draft on successful save
-      localStorage.removeItem(`water-test-draft-${aquarium.id}`);
-      
-      toast.success(t('waterTests.testLogged'), {
-        description: `${result.savedParams} parameter(s) saved successfully`,
-      });
-      
-      setParameters({});
-      setNotes("");
-      setTags("");
-      setPhotoFile(null);
-      setPhotoPreview(null);
-      setPhotoUrl(null);
-      setAnalysisResult(null);
-      setAiDetectedParams({});
+  // Use photo analysis hook
+  const {
+    photoFile,
+    photoPreview,
+    analyzingPhoto,
+    analysisResult,
+    handlePhotoSelect,
+    handleAnalyzePhoto,
+    handleRemovePhoto,
+    handlePhotoFeedback,
+  } = usePhotoAnalysis({
+    aquariumType: aquarium.type,
+    onParametersDetected: (detectedParams, detectedAiParams) => {
+      setParameters(detectedParams);
+      setAiDetectedParams(detectedAiParams);
       setFeedbackGiven(false);
     },
-    onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      // Provide more specific error messages
-      let title = 'Failed to save water test';
-      let description = errorMessage;
-      
-      if (errorMessage.includes('valid parameter')) {
-        title = 'No parameters entered';
-        description = 'Please enter at least one water test value before saving.';
-      } else if (errorMessage.includes('authenticated')) {
-        title = 'Authentication required';
-        description = 'Please log in to save water tests.';
-      }
-      
-      toast.error(title, {
-        description,
-        action: errorMessage.includes('valid parameter') ? undefined : {
-          label: 'Retry',
-          onClick: () => createTestMutation.mutate(),
-        },
-      });
-    },
   });
-
-  const handleTemplateChange = (templateId: string) => {
-    setSelectedTemplate(templateId);
-    setParameters({});
-  };
 
   const handleManageTemplates = () => {
     if (canCreateCustomTemplates) {
@@ -337,194 +84,8 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
     }
   };
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file
-    const validation = validateImageFile(file);
-    if (!validation.isValid) {
-      toast.error(validation.error || 'Invalid image file');
-      return;
-    }
-
-    try {
-      // Show initial file size
-      toast.info('Compressing image...', {
-        description: `Original size: ${formatFileSize(file.size)}`,
-      });
-
-      // Compress image
-      const compressedFile = await compressImage(file, 1, 1920, 0.8);
-
-      // Show compression result
-      const savedBytes = file.size - compressedFile.size;
-      if (savedBytes > 0) {
-        toast.success('Image compressed', {
-          description: `Reduced by ${formatFileSize(savedBytes)} (${Math.round((savedBytes / file.size) * 100)}%)`,
-        });
-      }
-
-      setPhotoFile(compressedFile);
-      
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(compressedFile);
-    } catch (error) {
-      console.error('Compression error:', error);
-      toast.error('Failed to process image', {
-        description: 'Using original file instead',
-      });
-
-      // Fall back to original file
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAnalyzePhoto = async () => {
-    if (!photoPreview) return;
-
-    // Check rate limit
-    const canProceed = await rateLimit.checkLimit();
-    if (!canProceed) {
-      return;
-    }
-
-    setAnalyzingPhoto(true);
-    try {
-      const { data, error } = await measurePerformance(
-        'water-test-photo-analysis',
-        () => supabase.functions.invoke('analyze-water-test-photo', {
-          body: { 
-            imageUrl: photoPreview,
-            aquariumType: aquarium.type 
-          }
-        }),
-        FeatureArea.WATER_TESTS
-      );
-
-      if (error) throw error;
-
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      setAnalysisResult(data);
-
-      // Auto-fill parameters from analysis
-      if (data.parameters && data.parameters.length > 0) {
-        const newParams: Record<string, string> = {};
-        const detectedParams: Record<string, AiDetectedParam> = {};
-        data.parameters.forEach((param: any) => {
-          if (param.value != null) {
-            newParams[param.name] = param.value.toString();
-            detectedParams[param.name] = {
-              value: param.value,
-              confidence: param.confidence ?? 0.5,
-            };
-          }
-        });
-        setParameters(newParams);
-        setAiDetectedParams(detectedParams);
-        setFeedbackGiven(false);
-        
-        toast.success(`Detected ${data.parameters.length} parameters from photo`, {
-          description: 'Review and edit values before saving'
-        });
-      } else {
-        toast.warning('No parameters detected', {
-          description: 'Please enter values manually'
-        });
-      }
-    } catch (error: any) {
-      console.error('Error analyzing photo:', error);
-      
-      const errorMessage = error.message || 'Unable to analyze the photo';
-      const isRateLimitError = errorMessage.toLowerCase().includes('rate limit') || 
-                               errorMessage.toLowerCase().includes('too many requests');
-      const isNetworkError = errorMessage.toLowerCase().includes('network') || 
-                             errorMessage.toLowerCase().includes('connection');
-      
-      if (isRateLimitError) {
-        toast.error('AI analysis temporarily unavailable', {
-          description: 'Too many requests. Please try again in a few minutes.',
-        });
-      } else if (isNetworkError) {
-        toast.error('Network error', {
-          description: 'Please check your internet connection and try again.',
-        });
-      } else {
-        toast.error('Failed to analyze photo', {
-          description: errorMessage,
-          action: {
-            label: 'Retry',
-            onClick: handleAnalyzePhoto,
-          },
-        });
-      }
-    } finally {
-      setAnalyzingPhoto(false);
-    }
-  };
-
-  const handleRemovePhoto = () => {
-    setPhotoFile(null);
-    setPhotoPreview(null);
-    setPhotoUrl(null);
-    setAnalysisResult(null);
-    setFeedbackGiven(false);
-    setAiDetectedParams({});
-  };
-
-  const handlePhotoFeedback = async (rating: "positive" | "negative") => {
-    if (feedbackGiven) return;
-    
-    try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) return;
-
-      await supabase.from("ai_feedback").insert({
-        user_id: authUser.id,
-        feature: "photo_analysis",
-        rating,
-        context: {
-          aquariumType: aquarium.type,
-          detectedParameters: analysisResult?.parameters || [],
-          photoAnalyzed: true,
-        },
-      });
-
-      setFeedbackGiven(true);
-      toast.success(rating === "positive" ? "Thanks for the feedback!" : "Thanks! We'll work to improve.");
-    } catch (error) {
-      console.error("Failed to submit feedback:", error);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Check test limit before submitting
-    if (isAtTestLimit) {
-      const suggestedPlan = getUpgradeSuggestion();
-      toast.error("Monthly test limit reached", {
-        description: `Your ${tier} plan allows ${limits.maxTestLogsPerMonth} tests per month. Upgrade to ${suggestedPlan || 'a higher plan'} for more.`,
-      });
-      return;
-    }
-    
-    // Clear draft on successful submit
-    localStorage.removeItem(`water-test-draft-${aquarium.id}`);
-    createTestMutation.mutate();
+  const onFormSubmit = (e: React.FormEvent) => {
+    handleSubmit(e, photoFile);
   };
 
   return (
@@ -571,148 +132,18 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={onFormSubmit} className="space-y-6">
             {/* Photo Upload Section */}
-            <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-br from-primary/5 to-primary/10">
-              <div className="flex items-center gap-2">
-                <Camera className="h-5 w-5 text-primary" aria-hidden="true" />
-                <h3 className="font-semibold" id="photo-analysis-heading">AI Photo Analysis</h3>
-                <Badge variant="secondary" className="ml-auto" aria-label="Powered by Google Gemini AI">
-                  <Sparkles className="h-3 w-3 mr-1" aria-hidden="true" />
-                  Powered by Gemini
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground" id="photo-analysis-description">
-                Upload a photo of your test strip or liquid test results for automatic analysis
-              </p>
-
-              {!photoPreview ? (
-                <div className="flex gap-2" role="group" aria-labelledby="photo-analysis-heading">
-                  <label className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoSelect}
-                      className="hidden"
-                      aria-label="Choose photo from device"
-                    />
-                    <Button type="button" variant="outline" className="w-full" asChild>
-                      <span>
-                        <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
-                        Choose Photo
-                      </span>
-                    </Button>
-                  </label>
-                  <label className="flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handlePhotoSelect}
-                      className="hidden"
-                      aria-label="Take photo with camera"
-                    />
-                    <Button type="button" className="w-full" asChild>
-                      <span>
-                        <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
-                        Take Photo
-                      </span>
-                    </Button>
-                  </label>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="relative rounded-lg overflow-hidden border">
-                    <img 
-                      src={photoPreview} 
-                      alt="Water test" 
-                      className="w-full h-48 object-cover"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={handleRemovePhoto}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  {!analysisResult ? (
-                    <Button
-                      type="button"
-                      onClick={handleAnalyzePhoto}
-                      disabled={analyzingPhoto}
-                      className="w-full"
-                    >
-                      {analyzingPhoto ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Analyzing with AI...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4 mr-2" />
-                          Analyze Photo
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <div className="space-y-3 p-3 bg-background rounded-lg border">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium">Analysis Complete</span>
-                      </div>
-                      {analysisResult.notes && (
-                        <p className="text-xs text-muted-foreground">{analysisResult.notes}</p>
-                      )}
-                      <div className="flex flex-wrap gap-2">
-                        {analysisResult.parameters?.map((param: any, idx: number) => (
-                          <Badge key={idx} variant="outline">
-                            {param.name}: {param.value} {param.unit}
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      {/* Feedback prompt */}
-                      {!feedbackGiven ? (
-                        <div className="flex items-center justify-between pt-2 border-t">
-                          <span className="text-xs text-muted-foreground">Was this analysis accurate?</span>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 gap-1 hover:text-green-500 hover:bg-green-500/10"
-                              onClick={() => handlePhotoFeedback("positive")}
-                            >
-                              <ThumbsUp className="h-3 w-3" />
-                              Yes
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 gap-1 hover:text-amber-500 hover:bg-amber-500/10"
-                              onClick={() => handlePhotoFeedback("negative")}
-                            >
-                              <ThumbsDown className="h-3 w-3" />
-                              No
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 pt-2 border-t text-xs text-muted-foreground">
-                          <CheckCircle2 className="h-3 w-3 text-green-500" />
-                          Thanks for your feedback!
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            <PhotoUploadSection
+              photoPreview={photoPreview}
+              analyzingPhoto={analyzingPhoto}
+              analysisResult={analysisResult}
+              feedbackGiven={false}
+              onPhotoSelect={handlePhotoSelect}
+              onAnalyzePhoto={handleAnalyzePhoto}
+              onRemovePhoto={handleRemovePhoto}
+              onPhotoFeedback={handlePhotoFeedback}
+            />
 
             {/* Template Selector */}
             <div className="space-y-2">
@@ -760,69 +191,13 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
 
             {/* Parameter Inputs */}
             {activeTemplate && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">{t('waterTests.testParameters')}</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {activeTemplate.parameters.map((param) => {
-                    const value = parameters[param.name] || "";
-                    
-                    // Display unit based on user preference
-                    let displayUnit = param.unit;
-                    let displayMin = param.range.min;
-                    let displayMax = param.range.max;
-                    
-                    // Convert temperature display if metric and parameter is in Fahrenheit
-                    if (param.unit === '°F' && units === 'metric') {
-                      displayUnit = getTemperatureUnit(units);
-                      displayMin = fahrenheitToCelsius(param.range.min);
-                      displayMax = fahrenheitToCelsius(param.range.max);
-                    }
-                    
-                    // For validation, we need to convert input value to storage unit
-                    let validationValue = value ? parseFloat(value) : null;
-                    if (validationValue && param.unit === '°F' && units === 'metric') {
-                      validationValue = celsiusToFahrenheit(validationValue);
-                    }
-                    
-                    const validation = validationValue
-                      ? validateParameter(param.name, validationValue, aquarium.type)
-                      : null;
-
-                    return (
-                      <div key={param.name} className="space-y-2">
-                        <Label htmlFor={param.name}>
-                          {param.name}
-                          <span className="text-xs text-muted-foreground ml-2">
-                            ({displayUnit})
-                          </span>
-                        </Label>
-                        <Input
-                          id={param.name}
-                          type="number"
-                          step="0.01"
-                          placeholder={`${formatDecimal(displayMin, 1)} - ${formatDecimal(displayMax, 1)}`}
-                          value={value}
-                          onChange={(e) =>
-                            setParameters({ ...parameters, [param.name]: e.target.value })
-                          }
-                        />
-                        {validation && !validation.isValid && (
-                          <div className="flex items-start gap-2 text-xs text-warning">
-                            <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                            <span>{validation.hint}</span>
-                          </div>
-                        )}
-                        {validation && validation.isValid && value && (
-                          <div className="flex items-center gap-1 text-xs text-green-600">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>{t('waterTests.withinNormalRange')}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <ParameterInputGrid
+                template={activeTemplate}
+                parameters={parameters}
+                onParameterChange={(name, value) => setParameters({ ...parameters, [name]: value })}
+                aquariumType={aquarium.type}
+                units={units}
+              />
             )}
 
             {/* Notes & Tags */}
@@ -861,10 +236,10 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             <div className="flex gap-3">
               <Button
                 type="submit"
-                disabled={!selectedTemplate || !hasValidParameters || createTestMutation.isPending || isAtTestLimit}
+                disabled={!selectedTemplate || !hasValidParameters || isPending || isAtTestLimit}
                 className="flex-1"
               >
-                {createTestMutation.isPending && (
+                {isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
                 {isAtTestLimit && <Lock className="w-4 h-4 mr-2" />}
@@ -899,7 +274,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
               <p className="text-sm text-muted-foreground">{t('waterTests.goldDescription')}</p>
             </div>
             <p className="text-sm text-muted-foreground">
-              {t('waterTests.currentPlan')} <span className="font-semibold capitalize">{subscriptionTier || "Free"}</span>
+              Visit the Pricing page to compare plans and upgrade.
             </p>
           </div>
         </DialogContent>
