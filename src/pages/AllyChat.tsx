@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Send, 
@@ -18,7 +17,6 @@ import {
   History, 
   Copy, 
   Check,
-  MoreVertical,
   Trash2,
   MessageSquare,
   Fish,
@@ -36,6 +34,7 @@ import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { VirtualizedConversationList } from "@/components/chat/VirtualizedConversationList";
 
 interface Message {
   role: "user" | "assistant";
@@ -156,7 +155,7 @@ const AllyChat = () => {
     setCurrentConversationId(null);
   };
 
-  const deleteConversation = async (conversationId: string, e: React.MouseEvent) => {
+  const deleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
     const { error } = await supabase
@@ -174,7 +173,11 @@ const AllyChat = () => {
         startNewConversation();
       }
     }
-  };
+  }, [currentConversationId, toast]);
+
+  const handleLoadConversation = useCallback((id: string) => {
+    loadConversation(id);
+  }, []);
 
   const saveConversation = async (userMessage: Message, assistantMessage: Message) => {
     if (!userId) return;
@@ -622,52 +625,17 @@ const AllyChat = () => {
               </Tooltip>
             </div>
             
-            <ScrollArea className="h-[calc(100%-8rem)]">
-              <div className="p-4 space-y-2">
-                <h3 className="text-sm font-semibold text-muted-foreground px-2 mb-3">
-                  Recent Conversations
-                </h3>
-                {conversations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No conversations yet
-                  </p>
-                ) : (
-                  conversations.map((conv) => (
-                    <div
-                      key={conv.id}
-                      className={cn(
-                        "group relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors",
-                        currentConversationId === conv.id && "bg-accent"
-                      )}
-                      onClick={() => loadConversation(conv.id)}
-                    >
-                      <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{conv.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(conv.updated_at), "MMM d, h:mm a")}
-                        </p>
-                      </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="opacity-0 group-hover:opacity-100 h-8 w-8"
-                            onClick={(e) => deleteConversation(conv.id, e)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete conversation</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
+            <div className="h-[calc(100%-8rem)] p-4">
+              <h3 className="text-sm font-semibold text-muted-foreground px-2 mb-3">
+                Recent Conversations
+              </h3>
+              <VirtualizedConversationList
+                conversations={conversations}
+                currentConversationId={currentConversationId}
+                onLoadConversation={handleLoadConversation}
+                onDeleteConversation={deleteConversation}
+              />
+            </div>
           </Card>
 
           {/* Main Chat Area */}
@@ -708,57 +676,28 @@ const AllyChat = () => {
                       <SheetHeader>
                         <SheetTitle>Chat History</SheetTitle>
                       </SheetHeader>
-                      <ScrollArea className="h-[calc(100vh-8rem)] mt-6">
-                        <div className="space-y-2">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button 
-                                onClick={startNewConversation} 
-                                className="w-full gap-2 mb-4"
-                              >
-                                <Plus className="h-4 w-4" />
-                                New Conversation
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Start a fresh conversation with Ally</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          {conversations.map((conv) => (
-                            <div
-                              key={conv.id}
-                              className={cn(
-                                "group relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent",
-                                currentConversationId === conv.id && "bg-accent"
-                              )}
-                              onClick={() => loadConversation(conv.id)}
+                      <div className="h-[calc(100vh-10rem)] mt-6">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              onClick={startNewConversation} 
+                              className="w-full gap-2 mb-4"
                             >
-                              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{conv.title}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(conv.updated_at), "MMM d, h:mm a")}
-                                </p>
-                              </div>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="opacity-0 group-hover:opacity-100 h-8 w-8"
-                                onClick={(e) => deleteConversation(conv.id, e)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete conversation</p>
-                            </TooltipContent>
-                          </Tooltip>
-                            </div>
-                          ))}
-                        </div>
-                      </ScrollArea>
+                              <Plus className="h-4 w-4" />
+                              New Conversation
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Start a fresh conversation with Ally</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <VirtualizedConversationList
+                          conversations={conversations}
+                          currentConversationId={currentConversationId}
+                          onLoadConversation={handleLoadConversation}
+                          onDeleteConversation={deleteConversation}
+                        />
+                      </div>
                     </SheetContent>
                   </Sheet>
 
