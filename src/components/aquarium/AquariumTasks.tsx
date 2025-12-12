@@ -17,26 +17,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Plus, ListTodo, CheckCircle2, Pencil, Trash2, AlertCircle, Clock, CalendarClock } from "lucide-react";
-import { format, isValid, isToday, isBefore, isAfter, startOfDay } from "date-fns";
+import { Loader2, Plus, ListTodo, CheckCircle2, AlertCircle, Clock, CalendarClock } from "lucide-react";
+import { isToday, isBefore, isAfter, startOfDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
-import { formatRelativeTime } from "@/lib/formatters";
 import { queryKeys } from "@/lib/queryKeys";
 import { fetchTasks, deleteTask, completeTask, type MaintenanceTask } from "@/infrastructure/queries";
+import { PendingTaskCard, CompletedTaskCard } from "./TaskCard";
 
-// Safe date formatter to prevent crashes
-const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
-  if (!dateValue) return '';
-  try {
-    const date = new Date(dateValue);
-    if (!isValid(date)) return 'Invalid date';
-    return format(date, formatStr);
-  } catch (error) {
-    console.error('Date formatting error in AquariumTasks:', error);
-    return '';
-  }
-};
+// Type alias for task filter
 
 type TaskFilter = "all" | "overdue" | "today" | "upcoming";
 
@@ -85,13 +74,23 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     setDialogOpen(true);
   };
 
-  const handleEditTask = (taskId: string) => {
+  const handleEditTask = useCallback((taskId: string) => {
     setTimeout(() => {
       setDialogMode("edit");
       setEditingTaskId(taskId);
       setDialogOpen(true);
     }, 0);
-  };
+  }, []);
+
+  const handleDeleteClick = useCallback((taskId: string) => {
+    setTaskToDelete(taskId);
+    setDeleteConfirmOpen(true);
+  }, []);
+
+  const handleCompleteClick = useCallback((taskId: string) => {
+    setTaskToComplete(taskId);
+    setCompleteConfirmOpen(true);
+  }, []);
 
   // Delete mutation with optimistic updates
   const deleteMutation = useMutation({
@@ -376,56 +375,13 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
           </h3>
           <div className="space-y-3">
             {filteredPendingTasks.map((task) => (
-              <Card key={task.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{task.task_name}</h4>
-                        <Badge variant="secondary">{task.task_type || ''}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {t('tasks.due')} {safeFormatDate(task.due_date, 'PP')}
-                      </p>
-                      {task.notes && (
-                        <p className="text-sm text-muted-foreground">{task.notes}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => handleEditTask(task.id)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => {
-                          setTaskToDelete(task.id);
-                          setDeleteConfirmOpen(true);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setTaskToComplete(task.id);
-                          setCompleteConfirmOpen(true);
-                        }}
-                      >
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        {t('tasks.complete')}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <PendingTaskCard
+                key={task.id}
+                task={task}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteClick}
+                onComplete={handleCompleteClick}
+              />
             ))}
           </div>
         </div>
@@ -445,33 +401,11 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
           </h3>
           <div className="space-y-3">
             {completedTasks.map((task) => (
-              <Card key={task.id} className="opacity-60">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold">{task.task_name}</h4>
-                        <Badge variant="secondary">{task.task_type}</Badge>
-                        <Badge variant="outline">{t('tasks.completed')}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {t('tasks.completedDate')} {task.completed_date && formatRelativeTime(task.completed_date)}
-                      </p>
-                    </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => {
-                        setTaskToDelete(task.id);
-                        setDeleteConfirmOpen(true);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <CompletedTaskCard
+                key={task.id}
+                task={task}
+                onDelete={handleDeleteClick}
+              />
             ))}
           </div>
         </div>
