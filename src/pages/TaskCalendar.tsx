@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 import { queryKeys } from "@/lib/queryKeys";
 import { queryPresets } from "@/lib/queryConfig";
+import { SectionErrorBoundary } from "@/components/error-boundaries";
+import { FeatureArea } from "@/lib/sentry";
 
 interface Task {
   id: string;
@@ -203,64 +205,66 @@ export default function TaskCalendar() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-2">
-              {/* Day Headers */}
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <div
-                  key={day}
-                  className="text-center font-semibold text-sm p-2 text-muted-foreground"
-                >
-                  {day}
-                </div>
-              ))}
-
-              {/* Calendar Days */}
-              {calendarDays.map((day) => {
-                const dayTasks = getTasksForDay(day);
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isToday = isSameDay(day, new Date());
-
-                return (
+            <SectionErrorBoundary fallbackTitle="Failed to load calendar grid" featureArea={FeatureArea.MAINTENANCE}>
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-2">
+                {/* Day Headers */}
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                   <div
-                    key={day.toISOString()}
-                    className={`min-h-[120px] p-2 border rounded-lg transition-colors ${
-                      isCurrentMonth ? "bg-card" : "bg-muted/30"
-                    } ${isToday ? "ring-2 ring-primary" : ""}`}
-                    onDragOver={handleDragOver}
-                    onDrop={() => handleDrop(day)}
+                    key={day}
+                    className="text-center font-semibold text-sm p-2 text-muted-foreground"
                   >
-                    <div
-                      className={`text-sm font-semibold mb-1 ${
-                        isCurrentMonth ? "text-foreground" : "text-muted-foreground"
-                      } ${isToday ? "text-primary" : ""}`}
-                    >
-                      {format(day, "d")}
-                    </div>
-                    <div className="space-y-1">
-                      {dayTasks.map((task) => (
-                        <div
-                          key={task.id}
-                          draggable
-                          onDragStart={() => handleDragStart(task)}
-                          className={`text-xs p-1.5 rounded cursor-move hover:opacity-80 transition-opacity ${
-                            TASK_TYPE_COLORS[task.task_type] || TASK_TYPE_COLORS.other
-                          } text-white`}
-                          title={`${task.task_name} - ${task.aquarium?.name || "Unknown"}`}
-                        >
-                          <div className="font-semibold truncate">
-                            {task.task_name}
-                          </div>
-                          <div className="truncate opacity-90">
-                            {task.aquarium?.name}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {day}
                   </div>
-                );
-              })}
-            </div>
+                ))}
+
+                {/* Calendar Days */}
+                {calendarDays.map((day) => {
+                  const dayTasks = getTasksForDay(day);
+                  const isCurrentMonth = isSameMonth(day, currentMonth);
+                  const isToday = isSameDay(day, new Date());
+
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`min-h-[120px] p-2 border rounded-lg transition-colors ${
+                        isCurrentMonth ? "bg-card" : "bg-muted/30"
+                      } ${isToday ? "ring-2 ring-primary" : ""}`}
+                      onDragOver={handleDragOver}
+                      onDrop={() => handleDrop(day)}
+                    >
+                      <div
+                        className={`text-sm font-semibold mb-1 ${
+                          isCurrentMonth ? "text-foreground" : "text-muted-foreground"
+                        } ${isToday ? "text-primary" : ""}`}
+                      >
+                        {format(day, "d")}
+                      </div>
+                      <div className="space-y-1">
+                        {dayTasks.map((task) => (
+                          <div
+                            key={task.id}
+                            draggable
+                            onDragStart={() => handleDragStart(task)}
+                            className={`text-xs p-1.5 rounded cursor-move hover:opacity-80 transition-opacity ${
+                              TASK_TYPE_COLORS[task.task_type] || TASK_TYPE_COLORS.other
+                            } text-white`}
+                            title={`${task.task_name} - ${task.aquarium?.name || "Unknown"}`}
+                          >
+                            <div className="font-semibold truncate">
+                              {task.task_name}
+                            </div>
+                            <div className="truncate opacity-90">
+                              {task.aquarium?.name}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionErrorBoundary>
 
             {/* Legend */}
             <div className="mt-6 pt-6 border-t">

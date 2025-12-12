@@ -9,6 +9,8 @@ import { WaterTestHistory } from "@/components/water-tests/WaterTestHistory";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { Loader2 } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
+import { SectionErrorBoundary } from "@/components/error-boundaries";
+import { FeatureArea } from "@/lib/sentry";
 
 const WaterTests = () => {
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
@@ -100,21 +102,27 @@ const WaterTests = () => {
           </TabsList>
 
           <TabsContent value="log">
-            {selectedAquarium && (
-              <WaterTestForm aquarium={selectedAquarium} />
-            )}
+            <SectionErrorBoundary fallbackTitle="Failed to load test form" featureArea={FeatureArea.WATER_TESTS}>
+              {selectedAquarium && (
+                <WaterTestForm aquarium={selectedAquarium} />
+              )}
+            </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="history">
-            {selectedAquarium && (
-              <WaterTestHistory aquariumId={selectedAquarium.id} />
-            )}
+            <SectionErrorBoundary fallbackTitle="Failed to load test history" featureArea={FeatureArea.WATER_TESTS}>
+              {selectedAquarium && (
+                <WaterTestHistory aquariumId={selectedAquarium.id} />
+              )}
+            </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="charts">
-            {selectedAquarium && (
-              <WaterTestCharts aquarium={selectedAquarium} />
-            )}
+            <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
+              {selectedAquarium && (
+                <WaterTestCharts aquarium={selectedAquarium} />
+              )}
+            </SectionErrorBoundary>
           </TabsContent>
         </Tabs>
       </div>

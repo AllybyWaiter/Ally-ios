@@ -18,6 +18,8 @@ import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import UserActivityLogs from '@/components/admin/UserActivityLogs';
 import AIAnalytics from '@/components/admin/AIAnalytics';
 import { formatDate } from '@/lib/formatters';
+import { SectionErrorBoundary } from '@/components/error-boundaries';
+import { FeatureArea } from '@/lib/sentry';
 
 interface WaitlistEntry {
   id: string;
@@ -255,31 +257,41 @@ export default function Admin() {
 
           {hasAnyRole(['admin']) && (
             <TabsContent value="beta" className="space-y-4">
-              <BetaAccessManager />
+              <SectionErrorBoundary fallbackTitle="Failed to load beta access manager" featureArea={FeatureArea.ADMIN}>
+                <BetaAccessManager />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
           {hasPermission('manage_users') && (
             <TabsContent value="users" className="space-y-4">
-              <UserManagement />
+              <SectionErrorBoundary fallbackTitle="Failed to load user management" featureArea={FeatureArea.ADMIN}>
+                <UserManagement />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
           {hasPermission('manage_roles') && (
             <TabsContent value="roles" className="space-y-4">
-              <RoleManager />
+              <SectionErrorBoundary fallbackTitle="Failed to load role manager" featureArea={FeatureArea.ADMIN}>
+                <RoleManager />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
           {(hasPermission('manage_blog') || hasPermission('publish_blog')) && (
             <TabsContent value="blog" className="space-y-4">
-              <BlogManager />
+              <SectionErrorBoundary fallbackTitle="Failed to load blog manager" featureArea={FeatureArea.ADMIN}>
+                <BlogManager />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
           {hasPermission('manage_announcements') && (
             <TabsContent value="announcements" className="space-y-4">
-              <AnnouncementManager />
+              <SectionErrorBoundary fallbackTitle="Failed to load announcements" featureArea={FeatureArea.ADMIN}>
+                <AnnouncementManager />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
@@ -401,19 +413,25 @@ export default function Admin() {
 
           {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
             <TabsContent value="tickets" className="space-y-4">
-              <SupportTickets />
+              <SectionErrorBoundary fallbackTitle="Failed to load support tickets" featureArea={FeatureArea.ADMIN}>
+                <SupportTickets />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
           {hasAnyRole(['admin']) && (
             <TabsContent value="activity" className="space-y-4">
-              <UserActivityLogs />
+              <SectionErrorBoundary fallbackTitle="Failed to load activity logs" featureArea={FeatureArea.ADMIN}>
+                <UserActivityLogs />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
 
           {hasAnyRole(['admin']) && (
             <TabsContent value="ai-analytics" className="space-y-4">
-              <AIAnalytics />
+              <SectionErrorBoundary fallbackTitle="Failed to load AI analytics" featureArea={FeatureArea.ADMIN}>
+                <AIAnalytics />
+              </SectionErrorBoundary>
             </TabsContent>
           )}
         </Tabs>
