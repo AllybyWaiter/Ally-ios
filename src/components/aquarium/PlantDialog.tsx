@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,30 +8,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-
-interface Plant {
-  id: string;
-  name: string;
-  species: string;
-  quantity: number;
-  date_added: string;
-  placement: string;
-  condition: string;
-  notes: string | null;
-}
+import { queryKeys } from '@/lib/queryKeys';
+import { createPlant, updatePlant, type Plant } from '@/infrastructure/queries/plants';
 
 interface PlantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   aquariumId: string;
   plant?: Plant;
-  onSuccess: () => void;
 }
 
-export function PlantDialog({ open, onOpenChange, aquariumId, plant, onSuccess }: PlantDialogProps) {
+export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  
   const [formData, setFormData] = useState({
     name: '',
     species: '',
@@ -66,45 +57,56 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant, onSuccess }
     }
   }, [plant, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const data = {
-        ...formData,
-        aquarium_id: aquariumId,
-        user_id: user.id,
-      };
-
+  const mutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      if (!user) throw new Error('User not authenticated');
+      
       if (plant) {
-        const { error } = await supabase
-          .from('plants')
-          .update(data)
-          .eq('id', plant.id);
-
-        if (error) throw error;
-        toast({ title: 'Success', description: 'Plant updated successfully' });
+        return updatePlant(plant.id, {
+          name: data.name,
+          species: data.species,
+          quantity: data.quantity,
+          date_added: data.date_added,
+          placement: data.placement,
+          condition: data.condition,
+          notes: data.notes || null,
+        });
       } else {
-        const { error } = await supabase.from('plants').insert([data]);
-
-        if (error) throw error;
-        toast({ title: 'Success', description: 'Plant added successfully' });
+        return createPlant({
+          aquarium_id: aquariumId,
+          user_id: user.id,
+          name: data.name,
+          species: data.species,
+          quantity: data.quantity,
+          date_added: data.date_added,
+          placement: data.placement,
+          condition: data.condition,
+          notes: data.notes || undefined,
+        });
       }
-
-      onSuccess();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: 'Success', 
+        description: plant ? 'Plant updated successfully' : 'Plant added successfully' 
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.plants.list(aquariumId) });
       onOpenChange(false);
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       console.error('Error saving plant:', error);
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    mutation.mutate(formData);
   };
 
   return (
@@ -209,8 +211,8 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant, onSuccess }
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : plant ? 'Update' : 'Add Plant'}
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Saving...' : plant ? 'Update' : 'Add Plant'}
             </Button>
           </DialogFooter>
         </form>

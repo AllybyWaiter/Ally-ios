@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,24 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Fish, Bug, Flower2, HelpCircle } from 'lucide-react';
-
-interface Livestock {
-  id: string;
-  name: string;
-  species: string;
-  category: string;
-  quantity: number;
-  date_added: string;
-  health_status: string;
-  notes: string | null;
-}
+import { queryKeys } from '@/lib/queryKeys';
+import { createLivestock, updateLivestock, type Livestock } from '@/infrastructure/queries/livestock';
 
 interface LivestockDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   aquariumId: string;
   livestock?: Livestock;
-  onSuccess: () => void;
 }
 
 const categoryIcons = {
@@ -36,10 +26,11 @@ const categoryIcons = {
   other: HelpCircle,
 };
 
-export function LivestockDialog({ open, onOpenChange, aquariumId, livestock, onSuccess }: LivestockDialogProps) {
+export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: LivestockDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+  
   const [formData, setFormData] = useState({
     name: '',
     species: '',
@@ -74,45 +65,56 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock, onS
     }
   }, [livestock, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const data = {
-        ...formData,
-        aquarium_id: aquariumId,
-        user_id: user.id,
-      };
-
+  const mutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      if (!user) throw new Error('User not authenticated');
+      
       if (livestock) {
-        const { error } = await supabase
-          .from('livestock')
-          .update(data)
-          .eq('id', livestock.id);
-
-        if (error) throw error;
-        toast({ title: 'Success', description: 'Livestock updated successfully' });
+        return updateLivestock(livestock.id, {
+          name: data.name,
+          species: data.species,
+          category: data.category,
+          quantity: data.quantity,
+          date_added: data.date_added,
+          health_status: data.health_status,
+          notes: data.notes || null,
+        });
       } else {
-        const { error } = await supabase.from('livestock').insert([data]);
-
-        if (error) throw error;
-        toast({ title: 'Success', description: 'Livestock added successfully' });
+        return createLivestock({
+          aquarium_id: aquariumId,
+          user_id: user.id,
+          name: data.name,
+          species: data.species,
+          category: data.category,
+          quantity: data.quantity,
+          date_added: data.date_added,
+          health_status: data.health_status,
+          notes: data.notes || undefined,
+        });
       }
-
-      onSuccess();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: 'Success', 
+        description: livestock ? 'Livestock updated successfully' : 'Livestock added successfully' 
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.livestock.list(aquariumId) });
       onOpenChange(false);
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       console.error('Error saving livestock:', error);
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    mutation.mutate(formData);
   };
 
   return (
@@ -237,8 +239,8 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock, onS
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : livestock ? 'Update' : 'Add Livestock'}
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Saving...' : livestock ? 'Update' : 'Add Livestock'}
             </Button>
           </DialogFooter>
         </form>
