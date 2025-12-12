@@ -1,17 +1,16 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, MoreVertical, Pencil, Trash2, Fish, Bug, Flower2, HelpCircle, Activity, Leaf, Loader2 } from 'lucide-react';
+import { Plus, Fish, Leaf, Loader2, Bug, Flower2, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LivestockDialog } from './LivestockDialog';
 import { PlantDialog } from './PlantDialog';
-import { formatDate } from '@/lib/formatters';
+import { LivestockCard } from './LivestockCard';
+import { PlantCard } from './PlantCard';
 import { queryKeys } from '@/lib/queryKeys';
 import { fetchLivestock, deleteLivestock, type Livestock } from '@/infrastructure/queries/livestock';
 import { fetchPlants, deletePlant, type Plant } from '@/infrastructure/queries/plants';
@@ -27,24 +26,12 @@ const categoryIcons = {
   other: HelpCircle,
 };
 
-const healthColors = {
-  healthy: 'default',
-  sick: 'destructive',
-  quarantine: 'secondary',
-} as const;
-
 const placementIcons = {
   foreground: Leaf,
   midground: Leaf,
   background: Leaf,
   floating: Leaf,
 };
-
-const conditionColors = {
-  growing: 'default',
-  melting: 'destructive',
-  stable: 'secondary',
-} as const;
 
 export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   const { user, loading: authLoading } = useAuth();
@@ -126,37 +113,45 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
     },
   });
 
-  const handleEditLivestock = (item: Livestock) => {
+  const handleEditLivestock = useCallback((item: Livestock) => {
     setTimeout(() => {
       setEditingLivestock(item);
       setLivestockDialogOpen(true);
     }, 0);
-  };
+  }, []);
 
-  const handleAddLivestock = () => {
+  const handleAddLivestock = useCallback(() => {
     setEditingLivestock(undefined);
     setLivestockDialogOpen(true);
-  };
+  }, []);
 
-  const handleEditPlant = (item: Plant) => {
+  const handleEditPlant = useCallback((item: Plant) => {
     setTimeout(() => {
       setEditingPlant(item);
       setPlantDialogOpen(true);
     }, 0);
-  };
+  }, []);
 
-  const handleAddPlant = () => {
+  const handleAddPlant = useCallback(() => {
     setEditingPlant(undefined);
     setPlantDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (id: string, type: 'livestock' | 'plant') => {
+  const handleDeleteLivestockClick = useCallback((id: string) => {
     setTimeout(() => {
       setDeletingId(id);
-      setDeletingType(type);
+      setDeletingType('livestock');
       setDeleteDialogOpen(true);
     }, 0);
-  };
+  }, []);
+
+  const handleDeletePlantClick = useCallback((id: string) => {
+    setTimeout(() => {
+      setDeletingId(id);
+      setDeletingType('plant');
+      setDeleteDialogOpen(true);
+    }, 0);
+  }, []);
 
   const handleDeleteConfirm = () => {
     if (!deletingId) return;
@@ -171,21 +166,25 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
     );
   };
 
-  const groupedLivestock = livestock.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
-    }
-    acc[item.category].push(item);
-    return acc;
-  }, {} as Record<string, Livestock[]>);
+  const groupedLivestock = useMemo(() => {
+    return livestock.reduce((acc, item) => {
+      if (!acc[item.category]) {
+        acc[item.category] = [];
+      }
+      acc[item.category].push(item);
+      return acc;
+    }, {} as Record<string, Livestock[]>);
+  }, [livestock]);
 
-  const groupedPlants = plants.reduce((acc, item) => {
-    if (!acc[item.placement]) {
-      acc[item.placement] = [];
-    }
-    acc[item.placement].push(item);
-    return acc;
-  }, {} as Record<string, Plant[]>);
+  const groupedPlants = useMemo(() => {
+    return plants.reduce((acc, item) => {
+      if (!acc[item.placement]) {
+        acc[item.placement] = [];
+      }
+      acc[item.placement].push(item);
+      return acc;
+    }, {} as Record<string, Plant[]>);
+  }, [plants]);
 
   // Show loading while auth is initializing or data is loading
   if (authLoading || livestockLoading || plantsLoading) {
@@ -241,70 +240,14 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                       {category} ({items.length})
                     </h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {items.map((item) => {
-                        const ItemIcon = categoryIcons[item.category as keyof typeof categoryIcons];
-                        return (
-                          <Card key={item.id}>
-                            <CardHeader className="pb-3">
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-2 flex-1">
-                                  <div className="p-2 rounded-lg bg-primary/10">
-                                    <ItemIcon className="h-4 w-4 text-primary" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <CardTitle className="text-base truncate">{item.name}</CardTitle>
-                                    <CardDescription className="text-sm truncate">
-                                      {item.species}
-                                    </CardDescription>
-                                  </div>
-                                </div>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleEditLivestock(item)}>
-                                      <Pencil className="mr-2 h-4 w-4" />
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDeleteClick(item.id, 'livestock')}
-                                      className="text-destructive"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Quantity</span>
-                                <Badge variant="outline">{item.quantity}</Badge>
-                              </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Health</span>
-                                <Badge variant={healthColors[item.health_status as keyof typeof healthColors]} className="capitalize">
-                                  <Activity className="mr-1 h-3 w-3" />
-                                  {item.health_status}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">Added</span>
-                                <span className="font-medium">{formatDate(item.date_added, 'PP')}</span>
-                              </div>
-                              {item.notes && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 pt-2 border-t">
-                                  {item.notes}
-                                </p>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                      {items.map((item) => (
+                        <LivestockCard
+                          key={item.id}
+                          livestock={item}
+                          onEdit={handleEditLivestock}
+                          onDelete={handleDeleteLivestockClick}
+                        />
+                      ))}
                     </div>
                   </div>
                 );
@@ -351,65 +294,12 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                     </h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {items.map((item) => (
-                        <Card key={item.id}>
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-2 flex-1">
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                  <Leaf className="h-4 w-4 text-primary" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <CardTitle className="text-base truncate">{item.name}</CardTitle>
-                                  <CardDescription className="text-sm truncate">
-                                    {item.species}
-                                  </CardDescription>
-                                </div>
-                              </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEditPlant(item)}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteClick(item.id, 'plant')}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Quantity</span>
-                              <Badge variant="outline">{item.quantity}</Badge>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Condition</span>
-                              <Badge variant={conditionColors[item.condition as keyof typeof conditionColors]} className="capitalize">
-                                <Activity className="mr-1 h-3 w-3" />
-                                {item.condition}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground">Added</span>
-                              <span className="font-medium">{formatDate(item.date_added, 'PP')}</span>
-                            </div>
-                            {item.notes && (
-                              <p className="text-xs text-muted-foreground line-clamp-2 pt-2 border-t">
-                                {item.notes}
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card>
+                        <PlantCard
+                          key={item.id}
+                          plant={item}
+                          onEdit={handleEditPlant}
+                          onDelete={handleDeletePlantClick}
+                        />
                       ))}
                     </div>
                   </div>

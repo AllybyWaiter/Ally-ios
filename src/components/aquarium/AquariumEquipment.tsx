@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,12 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Plus, Wrench, Edit, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Loader2, Plus, Wrench } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { EquipmentDialog } from "./EquipmentDialog";
+import { EquipmentCard } from "./EquipmentCard";
 import { queryKeys } from "@/lib/queryKeys";
-import { fetchEquipment, deleteEquipment } from "@/infrastructure/queries";
+import { fetchEquipment, deleteEquipment, type Equipment } from "@/infrastructure/queries";
 
 interface AquariumEquipmentProps {
   aquariumId: string;
@@ -29,9 +28,9 @@ interface AquariumEquipmentProps {
 export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
   const { user, loading: authLoading } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEquipment, setEditingEquipment] = useState<any>(null);
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [equipmentToDelete, setEquipmentToDelete] = useState<any>(null);
+  const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
@@ -84,20 +83,20 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
     },
   });
 
-  const handleEdit = (item: any) => {
+  const handleEdit = useCallback((item: Equipment) => {
     setEditingEquipment(item);
     setDialogOpen(true);
-  };
+  }, []);
 
-  const handleDelete = (item: any) => {
+  const handleDelete = useCallback((item: Equipment) => {
     setEquipmentToDelete(item);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleAddNew = () => {
+  const handleAddNew = useCallback(() => {
     setEditingEquipment(null);
     setDialogOpen(true);
-  };
+  }, []);
 
   // Show loading while auth is initializing or data is loading
   if (authLoading || isLoading) {
@@ -147,75 +146,12 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
 
       <div className="grid gap-4 md:grid-cols-2">
         {equipment.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-lg">{item.name}</CardTitle>
-                  <Badge variant="secondary">{item.equipment_type}</Badge>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(item)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(item)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                {item.brand && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('equipment.brand')}</span>
-                    <span className="font-medium">{item.brand}</span>
-                  </div>
-                )}
-                {item.model && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('equipment.model')}</span>
-                    <span className="font-medium">{item.model}</span>
-                  </div>
-                )}
-                {item.install_date && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('equipment.installed')}</span>
-                    <span className="font-medium">
-                      {format(new Date(item.install_date), "PPP")}
-                    </span>
-                  </div>
-                )}
-                {item.maintenance_interval_days && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('equipment.maintenance')}</span>
-                    <span className="font-medium">
-                      {t('equipment.everyDays', { days: item.maintenance_interval_days })}
-                    </span>
-                  </div>
-                )}
-                {item.last_maintenance_date && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('equipment.lastService')}</span>
-                    <span className="font-medium">
-                      {format(new Date(item.last_maintenance_date), "PPP")}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {item.notes && (
-                <p className="mt-3 text-sm text-muted-foreground">{item.notes}</p>
-              )}
-            </CardContent>
-          </Card>
+          <EquipmentCard
+            key={item.id}
+            equipment={item}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ))}
       </div>
 
