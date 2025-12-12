@@ -1,73 +1,147 @@
-# Welcome to your Lovable project
+# AquaDex - Smart Aquarium Management
 
-## Project info
+AquaDex is a comprehensive aquarium management application featuring AI-powered assistance, water test tracking, maintenance scheduling, and more.
 
-**URL**: https://lovable.dev/projects/3e85dd21-5f97-470b-b930-6fa7dd3660d5
+## Features
 
-## How can I edit this code?
+- 🐠 **Aquarium Management** - Track multiple tanks with livestock, plants, and equipment
+- 💧 **Water Testing** - Log parameters manually or via AI photo analysis
+- 🤖 **Ally AI Chat** - Get personalized aquarium advice with memory
+- 📅 **Task Calendar** - Schedule and track maintenance tasks
+- 📊 **Analytics** - Visualize water parameters over time
+- 📱 **PWA Support** - Install as a native-like app on mobile
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, Shadcn/UI
+- **State**: React Query (TanStack Query), React Context
+- **Backend**: Supabase (Lovable Cloud)
+- **AI**: Gemini, GPT models via Lovable AI Gateway
+- **Error Tracking**: Sentry
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3e85dd21-5f97-470b-b930-6fa7dd3660d5) and start prompting.
+## Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
+### Development
 
-**Use your preferred IDE**
+```bash
+# Install dependencies
+npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+
+# Open in browser
+open http://localhost:5173
 ```
 
-**Edit a file directly in GitHub**
+### Testing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Run tests in watch mode
+npm test
 
-**Use GitHub Codespaces**
+# Run tests once
+npm run test:run
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Run with coverage
+npm run test:coverage
+```
 
-## What technologies are used for this project?
+### Building
 
-This project is built with:
+```bash
+# Build for production
+npm run build
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Preview production build
+npm run preview
+```
 
-## How can I deploy this project?
+## Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/3e85dd21-5f97-470b-b930-6fa7dd3660d5) and click on Share -> Publish.
+```
+src/
+├── components/          # UI components by feature
+│   ├── ui/              # Shadcn/UI base components
+│   ├── aquarium/        # Aquarium-specific components
+│   ├── dashboard/       # Dashboard components
+│   ├── water-tests/     # Water test components
+│   └── error-boundaries/# Error handling components
+├── contexts/            # React contexts (Auth, Profile, Permissions)
+├── hooks/               # Custom React hooks
+├── infrastructure/      # Data access layer
+│   └── queries/         # Supabase CRUD operations
+├── lib/                 # Utilities (queryKeys, formatters, etc.)
+├── pages/               # Route-level components
+└── i18n/                # Internationalization
 
-## Can I connect a custom domain to my Lovable project?
+supabase/
+└── functions/           # Edge functions
+    ├── _shared/         # Shared utilities
+    └── ally-chat/       # AI chat (modular structure)
 
-Yes, you can!
+docs/                    # Developer documentation
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Documentation
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- [Architecture Overview](docs/ARCHITECTURE.md) - System design and layers
+- [Coding Patterns](docs/CODING_PATTERNS.md) - Conventions and patterns
+- [Edge Functions](docs/EDGE_FUNCTIONS.md) - Backend development guide
+- [Testing Guide](docs/TESTING.md) - Testing setup and practices
+- [Contributing](CONTRIBUTING.md) - How to contribute
+
+## Architecture Highlights
+
+### Layered Architecture
+
+```
+Pages → Components → Hooks → Data Access Layer → Supabase
+```
+
+### Key Patterns
+
+- **Context Split**: Auth, Profile, and Permissions in separate contexts
+- **Query Key Factory**: Consistent React Query cache keys
+- **Data Access Layer**: Centralized Supabase operations
+- **Error Boundaries**: Feature-specific error handling
+- **Optimistic Updates**: Instant UI feedback on mutations
+
+### Refactoring Status
+
+The codebase has undergone a comprehensive 4-phase refactoring:
+
+- ✅ **Phase 1**: Security hardening (validation, rate limiting, logging)
+- ✅ **Phase 2**: Architecture (context split, DAL, component modularization)
+- ✅ **Phase 3**: Performance (optimistic updates, memoization, virtualization)
+- 🔄 **Phase 4**: Testing & polish (in progress)
+
+## Environment
+
+This project uses Lovable Cloud which provides:
+
+- PostgreSQL database with RLS
+- Authentication
+- File storage
+- Edge functions
+- AI gateway
+
+No additional environment configuration is required for local development.
+
+## Deployment
+
+Deploy via Lovable:
+
+1. Open [Lovable Project](https://lovable.dev/projects/3e85dd21-5f97-470b-b930-6fa7dd3660d5)
+2. Click **Share → Publish**
+3. Frontend changes require clicking "Update"
+4. Backend changes (edge functions, migrations) deploy automatically
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+Proprietary - All rights reserved
