@@ -8,6 +8,7 @@ import { Loader2, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lu
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface Task {
   id: string;
@@ -38,7 +39,7 @@ export default function TaskCalendar() {
   const { toast } = useToast();
 
   const { data: tasks, isLoading } = useQuery({
-    queryKey: ["calendar-tasks", format(currentMonth, "yyyy-MM")],
+    queryKey: queryKeys.tasks.calendar(format(currentMonth, "yyyy-MM")),
     queryFn: async () => {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
@@ -77,7 +78,7 @@ export default function TaskCalendar() {
           table: "maintenance_tasks",
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
         }
       )
       .subscribe();
@@ -129,7 +130,7 @@ export default function TaskCalendar() {
         description: "Task rescheduled successfully",
       });
 
-      queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
     } catch (error: any) {
       toast({
         title: "Error",

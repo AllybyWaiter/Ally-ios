@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Plus, X, Star } from "lucide-react";
 import type { Parameter } from "@/lib/waterTestUtils";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface CustomTemplateManagerProps {
   open: boolean;
@@ -52,7 +53,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
   });
 
   const { data: templates, isLoading } = useQuery({
-    queryKey: ["custom-templates", user?.id],
+    queryKey: queryKeys.waterTests.customTemplates(user?.id || ''),
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
@@ -85,7 +86,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["custom-templates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.customTemplates(user?.id || '') });
       toast({ title: "Template created successfully" });
       setIsFormOpen(false);
       resetForm();
@@ -110,7 +111,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["custom-templates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.customTemplates(user?.id || '') });
       toast({ title: "Template updated successfully" });
       setIsFormOpen(false);
       setEditingTemplate(null);
@@ -127,7 +128,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["custom-templates"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.customTemplates(user?.id || '') });
       toast({ title: "Template deleted" });
       setDeleteTemplateId(null);
     },

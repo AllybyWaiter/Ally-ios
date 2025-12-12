@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,8 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { formatParameter, UnitSystem } from "@/lib/unitConversions";
 import { formatRelativeTime } from "@/lib/formatters";
+import { queryKeys } from "@/lib/queryKeys";
+import { fetchWaterTests } from "@/infrastructure/queries";
 
 interface WaterTestHistoryProps {
   aquariumId: string;
@@ -18,21 +19,8 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
   const { t } = useTranslation();
   
   const { data: tests, isLoading } = useQuery({
-    queryKey: ["water-tests", aquariumId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("water_tests")
-        .select(`
-          *,
-          test_parameters(*)
-        `)
-        .eq("aquarium_id", aquariumId)
-        .order("test_date", { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.waterTests.list(aquariumId),
+    queryFn: () => fetchWaterTests(aquariumId, 20),
   });
 
   if (isLoading) {
