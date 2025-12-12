@@ -22,6 +22,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatVolume, UnitSystem } from "@/lib/unitConversions";
 import { queryKeys } from "@/lib/queryKeys";
 import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastructure/queries";
+import { SectionErrorBoundary } from "@/components/error-boundaries";
+import { FeatureArea } from "@/lib/sentry";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
@@ -181,25 +183,37 @@ export default function AquariumDetail() {
           </TabsList>
 
           <TabsContent value="overview">
-            <AquariumOverview aquariumId={id!} aquarium={aquarium} />
+            <SectionErrorBoundary fallbackTitle="Failed to load overview" featureArea={FeatureArea.AQUARIUM}>
+              <AquariumOverview aquariumId={id!} aquarium={aquarium} />
+            </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="livestock">
-            <AquariumLivestock aquariumId={id!} />
+            <SectionErrorBoundary fallbackTitle="Failed to load livestock" featureArea={FeatureArea.AQUARIUM}>
+              <AquariumLivestock aquariumId={id!} />
+            </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="water-tests">
-            <WaterTestCharts aquarium={{ id: id!, name: aquarium.name, type: aquarium.type }} />
+            <SectionErrorBoundary fallbackTitle="Failed to load water tests" featureArea={FeatureArea.WATER_TESTS}>
+              <WaterTestCharts aquarium={{ id: id!, name: aquarium.name, type: aquarium.type }} />
+            </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="equipment">
-            <AquariumEquipment aquariumId={id!} />
+            <SectionErrorBoundary fallbackTitle="Failed to load equipment" featureArea={FeatureArea.EQUIPMENT}>
+              <AquariumEquipment aquariumId={id!} />
+            </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="tasks">
             <div className="space-y-6">
-              <TaskSuggestions aquariumId={id!} />
-              <AquariumTasks aquariumId={id!} />
+              <SectionErrorBoundary fallbackTitle="Failed to load task suggestions" featureArea={FeatureArea.MAINTENANCE}>
+                <TaskSuggestions aquariumId={id!} />
+              </SectionErrorBoundary>
+              <SectionErrorBoundary fallbackTitle="Failed to load tasks" featureArea={FeatureArea.MAINTENANCE}>
+                <AquariumTasks aquariumId={id!} />
+              </SectionErrorBoundary>
             </div>
           </TabsContent>
         </Tabs>
