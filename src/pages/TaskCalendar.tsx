@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 import { queryKeys } from "@/lib/queryKeys";
+import { queryPresets } from "@/lib/queryConfig";
 
 interface Task {
   id: string;
@@ -64,6 +65,7 @@ export default function TaskCalendar() {
       if (error) throw error;
       return data as Task[];
     },
+    ...queryPresets.tasks,
   });
 
   // Realtime subscription
@@ -88,21 +90,32 @@ export default function TaskCalendar() {
     };
   }, [queryClient]);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
+  // Memoize calendar grid computation
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calendarStart = startOfWeek(monthStart);
+    const calendarEnd = endOfWeek(monthEnd);
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [currentMonth]);
 
-  const calendarDays = eachDayOfInterval({
-    start: calendarStart,
-    end: calendarEnd,
-  });
+  // Memoize tasks grouped by date for O(1) lookup
+  const tasksByDate = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    tasks?.forEach((task) => {
+      const dateKey = task.due_date;
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey)!.push(task);
+    });
+    return map;
+  }, [tasks]);
 
-  const getTasksForDay = (date: Date) => {
-    return tasks?.filter((task) =>
-      isSameDay(new Date(task.due_date), date)
-    ) || [];
-  };
+  const getTasksForDay = useCallback((date: Date) => {
+    const dateKey = format(date, "yyyy-MM-dd");
+    return tasksByDate.get(dateKey) || [];
+  }, [tasksByDate]);
 
   const handleDragStart = (task: Task) => {
     setDraggedTask(task);
