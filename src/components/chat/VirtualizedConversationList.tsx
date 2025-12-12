@@ -1,7 +1,17 @@
-import { useRef, memo, useCallback } from "react";
+import { useRef, memo, useCallback, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MessageSquare, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,16 +34,16 @@ const ConversationItem = memo(({
   conversation, 
   isActive, 
   onLoad, 
-  onDelete 
+  onRequestDelete 
 }: { 
   conversation: Conversation; 
   isActive: boolean; 
   onLoad: () => void; 
-  onDelete: (e: React.MouseEvent) => void;
+  onRequestDelete: () => void;
 }) => (
   <div
     className={cn(
-      "group relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors",
+      "relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors",
       isActive && "bg-accent"
     )}
     onClick={onLoad}
@@ -50,8 +60,11 @@ const ConversationItem = memo(({
         <Button
           variant="ghost"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 h-8 w-8"
-          onClick={onDelete}
+          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRequestDelete();
+          }}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -72,11 +85,13 @@ export const VirtualizedConversationList = memo(({
   onDeleteConversation 
 }: VirtualizedConversationListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
 
   const virtualizer = useVirtualizer({
     count: conversations.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 64, // Each conversation item is ~64px
+    estimateSize: () => 64,
     overscan: 5,
   });
 
@@ -84,9 +99,18 @@ export const VirtualizedConversationList = memo(({
     onLoadConversation(id);
   }, [onLoadConversation]);
 
-  const handleDelete = useCallback((id: string) => (e: React.MouseEvent) => {
-    onDeleteConversation(id, e);
-  }, [onDeleteConversation]);
+  const handleRequestDelete = useCallback((id: string) => () => {
+    setConversationToDelete(id);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback((e: React.MouseEvent) => {
+    if (conversationToDelete) {
+      onDeleteConversation(conversationToDelete, e);
+      setDeleteDialogOpen(false);
+      setConversationToDelete(null);
+    }
+  }, [conversationToDelete, onDeleteConversation]);
 
   if (conversations.length === 0) {
     return (
@@ -97,41 +121,63 @@ export const VirtualizedConversationList = memo(({
   }
 
   return (
-    <div 
-      ref={parentRef} 
-      className="h-full overflow-auto"
-    >
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
-        }}
+    <>
+      <div 
+        ref={parentRef} 
+        className="h-full overflow-auto"
       >
-        {virtualizer.getVirtualItems().map((virtualItem) => {
-          const conv = conversations[virtualItem.index];
-          return (
-            <div
-              key={virtualItem.key}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-            >
-              <ConversationItem
-                conversation={conv}
-                isActive={currentConversationId === conv.id}
-                onLoad={handleLoad(conv.id)}
-                onDelete={handleDelete(conv.id)}
-              />
-            </div>
-          );
-        })}
+        <div
+          style={{
+            height: `${virtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualItem) => {
+            const conv = conversations[virtualItem.index];
+            return (
+              <div
+                key={virtualItem.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}
+              >
+                <ConversationItem
+                  conversation={conv}
+                  isActive={currentConversationId === conv.id}
+                  onLoad={handleLoad(conv.id)}
+                  onRequestDelete={handleRequestDelete(conv.id)}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this conversation and all its messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 });
 
