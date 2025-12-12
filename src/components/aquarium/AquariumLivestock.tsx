@@ -73,7 +73,7 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
     enabled: !authLoading && !!user && !!aquariumId,
   });
 
-  // Delete mutation
+  // Delete mutation with optimistic updates
   const deleteMutation = useMutation({
     mutationFn: async ({ id, type }: { id: string; type: 'livestock' | 'plant' }) => {
       if (type === 'livestock') {
@@ -82,25 +82,47 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
         await deletePlant(id);
       }
     },
+    onMutate: async ({ id, type }) => {
+      // Cancel outgoing refetches
+      const queryKey = type === 'livestock' 
+        ? queryKeys.livestock.list(aquariumId) 
+        : queryKeys.plants.list(aquariumId);
+      await queryClient.cancelQueries({ queryKey });
+      
+      // Snapshot previous values
+      const previousData = queryClient.getQueryData(queryKey);
+      
+      // Optimistically remove from cache
+      queryClient.setQueryData(queryKey, (old: any[] | undefined) => 
+        old?.filter((item) => item.id !== id) ?? []
+      );
+      
+      return { previousData, queryKey };
+    },
     onSuccess: (_, { type }) => {
       toast({ 
         title: 'Success', 
         description: `${type === 'livestock' ? 'Livestock' : 'Plant'} removed successfully` 
       });
-      // Invalidate the appropriate query
-      if (type === 'livestock') {
-        queryClient.invalidateQueries({ queryKey: queryKeys.livestock.list(aquariumId) });
-      } else {
-        queryClient.invalidateQueries({ queryKey: queryKeys.plants.list(aquariumId) });
-      }
     },
-    onError: (error: any, { type }) => {
+    onError: (error: any, { type }, context) => {
+      // Rollback on error
+      if (context?.previousData && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previousData);
+      }
       console.error('Error deleting:', error);
       toast({
         title: 'Error',
         description: `Failed to remove ${type}`,
         variant: 'destructive',
       });
+    },
+    onSettled: (_, __, { type }) => {
+      // Always refetch to ensure consistency
+      const queryKey = type === 'livestock' 
+        ? queryKeys.livestock.list(aquariumId) 
+        : queryKeys.plants.list(aquariumId);
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 
