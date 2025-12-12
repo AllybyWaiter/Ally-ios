@@ -25,7 +25,10 @@ export const queryKeys = {
     parameters: (testId: string) => ['water-tests', 'parameters', testId] as const,
     templates: (aquariumType: string, userId?: string) => 
       ['all-templates', aquariumType, userId] as const,
+    customTemplates: (userId: string) => ['custom-templates', userId] as const,
     monthlyCount: (userId: string) => ['water-tests', 'monthly-count', userId] as const,
+    latest: (aquariumId: string) => ['water-tests', 'latest', aquariumId] as const,
+    charts: (aquariumId: string, dateRange: string) => ['water-tests', 'charts', aquariumId, dateRange] as const,
   },
 
   // Maintenance Tasks
@@ -34,7 +37,10 @@ export const queryKeys = {
     list: (aquariumId: string) => ['maintenance-tasks', 'list', aquariumId] as const,
     detail: (id: string) => ['maintenance-tasks', 'detail', id] as const,
     upcoming: (aquariumIds: string[]) => ['maintenance-tasks', 'upcoming', aquariumIds] as const,
+    upcomingForAquarium: (aquariumId: string) => ['maintenance-tasks', 'upcoming', aquariumId] as const,
     suggestions: (aquariumId: string) => ['maintenance-tasks', 'suggestions', aquariumId] as const,
+    calendar: (month: string) => ['maintenance-tasks', 'calendar', month] as const,
+    dashboardCount: ['maintenance-tasks', 'dashboard-count'] as const,
   },
 
   // Equipment
@@ -42,6 +48,7 @@ export const queryKeys = {
     all: ['equipment'] as const,
     list: (aquariumId: string) => ['equipment', 'list', aquariumId] as const,
     detail: (id: string) => ['equipment', 'detail', id] as const,
+    count: (aquariumId: string) => ['equipment', 'count', aquariumId] as const,
   },
 
   // Livestock

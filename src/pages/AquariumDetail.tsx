@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,8 @@ import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatVolume, UnitSystem } from "@/lib/unitConversions";
+import { queryKeys } from "@/lib/queryKeys";
+import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastructure/queries";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
@@ -44,29 +45,15 @@ export default function AquariumDetail() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: aquarium, isLoading, error, refetch } = useQuery({
-    queryKey: ["aquarium", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("aquariums")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.aquariums.detail(id!),
+    queryFn: () => fetchAquarium(id!),
     enabled: !authLoading && !!user && !!id,
     retry: 2,
   });
 
   const handleDeleteConfirm = async () => {
     try {
-      const { error } = await supabase
-        .from("aquariums")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      await deleteAquariumDAL(id!);
 
       toast({
         title: t('common.success'),

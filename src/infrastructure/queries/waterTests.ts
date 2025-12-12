@@ -5,6 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { format, subDays } from 'date-fns';
 
 export interface WaterTest {
   id: string;
@@ -49,6 +50,48 @@ export async function fetchWaterTests(aquariumId: string, limit?: number) {
   const { data, error } = await query;
   if (error) throw error;
   return data as WaterTestWithParameters[];
+}
+
+// Fetch the latest water test for an aquarium
+export async function fetchLatestWaterTest(aquariumId: string) {
+  const { data, error } = await supabase
+    .from('water_tests')
+    .select('*, test_parameters(*)')
+    .eq('aquarium_id', aquariumId)
+    .order('test_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as WaterTestWithParameters | null;
+}
+
+// Fetch water tests for chart display
+export async function fetchWaterTestsForChart(
+  aquariumId: string, 
+  dateRange: '7d' | '30d' | '90d' | '1y' | 'all'
+) {
+  let startDate: Date | null = null;
+  const now = new Date();
+
+  if (dateRange === '7d') startDate = subDays(now, 7);
+  else if (dateRange === '30d') startDate = subDays(now, 30);
+  else if (dateRange === '90d') startDate = subDays(now, 90);
+  else if (dateRange === '1y') startDate = subDays(now, 365);
+
+  let query = supabase
+    .from('water_tests')
+    .select('id, test_date, test_parameters(parameter_name, value, unit)')
+    .eq('aquarium_id', aquariumId)
+    .order('test_date', { ascending: true });
+
+  if (startDate) {
+    query = query.gte('test_date', startDate.toISOString());
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
 }
 
 // Fetch a single water test
