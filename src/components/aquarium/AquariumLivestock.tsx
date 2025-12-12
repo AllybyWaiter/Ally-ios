@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,28 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { LivestockDialog } from './LivestockDialog';
 import { PlantDialog } from './PlantDialog';
 import { formatDate } from '@/lib/formatters';
-
-interface Livestock {
-  id: string;
-  name: string;
-  species: string;
-  category: string;
-  quantity: number;
-  date_added: string;
-  health_status: string;
-  notes: string | null;
-}
-
-interface Plant {
-  id: string;
-  name: string;
-  species: string;
-  placement: string;
-  quantity: number;
-  date_added: string;
-  condition: string;
-  notes: string | null;
-}
+import { queryKeys } from '@/lib/queryKeys';
+import { fetchLivestock, deleteLivestock, type Livestock } from '@/infrastructure/queries/livestock';
+import { fetchPlants, deletePlant, type Plant } from '@/infrastructure/queries/plants';
 
 interface AquariumLivestockProps {
   aquariumId: string;
@@ -68,9 +49,8 @@ const conditionColors = {
 export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [livestock, setLivestock] = useState<Livestock[]>([]);
-  const [plants, setPlants] = useState<Plant[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
   const [livestockDialogOpen, setLivestockDialogOpen] = useState(false);
   const [plantDialogOpen, setPlantDialogOpen] = useState(false);
   const [editingLivestock, setEditingLivestock] = useState<Livestock | undefined>();
@@ -79,56 +59,50 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingType, setDeletingType] = useState<'livestock' | 'plant'>('livestock');
 
-  useEffect(() => {
-    // Wait for auth to be ready before loading data
-    if (authLoading || !user || !aquariumId) {
-      return;
-    }
-    loadLivestock();
-    loadPlants();
-  }, [aquariumId, authLoading, user]);
+  // Fetch livestock using useQuery
+  const { data: livestock = [], isLoading: livestockLoading } = useQuery({
+    queryKey: queryKeys.livestock.list(aquariumId),
+    queryFn: () => fetchLivestock(aquariumId),
+    enabled: !authLoading && !!user && !!aquariumId,
+  });
 
-  const loadLivestock = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('livestock')
-        .select('*')
-        .eq('aquarium_id', aquariumId)
-        .order('date_added', { ascending: false });
+  // Fetch plants using useQuery
+  const { data: plants = [], isLoading: plantsLoading } = useQuery({
+    queryKey: queryKeys.plants.list(aquariumId),
+    queryFn: () => fetchPlants(aquariumId),
+    enabled: !authLoading && !!user && !!aquariumId,
+  });
 
-      if (error) throw error;
-      setLivestock(data || []);
-    } catch (error: any) {
-      console.error('Error loading livestock:', error);
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id, type }: { id: string; type: 'livestock' | 'plant' }) => {
+      if (type === 'livestock') {
+        await deleteLivestock(id);
+      } else {
+        await deletePlant(id);
+      }
+    },
+    onSuccess: (_, { type }) => {
+      toast({ 
+        title: 'Success', 
+        description: `${type === 'livestock' ? 'Livestock' : 'Plant'} removed successfully` 
+      });
+      // Invalidate the appropriate query
+      if (type === 'livestock') {
+        queryClient.invalidateQueries({ queryKey: queryKeys.livestock.list(aquariumId) });
+      } else {
+        queryClient.invalidateQueries({ queryKey: queryKeys.plants.list(aquariumId) });
+      }
+    },
+    onError: (error: any, { type }) => {
+      console.error('Error deleting:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load livestock',
+        description: `Failed to remove ${type}`,
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadPlants = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('plants')
-        .select('*')
-        .eq('aquarium_id', aquariumId)
-        .order('date_added', { ascending: false });
-
-      if (error) throw error;
-      setPlants(data || []);
-    } catch (error: any) {
-      console.error('Error loading plants:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load plants',
-        variant: 'destructive',
-      });
-    }
-  };
+    },
+  });
 
   const handleEditLivestock = (item: Livestock) => {
     setTimeout(() => {
@@ -162,39 +136,17 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
     }, 0);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!deletingId) return;
-
-    try {
-      const table = deletingType === 'livestock' ? 'livestock' : 'plants';
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', deletingId);
-
-      if (error) throw error;
-
-      toast({ 
-        title: 'Success', 
-        description: `${deletingType === 'livestock' ? 'Livestock' : 'Plant'} removed successfully` 
-      });
-      
-      if (deletingType === 'livestock') {
-        await loadLivestock();
-      } else {
-        await loadPlants();
+    deleteMutation.mutate(
+      { id: deletingId, type: deletingType },
+      {
+        onSettled: () => {
+          setDeleteDialogOpen(false);
+          setDeletingId(null);
+        },
       }
-    } catch (error: any) {
-      console.error('Error deleting:', error);
-      toast({
-        title: 'Error',
-        description: `Failed to remove ${deletingType}`,
-        variant: 'destructive',
-      });
-    } finally {
-      setDeleteDialogOpen(false);
-      setDeletingId(null);
-    }
+    );
   };
 
   const groupedLivestock = livestock.reduce((acc, item) => {
@@ -214,7 +166,7 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   }, {} as Record<string, Plant[]>);
 
   // Show loading while auth is initializing or data is loading
-  if (authLoading || loading) {
+  if (authLoading || livestockLoading || plantsLoading) {
     return (
       <div className="flex items-center justify-center p-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -451,7 +403,6 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
         onOpenChange={setLivestockDialogOpen}
         aquariumId={aquariumId}
         livestock={editingLivestock}
-        onSuccess={loadLivestock}
       />
 
       <PlantDialog
@@ -459,21 +410,25 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
         onOpenChange={setPlantDialogOpen}
         aquariumId={aquariumId}
         plant={editingPlant}
-        onSuccess={loadPlants}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Livestock</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this livestock? This action cannot be undone.
+              This action cannot be undone. This will permanently delete this{' '}
+              {deletingType === 'livestock' ? 'livestock' : 'plant'} from your aquarium.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Remove
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
