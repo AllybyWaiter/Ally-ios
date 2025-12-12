@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity, Brain } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity, Brain, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
@@ -17,6 +17,7 @@ import { RoleManager } from '@/components/admin/RoleManager';
 import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import UserActivityLogs from '@/components/admin/UserActivityLogs';
 import AIAnalytics from '@/components/admin/AIAnalytics';
+import FeatureFlagManager from '@/components/admin/FeatureFlagManager';
 import { formatDate } from '@/lib/formatters';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
@@ -253,6 +254,12 @@ export default function Admin() {
                 AI Analytics
               </TabsTrigger>
             )}
+            {hasAnyRole(['admin']) && (
+              <TabsTrigger value="feature-flags">
+                <Flag className="mr-2 h-4 w-4" />
+                Feature Flags
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {hasAnyRole(['admin']) && (
@@ -431,6 +438,14 @@ export default function Admin() {
             <TabsContent value="ai-analytics" className="space-y-4">
               <SectionErrorBoundary fallbackTitle="Failed to load AI analytics" featureArea={FeatureArea.ADMIN}>
                 <AIAnalytics />
+              </SectionErrorBoundary>
+            </TabsContent>
+          )}
+
+          {hasAnyRole(['admin']) && (
+            <TabsContent value="feature-flags" className="space-y-4">
+              <SectionErrorBoundary fallbackTitle="Failed to load feature flags" featureArea={FeatureArea.ADMIN}>
+                <FeatureFlagManager />
               </SectionErrorBoundary>
             </TabsContent>
           )}

@@ -471,6 +471,77 @@ export type Database = {
           },
         ]
       }
+      feature_flag_overrides: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          flag_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled: boolean
+          flag_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          flag_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_overrides_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          key: string
+          name: string
+          rollout_percentage: number
+          target_roles: Database["public"]["Enums"]["app_role"][] | null
+          target_tiers: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          name: string
+          rollout_percentage?: number
+          target_roles?: Database["public"]["Enums"]["app_role"][] | null
+          target_tiers?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          name?: string
+          rollout_percentage?: number
+          target_roles?: Database["public"]["Enums"]["app_role"][] | null
+          target_tiers?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       livestock: {
         Row: {
           aquarium_id: string

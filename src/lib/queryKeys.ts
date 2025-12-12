@@ -100,6 +100,15 @@ export const queryKeys = {
     post: (slug: string) => ['blog', 'posts', slug] as const,
     categories: ['blog', 'categories'] as const,
   },
+
+  // Feature Flags
+  featureFlags: {
+    all: ['feature-flags'] as const,
+    detail: (id: string) => ['feature-flags', 'detail', id] as const,
+    byKey: (key: string) => ['feature-flags', 'key', key] as const,
+    overrides: (flagId: string) => ['feature-flags', 'overrides', flagId] as const,
+    userOverrides: (userId: string) => ['feature-flags', 'user-overrides', userId] as const,
+  },
 } as const;
 
 // Type helpers for query key extraction
