@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,8 @@ import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions
 import { formatRelativeTime } from "@/lib/formatters";
 import { EquipmentDialog } from "./EquipmentDialog";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
+import { queryKeys } from "@/lib/queryKeys";
+import { fetchLatestWaterTest, fetchEquipmentCount, fetchUpcomingTasks } from "@/infrastructure/queries";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "MMM d"): string => {
@@ -40,55 +41,22 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   const { data: latestTest, isLoading: testLoading } = useQuery({
-    queryKey: ["latest-test", aquariumId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("water_tests")
-        .select(`
-          *,
-          test_parameters(*)
-        `)
-        .eq("aquarium_id", aquariumId)
-        .order("test_date", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.waterTests.latest(aquariumId),
+    queryFn: () => fetchLatestWaterTest(aquariumId),
     enabled: !authLoading && !!user && !!aquariumId,
     retry: 2,
   });
 
   const { data: equipmentCount, isLoading: equipmentLoading } = useQuery({
-    queryKey: ["equipment-count", aquariumId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("equipment")
-        .select("*", { count: "exact", head: true })
-        .eq("aquarium_id", aquariumId);
-
-      if (error) throw error;
-      return count || 0;
-    },
+    queryKey: queryKeys.equipment.count(aquariumId),
+    queryFn: () => fetchEquipmentCount(aquariumId),
     enabled: !authLoading && !!user && !!aquariumId,
     retry: 2,
   });
 
   const { data: upcomingTasks, isLoading: tasksLoading } = useQuery({
-    queryKey: ["upcomingTasks", aquariumId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("maintenance_tasks")
-        .select("*")
-        .eq("aquarium_id", aquariumId)
-        .eq("status", "pending")
-        .order("due_date", { ascending: true })
-        .limit(5);
-
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId),
+    queryFn: () => fetchUpcomingTasks([aquariumId], 30),
     enabled: !authLoading && !!user && !!aquariumId,
     retry: 2,
   });

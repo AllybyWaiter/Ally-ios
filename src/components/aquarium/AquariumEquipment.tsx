@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,8 @@ import { Loader2, Plus, Wrench, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 import { EquipmentDialog } from "./EquipmentDialog";
+import { queryKeys } from "@/lib/queryKeys";
+import { fetchEquipment, deleteEquipment } from "@/infrastructure/queries";
 
 interface AquariumEquipmentProps {
   aquariumId: string;
@@ -35,28 +36,16 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
   const { t } = useTranslation();
 
   const { data: equipment, isLoading } = useQuery({
-    queryKey: ["equipment", aquariumId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("equipment")
-        .select("*")
-        .eq("aquarium_id", aquariumId)
-        .order("install_date", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.equipment.list(aquariumId),
+    queryFn: () => fetchEquipment(aquariumId),
     enabled: !authLoading && !!user && !!aquariumId,
     retry: 2,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("equipment").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: deleteEquipment,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment", aquariumId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.equipment.list(aquariumId) });
       toast({
         title: t('equipment.equipmentDeleted'),
         description: t('equipment.equipmentRemoved'),

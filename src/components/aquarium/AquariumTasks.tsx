@@ -22,6 +22,8 @@ import { format, isValid, isToday, isBefore, isAfter, startOfDay } from "date-fn
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { formatRelativeTime } from "@/lib/formatters";
+import { queryKeys } from "@/lib/queryKeys";
+import { fetchTasks } from "@/infrastructure/queries";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
@@ -70,17 +72,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   const { t } = useTranslation();
 
   const { data: tasks, isLoading } = useQuery({
-    queryKey: ["tasks", aquariumId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("maintenance_tasks")
-        .select("*")
-        .eq("aquarium_id", aquariumId)
-        .order("due_date", { ascending: true });
-
-      if (error) throw error;
-      return data;
-    },
+    queryKey: queryKeys.tasks.list(aquariumId),
+    queryFn: () => fetchTasks(aquariumId),
     enabled: (!effectiveAuthLoading && !!user) || (authFallbackReady && !!aquariumId),
     staleTime: 10000,
     retry: 2,
@@ -116,9 +109,9 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         description: t('tasks.taskDeleted'),
       });
 
-      queryClient.invalidateQueries({ queryKey: ["tasks", aquariumId] });
-      queryClient.invalidateQueries({ queryKey: ["upcomingTasks", aquariumId] });
-      queryClient.invalidateQueries({ queryKey: ["dashboardTaskCount"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.dashboardCount });
     } catch (error: any) {
       toast({
         title: "Error",
@@ -191,9 +184,9 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ["tasks", aquariumId] });
-      queryClient.invalidateQueries({ queryKey: ["upcomingTasks", aquariumId] });
-      queryClient.invalidateQueries({ queryKey: ["dashboardTaskCount"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.dashboardCount });
     } catch (error: any) {
       toast({
         title: "Error",

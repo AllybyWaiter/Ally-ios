@@ -8,13 +8,14 @@ import { WaterTestForm } from "@/components/water-tests/WaterTestForm";
 import { WaterTestHistory } from "@/components/water-tests/WaterTestHistory";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { Loader2 } from "lucide-react";
+import { queryKeys } from "@/lib/queryKeys";
 
 const WaterTests = () => {
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
   const { t } = useTranslation();
 
   const { data: aquariums, isLoading } = useQuery({
-    queryKey: ["aquariums"],
+    queryKey: queryKeys.aquariums.all,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
