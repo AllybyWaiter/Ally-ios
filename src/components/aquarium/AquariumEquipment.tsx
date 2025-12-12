@@ -44,8 +44,22 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteEquipment,
+    onMutate: async (equipmentId: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.equipment.list(aquariumId) });
+      
+      // Snapshot previous value
+      const previousEquipment = queryClient.getQueryData(queryKeys.equipment.list(aquariumId));
+      
+      // Optimistically remove from cache
+      queryClient.setQueryData(
+        queryKeys.equipment.list(aquariumId),
+        (old: any[] | undefined) => old?.filter((item) => item.id !== equipmentId) ?? []
+      );
+      
+      return { previousEquipment };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.equipment.list(aquariumId) });
       toast({
         title: t('equipment.equipmentDeleted'),
         description: t('equipment.equipmentRemoved'),
@@ -53,12 +67,20 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
       setDeleteDialogOpen(false);
       setEquipmentToDelete(null);
     },
-    onError: (error: any) => {
+    onError: (error: any, _, context) => {
+      // Rollback on error
+      if (context?.previousEquipment) {
+        queryClient.setQueryData(queryKeys.equipment.list(aquariumId), context.previousEquipment);
+      }
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch to ensure consistency
+      queryClient.invalidateQueries({ queryKey: queryKeys.equipment.list(aquariumId) });
     },
   });
 

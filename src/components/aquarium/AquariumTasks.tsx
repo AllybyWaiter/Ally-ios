@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { formatRelativeTime } from "@/lib/formatters";
 import { queryKeys } from "@/lib/queryKeys";
-import { fetchTasks } from "@/infrastructure/queries";
+import { fetchTasks, deleteTask, completeTask, type MaintenanceTask } from "@/infrastructure/queries";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
@@ -93,60 +93,57 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     }, 0);
   };
 
-  const handleDeleteTask = async () => {
-    if (!taskToDelete) return;
-
-    try {
-      const { error } = await supabase
-        .from("maintenance_tasks")
-        .delete()
-        .eq("id", taskToDelete);
-
-      if (error) throw error;
-
+  // Delete mutation with optimistic updates
+  const deleteMutation = useMutation({
+    mutationFn: deleteTask,
+    onMutate: async (taskId: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+      const previousTasks = queryClient.getQueryData<MaintenanceTask[]>(queryKeys.tasks.list(aquariumId));
+      
+      queryClient.setQueryData(
+        queryKeys.tasks.list(aquariumId),
+        (old: MaintenanceTask[] | undefined) => old?.filter((t) => t.id !== taskId) ?? []
+      );
+      
+      return { previousTasks };
+    },
+    onSuccess: () => {
       toast({
         title: t('common.success'),
         description: t('tasks.taskDeleted'),
       });
-
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.dashboardCount });
-    } catch (error: any) {
+    },
+    onError: (error: any, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(queryKeys.tasks.list(aquariumId), context.previousTasks);
+      }
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setTaskToDelete(null);
-      setDeleteConfirmOpen(false);
-    }
-  };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.dashboardCount });
+    },
+  });
 
-  const handleCompleteTask = async () => {
-    if (!taskToComplete) return;
-
-    try {
-      // Get the task details first
+  // Complete mutation with optimistic updates
+  const completeMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      // Get task details for potential recurring task creation
       const { data: task } = await supabase
         .from("maintenance_tasks")
         .select("*, equipment_id")
-        .eq("id", taskToComplete)
+        .eq("id", taskId)
         .single();
 
-      // Complete the current task
-      const { error } = await supabase
-        .from("maintenance_tasks")
-        .update({
-          status: "completed",
-          completed_date: new Date().toISOString(),
-        })
-        .eq("id", taskToComplete);
+      // Complete the task
+      await completeTask(taskId);
 
-      if (error) throw error;
-
-      // If task has equipment with maintenance interval, create next occurrence
+      // Handle recurring tasks
       if (task?.equipment_id) {
         const { data: equipment } = await supabase
           .from("equipment")
@@ -167,37 +164,70 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
             status: "pending",
           });
 
-          toast({
-            title: t('common.success'),
-            description: t('tasks.taskCompletedAndNext'),
-          });
-        } else {
-          toast({
-            title: t('common.success'),
-            description: t('tasks.taskMarkedComplete'),
-          });
+          return { hasNextTask: true };
         }
-      } else {
-        toast({
-          title: t('common.success'),
-          description: t('tasks.taskMarkedComplete'),
-        });
       }
-
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.dashboardCount });
-    } catch (error: any) {
+      return { hasNextTask: false };
+    },
+    onMutate: async (taskId: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+      const previousTasks = queryClient.getQueryData<MaintenanceTask[]>(queryKeys.tasks.list(aquariumId));
+      
+      // Optimistically mark as completed
+      queryClient.setQueryData(
+        queryKeys.tasks.list(aquariumId),
+        (old: MaintenanceTask[] | undefined) => 
+          old?.map((t) => 
+            t.id === taskId 
+              ? { ...t, status: 'completed', completed_date: new Date().toISOString() } 
+              : t
+          ) ?? []
+      );
+      
+      return { previousTasks };
+    },
+    onSuccess: (result) => {
+      toast({
+        title: t('common.success'),
+        description: result?.hasNextTask ? t('tasks.taskCompletedAndNext') : t('tasks.taskMarkedComplete'),
+      });
+    },
+    onError: (error: any, _, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(queryKeys.tasks.list(aquariumId), context.previousTasks);
+      }
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setTaskToComplete(null);
-      setCompleteConfirmOpen(false);
-    }
-  };
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.dashboardCount });
+    },
+  });
+
+  const handleDeleteTask = useCallback(() => {
+    if (!taskToDelete) return;
+    deleteMutation.mutate(taskToDelete, {
+      onSettled: () => {
+        setTaskToDelete(null);
+        setDeleteConfirmOpen(false);
+      },
+    });
+  }, [taskToDelete, deleteMutation]);
+
+  const handleCompleteTask = useCallback(() => {
+    if (!taskToComplete) return;
+    completeMutation.mutate(taskToComplete, {
+      onSettled: () => {
+        setTaskToComplete(null);
+        setCompleteConfirmOpen(false);
+      },
+    });
+  }, [taskToComplete, completeMutation]);
 
   // All hooks MUST be called before any early returns (React Rules of Hooks)
   const today = useMemo(() => startOfDay(new Date()), []);
