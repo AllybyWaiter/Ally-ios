@@ -92,6 +92,8 @@ export const en = {
         reef: "Reef",
         planted: "Planted",
         brackish: "Brackish",
+        pool: "Pool",
+        spa: "Spa / Hot Tub",
       },
       statuses: {
         active: "Active",
