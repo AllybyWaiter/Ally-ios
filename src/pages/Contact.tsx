@@ -90,22 +90,35 @@ const Contact = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.from("contacts").insert({
-        name: result.data.name,
-        email: result.data.email,
-        message: result.data.message,
-        inquiry_type: result.data.inquiry_type,
-        company: result.data.company || null,
-        subject: result.data.subject,
+      const { data, error } = await supabase.functions.invoke('submit-contact', {
+        body: {
+          name: result.data.name,
+          email: result.data.email,
+          message: result.data.message,
+          inquiry_type: result.data.inquiry_type,
+          company: result.data.company || null,
+          subject: result.data.subject,
+        },
       });
 
       if (error) throw error;
+      
+      // Check for API-level errors in response
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       setIsSuccess(true);
       toast.success("Message sent successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Contact form error:", error);
-      toast.error("Failed to send message. Please try again.");
+      
+      // Handle rate limit response
+      if (error?.message?.includes('Rate limit')) {
+        toast.error("Too many submissions. Please try again later.");
+      } else {
+        toast.error(error?.message || "Failed to send message. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
