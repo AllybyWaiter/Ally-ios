@@ -223,7 +223,7 @@ export default function MemoryManager() {
   const getWaterTypeBadge = (waterType: string | null) => {
     if (!waterType) return <Badge variant="secondary" className="text-xs">Universal</Badge>;
     const colors: Record<string, string> = {
-      freshwater: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      freshwater: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
       saltwater: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
       brackish: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
     };
