@@ -135,14 +135,35 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       // Get task details for potential recurring task creation
       const { data: task } = await supabase
         .from("maintenance_tasks")
-        .select("*, equipment_id")
+        .select("*")
         .eq("id", taskId)
         .single();
 
       // Complete the task
       await completeTask(taskId);
 
-      // Handle recurring tasks
+      // Handle task-level recurring tasks first
+      if (task?.is_recurring && task?.recurrence_days) {
+        const nextDueDate = new Date();
+        nextDueDate.setDate(nextDueDate.getDate() + task.recurrence_days);
+
+        await supabase.from("maintenance_tasks").insert({
+          aquarium_id: aquariumId,
+          equipment_id: task.equipment_id,
+          task_name: task.task_name,
+          task_type: task.task_type,
+          due_date: nextDueDate.toISOString().split("T")[0],
+          status: "pending",
+          notes: task.notes,
+          is_recurring: true,
+          recurrence_interval: task.recurrence_interval,
+          recurrence_days: task.recurrence_days,
+        });
+
+        return { hasNextTask: true, isRecurring: true };
+      }
+
+      // Fall back to equipment-based recurring tasks
       if (task?.equipment_id) {
         const { data: equipment } = await supabase
           .from("equipment")
@@ -163,10 +184,10 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
             status: "pending",
           });
 
-          return { hasNextTask: true };
+          return { hasNextTask: true, isRecurring: false };
         }
       }
-      return { hasNextTask: false };
+      return { hasNextTask: false, isRecurring: false };
     },
     onMutate: async (taskId: string) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks.list(aquariumId) });

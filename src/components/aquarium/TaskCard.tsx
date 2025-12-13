@@ -2,11 +2,12 @@ import React, { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, CheckCircle2 } from "lucide-react";
+import { Pencil, Trash2, CheckCircle2, Repeat } from "lucide-react";
 import { format, isValid } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "@/lib/formatters";
 import type { MaintenanceTask } from "@/infrastructure/queries";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
   if (!dateValue) return '';
@@ -26,6 +27,18 @@ interface PendingTaskCardProps {
   onComplete: (taskId: string) => void;
 }
 
+const getRecurrenceLabel = (interval?: string | null, days?: number | null): string => {
+  if (!interval) return '';
+  if (interval === 'custom' && days) return `Every ${days} days`;
+  const labels: Record<string, string> = {
+    daily: 'Daily',
+    weekly: 'Weekly',
+    biweekly: 'Every 2 weeks',
+    monthly: 'Monthly',
+  };
+  return labels[interval] || '';
+};
+
 export const PendingTaskCard = memo(function PendingTaskCard({
   task,
   onEdit,
@@ -42,6 +55,19 @@ export const PendingTaskCard = memo(function PendingTaskCard({
             <div className="flex items-center gap-2 mb-1">
               <h4 className="font-semibold">{task.task_name}</h4>
               <Badge variant="secondary">{task.task_type || ''}</Badge>
+              {task.is_recurring && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="gap-1">
+                      <Repeat className="w-3 h-3" />
+                      Recurring
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {getRecurrenceLabel(task.recurrence_interval, task.recurrence_days)}
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mb-2">
               {t('tasks.due')} {safeFormatDate(task.due_date, 'PP')}

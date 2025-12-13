@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Repeat } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -41,6 +42,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Switch } from "@/components/ui/switch";
 import { getTaskTypes } from "@/lib/waterBodyUtils";
 
 const formSchema = z.object({
@@ -51,6 +53,18 @@ const formSchema = z.object({
   }),
   equipment_id: z.string().optional(),
   notes: z.string().optional(),
+  is_recurring: z.boolean().default(false),
+  recurrence_interval: z.enum(['daily', 'weekly', 'biweekly', 'monthly', 'custom']).optional(),
+  recurrence_days: z.number().min(1).optional(),
+}).refine((data) => {
+  // If recurring with custom interval, recurrence_days is required
+  if (data.is_recurring && data.recurrence_interval === 'custom') {
+    return data.recurrence_days != null && data.recurrence_days > 0;
+  }
+  return true;
+}, {
+  message: "Custom interval requires number of days",
+  path: ["recurrence_days"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,6 +77,14 @@ interface MaintenanceTaskDialogProps {
   taskId?: string;
   mode?: "create" | "edit";
 }
+
+const RECURRENCE_OPTIONS = [
+  { value: 'daily', label: 'Daily', days: 1 },
+  { value: 'weekly', label: 'Weekly', days: 7 },
+  { value: 'biweekly', label: 'Every 2 Weeks', days: 14 },
+  { value: 'monthly', label: 'Monthly', days: 30 },
+  { value: 'custom', label: 'Custom...', days: null },
+];
 
 export const MaintenanceTaskDialog = ({
   open,
@@ -86,8 +108,14 @@ export const MaintenanceTaskDialog = ({
       due_date: new Date(),
       equipment_id: "",
       notes: "",
+      is_recurring: false,
+      recurrence_interval: undefined,
+      recurrence_days: undefined,
     },
   });
+
+  const isRecurring = form.watch("is_recurring");
+  const recurrenceInterval = form.watch("recurrence_interval");
 
   // Load equipment for the aquarium
   useEffect(() => {
@@ -154,6 +182,9 @@ export const MaintenanceTaskDialog = ({
             due_date: new Date(data.due_date),
             equipment_id: data.equipment_id || "",
             notes: data.notes || "",
+            is_recurring: data.is_recurring || false,
+            recurrence_interval: data.recurrence_interval as FormValues['recurrence_interval'] || undefined,
+            recurrence_days: data.recurrence_days || undefined,
           });
         }
       }
@@ -163,9 +194,24 @@ export const MaintenanceTaskDialog = ({
     }
   }, [mode, taskId, open, form]);
 
+  // Reset recurrence fields when recurring is toggled off
+  useEffect(() => {
+    if (!isRecurring) {
+      form.setValue("recurrence_interval", undefined);
+      form.setValue("recurrence_days", undefined);
+    }
+  }, [isRecurring, form]);
+
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
     try {
+      // Calculate recurrence_days for non-custom intervals
+      let recurrenceDays = values.recurrence_days;
+      if (values.is_recurring && values.recurrence_interval && values.recurrence_interval !== 'custom') {
+        const option = RECURRENCE_OPTIONS.find(o => o.value === values.recurrence_interval);
+        recurrenceDays = option?.days || undefined;
+      }
+
       const taskData = {
         aquarium_id: aquariumId,
         task_name: values.task_name,
@@ -173,6 +219,9 @@ export const MaintenanceTaskDialog = ({
         due_date: format(values.due_date, "yyyy-MM-dd"),
         equipment_id: values.equipment_id || null,
         notes: values.notes || null,
+        is_recurring: values.is_recurring,
+        recurrence_interval: values.is_recurring ? values.recurrence_interval : null,
+        recurrence_days: values.is_recurring ? recurrenceDays : null,
       };
 
       if (mode === "create") {
@@ -184,7 +233,9 @@ export const MaintenanceTaskDialog = ({
 
         toast({
           title: "Success",
-          description: "Task created successfully",
+          description: values.is_recurring 
+            ? `Recurring task created (${getRecurrenceLabel(values.recurrence_interval, recurrenceDays)})`
+            : "Task created successfully",
         });
       } else if (mode === "edit" && taskId) {
         const { error } = await supabase
@@ -214,6 +265,13 @@ export const MaintenanceTaskDialog = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const getRecurrenceLabel = (interval?: string, days?: number): string => {
+    if (!interval) return '';
+    if (interval === 'custom' && days) return `every ${days} days`;
+    const option = RECURRENCE_OPTIONS.find(o => o.value === interval);
+    return option?.label.toLowerCase() || '';
   };
 
   return (
@@ -310,6 +368,85 @@ export const MaintenanceTaskDialog = ({
                 </FormItem>
               )}
             />
+
+            {/* Recurring Task Section */}
+            <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+              <FormField
+                control={form.control}
+                name="is_recurring"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <div className="space-y-0.5">
+                      <FormLabel className="flex items-center gap-2">
+                        <Repeat className="w-4 h-4" />
+                        Repeat this task
+                      </FormLabel>
+                      <FormDescription>
+                        Automatically create next occurrence when completed
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {isRecurring && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="recurrence_interval"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Frequency</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select frequency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {RECURRENCE_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {recurrenceInterval === 'custom' && (
+                    <FormField
+                      control={form.control}
+                      name="recurrence_days"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repeat every (days)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={1}
+                              placeholder="e.g., 3"
+                              {...field}
+                              value={field.value ?? ''}
+                              onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </>
+              )}
+            </div>
 
             {equipment.length > 0 && (
               <FormField
