@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { Search, Sparkles, TestTube, Database, Shield, DollarSign, Settings, Calendar, Users, Rocket, HelpCircle, Zap } from "lucide-react";
+import { Search, Sparkles, TestTube, Database, Shield, DollarSign, Settings, Calendar, Users, Rocket, HelpCircle, Zap, Droplets } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
@@ -24,19 +24,19 @@ const FAQ = () => {
       questions: [
         {
           q: "What is Ally?",
-          a: "Ally is an AI-powered aquarium management platform that helps you maintain perfect water quality, track maintenance tasks, manage livestock and equipment, and receive personalized care recommendations. Whether you're a beginner or expert aquarist, Ally makes aquarium care effortless."
+          a: "Ally is an AI-powered aquatic space management platform that helps you maintain perfect water quality, track maintenance tasks, manage livestock and equipment, and receive personalized care recommendations. Whether you're managing aquariums, pools, spas, or ponds, Ally makes water care effortless for beginners and experts alike."
         },
         {
           q: "How do I create an account?",
-          a: "During our closed beta, you'll need to join the waitlist first. Once you receive beta access, you can sign up with your email address. After creating your account, you'll go through a quick onboarding process where you'll set your preferences (units, language, theme) and create your first aquarium profile."
+          a: "During our closed beta, you'll need to join the waitlist first. Once you receive beta access, you can sign up with your email address. After creating your account, you'll go through a quick onboarding process where you'll set your preferences (units, language, theme) and create your first aquatic space profile."
         },
         {
-          q: "What aquarium types are supported?",
-          a: "Ally supports freshwater, saltwater (marine), and brackish aquariums. We also support ponds. Each type has customized parameter ranges, livestock databases, and care recommendations tailored to that specific environment."
+          q: "What aquatic space types are supported?",
+          a: "Ally supports a wide variety of aquatic environments: freshwater aquariums, saltwater (marine) aquariums, brackish aquariums, ponds, pools (chlorine and saltwater), and spas/hot tubs (chlorine and bromine systems). Each type has customized parameter ranges, care recommendations, and AI analysis tailored to that specific environment."
         },
         {
-          q: "How do I set up my first aquarium?",
-          a: "After account creation, you'll be guided through setting up your first aquarium. You'll enter basic details like name, type (freshwater/saltwater/brackish), volume, and setup date. You can also add notes about your setup. Once created, you can start logging water tests, adding equipment, tracking livestock, and scheduling maintenance tasks."
+          q: "How do I set up my first aquatic space?",
+          a: "After account creation, you'll be guided through setting up your first aquatic space. You'll enter basic details like name, type (freshwater, saltwater, pool, spa, etc.), volume, and setup date. You can also add notes about your setup. Once created, you can start logging water tests, adding equipment, tracking livestock (for aquariums), and scheduling maintenance tasks."
         }
       ]
     },
@@ -47,11 +47,11 @@ const FAQ = () => {
       questions: [
         {
           q: "How accurate is the AI?",
-          a: "Ally's AI achieves an average 98% accuracy in interpreting water test results when readings are entered correctly or photos are clear and well lit. Our AI has been trained on thousands of test kit images and is constantly improving. The AI excels at recognizing patterns, suggesting maintenance schedules, and providing personalized care recommendations based on your aquarium's history."
+          a: "Ally's AI achieves an average 98% accuracy in interpreting water test results when readings are entered correctly or photos are clear and well lit. Our AI has been trained on thousands of test kit images from aquariums, pools, and spas and is constantly improving. The AI excels at recognizing patterns, suggesting maintenance schedules, and providing personalized care recommendations based on your aquatic space's history."
         },
         {
           q: "Which test kits work with photo analysis?",
-          a: "Ally supports both test strips and liquid reagent kits from standard brands including API Master Test Kits, Tetra EasyStrips, Seachem MultiTest, Salifert marine kits, and Aquaforest test kits. Most conventional color based test kits will work. Digital meters or kits with unconventional color gradients may not be compatible for photo analysis, but you can always manually enter values."
+          a: "Ally supports test strips and liquid reagent kits from standard brands. For aquariums: API Master Test Kits, Tetra EasyStrips, Seachem MultiTest, Salifert marine kits, and Aquaforest test kits. For pools and spas: Clorox, AquaChek, Taylor test strips and liquid kits. Ally can also read digital salt reader displays for saltwater pools. Most conventional color based test kits will work. Digital meters with unconventional displays may not be compatible for photo analysis, but you can always manually enter values."
         },
         {
           q: "What if my photo doesn't analyze correctly?",
@@ -59,7 +59,34 @@ const FAQ = () => {
         },
         {
           q: "How does Ally interpret water test results?",
-          a: "Ally compares your test results against ideal ranges for your specific aquarium type (freshwater, saltwater, brackish). The AI considers your livestock, tank age, and historical trends to provide context aware recommendations. If parameters are out of range, Ally provides specific dosing instructions, water change recommendations, and explains what's happening in your aquarium."
+          a: "Ally compares your test results against ideal ranges for your specific aquatic space type. For aquariums, it considers the nitrogen cycle and livestock needs. For pools, it focuses on sanitization and safety. For spas, it accounts for higher temperatures and different chemical balance requirements. The AI considers your equipment, tank age, and historical trends to provide context aware recommendations."
+        }
+      ]
+    },
+    {
+      id: "pool-spa-care",
+      title: "Pool & Spa Care",
+      icon: Droplets,
+      questions: [
+        {
+          q: "Does Ally work for pools and hot tubs?",
+          a: "Yes! Ally provides full support for pools (both chlorine and saltwater) and spas/hot tubs (both chlorine and bromine systems). You'll get specialized parameters, AI photo analysis for pool test strips, maintenance scheduling, and care recommendations tailored specifically for pool and spa environments."
+        },
+        {
+          q: "What pool-specific parameters does Ally track?",
+          a: "For pools, Ally tracks: Free Chlorine (ideal 1-3 ppm), Total Chlorine (to calculate combined chlorine/chloramines), pH (ideal 7.2-7.8), Total Alkalinity (ideal 80-120 ppm), Cyanuric Acid/Stabilizer (ideal 30-50 ppm), Calcium Hardness (ideal 200-400 ppm), Salt (2700-3400 ppm for saltwater pools), and Temperature. Each parameter has pool-specific ideal ranges and status indicators."
+        },
+        {
+          q: "What about spa/hot tub parameters?",
+          a: "For spas, Ally tracks: Bromine (3-5 ppm for bromine systems) or Free Chlorine (1-3 ppm for chlorine systems), pH (7.2-7.8), Total Alkalinity (80-120 ppm), Calcium Hardness (150-250 ppm), and Temperature (typically 100-104°F/38-40°C for hot tubs). The higher water temperature in spas affects chemical balance differently than pools."
+        },
+        {
+          q: "Can Ally detect Salt levels for saltwater pools?",
+          a: "Yes! Ally's AI photo analysis can detect salt levels from both digital salt reader displays and color-based salt test strips. The ideal salt range for saltwater chlorine generators is 2700-3400 ppm, with a target of 3000-3200 ppm. Ally will alert you if salt levels drop too low for effective chlorine generation or rise too high."
+        },
+        {
+          q: "How is pool testing different from aquarium testing?",
+          a: "The key differences are: (1) Focus on sanitization (chlorine/bromine) rather than the nitrogen cycle (ammonia/nitrite/nitrate). (2) Pools need Cyanuric Acid to protect chlorine from UV, while aquariums don't. (3) Pool pH and alkalinity targets differ slightly from aquariums. (4) Calcium hardness matters for pool surface protection. (5) Spas have higher temperature considerations affecting chemical balance. Ally automatically adjusts recommendations based on your aquatic space type."
         }
       ]
     },
@@ -70,11 +97,11 @@ const FAQ = () => {
       questions: [
         {
           q: "Which parameters does Ally track?",
-          a: "Ally tracks all essential water parameters including pH, ammonia (NH3/NH4+), nitrite (NO2), nitrate (NO3), general hardness (GH), carbonate hardness (KH/alkalinity), temperature, salinity/specific gravity (for marine tanks), phosphate (PO4), and dissolved oxygen. You can also create custom parameters for specialized testing like copper, iron, or silicate."
+          a: "For aquariums: pH, ammonia (NH3/NH4+), nitrite (NO2), nitrate (NO3), general hardness (GH), carbonate hardness (KH/alkalinity), temperature, salinity/specific gravity (for marine tanks), phosphate (PO4), and dissolved oxygen. For pools/spas: Free Chlorine, Total Chlorine, Bromine, pH, Total Alkalinity, Cyanuric Acid, Calcium Hardness, Salt, and Temperature. You can also create custom parameters for specialized testing."
         },
         {
           q: "How often should I test my water?",
-          a: "For new aquariums (first 6-8 weeks), test every 2-3 days to monitor the nitrogen cycle. For established tanks, weekly testing is recommended for freshwater and 2-3 times weekly for saltwater. Ally's smart scheduling will remind you based on your tank's age, livestock load, and historical stability. After significant changes (new fish, medication, etc.), test daily for a few days."
+          a: "For new aquariums (first 6-8 weeks), test every 2-3 days to monitor the nitrogen cycle. For established tanks, weekly testing is recommended for freshwater and 2-3 times weekly for saltwater. For pools, test 2-3 times weekly during swimming season, daily after heavy use or rain. For spas, test before each use. Ally's smart scheduling will remind you based on your specific needs."
         },
         {
           q: "Can I manually enter test results?",
@@ -82,30 +109,30 @@ const FAQ = () => {
         },
         {
           q: "What are ideal water parameters?",
-          a: "Ideal parameters vary by aquarium type. For freshwater: pH 6.5-7.5, ammonia and nitrite at 0 ppm, nitrate under 20 ppm. For saltwater: pH 8.1-8.4, ammonia and nitrite at 0 ppm, nitrate under 10 ppm, salinity 1.025 specific gravity. Ally provides specific ideal ranges for your aquarium type and adjusts recommendations based on your livestock's needs."
+          a: "For freshwater aquariums: pH 6.5-7.5, ammonia and nitrite at 0 ppm, nitrate under 20 ppm. For saltwater: pH 8.1-8.4, ammonia and nitrite at 0 ppm, nitrate under 10 ppm, salinity 1.025 specific gravity. For pools: Free Chlorine 1-3 ppm, pH 7.2-7.8, Alkalinity 80-120 ppm, Cyanuric Acid 30-50 ppm, Calcium Hardness 200-400 ppm, Salt 2700-3400 ppm (saltwater pools). Ally adjusts recommendations for your specific setup."
         },
         {
           q: "How does the trend analysis work?",
-          a: "Ally tracks all your test results over time and uses AI to identify patterns, trends, and potential issues before they become problems. You'll see visual charts showing parameter changes, receive alerts for concerning trends (like rising nitrates), and get predictive recommendations. The AI learns your tank's unique behavior to provide increasingly accurate forecasts."
+          a: "Ally tracks all your test results over time and uses AI to identify patterns, trends, and potential issues before they become problems. You'll see visual charts showing parameter changes, receive alerts for concerning trends (like rising nitrates or dropping chlorine), and get predictive recommendations. The AI learns your aquatic space's unique behavior to provide increasingly accurate forecasts."
         }
       ]
     },
     {
       id: "aquarium-management",
-      title: "Aquarium Management",
+      title: "Aquarium & Space Management",
       icon: Database,
       questions: [
         {
-          q: "How many aquariums can I manage?",
-          a: "The number of aquariums you can manage depends on your subscription plan. Free plan: 1 aquarium, Basic plan: 1 aquarium, Plus plan: 3 aquariums, Gold plan: 10 aquariums, Business plan: unlimited aquariums. Each aquarium has its own complete profile with water tests, equipment, livestock, plants, and maintenance schedules."
+          q: "How many aquatic spaces can I manage?",
+          a: "The number of aquatic spaces you can manage depends on your subscription plan. Free plan: 1 space, Basic plan: 1 space, Plus plan: 3 spaces, Gold plan: 10 spaces, Business plan: unlimited spaces. Each space has its own complete profile with water tests, equipment, livestock (for aquariums), and maintenance schedules."
         },
         {
           q: "Can I track livestock and plants?",
-          a: "Yes! Ally includes comprehensive livestock and plant management. For each fish, invertebrate, or coral, you can track species, quantity, date added, health status, and notes. For plants, track species, placement, condition, and care requirements. Ally uses this information to provide species-specific care recommendations and compatibility warnings."
+          a: "Yes! For aquariums, Ally includes comprehensive livestock and plant management. For each fish, invertebrate, or coral, you can track species, quantity, date added, health status, and notes. For plants, track species, placement, condition, and care requirements. Ally uses this information to provide species-specific care recommendations and compatibility warnings."
         },
         {
-          q: "What information is stored for each aquarium?",
-          a: "Each aquarium profile stores: basic info (name, type, volume, setup date, status), complete water test history with trends and charts, all equipment with maintenance schedules, livestock and plant inventories with health tracking, maintenance task calendar, and any custom notes or observations. Everything is securely stored and accessible from any device."
+          q: "What information is stored for each aquatic space?",
+          a: "Each profile stores: basic info (name, type, volume, setup date, status), complete water test history with trends and charts, all equipment with maintenance schedules, livestock and plant inventories (for aquariums), maintenance task calendar, and any custom notes or observations. Everything is securely stored and accessible from any device."
         }
       ]
     },
@@ -116,15 +143,15 @@ const FAQ = () => {
       questions: [
         {
           q: "What equipment can I track?",
-          a: "Track all your aquarium equipment including filters (canister, HOB, sponge), heaters, lights, protein skimmers, UV sterilizers, wavemakers/pumps, air pumps, CO2 systems, auto-feeders, and controllers. For each piece, record brand, model, install date, warranty info, and maintenance schedules. This helps you stay on top of filter media changes, bulb replacements, and equipment servicing."
+          a: "For aquariums: filters, heaters, lights, protein skimmers, UV sterilizers, wavemakers/pumps, air pumps, CO2 systems, auto-feeders, and controllers. For pools/spas: pumps, filters, heaters, salt chlorine generators, ozone systems, UV sanitizers, and automatic chemical feeders. For each piece, record brand, model, install date, warranty info, and maintenance schedules."
         },
         {
           q: "How do equipment maintenance reminders work?",
-          a: "When you add equipment, set maintenance intervals (e.g., filter media every 4 weeks, light bulbs every 12 months). Ally automatically creates recurring tasks and sends notifications when maintenance is due. You can mark tasks complete, snooze them, or adjust intervals. The system learns from your patterns and can suggest optimal maintenance schedules."
+          a: "When you add equipment, set maintenance intervals (e.g., filter cleaning every 4 weeks, salt cell inspection every 3 months). Ally automatically creates recurring tasks and sends notifications when maintenance is due. You can mark tasks complete, snooze them, or adjust intervals. The system learns from your patterns and can suggest optimal maintenance schedules."
         },
         {
           q: "Can I track filter media replacement schedules?",
-          a: "Absolutely! Create detailed maintenance schedules for different filter media types (mechanical, chemical, biological). Set different intervals for each media type - for example, replace filter floss weekly, carbon monthly, and bio-media annually. Ally tracks last change dates and sends timely reminders so you never miss a critical maintenance task."
+          a: "Absolutely! Create detailed maintenance schedules for different filter media types. For aquariums: mechanical, chemical, biological media. For pools: sand replacement, cartridge cleaning, DE recharging. Set different intervals for each type and Ally tracks last change dates and sends timely reminders."
         }
       ]
     },
@@ -135,19 +162,19 @@ const FAQ = () => {
       questions: [
         {
           q: "How does smart scheduling work?",
-          a: "Ally's AI learns your aquarium's patterns and your maintenance habits to create intelligent schedules. It considers factors like tank age, bioload, water test trends, and equipment maintenance to suggest optimal timing for water changes, cleaning, testing, and other tasks. The system adapts as your tank matures and your routine evolves."
+          a: "Ally's AI learns your aquatic space's patterns and your maintenance habits to create intelligent schedules. It considers factors like water test trends, equipment maintenance, weather (for pools), and usage patterns to suggest optimal timing for water changes, cleaning, testing, and other tasks."
         },
         {
           q: "Can Ally suggest maintenance tasks?",
-          a: "Yes! Ally proactively suggests maintenance tasks based on your water test results, equipment schedules, and aquarium conditions. For example, if nitrates are rising, it'll suggest a water change. If algae growth is detected in your notes, it'll recommend glass cleaning and light schedule adjustments. You can accept, modify, or dismiss suggestions."
+          a: "Yes! Ally proactively suggests maintenance tasks based on your water test results, equipment schedules, and conditions. For aquariums: water changes when nitrates rise, glass cleaning when needed. For pools: shock treatment after heavy use, filter backwash based on pressure. You can accept, modify, or dismiss suggestions."
         },
         {
           q: "How do I set up recurring tasks?",
-          a: "Create any task and set it to recur daily, weekly, bi-weekly, monthly, or custom intervals. Common recurring tasks include water changes, glass cleaning, filter maintenance, and testing. Once marked complete, the task automatically schedules the next occurrence. You can view all upcoming tasks in the calendar view or task list."
+          a: "Create any task and set it to recur daily, weekly, bi-weekly, monthly, or custom intervals. Common recurring tasks: water changes, glass/wall cleaning, filter maintenance, testing, chemical additions. Once marked complete, the task automatically schedules the next occurrence. View all upcoming tasks in the calendar view."
         },
         {
           q: "What notifications will I receive?",
-          a: "Ally sends timely notifications for upcoming and overdue maintenance tasks, critical water parameter alerts (high ammonia, pH swings), equipment maintenance reminders, and important updates. You can customize notification preferences in settings - choose email, in-app, or both, and set quiet hours. Critical safety alerts always notify immediately."
+          a: "Ally sends notifications for upcoming and overdue maintenance tasks, critical water parameter alerts (high ammonia, low chlorine, pH swings), equipment maintenance reminders, and important updates. You can customize preferences in settings - choose email, in-app, or both, and set quiet hours. Critical safety alerts always notify immediately."
         }
       ]
     },
@@ -158,11 +185,11 @@ const FAQ = () => {
       questions: [
         {
           q: "What's included in the free plan?",
-          a: "The Free Plan includes 1 aquarium, up to 5 water tests per month, basic AI recommendations, simple maintenance reminders, and access to the Ally AI chat assistant. It's perfect for trying Ally or managing a single, stable aquarium. Upgrade anytime to unlock unlimited tests, multiple tanks, and advanced features."
+          a: "The Free Plan includes 1 aquatic space, up to 5 water tests per month, basic AI recommendations, simple maintenance reminders, and access to the Ally AI chat assistant. It's perfect for trying Ally or managing a single, stable aquatic space. Upgrade anytime to unlock unlimited tests, multiple spaces, and advanced features."
         },
         {
           q: "What are the subscription tiers?",
-          a: "Basic ($9.99/month): 1 aquarium, 10 tests/month, AI recommendations, basic scheduling. Plus ($14.99/month): 3 aquariums, unlimited tests, smart scheduling, equipment tracking, custom notifications. Gold ($19.99/month): 10 aquariums, multi-tank management, AI habit learning, connected devices (coming soon), data export. Business (custom pricing): Unlimited tanks, team dashboards, multi-location support, API access, dedicated support."
+          a: "Basic ($9.99/month): 1 space, 10 tests/month, AI recommendations, basic scheduling. Plus ($14.99/month): 3 spaces, unlimited tests, smart scheduling, equipment tracking, custom notifications. Gold ($19.99/month): 10 spaces, multi-space management, AI habit learning, connected devices (coming soon), data export. Business (custom pricing): Unlimited spaces, team dashboards, multi-location support, API access, dedicated support."
         },
         {
           q: "Is there a free trial?",
@@ -189,15 +216,15 @@ const FAQ = () => {
         },
         {
           q: "Can I export my data?",
-          a: "Yes! Gold and Business plan users can export all aquarium data including test history, equipment records, livestock info, and maintenance logs in PDF or CSV formats. Free and Plus plan users can view and screenshot their data. Exports are useful for sharing with aquarium professionals, backing up records, or if you decide to stop using Ally."
+          a: "Yes! Gold and Business plan users can export all data including test history, equipment records, livestock info, and maintenance logs in PDF or CSV formats. Free and Plus plan users can view and screenshot their data. Exports are useful for sharing with professionals, backing up records, or if you decide to stop using Ally."
         },
         {
           q: "How do I delete my account?",
-          a: "You can delete your account anytime from Settings > Account > Delete Account. This permanently removes all your data including aquariums, tests, photos, and settings within 30 days. Before deletion, we recommend exporting your data (Gold/Business plans). Account deletion cannot be undone. If you're having issues, contact support first - we're here to help!"
+          a: "You can delete your account anytime from Settings > Account > Delete Account. This permanently removes all your data including aquatic spaces, tests, photos, and settings within 30 days. Before deletion, we recommend exporting your data (Gold/Business plans). Account deletion cannot be undone. If you're having issues, contact support first - we're here to help!"
         },
         {
           q: "Is two-factor authentication available?",
-          a: "Yes! Enable two-factor authentication (2FA) in Settings > Security for an extra layer of protection. We support authenticator apps (Google Authenticator, Authy) for 2FA. We strongly recommend enabling 2FA, especially if you manage multiple high-value aquariums or work in a business environment."
+          a: "Yes! Enable two-factor authentication (2FA) in Settings > Security for an extra layer of protection. We support authenticator apps (Google Authenticator, Authy) for 2FA. We strongly recommend enabling 2FA, especially if you manage multiple high-value aquatic spaces or work in a business environment."
         }
       ]
     },
@@ -208,7 +235,7 @@ const FAQ = () => {
       questions: [
         {
           q: "What data does Ally collect?",
-          a: "Ally collects only what's necessary: your email for account management, aquarium details (name, type, volume), water test results and photos, equipment and livestock information, and maintenance task data. We also collect anonymous usage analytics to improve the app. We never access your camera or location without explicit permission for specific features."
+          a: "Ally collects only what's necessary: your email for account management, aquatic space details (name, type, volume), water test results and photos, equipment and livestock information, and maintenance task data. We also collect anonymous usage analytics to improve the app. We never access your camera or location without explicit permission for specific features."
         },
         {
           q: "Do you share or sell my data?",
@@ -262,7 +289,7 @@ const FAQ = () => {
         },
         {
           q: "How do I get early access?",
-          a: "Join the waitlist for a chance at early beta access! Beta invitations are sent randomly to waitlist members. Want to increase your chances? Share Ally with friends in the aquarium community - we love enthusiastic aquarists who spread the word. Aquarium shop owners, breeders, and influencers can contact us directly for partnership opportunities and guaranteed access."
+          a: "Join the waitlist for a chance at early beta access! Beta invitations are sent randomly to waitlist members. Want to increase your chances? Share Ally with friends in the aquatic community - we love enthusiastic water hobbyists who spread the word. Pool service professionals, aquarium shop owners, and influencers can contact us directly for partnership opportunities and guaranteed access."
         }
       ]
     },
@@ -273,11 +300,11 @@ const FAQ = () => {
       questions: [
         {
           q: "What features are coming?",
-          a: "We're working on exciting features for 2025 and beyond: Native mobile apps (iOS/Android), connected device integration (smart monitors, auto-dosers), livestock-specific care guides, breeding tracking and fry management, aquarium marketplace integration, social features (share tanks, connect with other aquarists), aquascaping planning tools, expense tracking, and multi-user family accounts. Beta users get early access!"
+          a: "We're working on exciting features for 2025 and beyond: Native mobile apps (iOS/Android), connected device integration (smart monitors, auto-dosers, pool controllers), livestock-specific care guides, pool/spa automation integrations, breeding tracking and fry management, aquarium marketplace integration, social features (share tanks/pools, connect with others), aquascaping planning tools, expense tracking, and multi-user family accounts. Beta users get early access!"
         },
         {
           q: "Will there be device integrations?",
-          a: "Yes! We're partnering with leading aquarium device manufacturers to integrate smart monitors, controllers, and auto-dosers. Imagine Ally automatically importing test readings from your WiFi monitor, adjusting equipment schedules based on AI recommendations, or triggering water changes when needed. Connected device integration launches late 2025 for Gold and Business plans."
+          a: "Yes! We're partnering with leading aquarium and pool device manufacturers to integrate smart monitors, controllers, and auto-dosers. Imagine Ally automatically importing test readings from your WiFi monitor, adjusting equipment schedules based on AI recommendations, or triggering water changes/chemical additions when needed. Connected device integration launches late 2025 for Gold and Business plans."
         },
         {
           q: "Can I request features?",
@@ -311,7 +338,7 @@ const FAQ = () => {
               Frequently Asked Questions
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Everything you need to know about Ally - from AI features to pricing, security, and future plans
+              Everything you need to know about Ally - from aquariums to pools and spas, AI features, pricing, and more
             </p>
 
             {/* Search Bar */}
