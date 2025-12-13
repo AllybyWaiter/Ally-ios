@@ -295,7 +295,7 @@ export default function FeatureFlagManager() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-primary">
               {flags.filter(f => 
                 (f.target_tiers?.length ?? 0) > 0 || 
                 (f.target_roles?.length ?? 0) > 0 ||
