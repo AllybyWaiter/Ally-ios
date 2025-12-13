@@ -26,7 +26,7 @@ interface Task {
 }
 
 const TASK_TYPE_COLORS: Record<string, string> = {
-  water_change: "bg-blue-500",
+  water_change: "bg-primary",
   filter_maintenance: "bg-purple-500",
   equipment_maintenance: "bg-orange-500",
   testing: "bg-green-500",
