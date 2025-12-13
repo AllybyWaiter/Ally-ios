@@ -138,6 +138,7 @@ export const getParameterTemplates = (aquariumType: string): ParameterTemplate[]
           { name: "Alkalinity", unit: "ppm", range: { min: 80, max: 120 } },
           { name: "Calcium Hardness", unit: "ppm", range: { min: 200, max: 400 } },
           { name: "Cyanuric Acid", unit: "ppm", range: { min: 30, max: 50 } },
+          { name: "Salt", unit: "ppm", range: { min: 2700, max: 3400, target: { min: 3000, max: 3200 } } },
           { name: "Temperature", unit: "°F", range: { min: 78, max: 84 } },
         ],
       },
