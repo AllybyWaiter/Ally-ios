@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -7,6 +7,7 @@ import {
   deleteAquarium as deleteAquariumApi,
   type Aquarium 
 } from '@/infrastructure/queries/aquariums';
+import { isPoolType } from '@/lib/waterBodyUtils';
 
 interface DashboardAquarium extends Aquarium {
   volume_gallons: number;
@@ -89,11 +90,23 @@ export function useDashboardData() {
   const totalVolume = aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0);
   const activeCount = aquariums.filter(a => a.status === 'active').length;
 
+  // Separate aquariums from pools/spas
+  const aquariumsOnly = useMemo(() => aquariums.filter(a => !isPoolType(a.type)), [aquariums]);
+  const poolsOnly = useMemo(() => aquariums.filter(a => isPoolType(a.type)), [aquariums]);
+  const hasOnlyAquariums = aquariumsOnly.length > 0 && poolsOnly.length === 0;
+  const hasOnlyPools = poolsOnly.length > 0 && aquariumsOnly.length === 0;
+  const hasMixed = aquariumsOnly.length > 0 && poolsOnly.length > 0;
+
   return {
     loading,
     setLoading,
     dataFetched,
     aquariums,
+    aquariumsOnly,
+    poolsOnly,
+    hasOnlyAquariums,
+    hasOnlyPools,
+    hasMixed,
     upcomingTaskCount,
     totalVolume,
     activeCount,
