@@ -14,6 +14,11 @@ export default defineConfig({
     typecheck: {
       tsconfig: './tsconfig.app.json',
     },
+    env: {
+      VITE_SUPABASE_URL: 'https://test-project.supabase.co',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
+      VITE_SUPABASE_PROJECT_ID: 'test-project',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
