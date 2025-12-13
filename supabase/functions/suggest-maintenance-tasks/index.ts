@@ -42,18 +42,63 @@ const DEFAULT_POOL_SUGGESTIONS = [
     reasoning: "Pool chemistry should be tested 2-3 times per week"
   },
   {
-    title: "Empty Skimmer Baskets",
-    description: "Remove debris from skimmer and pump baskets",
-    priority: "medium",
-    category: "skimmer_basket",
-    reasoning: "Keeps water flowing properly through filter system"
-  },
-  {
-    title: "Shock Treatment",
-    description: "Add pool shock to oxidize contaminants and boost chlorine levels",
+    title: "Weekly Shock Treatment",
+    description: "Add pool shock to oxidize contaminants and boost chlorine levels. Use 1 lb per 10,000 gallons.",
     priority: "medium",
     category: "shock_treatment",
     reasoning: "Weekly shock treatment prevents algae and bacteria buildup"
+  },
+  {
+    title: "Backwash Filter",
+    description: "Backwash the filter when pressure gauge reads 8-10 PSI above clean baseline.",
+    priority: "medium",
+    category: "backwash",
+    reasoning: "Regular backwashing maintains filter efficiency and water clarity"
+  },
+  {
+    title: "Clean Pool Cover",
+    description: "Remove debris, rinse with fresh water, and check for damage or wear.",
+    priority: "low",
+    category: "cover_cleaning",
+    reasoning: "Clean covers last longer and prevent debris from entering the pool"
+  },
+  {
+    title: "Empty Skimmer Baskets",
+    description: "Remove debris from skimmer and pump baskets to maintain proper flow.",
+    priority: "medium",
+    category: "skimmer_basket",
+    reasoning: "Keeps water flowing properly through filter system"
+  }
+];
+
+const DEFAULT_SPA_SUGGESTIONS = [
+  {
+    title: "Test Sanitizer Levels",
+    description: "Check chlorine or bromine levels before each use. Target: Chlorine 1-3 ppm, Bromine 3-5 ppm.",
+    priority: "high",
+    category: "testing",
+    reasoning: "Hot water requires more frequent sanitizer monitoring"
+  },
+  {
+    title: "Shock Treatment",
+    description: "Apply spa shock after heavy use or weekly. Hot water accelerates chemical breakdown.",
+    priority: "medium",
+    category: "shock_treatment",
+    reasoning: "Spas need more frequent shocking due to higher bather load relative to volume"
+  },
+  {
+    title: "Clean Spa Cover",
+    description: "Wipe down cover with mild cleaner, condition vinyl, and check for waterlogging or damage.",
+    priority: "medium",
+    category: "cover_cleaning",
+    reasoning: "Spa covers trap heat and need regular maintenance to stay effective"
+  },
+  {
+    title: "Drain and Refill",
+    description: "Drain spa completely and refill with fresh water. Clean shell while empty.",
+    priority: "low",
+    category: "drain_refresh",
+    reasoning: "Spas should be drained every 3-4 months to reset water chemistry"
   }
 ];
 
@@ -177,30 +222,46 @@ serve(async (req) => {
     });
 
     const isPoolOrSpa = ['pool', 'spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
+    const isSpa = ['spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
 
-    const systemPrompt = isPoolOrSpa ? `You are an expert pool and spa maintenance advisor. Analyze the provided pool/spa data and suggest 3-5 actionable maintenance tasks.
+    const systemPrompt = isPoolOrSpa ? `You are an expert ${isSpa ? 'spa/hot tub' : 'pool'} maintenance advisor. Analyze the provided data and suggest 3-5 actionable maintenance tasks.
 
 ANALYSIS PRIORITIES:
-1. Water chemistry balance - Look for concerning chlorine levels, pH drift, alkalinity issues
+1. Water chemistry balance - Look for concerning chlorine/bromine levels, pH drift, alkalinity issues
 2. Equipment maintenance schedules - Suggest maintenance based on intervals and last service dates
-3. Seasonal considerations - Winterization, spring opening, algae prevention
+3. ${isSpa ? 'Spa-specific needs - Hot water degrades chemicals faster, drain/refill cycles, cover maintenance' : 'Seasonal considerations - Winterization, spring opening, algae prevention'}
 4. Recent task history - Avoid duplicating recently completed tasks
 
 TASK CATEGORIES:
 - testing: Water testing (specify which parameters)
 - shock_treatment: Shock/oxidizer treatment
 - chemical_balancing: pH, alkalinity, calcium adjustment
-- filter_cleaning: Filter cleaning, backwash
+- filter_cleaning: Filter cleaning
+- backwash: Backwash filter (if applicable)
 - skimmer_basket: Empty skimmer and pump baskets
-- vacuuming: Pool vacuuming
-- brush_walls: Brush pool walls and floor
+- vacuuming: Vacuuming
+- brush_walls: Brush walls and floor
+- cover_cleaning: Clean and maintain cover
+- salt_cell_cleaning: Clean salt chlorine generator cell
+- algae_treatment: Algae prevention or treatment
+- drain_refresh: Drain and refill water (especially for spas every 3-4 months)
 - equipment_maintenance: Pump, heater, SWG maintenance
 - winterize: Winterization tasks
 - opening: Spring opening tasks
 - other: Other maintenance
 
+${isSpa ? `SPA-SPECIFIC GUIDELINES:
+- Recommend drain/refill every 3-4 months based on usage
+- Bromine systems need 3-5 ppm, chlorine needs 1-3 ppm
+- Cover maintenance is critical for heat retention
+- Shock after every heavy use session` : `POOL-SPECIFIC GUIDELINES:
+- Weekly shock treatment prevents algae
+- Backwash when filter pressure rises 8-10 PSI above clean
+- Salt cells need cleaning every 3-6 months
+- Cover cleaning extends lifespan and prevents debris`}
+
 PRIORITY GUIDELINES:
-- high: Immediate action needed (low/high chlorine, pH out of range, equipment failure)
+- high: Immediate action needed (low/high sanitizer, pH out of range, equipment failure)
 - medium: Should be done within the week (routine maintenance, slight imbalances)
 - low: Nice to do when convenient (optimization, aesthetic improvements)
 
@@ -257,7 +318,7 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
               category: { 
                 type: "string", 
                 enum: isPoolOrSpa 
-                  ? ["testing", "shock_treatment", "chemical_balancing", "filter_cleaning", "skimmer_basket", "vacuuming", "brush_walls", "equipment_maintenance", "winterize", "opening", "other"]
+                  ? ["testing", "shock_treatment", "chemical_balancing", "filter_cleaning", "backwash", "skimmer_basket", "vacuuming", "brush_walls", "cover_cleaning", "salt_cell_cleaning", "algae_treatment", "drain_refresh", "equipment_maintenance", "winterize", "opening", "other"]
                   : ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"], 
                 description: "Task category" 
               },
@@ -322,7 +383,7 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
 
     if (suggestions.length === 0) {
       logger.warn('No AI suggestions generated, using defaults');
-      suggestions = isPoolOrSpa ? DEFAULT_POOL_SUGGESTIONS : DEFAULT_AQUARIUM_SUGGESTIONS;
+      suggestions = isSpa ? DEFAULT_SPA_SUGGESTIONS : (isPoolOrSpa ? DEFAULT_POOL_SUGGESTIONS : DEFAULT_AQUARIUM_SUGGESTIONS);
     }
 
     logger.info('Task suggestions generated', { count: suggestions.length });
