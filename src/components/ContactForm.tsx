@@ -68,22 +68,22 @@ export const ContactForm = () => {
       };
       const validatedData = contactSchema.parse(sanitizedData);
 
-      // Insert into contacts table
-      const { error: dbError } = await supabase
-        .from("contacts")
-        .insert([{
+      // Submit via edge function with server-side rate limiting
+      const { data, error: fnError } = await supabase.functions.invoke('submit-contact', {
+        body: {
           name: validatedData.name,
           email: validatedData.email,
           message: validatedData.message,
-          status: "new"
-        }]);
+        },
+      });
 
-      if (dbError) {
-        // Check for duplicate email
-        if (dbError.code === "23505") {
-          throw new Error("We already have your contact information");
-        }
+      if (fnError) {
         throw new Error("Failed to send message. Please try again.");
+      }
+      
+      // Check for API-level errors in response
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       // Success!
