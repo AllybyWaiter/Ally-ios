@@ -15,6 +15,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
 import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData } from '@/components/dashboard';
 import { TrendAlertsBanner } from '@/components/dashboard/TrendAlertsBanner';
+import { DashboardHeroBanner } from '@/components/dashboard/DashboardHeroBanner';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
 
@@ -226,16 +227,12 @@ export default function Dashboard() {
         isRefreshing={isRefreshing}
       />
       
-      <main className="container mx-auto px-4 py-8 pt-24 mt-safe">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">
-            {hasOnlyPools ? t('dashboard.myPools') : hasMixed ? t('dashboard.myWaterBodies') : t('dashboard.title')}
-          </h1>
-          <p className="text-muted-foreground">
-            {hasOnlyPools ? t('dashboard.poolsSubtitle') : hasMixed ? t('dashboard.waterBodiesSubtitle') : t('dashboard.subtitle')}
-          </p>
-        </div>
+      {/* Time-of-Day Hero Banner */}
+      <div className="pt-16 mt-safe">
+        <DashboardHeroBanner />
+      </div>
+      
+      <main className="container mx-auto px-4 py-6">
 
         {/* Trend Alerts Banner */}
         <SectionErrorBoundary fallbackTitle="Failed to load alerts" featureArea={FeatureArea.AQUARIUM}>
