@@ -39,9 +39,13 @@ export default function Dashboard() {
     setLoading,
     dataFetched,
     aquariums,
+    aquariumsOnly,
+    poolsOnly,
+    hasOnlyAquariums,
+    hasOnlyPools,
+    hasMixed,
     upcomingTaskCount,
     totalVolume,
-    activeCount,
     loadAquariums,
     deleteAquarium,
   } = useDashboardData();
@@ -224,15 +228,22 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 pt-24 mt-safe">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{t('dashboard.title')}</h1>
-          <p className="text-muted-foreground">{t('dashboard.subtitle')}</p>
+          <h1 className="text-4xl font-bold mb-2">
+            {hasOnlyPools ? t('dashboard.myPools') : hasMixed ? t('dashboard.myWaterBodies') : t('dashboard.title')}
+          </h1>
+          <p className="text-muted-foreground">
+            {hasOnlyPools ? t('dashboard.poolsSubtitle') : hasMixed ? t('dashboard.waterBodiesSubtitle') : t('dashboard.subtitle')}
+          </p>
         </div>
 
         {/* Stats Overview */}
         <SectionErrorBoundary fallbackTitle="Failed to load stats" featureArea={FeatureArea.AQUARIUM}>
           <DashboardStats
-            aquariumCount={aquariums.length}
-            activeCount={activeCount}
+            aquariumsOnly={aquariumsOnly}
+            poolsOnly={poolsOnly}
+            hasOnlyAquariums={hasOnlyAquariums}
+            hasOnlyPools={hasOnlyPools}
+            hasMixed={hasMixed}
             totalVolume={totalVolume}
             upcomingTaskCount={upcomingTaskCount}
             units={units}
