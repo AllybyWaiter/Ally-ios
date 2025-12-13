@@ -102,6 +102,53 @@ const DEFAULT_SPA_SUGGESTIONS = [
   }
 ];
 
+// Seasonal task suggestions for pools
+const WINTERIZATION_SUGGESTIONS = [
+  {
+    title: "Pool Winterization",
+    description: "Balance water chemistry, lower water level below skimmer, add winterizing chemicals, blow out lines, install winter plugs, and secure pool cover.",
+    priority: "high",
+    category: "winterize",
+    reasoning: "Fall is approaching. Proper winterization prevents freeze damage, protects equipment, and makes spring opening easier."
+  }
+];
+
+const SPRING_OPENING_SUGGESTIONS = [
+  {
+    title: "Spring Pool Opening",
+    description: "Remove and clean cover, reconnect equipment, refill to proper level, prime pump, shock pool with 2-3x normal dose, run filter 24+ hours, then balance chemistry.",
+    priority: "high",
+    category: "opening",
+    reasoning: "Spring is here. Opening your pool properly ensures safe swimming and prevents equipment issues."
+  }
+];
+
+// Helper to determine current season based on hemisphere
+function getSeasonalContext(hemisphere: string): { isFall: boolean; isSpring: boolean; seasonName: string } {
+  const month = new Date().getMonth() + 1; // 1-12
+  const isNorthern = hemisphere !== 'southern';
+  
+  // Fall: Sept-Nov (North) or Mar-May (South)
+  const isFall = isNorthern ? (month >= 9 && month <= 11) : (month >= 3 && month <= 5);
+  // Spring: Mar-May (North) or Sept-Nov (South)
+  const isSpring = isNorthern ? (month >= 3 && month <= 5) : (month >= 9 && month <= 11);
+  
+  let seasonName = 'unknown';
+  if (isNorthern) {
+    if (month >= 3 && month <= 5) seasonName = 'spring';
+    else if (month >= 6 && month <= 8) seasonName = 'summer';
+    else if (month >= 9 && month <= 11) seasonName = 'fall';
+    else seasonName = 'winter';
+  } else {
+    if (month >= 3 && month <= 5) seasonName = 'fall';
+    else if (month >= 6 && month <= 8) seasonName = 'winter';
+    else if (month >= 9 && month <= 11) seasonName = 'spring';
+    else seasonName = 'summer';
+  }
+  
+  return { isFall, isSpring, seasonName };
+}
+
 serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -181,6 +228,16 @@ serve(async (req) => {
       .order('completed_date', { ascending: false })
       .limit(10);
 
+    // Fetch user's hemisphere preference
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('hemisphere')
+      .eq('user_id', aquarium?.user_id)
+      .maybeSingle();
+
+    const hemisphere = profile?.hemisphere || 'northern';
+    const seasonalContext = getSeasonalContext(hemisphere);
+
     // Build context for AI
     const context = {
       aquarium: {
@@ -211,6 +268,8 @@ serve(async (req) => {
         type: t.task_type,
         completedDate: t.completed_date,
       })),
+      season: seasonalContext.seasonName,
+      hemisphere: hemisphere,
     };
 
     const today = new Date().toISOString().split('T')[0];
@@ -224,6 +283,20 @@ serve(async (req) => {
     const isPoolOrSpa = ['pool', 'spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
     const isSpa = ['spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
 
+    // Build seasonal instructions for pools
+    let seasonalInstructions = '';
+    if (isPoolOrSpa && !isSpa) {
+      if (seasonalContext.isFall) {
+        seasonalInstructions = `
+SEASONAL PRIORITY - FALL WINTERIZATION:
+It is currently ${seasonalContext.seasonName} in the ${hemisphere} hemisphere. If the pool has not been winterized yet this season, include a high-priority winterization task. Check if "winterize" or "winterization" appears in recent completed tasks before suggesting.`;
+      } else if (seasonalContext.isSpring) {
+        seasonalInstructions = `
+SEASONAL PRIORITY - SPRING OPENING:
+It is currently ${seasonalContext.seasonName} in the ${hemisphere} hemisphere. If the pool has not been opened yet this season, include a high-priority spring opening task. Check if "opening" or "spring" appears in recent completed tasks before suggesting.`;
+      }
+    }
+
     const systemPrompt = isPoolOrSpa ? `You are an expert ${isSpa ? 'spa/hot tub' : 'pool'} maintenance advisor. Analyze the provided data and suggest 3-5 actionable maintenance tasks.
 
 ANALYSIS PRIORITIES:
@@ -231,6 +304,7 @@ ANALYSIS PRIORITIES:
 2. Equipment maintenance schedules - Suggest maintenance based on intervals and last service dates
 3. ${isSpa ? 'Spa-specific needs - Hot water degrades chemicals faster, drain/refill cycles, cover maintenance' : 'Seasonal considerations - Winterization, spring opening, algae prevention'}
 4. Recent task history - Avoid duplicating recently completed tasks
+${seasonalInstructions}
 
 TASK CATEGORIES:
 - testing: Water testing (specify which parameters)
@@ -261,11 +335,11 @@ ${isSpa ? `SPA-SPECIFIC GUIDELINES:
 - Cover cleaning extends lifespan and prevents debris`}
 
 PRIORITY GUIDELINES:
-- high: Immediate action needed (low/high sanitizer, pH out of range, equipment failure)
+- high: Immediate action needed (low/high sanitizer, pH out of range, equipment failure, seasonal tasks)
 - medium: Should be done within the week (routine maintenance, slight imbalances)
 - low: Nice to do when convenient (optimization, aesthetic improvements)
 
-Today's date is ${today}. Use this for calculating days since last maintenance and setting recommended dates.`
+Today's date is ${today}. Current season: ${seasonalContext.seasonName} (${hemisphere} hemisphere). Use this for calculating days since last maintenance and setting recommended dates.`
     : `You are an expert aquarium maintenance advisor. Analyze the provided aquarium data and suggest 3-5 actionable maintenance tasks.
 
 ANALYSIS PRIORITIES:

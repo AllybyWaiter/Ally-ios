@@ -46,6 +46,7 @@ export const useAuth = () => {
     themePreference: profile.themePreference,
     languagePreference: profile.languagePreference,
     unitPreference: profile.unitPreference,
+    hemisphere: profile.hemisphere,
     units: profile.units,
     onboardingCompleted: profile.onboardingCompleted,
     refreshProfile: profile.refreshProfile,
