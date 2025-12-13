@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import DOMPurify from 'dompurify';
 
 interface BlogPreviewProps {
   title: string;
@@ -35,7 +36,7 @@ export default function BlogPreview({
           </div>
           <div
             className="prose prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: content || '<p>No content yet...</p>' }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '<p>No content yet...</p>') }}
           />
         </CardContent>
       </Card>
