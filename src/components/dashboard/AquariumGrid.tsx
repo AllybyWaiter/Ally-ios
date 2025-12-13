@@ -45,7 +45,7 @@ export function AquariumGrid({
 
   if (aquariums.length === 0) {
     return (
-      <Card className="p-12 text-center">
+      <Card className="glass-card p-12 text-center animate-fade-up opacity-0">
         <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
         <h3 className="text-lg font-semibold mb-2">{t('dashboard.noAquariumsYet')}</h3>
         <p className="text-muted-foreground mb-4">
@@ -61,7 +61,7 @@ export function AquariumGrid({
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 animate-fade-up opacity-0" style={{ animationDelay: '200ms' }}>
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
           {!limitsLoading && maxAquariums !== Infinity && (
@@ -98,12 +98,12 @@ export function AquariumGrid({
       </div>
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {aquariums.map((aquarium) => (
+        {aquariums.map((aquarium, index) => (
           <Card 
             key={aquarium.id} 
-            className="hover:shadow-lg transition-shadow"
+            className="glass-card animate-fade-up opacity-0"
+            style={{ animationDelay: `${(index + 3) * 100}ms` }}
             onMouseEnter={() => {
-              // Preload AquariumDetail page on hover
               import('@/pages/AquariumDetail').catch(() => {});
             }}
           >
