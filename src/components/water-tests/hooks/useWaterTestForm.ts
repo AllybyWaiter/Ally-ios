@@ -9,6 +9,7 @@ import { celsiusToFahrenheit } from '@/lib/unitConversions';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { queryKeys } from '@/lib/queryKeys';
+import { triggerTrendAnalysis } from '@/infrastructure/queries/waterTestAlerts';
 
 interface AiDetectedParam {
   value: number;
@@ -225,7 +226,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
 
       return { test, savedParams: parameterEntries.length };
     },
-    onSuccess: (result) => {
+    onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.templates(aquarium.type, user?.id) });
 
@@ -234,6 +235,15 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
       toast.success(t('waterTests.testLogged'), {
         description: `${result.savedParams} parameter(s) saved successfully`,
       });
+
+      // Trigger trend analysis in background (non-blocking)
+      if (user) {
+        triggerTrendAnalysis(aquarium.id, user.id);
+        // Invalidate alerts cache after a short delay to allow edge function to complete
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.alerts(user.id) });
+        }, 2000);
+      }
 
       // Reset form
       setParameters({});

@@ -14,6 +14,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
 import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData } from '@/components/dashboard';
+import { TrendAlertsBanner } from '@/components/dashboard/TrendAlertsBanner';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
 
@@ -235,6 +236,11 @@ export default function Dashboard() {
             {hasOnlyPools ? t('dashboard.poolsSubtitle') : hasMixed ? t('dashboard.waterBodiesSubtitle') : t('dashboard.subtitle')}
           </p>
         </div>
+
+        {/* Trend Alerts Banner */}
+        <SectionErrorBoundary fallbackTitle="Failed to load alerts" featureArea={FeatureArea.AQUARIUM}>
+          <TrendAlertsBanner />
+        </SectionErrorBoundary>
 
         {/* Stats Overview */}
         <SectionErrorBoundary fallbackTitle="Failed to load stats" featureArea={FeatureArea.AQUARIUM}>
