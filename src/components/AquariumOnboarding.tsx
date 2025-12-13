@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { Waves, ArrowRight, CheckCircle, Calendar } from 'lucide-react';
+import { Waves, ArrowRight, CheckCircle, Calendar, Droplets, TestTube2, Camera } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useTranslation } from 'react-i18next';
 
@@ -42,12 +42,22 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const totalSteps = 3;
+  const isPoolOrSpa = type === 'pool' || type === 'spa';
+  const totalSteps = isPoolOrSpa ? 4 : 3;
+
+  // Get the actual step for validation (accounting for pool/spa guide step)
+  const getLogicalStep = () => {
+    if (!isPoolOrSpa) return step;
+    // For pool/spa: step 3 is guide (no validation), step 4 is setup date
+    if (step === 4) return 3; // Map step 4 to original step 3 validation
+    return step;
+  };
 
   const validateStep = () => {
+    const logicalStep = getLogicalStep();
     setErrors({});
 
-    if (step === 1) {
+    if (logicalStep === 1) {
       if (!name.trim()) {
         setErrors({ name: t('aquariumOnboarding.step1.nameRequired') });
         return false;
@@ -58,7 +68,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
       }
     }
 
-    if (step === 2) {
+    if (logicalStep === 2) {
       if (!type) {
         setErrors({ type: t('aquariumOnboarding.step2.typeRequired') });
         return false;
@@ -74,7 +84,10 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
       }
     }
 
-    if (step === 3) {
+    // For pool/spa, step 3 is the guide (no validation needed)
+    // Step 4 (or step 3 for non-pool/spa) needs setup date validation
+    const setupDateStep = isPoolOrSpa ? 4 : 3;
+    if (step === setupDateStep) {
       if (!setupDate) {
         setErrors({ setup_date: t('aquariumOnboarding.step3.setupDateRequired') });
         return false;
@@ -167,7 +180,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2">
-            {[1, 2, 3].map((i) => (
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((i) => (
               <div key={i} className="flex items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
@@ -280,8 +293,72 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
             </div>
           )}
 
-          {/* Step 3: Setup Date & Notes */}
-          {step === 3 && (
+          {/* Step 3: Pool/Spa Quick Start Guide (only for pool/spa) */}
+          {step === 3 && isPoolOrSpa && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-5 duration-300">
+              <div className="text-center mb-6">
+                <Droplets className="w-16 h-16 mx-auto text-primary mb-4" />
+                <CardTitle className="text-2xl">{t('aquariumOnboarding.poolGuide.title')}</CardTitle>
+                <CardDescription>{t('aquariumOnboarding.poolGuide.description')}</CardDescription>
+              </div>
+
+              <div className="space-y-4">
+                {/* Key Parameters Card */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <TestTube2 className="w-4 h-4 text-primary" />
+                    {t('aquariumOnboarding.poolGuide.keyParameters')}
+                  </h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• <strong>{t('aquariumOnboarding.poolGuide.freeChlorine')}</strong></li>
+                    <li>• <strong>{t('aquariumOnboarding.poolGuide.ph')}</strong></li>
+                    <li>• <strong>{t('aquariumOnboarding.poolGuide.alkalinity')}</strong></li>
+                    <li>• <strong>{t('aquariumOnboarding.poolGuide.cyanuricAcid')}</strong></li>
+                    <li>• <strong>{t('aquariumOnboarding.poolGuide.calciumHardness')}</strong></li>
+                    {type === 'pool' && <li>• <strong>{t('aquariumOnboarding.poolGuide.salt')}</strong></li>}
+                    {type === 'spa' && <li>• <strong>{t('aquariumOnboarding.poolGuide.bromine')}</strong></li>}
+                  </ul>
+                </div>
+
+                {/* Testing Frequency Card */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    {t('aquariumOnboarding.poolGuide.testingFrequency')}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {type === 'spa' 
+                      ? t('aquariumOnboarding.poolGuide.spaTestingTip')
+                      : t('aquariumOnboarding.poolGuide.poolTestingTip')
+                    }
+                  </p>
+                </div>
+
+                {/* AI Photo Analysis Card */}
+                <div className="p-4 rounded-lg border bg-card">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-primary" />
+                    {t('aquariumOnboarding.poolGuide.photoAnalysis')}
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    {t('aquariumOnboarding.poolGuide.photoAnalysisTip')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
+                  {t('aquariumOnboarding.back')}
+                </Button>
+                <Button onClick={handleNext} disabled={isLoading}>
+                  {t('aquariumOnboarding.next')} <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3 (aquarium) or Step 4 (pool/spa): Setup Date & Notes */}
+          {((step === 3 && !isPoolOrSpa) || (step === 4 && isPoolOrSpa)) && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Calendar className="w-16 h-16 mx-auto text-primary mb-4" />
@@ -324,7 +401,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
+                <Button onClick={() => setStep(isPoolOrSpa ? 3 : 2)} variant="outline" disabled={isLoading}>
                   {t('aquariumOnboarding.back')}
                 </Button>
                 <Button onClick={handleSubmit} disabled={isLoading}>
