@@ -633,7 +633,10 @@ export type Database = {
           due_date: string
           equipment_id: string | null
           id: string
+          is_recurring: boolean | null
           notes: string | null
+          recurrence_days: number | null
+          recurrence_interval: string | null
           status: string | null
           task_name: string
           task_type: string
@@ -646,7 +649,10 @@ export type Database = {
           due_date: string
           equipment_id?: string | null
           id?: string
+          is_recurring?: boolean | null
           notes?: string | null
+          recurrence_days?: number | null
+          recurrence_interval?: string | null
           status?: string | null
           task_name: string
           task_type: string
@@ -659,7 +665,10 @@ export type Database = {
           due_date?: string
           equipment_id?: string | null
           id?: string
+          is_recurring?: boolean | null
           notes?: string | null
+          recurrence_days?: number | null
+          recurrence_interval?: string | null
           status?: string | null
           task_name?: string
           task_type?: string
