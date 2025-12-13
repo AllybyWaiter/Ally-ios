@@ -4,37 +4,25 @@ import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Send, 
   Loader2, 
   Sparkles, 
   Plus, 
   History, 
-  Copy, 
-  Check,
-  Trash2,
-  MessageSquare,
   Fish,
-  Edit2,
-  X,
-  RotateCw,
   ArrowLeft
 } from "lucide-react";
-import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { TypingIndicator } from "@/components/TypingIndicator";
-import { format } from "date-fns";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { VirtualizedConversationList } from "@/components/chat/VirtualizedConversationList";
+import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
+import { useStreamingResponse } from "@/hooks/useStreamingResponse";
+import { useConversationManager } from "@/hooks/useConversationManager";
 
 interface Message {
   role: "user" | "assistant";
@@ -45,18 +33,12 @@ interface Message {
   aquariumName?: string;
 }
 
-interface Aquarium {
-  id: string;
-  name: string;
-  type: string;
-}
-
-interface Conversation {
-  id: string;
-  title: string;
-  updated_at: string;
-  aquarium_id: string | null;
-}
+const quickQuestions = [
+  "What are ideal water parameters?",
+  "Help with cloudy water",
+  "Fish compatibility check",
+  "Equipment recommendations",
+];
 
 const AllyChat = () => {
   const navigate = useNavigate();
@@ -64,30 +46,18 @@ const AllyChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [aquariums, setAquariums] = useState<Aquarium[]>([]);
-  const [selectedAquarium, setSelectedAquarium] = useState<string>("general");
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState<string>("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Token batching refs for smoother streaming
-  const tokenBufferRef = useRef<string>("");
-  const lastUpdateRef = useRef<number>(0);
-  const UPDATE_INTERVAL = 30; // ms between state updates
+
+  const { isStreaming, streamResponse } = useStreamingResponse();
+  const conversationManager = useConversationManager(userId);
 
   useEffect(() => {
     initializeChat();
   }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -96,274 +66,83 @@ const AllyChat = () => {
       return;
     }
     setUserId(user.id);
-    await fetchAquariums();
-    await fetchConversations();
-    startNewConversation();
+    await conversationManager.fetchAquariums();
+    await conversationManager.fetchConversations();
+    setMessages(conversationManager.startNewConversation());
   };
 
-  const fetchAquariums = async () => {
-    const { data } = await supabase
-      .from('aquariums')
-      .select('id, name, type')
-      .order('created_at', { ascending: false });
-    
-    if (data) {
-      setAquariums(data);
-    }
-  };
+  const handleLoadConversation = useCallback(async (id: string) => {
+    const loadedMessages = await conversationManager.loadConversation(id);
+    setMessages(loadedMessages);
+  }, [conversationManager]);
 
-  const fetchConversations = async () => {
-    const { data } = await supabase
-      .from('chat_conversations')
-      .select('*')
-      .order('updated_at', { ascending: false });
-    
-    if (data) {
-      setConversations(data);
-    }
-  };
+  const handleStartNewConversation = useCallback(() => {
+    setMessages(conversationManager.startNewConversation());
+  }, [conversationManager]);
 
-  const loadConversation = async (conversationId: string) => {
-    const { data: messagesData } = await supabase
-      .from('chat_messages')
-      .select('*')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
-    
-    if (messagesData) {
-      setMessages(messagesData.map(msg => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-        timestamp: new Date(msg.created_at)
-      })));
-      setCurrentConversationId(conversationId);
-      
-      // Update selected aquarium
-      const conv = conversations.find(c => c.id === conversationId);
-      if (conv) {
-        setSelectedAquarium(conv.aquarium_id || "general");
-      }
-    }
-  };
-
-  const startNewConversation = async () => {
-    setMessages([{
-      role: "assistant",
-      content: "Hi! I'm Ally, your aquarium assistant. I can help you with water parameters, fish care, equipment, and everything aquarium-related. What would you like to know?",
-      timestamp: new Date()
-    }]);
-    setCurrentConversationId(null);
-  };
-
-  const deleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
+  const handleDeleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    const { error } = await supabase
-      .from('chat_conversations')
-      .delete()
-      .eq('id', conversationId);
-
-    if (!error) {
-      toast({
-        title: "Success",
-        description: "Conversation deleted",
-      });
-      await fetchConversations();
-      if (currentConversationId === conversationId) {
-        startNewConversation();
-      }
+    const shouldReset = await conversationManager.deleteConversation(conversationId);
+    if (shouldReset) {
+      setMessages(conversationManager.startNewConversation());
     }
-  }, [currentConversationId, toast]);
-
-  const handleLoadConversation = useCallback((id: string) => {
-    loadConversation(id);
-  }, []);
-
-  const saveConversation = async (userMessage: Message, assistantMessage: Message) => {
-    if (!userId) return;
-
-    let conversationId = currentConversationId;
-
-    // Create new conversation if needed
-    if (!conversationId) {
-      const title = userMessage.content.slice(0, 50) + (userMessage.content.length > 50 ? "..." : "");
-      const { data: newConv, error: convError } = await supabase
-        .from('chat_conversations')
-        .insert({
-          user_id: userId,
-          aquarium_id: selectedAquarium === "general" ? null : selectedAquarium,
-          title
-        })
-        .select()
-        .single();
-
-      if (convError || !newConv) return;
-      
-      conversationId = newConv.id;
-      setCurrentConversationId(conversationId);
-      await fetchConversations();
-    }
-
-    // Save messages
-    await supabase
-      .from('chat_messages')
-      .insert([
-        {
-          conversation_id: conversationId,
-          role: userMessage.role,
-          content: userMessage.content
-        },
-        {
-          conversation_id: conversationId,
-          role: assistantMessage.role,
-          content: assistantMessage.content
-        }
-      ]);
-
-    // Update conversation timestamp
-    await supabase
-      .from('chat_conversations')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', conversationId);
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, [conversationManager]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { 
-      role: "user", 
+    const userMessage: Message = {
+      role: "user",
       content: input,
       timestamp: new Date()
     };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
+    const currentAquariumName = conversationManager.getSelectedAquariumName();
+    const currentAquariumContext = conversationManager.selectedAquarium;
+
     try {
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to chat with Ally",
-          variant: "destructive",
-        });
-        navigate("/auth");
-        return;
-      }
-
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
-      
-      const response = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.data.session.access_token}`,
-        },
-        body: JSON.stringify({ 
-          messages: [...messages, userMessage],
-          aquariumId: selectedAquarium === "general" ? null : selectedAquarium
-        }),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to get response");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantMessage = "";
-      let textBuffer = "";
-      let streamDone = false;
-      const currentAquariumName = getSelectedAquariumName();
-      const currentAquariumContext = selectedAquarium;
-
-      // Reset token batching
-      tokenBufferRef.current = "";
-      lastUpdateRef.current = Date.now();
-      setIsStreaming(true);
-
-      setMessages((prev) => [...prev, { 
-        role: "assistant", 
-        content: "", 
-        timestamp: new Date(),
-        aquariumContext: currentAquariumContext,
-        aquariumName: currentAquariumName
-      }]);
-
-      // Batched update function
-      const flushTokenBuffer = (forceFlush = false) => {
-        const now = Date.now();
-        if (forceFlush || now - lastUpdateRef.current >= UPDATE_INTERVAL) {
-          if (tokenBufferRef.current) {
-            assistantMessage += tokenBufferRef.current;
-            tokenBufferRef.current = "";
-            lastUpdateRef.current = now;
-            setMessages((prev) => {
+      const fullContent = await streamResponse(
+        [...messages, userMessage],
+        conversationManager.getAquariumIdForApi(),
+        {
+          onStreamStart: () => {
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              aquariumContext: currentAquariumContext,
+              aquariumName: currentAquariumName
+            }]);
+          },
+          onToken: (content) => {
+            setMessages(prev => {
               const newMessages = [...prev];
               newMessages[newMessages.length - 1] = {
                 role: "assistant",
-                content: assistantMessage,
+                content,
                 timestamp: new Date(),
                 aquariumContext: currentAquariumContext,
                 aquariumName: currentAquariumName
               };
               return newMessages;
             });
+          },
+          onStreamEnd: async (content) => {
+            const finalAssistantMessage = {
+              role: "assistant" as const,
+              content,
+              timestamp: new Date()
+            };
+            await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+          },
+          onError: (error) => {
+            console.error("Stream error:", error);
           }
         }
-      };
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              tokenBufferRef.current += content;
-              flushTokenBuffer();
-            }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
-      }
-
-      // Final flush to ensure all tokens are rendered
-      flushTokenBuffer(true);
-      setIsStreaming(false);
-
-      // Save conversation
-      const finalAssistantMessage = {
-        role: "assistant" as const,
-        content: assistantMessage,
-        timestamp: new Date()
-      };
-      await saveConversation(userMessage, finalAssistantMessage);
-      
+      );
     } catch (error) {
       console.error("Chat error:", error);
       toast({
@@ -371,7 +150,7 @@ const AllyChat = () => {
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       });
-      setMessages((prev) => prev.slice(0, -1));
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -384,193 +163,89 @@ const AllyChat = () => {
     }
   };
 
-  const copyMessage = async (content: string, index: number) => {
+  const copyMessage = useCallback(async (content: string, index: number) => {
     await navigator.clipboard.writeText(content);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
-  };
+  }, []);
 
-  const startEditMessage = (index: number, content: string) => {
+  const startEditMessage = useCallback((index: number, content: string) => {
     setEditingIndex(index);
     setEditingContent(content);
-  };
+  }, []);
 
-  const cancelEdit = () => {
+  const cancelEdit = useCallback(() => {
     setEditingIndex(null);
     setEditingContent("");
-  };
+  }, []);
 
-  const saveEdit = async () => {
+  const saveEdit = useCallback(async () => {
     if (editingIndex === null || !editingContent.trim()) return;
 
     const updatedMessages = [...messages];
     const messageToEdit = updatedMessages[editingIndex];
-    
+
     if (!messageToEdit || messageToEdit.role !== "user") return;
 
     // Update local state
     messageToEdit.content = editingContent.trim();
-    
+
     // Remove all messages after the edited one
     const newMessages = updatedMessages.slice(0, editingIndex + 1);
     setMessages(newMessages);
-    
-    // Update in database if conversation exists
-    if (currentConversationId) {
-      // Delete messages after the edited one
-      const { data: existingMessages } = await supabase
-        .from('chat_messages')
-        .select('id, created_at')
-        .eq('conversation_id', currentConversationId)
-        .order('created_at', { ascending: true });
 
-      if (existingMessages && existingMessages.length > editingIndex) {
-        const messageToUpdate = existingMessages[editingIndex];
-        
-        // Update the edited message
-        await supabase
-          .from('chat_messages')
-          .update({ content: editingContent.trim() })
-          .eq('id', messageToUpdate.id);
-        
-        // Delete subsequent messages
-        const messagesToDelete = existingMessages.slice(editingIndex + 1);
-        if (messagesToDelete.length > 0) {
-          await supabase
-            .from('chat_messages')
-            .delete()
-            .in('id', messagesToDelete.map(m => m.id));
-        }
-      }
-    }
+    // Update in database
+    await conversationManager.updateMessageInDb(editingIndex, editingContent.trim());
 
     // Clear editing state
     setEditingIndex(null);
     setEditingContent("");
-    
+
     // Regenerate assistant response
     setIsLoading(true);
-    
+
+    const currentAquariumName = conversationManager.getSelectedAquariumName();
+    const currentAquariumContext = conversationManager.selectedAquarium;
+
     try {
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to continue",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
-      
-      const response = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.data.session.access_token}`,
-        },
-        body: JSON.stringify({ 
-          messages: newMessages,
-          aquariumId: selectedAquarium === "general" ? null : selectedAquarium
-        }),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error("Failed to get response");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantMessage = "";
-      let textBuffer = "";
-      let streamDone = false;
-
-      // Reset token batching
-      tokenBufferRef.current = "";
-      lastUpdateRef.current = Date.now();
-      setIsStreaming(true);
-
-      setMessages((prev) => [...prev, { role: "assistant", content: "", timestamp: new Date() }]);
-
-      // Batched update function
-      const flushTokenBuffer = (forceFlush = false) => {
-        const now = Date.now();
-        if (forceFlush || now - lastUpdateRef.current >= UPDATE_INTERVAL) {
-          if (tokenBufferRef.current) {
-            assistantMessage += tokenBufferRef.current;
-            tokenBufferRef.current = "";
-            lastUpdateRef.current = now;
-            setMessages((prev) => {
+      await streamResponse(
+        newMessages,
+        conversationManager.getAquariumIdForApi(),
+        {
+          onStreamStart: () => {
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: "",
+              timestamp: new Date()
+            }]);
+          },
+          onToken: (content) => {
+            setMessages(prev => {
               const updated = [...prev];
               updated[updated.length - 1] = {
                 ...updated[updated.length - 1],
-                content: assistantMessage
+                content
               };
               return updated;
             });
-          }
-        }
-      };
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const data = JSON.parse(jsonStr);
-            const content = data.choices[0]?.delta?.content || "";
-            if (content) {
-              tokenBufferRef.current += content;
-              flushTokenBuffer();
+          },
+          onStreamEnd: async (content) => {
+            if (conversationManager.currentConversationId) {
+              await conversationManager.saveAssistantMessage(content);
+            } else {
+              const lastUserMessage = newMessages[newMessages.length - 1];
+              await conversationManager.saveConversation(
+                lastUserMessage,
+                { role: "assistant", content, timestamp: new Date() }
+              );
+              await conversationManager.fetchConversations();
             }
-          } catch (e) {
-            console.error("Error parsing SSE:", e);
+          },
+          onError: (error) => {
+            console.error("Regeneration error:", error);
           }
         }
-      }
-
-      // Final flush
-      flushTokenBuffer(true);
-      setIsStreaming(false);
-
-      // Save to database
-      if (currentConversationId) {
-        await supabase
-          .from('chat_messages')
-          .insert({
-            conversation_id: currentConversationId,
-            role: "assistant",
-            content: assistantMessage
-          });
-
-        await supabase
-          .from('chat_conversations')
-          .update({ updated_at: new Date().toISOString() })
-          .eq('id', currentConversationId);
-      } else {
-        // Create new conversation and save messages
-        const lastUserMessage = newMessages[newMessages.length - 1];
-        await saveConversation(lastUserMessage, { role: "assistant", content: assistantMessage, timestamp: new Date() });
-        await fetchConversations();
-      }
+      );
     } catch (error) {
       console.error("Error regenerating response:", error);
       toast({
@@ -581,20 +256,16 @@ const AllyChat = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [editingIndex, editingContent, messages, conversationManager, streamResponse, toast]);
 
-  const quickQuestions = [
-    "What are ideal water parameters?",
-    "Help with cloudy water",
-    "Fish compatibility check",
-    "Equipment recommendations",
-  ];
-
-  const getSelectedAquariumName = () => {
-    if (selectedAquarium === "general") return "General Advice";
-    const aquarium = aquariums.find(aq => aq.id === selectedAquarium);
-    return aquarium ? `${aquarium.name}` : "General Advice";
-  };
+  const handleRegenerateResponse = useCallback((index: number) => {
+    // Find the user message and regenerate from there
+    if (messages[index]?.role === "user") {
+      startEditMessage(index, messages[index].content);
+      // Then immediately save to trigger regeneration
+      setTimeout(() => saveEdit(), 0);
+    }
+  }, [messages, startEditMessage, saveEdit]);
 
   return (
     <TooltipProvider>
@@ -602,480 +273,263 @@ const AllyChat = () => {
         <div className="hidden lg:block">
           <AppHeader />
         </div>
-      
-      <main className="flex-1 lg:container lg:mx-auto lg:px-4 lg:py-8 lg:pt-28 lg:max-w-7xl overflow-hidden">
-        <div className="flex gap-4 h-full lg:h-[calc(100vh-12rem)]">
-          {/* Desktop Sidebar */}
-          <Card className="hidden lg:block w-80 shadow-lg">
-            <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-primary/5">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    onClick={startNewConversation} 
-                    className="w-full gap-2"
-                    size="lg"
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Conversation
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Start a fresh conversation with Ally</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            
-            <div className="h-[calc(100%-8rem)] p-4">
-              <h3 className="text-sm font-semibold text-muted-foreground px-2 mb-3">
-                Recent Conversations
-              </h3>
-              <VirtualizedConversationList
-                conversations={conversations}
-                currentConversationId={currentConversationId}
-                onLoadConversation={handleLoadConversation}
-                onDeleteConversation={deleteConversation}
-              />
-            </div>
-          </Card>
 
-          {/* Main Chat Area */}
-          <Card className="flex-1 shadow-lg flex flex-col rounded-none lg:rounded-lg border-0 lg:border">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-3 lg:p-6 pt-safe border-b flex-shrink-0">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {/* Mobile Back Button */}
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
-                    onClick={() => navigate('/dashboard')}
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </Button>
-                  
-                  {/* Mobile History Button */}
-                  <Sheet>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <SheetTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
-                          >
-                            <History className="h-5 w-5" />
-                          </Button>
-                        </SheetTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>View chat history</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <SheetContent side="left" className="w-80">
-                      <SheetHeader>
-                        <SheetTitle>Chat History</SheetTitle>
-                      </SheetHeader>
-                      <div className="h-[calc(100vh-10rem)] mt-6">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              onClick={startNewConversation} 
-                              className="w-full gap-2 mb-4"
-                            >
-                              <Plus className="h-4 w-4" />
-                              New Conversation
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Start a fresh conversation with Ally</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <VirtualizedConversationList
-                          conversations={conversations}
-                          currentConversationId={currentConversationId}
-                          onLoadConversation={handleLoadConversation}
-                          onDeleteConversation={deleteConversation}
-                        />
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-
-                  <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h1 className="text-2xl font-bold text-primary-foreground truncate">Chat with Ally</h1>
-                    <p className="text-sm text-primary-foreground/80 truncate">Your AI Aquarium Expert</p>
-                  </div>
-                </div>
-                
-                {/* Aquarium Selector */}
-                {aquariums.length > 0 && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div>
-                        <Select value={selectedAquarium} onValueChange={setSelectedAquarium}>
-                          <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hidden sm:flex">
-                            <Fish className="h-4 w-4 mr-2" />
-                            <SelectValue placeholder="Select aquarium" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="general">
-                              <span className="flex items-center gap-2">
-                                <Sparkles className="h-4 w-4" />
-                                General Advice
-                              </span>
-                            </SelectItem>
-                            {aquariums.map((aq) => (
-                              <SelectItem key={aq.id} value={aq.id}>
-                                <span className="flex items-center gap-2">
-                                  <Fish className="h-4 w-4" />
-                                  {aq.name} ({aq.type})
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Get advice specific to your aquarium</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+        <main className="flex-1 lg:container lg:mx-auto lg:px-4 lg:py-8 lg:pt-28 lg:max-w-7xl overflow-hidden">
+          <div className="flex gap-4 h-full lg:h-[calc(100vh-12rem)]">
+            {/* Desktop Sidebar */}
+            <Card className="hidden lg:block w-80 shadow-lg">
+              <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-primary/5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleStartNewConversation}
+                      className="w-full gap-2"
+                      size="lg"
+                    >
+                      <Plus className="h-4 w-4" />
+                      New Conversation
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Start a fresh conversation with Ally</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
-              
-              {/* Mobile aquarium selector */}
-              {aquariums.length > 0 && (
-                <div className="mt-3 sm:hidden">
-                  <p className="text-xs text-primary-foreground/70 mb-1">Current context:</p>
-                  <Select value={selectedAquarium} onValueChange={setSelectedAquarium}>
-                    <SelectTrigger className="w-full bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20">
-                      <Fish className="h-4 w-4 mr-2" />
-                      <SelectValue placeholder="Select aquarium" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">
-                        <span className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          General Advice
-                        </span>
-                      </SelectItem>
-                      {aquariums.map((aq) => (
-                        <SelectItem key={aq.id} value={aq.id}>
-                          <span className="flex items-center gap-2">
-                            <Fish className="h-4 w-4" />
-                            {aq.name} ({aq.type})
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
 
-            {/* Messages */}
-            <ScrollArea className="flex-1 p-4 lg:p-6">
-              <div className="space-y-8 max-w-4xl mx-auto">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "flex gap-4 group animate-fade-in relative",
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    )}
-                  >
-                    {message.role === "assistant" && (
-                      <div className="h-6 w-6 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0 mt-1">
-                        <Sparkles className="h-3 w-3 text-primary" />
-                      </div>
-                    )}
-                    
-                    <div className={cn(
-                      "flex-1 space-y-1 min-w-0 overflow-hidden",
-                      message.role === "user" && "flex flex-col items-end"
-                    )}>
-                      <div className={cn(
-                        "relative group/message",
-                        message.role === "user" ? "text-right" : "text-left"
-                      )}>
-                        {message.role === "assistant" ? (
-                          <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
-                            {/* Show plain text with cursor while streaming, full markdown when done */}
-                            {isStreaming && index === messages.length - 1 ? (
-                              <p className="whitespace-pre-wrap leading-relaxed">
-                                {message.content}
-                                <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
-                              </p>
-                            ) : (
-                              <ReactMarkdown
-                                components={{
-                                  code({ node, inline, className, children, ...props }: any) {
-                                    const match = /language-(\w+)/.exec(className || '');
-                                    return !inline && match ? (
-                                      <SyntaxHighlighter
-                                        style={oneDark}
-                                        language={match[1]}
-                                        PreTag="div"
-                                        className="rounded-md my-2 text-sm"
-                                        customStyle={{
-                                          margin: 0,
-                                          borderRadius: '0.375rem',
-                                          fontSize: '0.875rem',
-                                        }}
-                                        {...props}
-                                      >
-                                        {String(children).replace(/\n$/, '')}
-                                      </SyntaxHighlighter>
-                                    ) : (
-                                      <code className={cn("bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono", className)} {...props}>
-                                        {children}
-                                      </code>
-                                    );
-                                  },
-                                  a: ({ children, href }) => (
-                                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
-                                      {children}
-                                    </a>
-                                  ),
-                                  p: ({ children }) => <p className="mb-3 leading-relaxed">{children}</p>,
-                                  ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
-                                  ol: ({ children }) => <ol className="space-y-1 my-2">{children}</ol>,
-                                  li: ({ children }) => <li className="ml-4">{children}</li>,
-                                  h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
-                                  h2: ({ children }) => <h2 className="text-lg font-semibold mt-3 mb-2">{children}</h2>,
-                                  h3: ({ children }) => <h3 className="text-base font-semibold mt-2 mb-1">{children}</h3>,
-                                  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-                                  blockquote: ({ children }) => (
-                                    <blockquote className="border-l-2 border-primary pl-3 italic text-muted-foreground my-2">
-                                      {children}
-                                    </blockquote>
-                                  ),
-                                }}
-                              >
-                                {message.content}
-                              </ReactMarkdown>
-                            )}
-                          </div>
-                        ) : editingIndex === index ? (
-                          <div className="space-y-2">
-                            <Input
-                              value={editingContent}
-                              onChange={(e) => setEditingContent(e.target.value)}
-                              className="bg-background/50"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault();
-                                  saveEdit();
-                                } else if (e.key === "Escape") {
-                                  cancelEdit();
-                                }
-                              }}
-                            />
-                            <div className="flex gap-2 justify-end">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={cancelEdit}
-                                    className="h-7"
-                                  >
-                                    <X className="h-3 w-3 mr-1" />
-                                    Cancel
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Cancel editing (Esc)</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={saveEdit}
-                                    disabled={!editingContent.trim()}
-                                    className="h-7"
-                                  >
-                                    <RotateCw className="h-3 w-3 mr-1" />
-                                    Save & Regenerate
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Save and regenerate response (Enter)</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className={cn(
-                            "whitespace-pre-wrap leading-relaxed",
-                            message.role === "user" ? "text-foreground font-medium" : "text-foreground/90"
-                          )}>
-                            {message.content}
-                          </p>
-                        )}
-                        
-                        {message.role === "assistant" && !isStreaming && index > 0 && (
-                          <div className="absolute -right-20 top-0 opacity-0 group-hover/message:opacity-100 transition-opacity flex items-center gap-1">
-                            <FeedbackButtons
-                              feature="chat"
-                              context={{ message: message.content.slice(0, 500), aquariumContext: message.aquariumContext }}
-                              size="sm"
-                            />
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => copyMessage(message.content, index)}
-                                >
-                                  {copiedIndex === index ? (
-                                    <Check className="h-3 w-3 text-green-500" />
-                                  ) : (
-                                    <Copy className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{copiedIndex === index ? "Copied!" : "Copy message"}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                        )}
-                        
-                        {message.role === "user" && editingIndex !== index && index !== 0 && (
+              <div className="h-[calc(100%-8rem)] p-4">
+                <h3 className="text-sm font-semibold text-muted-foreground px-2 mb-3">
+                  Recent Conversations
+                </h3>
+                <VirtualizedConversationList
+                  conversations={conversationManager.conversations}
+                  currentConversationId={conversationManager.currentConversationId}
+                  onLoadConversation={handleLoadConversation}
+                  onDeleteConversation={handleDeleteConversation}
+                />
+              </div>
+            </Card>
+
+            {/* Main Chat Area */}
+            <Card className="flex-1 shadow-lg flex flex-col rounded-none lg:rounded-lg border-0 lg:border">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-3 lg:p-6 pt-safe border-b flex-shrink-0">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {/* Mobile Back Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
+                      onClick={() => navigate('/dashboard')}
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </Button>
+
+                    {/* Mobile History Button */}
+                    <Sheet>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SheetTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
+                            >
+                              <History className="h-5 w-5" />
+                            </Button>
+                          </SheetTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View chat history</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <SheetContent side="left" className="w-80">
+                        <SheetHeader>
+                          <SheetTitle>Chat History</SheetTitle>
+                        </SheetHeader>
+                        <div className="h-[calc(100vh-10rem)] mt-6">
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute -left-8 top-0 opacity-0 group-hover/message:opacity-100 transition-opacity h-6 w-6"
-                                onClick={() => startEditMessage(index, message.content)}
-                                disabled={isLoading}
+                                onClick={handleStartNewConversation}
+                                className="w-full gap-2 mb-4"
                               >
-                                <Edit2 className="h-3 w-3" />
+                                <Plus className="h-4 w-4" />
+                                New Conversation
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Edit message</p>
+                              <p>Start a fresh conversation with Ally</p>
                             </TooltipContent>
                           </Tooltip>
-                        )}
-                      </div>
-                      
-                      <div className={cn(
-                        "flex items-center gap-2 flex-wrap",
-                        message.role === "user" ? "justify-end" : "justify-start"
-                      )}>
-                        {message.timestamp && (
-                          <p className="text-xs text-muted-foreground/60">
-                            {format(message.timestamp, "h:mm a")}
-                          </p>
-                        )}
-                        {message.role === "assistant" && message.aquariumName && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                            <Fish className="h-3 w-3" />
-                            {message.aquariumName}
-                          </span>
-                        )}
-                      </div>
+                          <VirtualizedConversationList
+                            conversations={conversationManager.conversations}
+                            currentConversationId={conversationManager.currentConversationId}
+                            onLoadConversation={handleLoadConversation}
+                            onDeleteConversation={handleDeleteConversation}
+                          />
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+
+                    <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="h-6 w-6 text-primary-foreground" />
                     </div>
-                    
-                    {message.role === "user" && (
-                      <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-1">
-                        <span className="text-xs font-medium text-primary">U</span>
-                      </div>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <h1 className="text-2xl font-bold text-primary-foreground truncate">Chat with Ally</h1>
+                      <p className="text-sm text-primary-foreground/80 truncate">Your AI Aquarium Expert</p>
+                    </div>
                   </div>
-                ))}
-                
-                {isLoading && messages[messages.length - 1]?.content === "" && (
-                  <div className="flex gap-4 animate-fade-in">
-                    <div className="h-6 w-6 rounded-full bg-primary/5 flex items-center justify-center mt-1">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <TypingIndicator />
-                    </div>
+
+                  {/* Aquarium Selector */}
+                  {conversationManager.aquariums.length > 0 && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Select
+                            value={conversationManager.selectedAquarium}
+                            onValueChange={conversationManager.setSelectedAquarium}
+                          >
+                            <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hidden sm:flex">
+                              <Fish className="h-4 w-4 mr-2" />
+                              <SelectValue placeholder="Select aquarium" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">
+                                <span className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4" />
+                                  General Advice
+                                </span>
+                              </SelectItem>
+                              {conversationManager.aquariums.map((aq) => (
+                                <SelectItem key={aq.id} value={aq.id}>
+                                  <span className="flex items-center gap-2">
+                                    <Fish className="h-4 w-4" />
+                                    {aq.name} ({aq.type})
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Get advice specific to your aquarium</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+
+                {/* Mobile aquarium selector */}
+                {conversationManager.aquariums.length > 0 && (
+                  <div className="mt-3 sm:hidden">
+                    <p className="text-xs text-primary-foreground/70 mb-1">Current context:</p>
+                    <Select
+                      value={conversationManager.selectedAquarium}
+                      onValueChange={conversationManager.setSelectedAquarium}
+                    >
+                      <SelectTrigger className="w-full bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20">
+                        <Fish className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Select aquarium" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="general">
+                          <span className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            General Advice
+                          </span>
+                        </SelectItem>
+                        {conversationManager.aquariums.map((aq) => (
+                          <SelectItem key={aq.id} value={aq.id}>
+                            <span className="flex items-center gap-2">
+                              <Fish className="h-4 w-4" />
+                              {aq.name} ({aq.type})
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
-                
-                <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
 
-            {/* Quick Questions */}
-            {messages.length <= 2 && !isLoading && (
-              <div className="px-4 lg:px-6 pb-3 lg:pb-4 flex flex-wrap gap-2 max-w-3xl mx-auto w-full flex-shrink-0">
-                {quickQuestions.map((question, index) => (
-                  <Button
-                    key={index}
-                    onClick={() => {
-                      setInput(question);
-                      setTimeout(() => sendMessage(), 100);
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs hover-scale"
-                  >
-                    {question}
-                  </Button>
-                ))}
+              {/* Messages - Using VirtualizedMessageList */}
+              <div className="flex-1 overflow-hidden">
+                <VirtualizedMessageList
+                  messages={messages}
+                  isLoading={isLoading}
+                  isStreaming={isStreaming}
+                  copiedIndex={copiedIndex}
+                  editingIndex={editingIndex}
+                  editingContent={editingContent}
+                  onCopy={copyMessage}
+                  onStartEdit={startEditMessage}
+                  onCancelEdit={cancelEdit}
+                  onSaveEdit={saveEdit}
+                  onRegenerateResponse={handleRegenerateResponse}
+                  onEditingContentChange={setEditingContent}
+                />
               </div>
-            )}
 
-            {/* Input */}
-            <div className="p-3 lg:p-6 border-t bg-muted/30 flex-shrink-0 pb-safe">
-              <div className="max-w-3xl mx-auto">
-                <div className="flex gap-2 items-end">
-                  <Textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        if (input.trim() && !isLoading) {
-                          sendMessage();
-                        }
-                      }
-                    }}
-                    placeholder="Ask Ally anything about your aquarium..."
-                    disabled={isLoading}
-                    className="flex-1 min-h-[44px] max-h-[120px] lg:max-h-[200px] resize-none text-base"
-                    rows={1}
-                  />
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={sendMessage}
-                        disabled={!input.trim() || isLoading}
-                        size="icon"
-                        className="h-12 w-12"
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Send className="h-5 w-5" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Send message</p>
-                    </TooltipContent>
-                  </Tooltip>
+              {/* Quick Questions */}
+              {messages.length <= 2 && !isLoading && (
+                <div className="px-4 lg:px-6 pb-3 lg:pb-4 flex flex-wrap gap-2 max-w-3xl mx-auto w-full flex-shrink-0">
+                  {quickQuestions.map((question, index) => (
+                    <Button
+                      key={index}
+                      onClick={() => {
+                        setInput(question);
+                        setTimeout(() => sendMessage(), 100);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs hover-scale"
+                    >
+                      {question}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {/* Input */}
+              <div className="p-3 lg:p-6 border-t bg-muted/30 flex-shrink-0 pb-safe">
+                <div className="max-w-3xl mx-auto">
+                  <div className="flex gap-2 items-end">
+                    <Textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder="Ask Ally anything about your aquarium..."
+                      disabled={isLoading}
+                      className="flex-1 min-h-[44px] max-h-[120px] lg:max-h-[200px] resize-none text-base"
+                      rows={1}
+                    />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={sendMessage}
+                          disabled={!input.trim() || isLoading}
+                          size="icon"
+                          className="h-12 w-12"
+                        >
+                          {isLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Send className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Send message</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
                 </div>
               </div>
-            </div>
-          </Card>
-        </div>
-      </main>
+            </Card>
+          </div>
+        </main>
       </div>
     </TooltipProvider>
   );
