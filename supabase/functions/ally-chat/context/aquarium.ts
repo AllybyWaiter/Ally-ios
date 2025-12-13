@@ -32,10 +32,11 @@ export async function buildAquariumContext(
     };
   }
 
-  // Fetch livestock and plants
-  const [{ data: livestock }, { data: plants }] = await Promise.all([
+  // Fetch livestock, plants, and active alerts
+  const [{ data: livestock }, { data: plants }, { data: alerts }] = await Promise.all([
     supabase.from('livestock').select('*').eq('aquarium_id', aquariumId),
     supabase.from('plants').select('*').eq('aquarium_id', aquariumId),
+    supabase.from('water_test_alerts').select('*').eq('aquarium_id', aquariumId).eq('is_dismissed', false),
   ]);
 
   const waterType = getWaterType(aquarium.type);
@@ -66,6 +67,11 @@ Plants (${plants?.length || 0} total):
 ${plants && plants.length > 0
   ? plants.map((p: any) => `  - ${p.quantity}x ${p.species} (${p.name}) - Placement: ${p.placement}, Condition: ${p.condition}${p.notes ? ', Notes: ' + p.notes : ''}`).join('\n')
   : '  None added yet'}
+
+Active Trend Alerts (${alerts?.length || 0}):
+${alerts && alerts.length > 0
+  ? alerts.map((a: any) => `  - [${a.severity.toUpperCase()}] ${a.parameter_name}: ${a.message}`).join('\n')
+  : '  No active alerts'}
 `;
 
   return {
