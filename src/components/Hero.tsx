@@ -31,7 +31,7 @@ const Hero = () => {
         
         <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">
           Meet <span className="font-semibold text-foreground">Ally by WA.I.TER</span>, your AI powered water care assistant. 
-          No expertise needed. Just smart, personalized care for your aquarium.
+          No expertise needed. Just smart, personalized care for your aquarium, pool, or spa.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
