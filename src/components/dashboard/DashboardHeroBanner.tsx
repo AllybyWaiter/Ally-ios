@@ -70,7 +70,7 @@ export function DashboardBackground() {
       />
 
       {/* Overlay for content readability */}
-      <div className="fixed inset-0 bg-gradient-to-b from-background/60 via-background/70 to-background/90 z-0" />
+      <div className="fixed inset-0 bg-gradient-to-b from-background/30 via-background/40 to-background/70 z-0" />
     </>
   );
 }
