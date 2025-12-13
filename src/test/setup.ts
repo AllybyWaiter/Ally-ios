@@ -1,17 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// Mock import.meta.env for edge function URLs
-vi.stubGlobal('import', {
-  meta: {
-    env: {
-      VITE_SUPABASE_URL: 'https://test-project.supabase.co',
-      VITE_SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
-      VITE_SUPABASE_PROJECT_ID: 'test-project',
-    },
-  },
-});
-
 // Export shared mock toast for tests to verify calls
 export const mockToast = vi.fn();
 export const mockDismiss = vi.fn();
