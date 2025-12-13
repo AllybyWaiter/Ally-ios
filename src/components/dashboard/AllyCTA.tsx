@@ -9,11 +9,11 @@ export function AllyCTA() {
   const { t } = useTranslation();
 
   return (
-    <Card className="mb-8 bg-gradient-primary border-none">
+    <Card className="mb-8 bg-gradient-primary border-none animate-fade-up opacity-0 hover:shadow-glow transition-shadow duration-300" style={{ animationDelay: '100ms' }}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-float">
               <Sparkles className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
