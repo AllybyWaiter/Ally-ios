@@ -23,9 +23,10 @@ import { fetchEquipment, deleteEquipment, type Equipment } from "@/infrastructur
 
 interface AquariumEquipmentProps {
   aquariumId: string;
+  aquariumType?: string;
 }
 
-export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
+export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater' }: AquariumEquipmentProps) => {
   const { user, loading: authLoading } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
@@ -159,6 +160,7 @@ export const AquariumEquipment = ({ aquariumId }: AquariumEquipmentProps) => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         aquariumId={aquariumId}
+        aquariumType={aquariumType}
         equipment={editingEquipment}
       />
 

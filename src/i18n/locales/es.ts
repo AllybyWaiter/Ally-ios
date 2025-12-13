@@ -92,6 +92,8 @@ export const es = {
         reef: "Arrecife",
         planted: "Plantado",
         brackish: "Salobre",
+        pool: "Piscina",
+        spa: "Spa / Jacuzzi",
       },
       statuses: {
         active: "Activo",

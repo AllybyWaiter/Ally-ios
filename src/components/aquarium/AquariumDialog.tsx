@@ -174,6 +174,8 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
                       <SelectItem value="reef">{t('aquarium.types.reef')}</SelectItem>
                       <SelectItem value="planted">{t('aquarium.types.planted')}</SelectItem>
                       <SelectItem value="brackish">{t('aquarium.types.brackish')}</SelectItem>
+                      <SelectItem value="pool">{t('aquarium.types.pool')}</SelectItem>
+                      <SelectItem value="spa">{t('aquarium.types.spa')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -92,6 +92,8 @@ export const fr = {
         reef: "Récif",
         planted: "Planté",
         brackish: "Saumâtre",
+        pool: "Piscine",
+        spa: "Spa / Jacuzzi",
       },
       statuses: {
         active: "Actif",
