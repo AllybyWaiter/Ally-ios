@@ -810,6 +810,8 @@ export type Database = {
           hemisphere: string | null
           id: string
           language_preference: string | null
+          latitude: number | null
+          longitude: number | null
           name: string | null
           onboarding_completed: boolean | null
           skill_level: string | null
@@ -821,6 +823,7 @@ export type Database = {
           unit_preference: string | null
           updated_at: string
           user_id: string
+          weather_enabled: boolean | null
         }
         Insert: {
           created_at?: string
@@ -828,6 +831,8 @@ export type Database = {
           hemisphere?: string | null
           id?: string
           language_preference?: string | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string | null
           onboarding_completed?: boolean | null
           skill_level?: string | null
@@ -839,6 +844,7 @@ export type Database = {
           unit_preference?: string | null
           updated_at?: string
           user_id: string
+          weather_enabled?: boolean | null
         }
         Update: {
           created_at?: string
@@ -846,6 +852,8 @@ export type Database = {
           hemisphere?: string | null
           id?: string
           language_preference?: string | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string | null
           onboarding_completed?: boolean | null
           skill_level?: string | null
@@ -857,6 +865,7 @@ export type Database = {
           unit_preference?: string | null
           updated_at?: string
           user_id?: string
+          weather_enabled?: boolean | null
         }
         Relationships: []
       }
