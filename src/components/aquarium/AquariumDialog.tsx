@@ -288,7 +288,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {t(isEditMode ? 'common.update' : 'common.create')} {t('aquarium.name')}
+                {t(isEditMode ? 'common.update' : 'common.create')}
               </Button>
             </DialogFooter>
           </form>
