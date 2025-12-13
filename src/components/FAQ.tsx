@@ -31,7 +31,7 @@ const FAQ = () => {
               <div>
                 <p className="font-semibold text-foreground mb-2">What does the 98% accuracy rate mean?</p>
                 <p>
-                  Ally's AI achieves an average <strong>98% accuracy</strong> in interpreting water-test results when readings are entered correctly or photos are clear and well-lit. This measures how precisely Ally identifies key parameters (pH, ammonia, nitrite, nitrate, chlorine, alkalinity, and hardness) and how consistent its care plans are with professional water-care recommendations.
+                  Ally's AI achieves an average <strong>98% accuracy</strong> in interpreting water-test results when readings are entered correctly or photos are clear and well-lit. This measures how precisely Ally identifies key parameters for aquariums (pH, ammonia, nitrite, nitrate, hardness) and pools/spas (chlorine, bromine, alkalinity, cyanuric acid, salt) and how consistent its care plans are with professional water-care recommendations.
                 </p>
               </div>
               
@@ -60,25 +60,43 @@ const FAQ = () => {
               <div>
                 <p className="font-semibold text-foreground mb-2">Which test kits work with Ally?</p>
                 <p className="mb-2">
-                  Ally supports both <strong>test strips</strong> and <strong>liquid reagent kits</strong> from any standard brand that follows conventional color ranges for freshwater or saltwater parameters. Strips are faster to scan, while liquid kits often yield more precise readings.
+                  Ally supports both <strong>test strips</strong> and <strong>liquid reagent kits</strong> from any standard brand that follows conventional color ranges for freshwater, saltwater, pool, or spa parameters. Strips are faster to scan, while liquid kits often yield more precise readings.
                 </p>
               </div>
               
               <div>
                 <p className="font-semibold text-foreground mb-2">Recommended brands:</p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>API Freshwater and Saltwater Master Kits</li>
-                  <li>Tetra EasyStrips</li>
-                  <li>Seachem MultiTest and Ammonia Alert systems</li>
-                  <li>Aquaforest and Salifert marine test kits</li>
+                  <li><strong>Aquariums:</strong> API Freshwater and Saltwater Master Kits, Tetra EasyStrips, Seachem MultiTest, Aquaforest and Salifert marine test kits</li>
+                  <li><strong>Pools & Spas:</strong> Clorox, AquaChek, Taylor test strips and liquid kits, digital salt readers</li>
                 </ul>
               </div>
 
               <div>
                 <p className="font-semibold text-foreground mb-2">What doesn't work with Ally?</p>
                 <p>
-                  Kits that use <strong>digital meters</strong>, <strong>single-reactive indicators</strong>, or <strong>unconventional color gradients</strong> may not provide compatible visuals for photo interpretation. In these cases, you can manually input readings into Ally to receive accurate treatment recommendations.
+                  Kits that use <strong>digital meters</strong> (except salt readers), <strong>single-reactive indicators</strong>, or <strong>unconventional color gradients</strong> may not provide compatible visuals for photo interpretation. In these cases, you can manually input readings into Ally to receive accurate treatment recommendations.
                 </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Supported Aquatic Spaces */}
+          <AccordionItem value="spaces" className="border border-border/50 rounded-lg px-6 bg-card/30 backdrop-blur-sm">
+            <AccordionTrigger className="text-left hover:no-underline">
+              <span className="text-lg font-semibold">Supported Aquatic Spaces</span>
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground space-y-4 pt-2">
+              <div>
+                <p className="font-semibold text-foreground mb-2">What types of aquatic spaces does Ally support?</p>
+                <p className="mb-2">Ally provides full support for:</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li><strong>Aquariums:</strong> Freshwater, saltwater (marine), and brackish tanks</li>
+                  <li><strong>Ponds:</strong> Koi ponds and garden ponds</li>
+                  <li><strong>Pools:</strong> Chlorine pools and saltwater pools</li>
+                  <li><strong>Spas/Hot Tubs:</strong> Chlorine and bromine systems</li>
+                </ul>
+                <p className="mt-2">Each type has customized parameter ranges, ideal targets, and care recommendations tailored to that specific environment.</p>
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -93,7 +111,7 @@ const FAQ = () => {
                 <p className="font-semibold text-foreground mb-2">What's included in the free version?</p>
                 <p className="mb-2">The <strong>Free Plan</strong> allows you to:</p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>Create one aquatic space (aquarium or pond)</li>
+                  <li>Create one aquatic space (aquarium, pool, spa, or pond)</li>
                   <li>Log and analyze up to 5 tests per month</li>
                   <li>Receive basic AI recommendations and care reminders</li>
                 </ul>
@@ -112,7 +130,7 @@ const FAQ = () => {
                   </div>
                   <div>
                     <p className="font-medium text-foreground">Gold – $19.99/month</p>
-                    <p>Multi-tank management, AI habit learning, and early access to connected device integration</p>
+                    <p>Multi-space management, AI habit learning, and early access to connected device integration</p>
                   </div>
                 </div>
                 <p className="mt-3 text-sm">Annual pricing and business partner options are also available.</p>
