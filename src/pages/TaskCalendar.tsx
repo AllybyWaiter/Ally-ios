@@ -31,7 +31,7 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   equipment_maintenance: "bg-orange-500",
   testing: "bg-green-500",
   feeding: "bg-yellow-500",
-  cleaning: "bg-cyan-500",
+  cleaning: "bg-secondary",
   other: "bg-gray-500",
 };
 
