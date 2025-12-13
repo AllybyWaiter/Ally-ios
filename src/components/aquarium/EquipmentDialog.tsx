@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { getEquipmentTypes } from "@/lib/waterBodyUtils";
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -49,29 +50,18 @@ interface EquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   aquariumId: string;
+  aquariumType?: string;
   equipment?: any;
 }
-
-const EQUIPMENT_TYPES = [
-  "Filter",
-  "Heater",
-  "Light",
-  "Pump",
-  "Protein Skimmer",
-  "UV Sterilizer",
-  "CO2 System",
-  "Dosing Pump",
-  "Wave Maker",
-  "Chiller",
-  "Other",
-];
 
 export const EquipmentDialog = ({
   open,
   onOpenChange,
   aquariumId,
+  aquariumType = 'freshwater',
   equipment,
 }: EquipmentDialogProps) => {
+  const equipmentTypes = getEquipmentTypes(aquariumType);
   const queryClient = useQueryClient();
   const isEditing = !!equipment;
 
@@ -216,7 +206,7 @@ export const EquipmentDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {EQUIPMENT_TYPES.map((type) => (
+                      {equipmentTypes.map((type) => (
                         <SelectItem key={type} value={type}>
                           {type}
                         </SelectItem>

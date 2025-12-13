@@ -16,7 +16,7 @@ import {
   createSuccessResponse,
 } from "../_shared/mod.ts";
 
-const DEFAULT_SUGGESTIONS = [
+const DEFAULT_AQUARIUM_SUGGESTIONS = [
   {
     title: "Weekly Water Change",
     description: "Perform routine 25% water change to maintain water quality",
@@ -30,6 +30,30 @@ const DEFAULT_SUGGESTIONS = [
     priority: "high",
     category: "testing",
     reasoning: "Regular testing is essential for tank health"
+  }
+];
+
+const DEFAULT_POOL_SUGGESTIONS = [
+  {
+    title: "Test & Balance Water Chemistry",
+    description: "Check chlorine, pH, and alkalinity levels. Adjust as needed.",
+    priority: "high",
+    category: "testing",
+    reasoning: "Pool chemistry should be tested 2-3 times per week"
+  },
+  {
+    title: "Empty Skimmer Baskets",
+    description: "Remove debris from skimmer and pump baskets",
+    priority: "medium",
+    category: "skimmer_basket",
+    reasoning: "Keeps water flowing properly through filter system"
+  },
+  {
+    title: "Shock Treatment",
+    description: "Add pool shock to oxidize contaminants and boost chlorine levels",
+    priority: "medium",
+    category: "shock_treatment",
+    reasoning: "Weekly shock treatment prevents algae and bacteria buildup"
   }
 ];
 
@@ -152,7 +176,36 @@ serve(async (req) => {
       equipmentCount: equipment?.length || 0,
     });
 
-    const systemPrompt = `You are an expert aquarium maintenance advisor. Analyze the provided aquarium data and suggest 3-5 actionable maintenance tasks.
+    const isPoolOrSpa = ['pool', 'spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
+
+    const systemPrompt = isPoolOrSpa ? `You are an expert pool and spa maintenance advisor. Analyze the provided pool/spa data and suggest 3-5 actionable maintenance tasks.
+
+ANALYSIS PRIORITIES:
+1. Water chemistry balance - Look for concerning chlorine levels, pH drift, alkalinity issues
+2. Equipment maintenance schedules - Suggest maintenance based on intervals and last service dates
+3. Seasonal considerations - Winterization, spring opening, algae prevention
+4. Recent task history - Avoid duplicating recently completed tasks
+
+TASK CATEGORIES:
+- testing: Water testing (specify which parameters)
+- shock_treatment: Shock/oxidizer treatment
+- chemical_balancing: pH, alkalinity, calcium adjustment
+- filter_cleaning: Filter cleaning, backwash
+- skimmer_basket: Empty skimmer and pump baskets
+- vacuuming: Pool vacuuming
+- brush_walls: Brush pool walls and floor
+- equipment_maintenance: Pump, heater, SWG maintenance
+- winterize: Winterization tasks
+- opening: Spring opening tasks
+- other: Other maintenance
+
+PRIORITY GUIDELINES:
+- high: Immediate action needed (low/high chlorine, pH out of range, equipment failure)
+- medium: Should be done within the week (routine maintenance, slight imbalances)
+- low: Nice to do when convenient (optimization, aesthetic improvements)
+
+Today's date is ${today}. Use this for calculating days since last maintenance and setting recommended dates.`
+    : `You are an expert aquarium maintenance advisor. Analyze the provided aquarium data and suggest 3-5 actionable maintenance tasks.
 
 ANALYSIS PRIORITIES:
 1. Water parameter trends - Look for concerning patterns (rising nitrates, pH drift, ammonia spikes)
@@ -176,7 +229,7 @@ PRIORITY GUIDELINES:
 
 Today's date is ${today}. Use this for calculating days since last maintenance and setting recommended dates.`;
 
-    const userPrompt = `Analyze this aquarium and suggest 3-5 specific, actionable maintenance tasks:\n\n${JSON.stringify(context, null, 2)}`;
+    const userPrompt = `Analyze this ${isPoolOrSpa ? 'pool/spa' : 'aquarium'} and suggest 3-5 specific, actionable maintenance tasks:\n\n${JSON.stringify(context, null, 2)}`;
 
     const aiBody = {
       model: "google/gemini-2.5-pro",
@@ -201,7 +254,13 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
                       title: { type: "string", description: "Clear, action-oriented task title" },
                       description: { type: "string", description: "Detailed instructions for completing the task" },
                       priority: { type: "string", enum: ["low", "medium", "high"], description: "Urgency level" },
-                      category: { type: "string", enum: ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"], description: "Task category" },
+              category: { 
+                type: "string", 
+                enum: isPoolOrSpa 
+                  ? ["testing", "shock_treatment", "chemical_balancing", "filter_cleaning", "skimmer_basket", "vacuuming", "brush_walls", "equipment_maintenance", "winterize", "opening", "other"]
+                  : ["water_change", "cleaning", "equipment_maintenance", "testing", "feeding", "other"], 
+                description: "Task category" 
+              },
                       recommendedDate: { type: "string", description: "ISO date string for when to do this task (YYYY-MM-DD)" },
                       reasoning: { type: "string", description: "Why this task is recommended based on the data" }
                     },
@@ -263,7 +322,7 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
 
     if (suggestions.length === 0) {
       logger.warn('No AI suggestions generated, using defaults');
-      suggestions = DEFAULT_SUGGESTIONS;
+      suggestions = isPoolOrSpa ? DEFAULT_POOL_SUGGESTIONS : DEFAULT_AQUARIUM_SUGGESTIONS;
     }
 
     logger.info('Task suggestions generated', { count: suggestions.length });
