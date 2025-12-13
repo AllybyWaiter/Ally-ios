@@ -14,11 +14,11 @@ import logo from '@/assets/logo.png';
 import { useTranslation } from 'react-i18next';
 
 const aquariumSchema = z.object({
-  name: z.string().trim().min(1, 'Aquarium name is required').max(100, 'Name must be less than 100 characters'),
-  type: z.enum(['freshwater', 'saltwater', 'reef', 'planted'], {
-    errorMap: () => ({ message: 'Please select an aquarium type' }),
+  name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+  type: z.enum(['freshwater', 'saltwater', 'reef', 'planted', 'brackish', 'pool', 'spa'], {
+    errorMap: () => ({ message: 'Please select a type' }),
   }),
-  volume_gallons: z.number().min(1, 'Volume must be at least 1 gallon').max(10000, 'Volume seems too large'),
+  volume_gallons: z.number().min(1, 'Volume must be at least 1 gallon').max(50000, 'Volume seems too large'),
   setup_date: z.string().min(1, 'Setup date is required'),
   notes: z.string().max(500, 'Notes must be less than 500 characters').optional(),
 });
@@ -68,7 +68,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
         setErrors({ volume_gallons: t('aquariumOnboarding.step2.volumeRequired') });
         return false;
       }
-      if (volume > 10000) {
+      if (volume > 50000) {
         setErrors({ volume_gallons: t('aquariumOnboarding.step2.volumeTooLarge') });
         return false;
       }
@@ -243,6 +243,9 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                     <SelectItem value="saltwater">{t('aquarium.types.saltwater')}</SelectItem>
                     <SelectItem value="reef">{t('aquarium.types.reef')}</SelectItem>
                     <SelectItem value="planted">{t('aquarium.types.planted')}</SelectItem>
+                    <SelectItem value="brackish">{t('aquarium.types.brackish')}</SelectItem>
+                    <SelectItem value="pool">{t('aquarium.types.pool')}</SelectItem>
+                    <SelectItem value="spa">{t('aquarium.types.spa')}</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.type && (
