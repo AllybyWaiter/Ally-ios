@@ -1,21 +1,42 @@
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
+import { Cloud, CloudRain, CloudSnow, Sun, CloudFog } from 'lucide-react';
+
+const WEATHER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  clear: Sun,
+  cloudy: Cloud,
+  rain: CloudRain,
+  snow: CloudSnow,
+  storm: CloudRain,
+  fog: CloudFog,
+};
 
 export function DashboardHeroBanner() {
-  const { imagePath, greeting } = useTimeOfDay();
+  const { imagePath, greeting, weather, weatherEnabled } = useTimeOfDay();
   const { userName } = useAuth();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [currentImage, setCurrentImage] = useState(imagePath);
+  const [fallbackToDefault, setFallbackToDefault] = useState(false);
 
   // Handle smooth transition when image changes
   useEffect(() => {
     if (imagePath !== currentImage) {
       setImageLoaded(false);
+      setFallbackToDefault(false);
       const img = new Image();
       img.onload = () => {
         setCurrentImage(imagePath);
         setImageLoaded(true);
+      };
+      img.onerror = () => {
+        // If weather-specific image fails, fallback to time-only image
+        const fallbackPath = imagePath.replace(/-(?:rain|cloudy|snow)\.jpg$/, '.jpg');
+        if (fallbackPath !== imagePath) {
+          setFallbackToDefault(true);
+          setCurrentImage(fallbackPath);
+          setImageLoaded(true);
+        }
       };
       img.src = imagePath;
     }
@@ -25,11 +46,23 @@ export function DashboardHeroBanner() {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setImageLoaded(true);
+    img.onerror = () => {
+      // Fallback to time-only on initial load error
+      const fallbackPath = currentImage.replace(/-(?:rain|cloudy|snow)\.jpg$/, '.jpg');
+      if (fallbackPath !== currentImage) {
+        setCurrentImage(fallbackPath);
+        const fallbackImg = new Image();
+        fallbackImg.onload = () => setImageLoaded(true);
+        fallbackImg.src = fallbackPath;
+      }
+    };
     img.src = currentImage;
   }, []);
 
   const firstName = userName?.split(' ')[0];
   const personalizedGreeting = firstName ? `${greeting}, ${firstName}` : greeting;
+  
+  const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
 
   return (
     <div className="relative w-full h-48 md:h-64 lg:h-72 overflow-hidden">
@@ -53,9 +86,14 @@ export function DashboardHeroBanner() {
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground drop-shadow-lg">
-          {personalizedGreeting}
-        </h2>
+        <div className="flex items-center gap-3">
+          {weatherEnabled && WeatherIcon && (
+            <WeatherIcon className="h-6 w-6 md:h-8 md:w-8 text-foreground/80 drop-shadow-lg" />
+          )}
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground drop-shadow-lg">
+            {personalizedGreeting}
+          </h2>
+        </div>
       </div>
     </div>
   );
