@@ -13,6 +13,7 @@ interface ProfileContextType {
   themePreference: string | null;
   languagePreference: string | null;
   unitPreference: string | null;
+  hemisphere: string | null;
   units: UnitSystem;
   onboardingCompleted: boolean | null;
   profileLoading: boolean;
@@ -30,6 +31,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [themePreference, setThemePreference] = useState<string | null>(null);
   const [languagePreference, setLanguagePreference] = useState<string | null>(null);
   const [unitPreference, setUnitPreference] = useState<string | null>(null);
+  const [hemisphere, setHemisphere] = useState<string | null>(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -38,7 +40,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, onboarding_completed')
+        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, hemisphere, onboarding_completed')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -54,6 +56,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         setThemePreference(data.theme_preference);
         setLanguagePreference(data.language_preference);
         setUnitPreference(data.unit_preference);
+        setHemisphere(data.hemisphere);
         setOnboardingCompleted(data.onboarding_completed === true);
         setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
         setUserContext(userId, undefined, data.name || undefined);
@@ -75,6 +78,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     setThemePreference(null);
     setLanguagePreference(null);
     setUnitPreference(null);
+    setHemisphere(null);
     setOnboardingCompleted(false);
   }, []);
 
@@ -139,6 +143,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       themePreference,
       languagePreference,
       unitPreference,
+      hemisphere,
       units: (unitPreference as UnitSystem) || 'imperial',
       onboardingCompleted,
       profileLoading,
@@ -159,6 +164,7 @@ export const useProfileContext = () => {
       themePreference: null,
       languagePreference: null,
       unitPreference: null,
+      hemisphere: null,
       units: 'imperial' as UnitSystem,
       onboardingCompleted: null,
       profileLoading: true,

@@ -11,13 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler, Palette, Globe, Shield, Crown, Brain } from "lucide-react";
+import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler, Palette, Globe, Shield, Crown, Brain, MapPin } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import MemoryManager from "@/components/settings/MemoryManager";
 
 const Settings = () => {
-  const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, signOut } = useAuth();
+  const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -25,6 +25,7 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState(userName || "");
   const [units, setUnits] = useState(unitPreference || "imperial");
+  const [hemisphere, setHemisphere] = useState(userHemisphere || "northern");
   const [skillLevel, setSkillLevel] = useState<string>("beginner");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -49,6 +50,12 @@ const Settings = () => {
       setUnits(unitPreference);
     }
   }, [unitPreference]);
+
+  useEffect(() => {
+    if (userHemisphere) {
+      setHemisphere(userHemisphere);
+    }
+  }, [userHemisphere]);
 
   useEffect(() => {
     const fetchSkillLevel = async () => {
@@ -143,6 +150,33 @@ const Settings = () => {
       toast({
         title: "Error",
         description: "Failed to save language preference.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleHemisphereChange = async (newHemisphere: string) => {
+    if (!user || newHemisphere === hemisphere) return;
+    
+    setHemisphere(newHemisphere);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ hemisphere: newHemisphere })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Location updated",
+        description: "Your hemisphere has been saved for seasonal reminders.",
+      });
+    } catch (error: any) {
+      console.error('Failed to save hemisphere preference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save hemisphere preference.",
         variant: "destructive",
       });
     }
@@ -586,6 +620,79 @@ const Settings = () => {
                       )}
                     </button>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 shadow-lg">
+              <CardHeader className="space-y-1 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-secondary/10">
+                    <MapPin className="h-5 w-5 text-secondary" />
+                  </div>
+                  <CardTitle className="text-2xl">Location</CardTitle>
+                </div>
+                <CardDescription className="text-base">
+                  Used for seasonal pool and spa reminders like winterization
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handleHemisphereChange('northern')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      hemisphere === 'northern'
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-lg ${
+                          hemisphere === 'northern' ? 'bg-primary/10' : 'bg-muted'
+                        }`}>
+                          <span className="text-2xl">🌎</span>
+                        </div>
+                        <p className="font-bold text-xl">Northern Hemisphere</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground text-left">
+                        North America, Europe, Asia (above equator)
+                      </p>
+                    </div>
+                    {hemisphere === 'northern' && (
+                      <div className="absolute top-3 right-3">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleHemisphereChange('southern')}
+                    className={`relative group p-6 rounded-xl border-2 transition-all hover:scale-105 ${
+                      hemisphere === 'southern'
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/20'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-lg ${
+                          hemisphere === 'southern' ? 'bg-secondary/10' : 'bg-muted'
+                        }`}>
+                          <span className="text-2xl">🌍</span>
+                        </div>
+                        <p className="font-bold text-xl">Southern Hemisphere</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground text-left">
+                        Australia, South America, Africa (below equator)
+                      </p>
+                    </div>
+                    {hemisphere === 'southern' && (
+                      <div className="absolute top-3 right-3">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                      </div>
+                    )}
+                  </button>
                 </div>
               </CardContent>
             </Card>

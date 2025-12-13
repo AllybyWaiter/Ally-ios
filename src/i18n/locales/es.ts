@@ -33,6 +33,14 @@ export const es = {
       language: "Idioma",
       selectLanguage: "Selecciona tu idioma preferido",
       languageDescription: "Elige el idioma para la interfaz de la aplicación",
+      location: {
+        title: "Ubicación",
+        description: "Usado para recordatorios estacionales de piscinas y spas",
+        northern: "Hemisferio Norte",
+        southern: "Hemisferio Sur",
+        northernHint: "América del Norte, Europa, Asia (sobre el ecuador)",
+        southernHint: "Australia, América del Sur, África (bajo el ecuador)",
+      },
     },
     languages: {
       en: "Inglés",

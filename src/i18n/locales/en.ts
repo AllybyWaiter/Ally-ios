@@ -33,6 +33,14 @@ export const en = {
       language: "Language",
       selectLanguage: "Select your preferred language",
       languageDescription: "Choose the language for the app interface",
+      location: {
+        title: "Location",
+        description: "Used for seasonal pool and spa reminders",
+        northern: "Northern Hemisphere",
+        southern: "Southern Hemisphere",
+        northernHint: "North America, Europe, Asia (above equator)",
+        southernHint: "Australia, South America, Africa (below equator)",
+      },
     },
     languages: {
       en: "English",

@@ -33,6 +33,14 @@ export const fr = {
       language: "Langue",
       selectLanguage: "Sélectionnez votre langue préférée",
       languageDescription: "Choisissez la langue de l'interface de l'application",
+      location: {
+        title: "Localisation",
+        description: "Utilisé pour les rappels saisonniers de piscines et spas",
+        northern: "Hémisphère Nord",
+        southern: "Hémisphère Sud",
+        northernHint: "Amérique du Nord, Europe, Asie (au-dessus de l'équateur)",
+        southernHint: "Australie, Amérique du Sud, Afrique (sous l'équateur)",
+      },
     },
     languages: {
       en: "Anglais",
