@@ -1,12 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Droplets, Calendar, Shield } from 'lucide-react';
+import { Droplets, Calendar, Shield, Waves } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardStatsProps {
-  aquariumCount: number;
-  activeCount: number;
+  aquariumsOnly: Array<{ type: string; volume_gallons: number; status: string }>;
+  poolsOnly: Array<{ type: string; volume_gallons: number; status: string }>;
+  hasOnlyAquariums: boolean;
+  hasOnlyPools: boolean;
+  hasMixed: boolean;
   totalVolume: number;
   upcomingTaskCount: number;
   units: UnitSystem;
@@ -15,8 +18,11 @@ interface DashboardStatsProps {
 }
 
 export function DashboardStats({
-  aquariumCount,
-  activeCount,
+  aquariumsOnly,
+  poolsOnly,
+  hasOnlyAquariums,
+  hasOnlyPools,
+  hasMixed,
   totalVolume,
   upcomingTaskCount,
   units,
@@ -26,20 +32,46 @@ export function DashboardStats({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const aquariumActiveCount = aquariumsOnly.filter(a => a.status === 'active').length;
+  const poolActiveCount = poolsOnly.filter(a => a.status === 'active').length;
+
   return (
     <div className="grid md:grid-cols-3 gap-6 mb-8">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">{t('dashboard.totalAquariums')}</CardTitle>
-          <Droplets className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{aquariumCount}</div>
-          <p className="text-xs text-muted-foreground">
-            {activeCount} {t('dashboard.active')}
-          </p>
-        </CardContent>
-      </Card>
+      {/* Aquariums Card - show if has aquariums */}
+      {(hasOnlyAquariums || hasMixed) && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {hasMixed ? t('dashboard.aquariums') : t('dashboard.totalAquariums')}
+            </CardTitle>
+            <Droplets className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{aquariumsOnly.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {aquariumActiveCount} {t('dashboard.active')}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pools Card - show if has pools */}
+      {(hasOnlyPools || hasMixed) && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {hasMixed ? t('dashboard.poolsAndSpas') : t('dashboard.totalPools')}
+            </CardTitle>
+            <Waves className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{poolsOnly.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {poolActiveCount} {t('dashboard.active')}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

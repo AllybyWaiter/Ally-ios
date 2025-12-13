@@ -46,6 +46,13 @@ export const fr = {
     dashboard: {
       title: "Mes Aquariums",
       subtitle: "Gérez votre collection d'aquariums",
+      myPools: "Mes Piscines",
+      poolsSubtitle: "Gérez vos piscines et spas",
+      myWaterBodies: "Mes Plans d'Eau",
+      waterBodiesSubtitle: "Gérez vos aquariums, piscines et spas",
+      totalPools: "Total des Piscines",
+      poolsAndSpas: "Piscines et Spas",
+      aquariums: "Aquariums",
       totalAquariums: "Total des Aquariums",
       totalVolume: "Volume Total",
       upcomingTasks: "Tâches À Venir",
