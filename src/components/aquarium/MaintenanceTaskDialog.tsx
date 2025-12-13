@@ -41,16 +41,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-
-const taskTypes = [
-  { value: "water_change", label: "Water Change" },
-  { value: "filter_cleaning", label: "Filter Cleaning" },
-  { value: "equipment_maintenance", label: "Equipment Maintenance" },
-  { value: "feeding", label: "Feeding" },
-  { value: "dosing", label: "Dosing" },
-  { value: "testing", label: "Testing" },
-  { value: "other", label: "Other" },
-] as const;
+import { getTaskTypes } from "@/lib/waterBodyUtils";
 
 const formSchema = z.object({
   task_name: z.string().min(1, "Task name is required"),
@@ -68,6 +59,7 @@ interface MaintenanceTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   aquariumId: string;
+  aquariumType?: string;
   taskId?: string;
   mode?: "create" | "edit";
 }
@@ -76,9 +68,11 @@ export const MaintenanceTaskDialog = ({
   open,
   onOpenChange,
   aquariumId,
+  aquariumType = 'freshwater',
   taskId,
   mode = "create",
 }: MaintenanceTaskDialogProps) => {
+  const taskTypes = getTaskTypes(aquariumType);
   const [loading, setLoading] = useState(false);
   const [equipment, setEquipment] = useState<Array<{ id: string; name: string; equipment_type: string }>>([]);
   const queryClient = useQueryClient();

@@ -24,6 +24,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastructure/queries";
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
+import { isPoolType, getWaterBodyLabels } from "@/lib/waterBodyUtils";
 
 // Safe date formatter to prevent crashes
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
@@ -176,7 +177,9 @@ export default function AquariumDetail() {
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="flex overflow-x-auto w-full max-w-3xl mx-auto gap-1 scrollbar-hide">
             <TabsTrigger value="overview" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.overview')}</TabsTrigger>
-            <TabsTrigger value="livestock" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Livestock & Plants</TabsTrigger>
+            {!isPoolType(aquarium.type) && (
+              <TabsTrigger value="livestock" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Livestock & Plants</TabsTrigger>
+            )}
             <TabsTrigger value="water-tests" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.waterTests')}</TabsTrigger>
             <TabsTrigger value="equipment" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.equipment')}</TabsTrigger>
             <TabsTrigger value="tasks" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.tasks')}</TabsTrigger>
@@ -188,11 +191,13 @@ export default function AquariumDetail() {
             </SectionErrorBoundary>
           </TabsContent>
 
-          <TabsContent value="livestock">
-            <SectionErrorBoundary fallbackTitle="Failed to load livestock" featureArea={FeatureArea.AQUARIUM}>
-              <AquariumLivestock aquariumId={id!} />
-            </SectionErrorBoundary>
-          </TabsContent>
+          {!isPoolType(aquarium.type) && (
+            <TabsContent value="livestock">
+              <SectionErrorBoundary fallbackTitle="Failed to load livestock" featureArea={FeatureArea.AQUARIUM}>
+                <AquariumLivestock aquariumId={id!} />
+              </SectionErrorBoundary>
+            </TabsContent>
+          )}
 
           <TabsContent value="water-tests">
             <SectionErrorBoundary fallbackTitle="Failed to load water tests" featureArea={FeatureArea.WATER_TESTS}>
@@ -202,7 +207,7 @@ export default function AquariumDetail() {
 
           <TabsContent value="equipment">
             <SectionErrorBoundary fallbackTitle="Failed to load equipment" featureArea={FeatureArea.EQUIPMENT}>
-              <AquariumEquipment aquariumId={id!} />
+              <AquariumEquipment aquariumId={id!} aquariumType={aquarium.type} />
             </SectionErrorBoundary>
           </TabsContent>
 

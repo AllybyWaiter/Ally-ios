@@ -6,8 +6,9 @@ import { validateUrl, validateString, collectErrors, validationErrorResponse } f
 import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
 
-// Valid parameter ranges for validation
+// Valid parameter ranges for validation (aquarium + pool parameters)
 const validRanges: Record<string, { min: number; max: number }> = {
+  // Aquarium parameters
   pH: { min: 4.0, max: 10.0 },
   Ammonia: { min: 0, max: 10 },
   Nitrite: { min: 0, max: 10 },
@@ -15,7 +16,19 @@ const validRanges: Record<string, { min: number; max: number }> = {
   GH: { min: 0, max: 500 },
   KH: { min: 0, max: 400 },
   Chlorine: { min: 0, max: 10 },
-  Temperature: { min: 32, max: 100 },
+  Temperature: { min: 32, max: 120 },
+  // Pool/Spa parameters
+  "Free Chlorine": { min: 0, max: 15 },
+  "Total Chlorine": { min: 0, max: 20 },
+  "Combined Chlorine": { min: 0, max: 5 },
+  Alkalinity: { min: 0, max: 300 },
+  "Total Alkalinity": { min: 0, max: 300 },
+  "Calcium Hardness": { min: 0, max: 1000 },
+  "Cyanuric Acid": { min: 0, max: 200 },
+  CYA: { min: 0, max: 200 },
+  Salt: { min: 0, max: 6000 },
+  Bromine: { min: 0, max: 20 },
+  TDS: { min: 0, max: 5000 },
 };
 
 // Validate and filter parameters within reasonable ranges
@@ -50,7 +63,11 @@ const analyzeWaterTestTool = {
             properties: {
               name: { 
                 type: "string", 
-                enum: ["pH", "Ammonia", "Nitrite", "Nitrate", "GH", "KH", "Chlorine", "Temperature"],
+                enum: [
+                  "pH", "Ammonia", "Nitrite", "Nitrate", "GH", "KH", "Chlorine", "Temperature",
+                  "Free Chlorine", "Total Chlorine", "Combined Chlorine", "Alkalinity", "Total Alkalinity",
+                  "Calcium Hardness", "Cyanuric Acid", "CYA", "Salt", "Bromine", "TDS"
+                ],
                 description: "Parameter name"
               },
               value: { 
@@ -137,7 +154,34 @@ serve(async (req) => {
       return createErrorResponse('AI service not configured', logger, { status: 500 });
     }
 
-    const systemPrompt = `You are an expert aquarium water test analyzer with extensive experience reading test strips and liquid test kits. Analyze the provided image carefully and extract all parameter values.
+    const isPoolOrSpa = ['pool', 'spa', 'hot_tub'].includes((aquariumType || '').toLowerCase());
+
+    const systemPrompt = isPoolOrSpa ? `You are an expert pool and spa water test analyzer with extensive experience reading test strips and liquid test kits. Analyze the provided image carefully and extract all parameter values.
+
+CRITICAL INSTRUCTIONS:
+1. Look for the color chart/legend on the test kit packaging
+2. Compare each test pad/vial color to the reference chart
+3. Be precise - small color differences matter
+4. If a reading is unclear, provide lower confidence
+
+POOL/SPA PARAMETER IDENTIFICATION:
+- Free Chlorine: 0-10 ppm, typically yellow to pink/red gradient
+- Total Chlorine: 0-10 ppm, similar color range to Free Chlorine
+- pH: Usually shows range 6.2-8.4, look for color gradient
+- Total Alkalinity: 0-240 ppm, varies by brand
+- Calcium Hardness: 0-1000 ppm, color varies by brand
+- Cyanuric Acid (CYA/Stabilizer): 0-150 ppm
+- Bromine: 0-20 ppm (for spas using bromine)
+- Salt: 0-5000 ppm (for saltwater pools)
+
+STATUS DETERMINATION for ${aquariumType || 'pool'}:
+- Free Chlorine 1-3: good, <1 or >5: warning, 0 or >10: critical
+- pH 7.2-7.6: good, 7.0-7.8: warning, <7.0 or >8.0: critical
+- Total Alkalinity 80-120: good, 60-150: warning, <60 or >180: critical
+- Calcium Hardness 200-400: good, 150-500: warning, <100 or >600: critical
+- Cyanuric Acid 30-50: good, 20-80: warning, <20 or >100: critical
+
+Use the analyze_water_test tool to return your analysis.` : `You are an expert aquarium water test analyzer with extensive experience reading test strips and liquid test kits. Analyze the provided image carefully and extract all parameter values.
 
 CRITICAL INSTRUCTIONS:
 1. Look for the color chart/legend on the test kit packaging
