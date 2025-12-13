@@ -1,17 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useConversationManager } from './useConversationManager';
 import { supabase } from '@/integrations/supabase/client';
-
-// Mock useToast
-const mockToast = vi.fn();
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: mockToast,
-    dismiss: vi.fn(),
-    toasts: [],
-  }),
-}));
+import { mockToast } from '@/test/setup';
 
 describe('useConversationManager', () => {
   beforeEach(() => {

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useStreamingResponse } from './useStreamingResponse';
 import { supabase } from '@/integrations/supabase/client';
+import { mockToast } from '@/test/setup';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -13,24 +14,9 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock useToast
-const mockToast = vi.fn();
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: mockToast,
-    dismiss: vi.fn(),
-    toasts: [],
-  }),
-}));
-
 describe('useStreamingResponse', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it('should initialize with isStreaming as false', () => {
