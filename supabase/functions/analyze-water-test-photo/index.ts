@@ -172,7 +172,7 @@ POOL/SPA PARAMETER IDENTIFICATION:
 - Calcium Hardness: 0-1000 ppm, color varies by brand
 - Cyanuric Acid (CYA/Stabilizer): 0-150 ppm
 - Bromine: 0-20 ppm (for spas using bromine)
-- Salt: 0-5000 ppm (for saltwater pools)
+- Salt: 0-5000 ppm (for saltwater pools), digital readers or color strips available
 
 STATUS DETERMINATION for ${aquariumType || 'pool'}:
 - Free Chlorine 1-3: good, <1 or >5: warning, 0 or >10: critical
@@ -180,6 +180,7 @@ STATUS DETERMINATION for ${aquariumType || 'pool'}:
 - Total Alkalinity 80-120: good, 60-150: warning, <60 or >180: critical
 - Calcium Hardness 200-400: good, 150-500: warning, <100 or >600: critical
 - Cyanuric Acid 30-50: good, 20-80: warning, <20 or >100: critical
+- Salt 2700-3400: good (for saltwater pools), <2500 or >3600: warning, <2000 or >4000: critical
 
 Use the analyze_water_test tool to return your analysis.` : `You are an expert aquarium water test analyzer with extensive experience reading test strips and liquid test kits. Analyze the provided image carefully and extract all parameter values.
 
