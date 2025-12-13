@@ -15,7 +15,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
 import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData } from '@/components/dashboard';
 import { TrendAlertsBanner } from '@/components/dashboard/TrendAlertsBanner';
-import { DashboardHeroBanner } from '@/components/dashboard/DashboardHeroBanner';
+import { DashboardBackground, DashboardGreeting } from '@/components/dashboard/DashboardHeroBanner';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
 
@@ -218,21 +218,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pull-refresh-container">
-      <AppHeader />
+    <div ref={containerRef} className="min-h-screen pull-refresh-container relative">
+      {/* Full-page time-of-day background */}
+      <DashboardBackground />
       
-      <PullToRefreshIndicator 
-        pullDistance={pullDistance}
-        isPastThreshold={isPastThreshold}
-        isRefreshing={isRefreshing}
-      />
-      
-      {/* Time-of-Day Hero Banner */}
-      <div className="pt-16 mt-safe">
-        <DashboardHeroBanner />
-      </div>
-      
-      <main className="container mx-auto px-4 py-6">
+      {/* Content layer */}
+      <div className="relative z-10">
+        <AppHeader />
+        
+        <PullToRefreshIndicator 
+          pullDistance={pullDistance}
+          isPastThreshold={isPastThreshold}
+          isRefreshing={isRefreshing}
+        />
+        
+        <main className="container mx-auto px-4 py-6 pt-24 mt-safe">
+          {/* Personalized Greeting */}
+          <DashboardGreeting />
 
         {/* Trend Alerts Banner */}
         <SectionErrorBoundary fallbackTitle="Failed to load alerts" featureArea={FeatureArea.AQUARIUM}>
@@ -273,7 +275,8 @@ export default function Dashboard() {
             onDeleteAquarium={handleDeleteClick}
           />
         </SectionErrorBoundary>
-      </main>
+        </main>
+      </div>
 
       <AquariumDialog
         open={aquariumDialogOpen}
