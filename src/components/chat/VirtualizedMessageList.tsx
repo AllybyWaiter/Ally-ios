@@ -249,10 +249,11 @@ export const VirtualizedMessageList = memo(({
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
-    count: messages.length + (isLoading && !isStreaming ? 1 : 0), // +1 for loading indicator
+    count: messages.length + (isLoading && !isStreaming ? 1 : 0),
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 100, // Estimated message height
-    overscan: 3,
+    estimateSize: () => 80,
+    overscan: 5,
+    measureElement: (element) => element.getBoundingClientRect().height,
   });
 
   // Auto-scroll to bottom on new messages
@@ -281,6 +282,8 @@ export const VirtualizedMessageList = memo(({
             return (
               <div
                 key="loading"
+                data-index={virtualItem.index}
+                ref={virtualizer.measureElement}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -303,6 +306,8 @@ export const VirtualizedMessageList = memo(({
           return (
             <div
               key={virtualItem.key}
+              data-index={virtualItem.index}
+              ref={virtualizer.measureElement}
               style={{
                 position: 'absolute',
                 top: 0,
