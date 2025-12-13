@@ -15,6 +15,7 @@ import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Language
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import MemoryManager from "@/components/settings/MemoryManager";
+import { WeatherSettings } from "@/components/settings/WeatherSettings";
 
 const Settings = () => {
   const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut } = useAuth();
@@ -696,6 +697,8 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <WeatherSettings />
           </TabsContent>
 
           <TabsContent value="units" className="space-y-6">
