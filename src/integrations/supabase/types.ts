@@ -807,6 +807,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          hemisphere: string | null
           id: string
           language_preference: string | null
           name: string | null
@@ -824,6 +825,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          hemisphere?: string | null
           id?: string
           language_preference?: string | null
           name?: string | null
@@ -841,6 +843,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          hemisphere?: string | null
           id?: string
           language_preference?: string | null
           name?: string | null
