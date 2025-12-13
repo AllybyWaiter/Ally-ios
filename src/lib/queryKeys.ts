@@ -29,6 +29,8 @@ export const queryKeys = {
     monthlyCount: (userId: string) => ['water-tests', 'monthly-count', userId] as const,
     latest: (aquariumId: string) => ['water-tests', 'latest', aquariumId] as const,
     charts: (aquariumId: string, dateRange: string) => ['water-tests', 'charts', aquariumId, dateRange] as const,
+    alerts: (userId: string) => ['water-tests', 'alerts', userId] as const,
+    aquariumAlerts: (aquariumId: string) => ['water-tests', 'alerts', 'aquarium', aquariumId] as const,
   },
 
   // Maintenance Tasks
