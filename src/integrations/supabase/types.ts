@@ -1120,6 +1120,59 @@ export type Database = {
         }
         Relationships: []
       }
+      water_test_alerts: {
+        Row: {
+          alert_type: string
+          aquarium_id: string
+          created_at: string
+          details: Json | null
+          dismissed_at: string | null
+          id: string
+          is_dismissed: boolean
+          message: string
+          parameter_name: string
+          severity: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          aquarium_id: string
+          created_at?: string
+          details?: Json | null
+          dismissed_at?: string | null
+          id?: string
+          is_dismissed?: boolean
+          message: string
+          parameter_name: string
+          severity?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          aquarium_id?: string
+          created_at?: string
+          details?: Json | null
+          dismissed_at?: string | null
+          id?: string
+          is_dismissed?: boolean
+          message?: string
+          parameter_name?: string
+          severity?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "water_test_alerts_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       water_tests: {
         Row: {
           aquarium_id: string
