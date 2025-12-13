@@ -54,7 +54,7 @@ const AppShowcase = () => {
 
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-water blur-3xl opacity-20 rounded-full" />
-            <img src={appMockup} alt="Ally App Interface" className="relative w-full max-w-md mx-auto drop-shadow-2xl" />
+            <img alt="Ally App Interface" className="relative w-full max-w-md mx-auto drop-shadow-2xl" src="/lovable-uploads/71e85e7c-168f-4a25-8650-7e3bd25859d4.png" />
           </div>
         </div>
       </div>
