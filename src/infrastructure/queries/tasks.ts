@@ -16,6 +16,9 @@ export interface MaintenanceTask {
   completed_date: string | null;
   status: string | null;
   notes: string | null;
+  is_recurring: boolean | null;
+  recurrence_interval: string | null;
+  recurrence_days: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +56,9 @@ export async function createTask(task: {
   equipment_id?: string;
   notes?: string;
   status?: string;
+  is_recurring?: boolean;
+  recurrence_interval?: string;
+  recurrence_days?: number;
 }) {
   const { data, error } = await supabase
     .from('maintenance_tasks')
