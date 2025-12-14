@@ -228,18 +228,81 @@ serve(async (req) => {
       .order('completed_date', { ascending: false })
       .limit(10);
 
-    // Fetch user's hemisphere preference
+    // Fetch user's hemisphere and weather preferences
     const { data: profile } = await supabase
       .from('profiles')
-      .select('hemisphere')
+      .select('hemisphere, weather_enabled, latitude, longitude')
       .eq('user_id', aquarium?.user_id)
       .maybeSingle();
 
     const hemisphere = profile?.hemisphere || 'northern';
     const seasonalContext = getSeasonalContext(hemisphere);
 
+    // Fetch weather data for pool/spa owners if location is available
+    let weatherContext: {
+      temperature: number;
+      uvIndex: number;
+      condition: string;
+      windSpeed: number;
+      humidity: number;
+      forecast: Array<{ date: string; condition: string; tempMax: number; uvIndexMax: number }>;
+    } | null = null;
+
+    const isPoolOrSpaType = ['pool', 'spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
+    
+    if (isPoolOrSpaType && profile?.weather_enabled && profile?.latitude && profile?.longitude) {
+      try {
+        logger.info('Fetching weather data for pool/spa', { 
+          lat: profile.latitude, 
+          lon: profile.longitude 
+        });
+        
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${profile.latitude}&longitude=${profile.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,uv_index&daily=weather_code,temperature_2m_max,uv_index_max&timezone=auto&forecast_days=3`;
+        
+        const weatherResponse = await fetch(weatherUrl);
+        
+        if (weatherResponse.ok) {
+          const weatherData = await weatherResponse.json();
+          
+          // Map weather code to condition string
+          const mapWeatherCode = (code: number): string => {
+            if (code === 0) return 'clear';
+            if (code <= 3) return 'partly_cloudy';
+            if (code <= 49) return 'cloudy';
+            if (code <= 69) return 'rain';
+            if (code <= 79) return 'snow';
+            if (code <= 99) return 'storm';
+            return 'unknown';
+          };
+          
+          weatherContext = {
+            temperature: Math.round(weatherData.current?.temperature_2m || 0),
+            uvIndex: Math.round(weatherData.current?.uv_index || 0),
+            condition: mapWeatherCode(weatherData.current?.weather_code || 0),
+            windSpeed: Math.round(weatherData.current?.wind_speed_10m || 0),
+            humidity: Math.round(weatherData.current?.relative_humidity_2m || 0),
+            forecast: (weatherData.daily?.time || []).map((date: string, i: number) => ({
+              date,
+              condition: mapWeatherCode(weatherData.daily?.weather_code?.[i] || 0),
+              tempMax: Math.round(weatherData.daily?.temperature_2m_max?.[i] || 0),
+              uvIndexMax: Math.round(weatherData.daily?.uv_index_max?.[i] || 0),
+            })),
+          };
+          
+          logger.info('Weather data fetched', { 
+            temp: weatherContext.temperature, 
+            uv: weatherContext.uvIndex,
+            condition: weatherContext.condition 
+          });
+        }
+      } catch (weatherError) {
+        logger.warn('Failed to fetch weather data', { error: weatherError });
+        // Continue without weather - graceful degradation
+      }
+    }
+
     // Build context for AI
-    const context = {
+    const context: Record<string, unknown> = {
       aquarium: {
         type: aquarium?.type,
         volume: aquarium?.volume_gallons,
@@ -271,6 +334,11 @@ serve(async (req) => {
       season: seasonalContext.seasonName,
       hemisphere: hemisphere,
     };
+    
+    // Add weather context for pool/spa if available
+    if (weatherContext) {
+      context.weather = weatherContext;
+    }
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -278,6 +346,9 @@ serve(async (req) => {
       aquariumType: aquarium?.type,
       waterTestCount: waterTests?.length || 0,
       equipmentCount: equipment?.length || 0,
+      hasWeatherContext: !!weatherContext,
+      weatherTemp: weatherContext?.temperature,
+      weatherUV: weatherContext?.uvIndex,
     });
 
     const isPoolOrSpa = ['pool', 'spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
@@ -297,6 +368,33 @@ It is currently ${seasonalContext.seasonName} in the ${hemisphere} hemisphere. I
       }
     }
 
+    // Build weather-based instructions for pools/spas
+    let weatherInstructions = '';
+    if (weatherContext && isPoolOrSpa) {
+      const uvLevel = weatherContext.uvIndex >= 8 ? 'Very High' : 
+                      weatherContext.uvIndex >= 6 ? 'High' :
+                      weatherContext.uvIndex >= 3 ? 'Moderate' : 'Low';
+      
+      const rainForecast = weatherContext.forecast.find(f => f.condition === 'rain' || f.condition === 'storm');
+      
+      weatherInstructions = `
+WEATHER-AWARE MAINTENANCE:
+Current conditions: ${weatherContext.temperature}°F (UV Index: ${weatherContext.uvIndex} - ${uvLevel}), ${weatherContext.condition.replace('_', ' ')}, Wind: ${weatherContext.windSpeed} mph, Humidity: ${weatherContext.humidity}%
+${rainForecast ? `Rain/storms expected: ${rainForecast.date}` : 'No rain in forecast'}
+
+Weather-based recommendations to consider:
+${weatherContext.uvIndex >= 8 ? '- VERY HIGH UV: Chlorine consumption increases 2-3x. Recommend daily sanitizer testing and possible extra shock.' : ''}
+${weatherContext.uvIndex >= 6 && weatherContext.uvIndex < 8 ? '- HIGH UV: Chlorine degrades faster. Consider testing sanitizer levels more frequently.' : ''}
+${weatherContext.temperature >= 90 ? '- HOT TEMPS (90°F+): Algae thrives in warm water. Increase shock frequency and monitor for algae.' : ''}
+${weatherContext.temperature >= 85 && weatherContext.temperature < 90 ? '- WARM TEMPS: Higher water temps accelerate chemical breakdown. Keep sanitizer levels optimal.' : ''}
+${weatherContext.temperature < 50 ? '- COLD TEMPS: Consider heating efficiency check and cover usage to retain heat.' : ''}
+${weatherContext.windSpeed >= 15 ? '- HIGH WINDS: Expect more debris. Clean skimmer baskets more frequently.' : ''}
+${rainForecast ? `- RAIN INCOMING: Plan to test and adjust pH after rain (typically drops pH).` : ''}
+${weatherContext.humidity >= 80 ? '- HIGH HUMIDITY: Slower evaporation may affect water levels and chemistry balance.' : ''}
+
+Include weather reasoning in your task suggestions when relevant. Mention specific weather conditions in the reasoning field.`;
+    }
+
     const systemPrompt = isPoolOrSpa ? `You are an expert ${isSpa ? 'spa/hot tub' : 'pool'} maintenance advisor. Analyze the provided data and suggest 3-5 actionable maintenance tasks.
 
 ANALYSIS PRIORITIES:
@@ -304,7 +402,9 @@ ANALYSIS PRIORITIES:
 2. Equipment maintenance schedules - Suggest maintenance based on intervals and last service dates
 3. ${isSpa ? 'Spa-specific needs - Hot water degrades chemicals faster, drain/refill cycles, cover maintenance' : 'Seasonal considerations - Winterization, spring opening, algae prevention'}
 4. Recent task history - Avoid duplicating recently completed tasks
+${weatherContext ? '5. Current weather conditions - Factor in UV, temperature, and incoming weather' : ''}
 ${seasonalInstructions}
+${weatherInstructions}
 
 TASK CATEGORIES:
 - testing: Water testing (specify which parameters)
@@ -335,8 +435,8 @@ ${isSpa ? `SPA-SPECIFIC GUIDELINES:
 - Cover cleaning extends lifespan and prevents debris`}
 
 PRIORITY GUIDELINES:
-- high: Immediate action needed (low/high sanitizer, pH out of range, equipment failure, seasonal tasks)
-- medium: Should be done within the week (routine maintenance, slight imbalances)
+- high: Immediate action needed (low/high sanitizer, pH out of range, equipment failure, seasonal tasks, extreme weather conditions)
+- medium: Should be done within the week (routine maintenance, slight imbalances, weather-related adjustments)
 - low: Nice to do when convenient (optimization, aesthetic improvements)
 
 Today's date is ${today}. Current season: ${seasonalContext.seasonName} (${hemisphere} hemisphere). Use this for calculating days since last maintenance and setting recommended dates.`
