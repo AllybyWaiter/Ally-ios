@@ -142,7 +142,7 @@ serve(async (req) => {
       forecast,
     };
 
-    logger.info('Weather fetched successfully', { condition, temperature: temperature_2m, hourlyCount: hourlyForecast.length, forecastDays: forecast.length });
+    logger.info('Weather fetched successfully', { condition, temperature: temperature_2m, hourlyCount: hourlyForecast.length, forecastDays: forecast.length, locationName });
 
     return new Response(
       JSON.stringify(weatherData),
