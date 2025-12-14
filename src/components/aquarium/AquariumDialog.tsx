@@ -72,8 +72,23 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
   const onSubmit = async (data: AquariumFormData) => {
     setIsSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      // iOS PWA fix: Try to get session first, refresh if stale
+      let currentUser = null;
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (sessionData.session?.user) {
+        currentUser = sessionData.session.user;
+      } else {
+        // Try refreshing the session once (handles iOS PWA stale sessions)
+        const { data: refreshData } = await supabase.auth.refreshSession();
+        if (refreshData.session?.user) {
+          currentUser = refreshData.session.user;
+        }
+      }
+      
+      if (!currentUser) {
+        throw new Error("Session expired. Please sign in again.");
+      }
 
       // Convert volume to gallons for storage if user entered in liters
       const volumeInGallons = data.volume_gallons && units === 'metric' 
@@ -87,7 +102,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
         status: data.status,
         setup_date: data.setup_date?.toISOString().split('T')[0] || null,
         notes: data.notes || null,
-        user_id: user.id,
+        user_id: currentUser.id,
       };
 
       if (isEditMode) {
@@ -120,9 +135,10 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
       onSuccess();
     } catch (error) {
       console.error("Error saving aquarium:", error);
+      const errorMessage = error instanceof Error ? error.message : t(isEditMode ? 'aquarium.failedToUpdate' : 'aquarium.failedToCreate');
       toast({
         title: t('common.error'),
-        description: t(isEditMode ? 'aquarium.failedToUpdate' : 'aquarium.failedToCreate'),
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
