@@ -43,8 +43,8 @@ serve(async (req) => {
 
     logger.info('Fetching weather', { latitude, longitude });
 
-    // Call Open-Meteo API with current weather, humidity, feels-like, UV, and 5-day forecast
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max&forecast_days=5&timezone=auto`;
+    // Call Open-Meteo API with current weather, humidity, feels-like, UV, hourly, and 5-day forecast
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&hourly=temperature_2m,weather_code,is_day&forecast_hours=24&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max&forecast_days=5&timezone=auto`;
     
     const response = await fetch(apiUrl);
     
@@ -63,7 +63,20 @@ serve(async (req) => {
     const { weather_code, temperature_2m, apparent_temperature, wind_speed_10m, relative_humidity_2m, is_day, uv_index } = data.current;
     const condition = mapWeatherCode(weather_code);
 
-    // Build forecast array
+    // Build hourly forecast array (next 24 hours)
+    const hourlyForecast = [];
+    if (data.hourly && data.hourly.time) {
+      for (let i = 0; i < data.hourly.time.length; i++) {
+        hourlyForecast.push({
+          time: data.hourly.time[i],
+          temperature: Math.round(data.hourly.temperature_2m[i]),
+          condition: mapWeatherCode(data.hourly.weather_code[i]),
+          isDay: data.hourly.is_day[i] === 1,
+        });
+      }
+    }
+
+    // Build daily forecast array
     const forecast = [];
     if (data.daily && data.daily.time) {
       for (let i = 0; i < data.daily.time.length; i++) {
@@ -89,10 +102,11 @@ serve(async (req) => {
       uvIndex: Math.round(uv_index ?? 0),
       isDay: is_day === 1,
       fetchedAt: new Date().toISOString(),
+      hourlyForecast,
       forecast,
     };
 
-    logger.info('Weather fetched successfully', { condition, temperature: temperature_2m, forecastDays: forecast.length });
+    logger.info('Weather fetched successfully', { condition, temperature: temperature_2m, hourlyCount: hourlyForecast.length, forecastDays: forecast.length });
 
     return new Response(
       JSON.stringify(weatherData),
