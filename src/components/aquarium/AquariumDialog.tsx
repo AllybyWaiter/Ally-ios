@@ -95,20 +95,20 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
         ? litersToGallons(data.volume_gallons)
         : data.volume_gallons;
 
-      const aquariumData = {
+      // Base data for updates (excludes user_id to avoid RLS issues)
+      const updateData = {
         name: data.name,
         type: data.type,
         volume_gallons: volumeInGallons,
         status: data.status,
         setup_date: data.setup_date?.toISOString().split('T')[0] || null,
         notes: data.notes || null,
-        user_id: currentUser.id,
       };
 
       if (isEditMode) {
         const { error } = await supabase
           .from("aquariums")
-          .update(aquariumData)
+          .update(updateData)
           .eq("id", aquarium.id);
 
         if (error) throw error;
@@ -118,9 +118,10 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
           description: t('aquarium.aquariumUpdated'),
         });
       } else {
+        // Include user_id only for new aquariums
         const { error } = await supabase
           .from("aquariums")
-          .insert([aquariumData]);
+          .insert([{ ...updateData, user_id: currentUser.id }]);
 
         if (error) throw error;
 
