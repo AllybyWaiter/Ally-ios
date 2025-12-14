@@ -124,3 +124,22 @@ export const getVolumeUnit = (units: UnitSystem | null): string => {
 export const getLengthUnit = (units: UnitSystem | null): string => {
   return units === 'metric' ? 'cm' : 'in';
 };
+
+// Wind speed conversions
+export const kmhToMph = (kmh: number): number => {
+  return kmh / 1.60934;
+};
+
+export const mphToKmh = (mph: number): number => {
+  return mph * 1.60934;
+};
+
+export const formatWindSpeed = (kmh: number | null | undefined, units: UnitSystem | null): string => {
+  if (kmh === null || kmh === undefined || isNaN(kmh)) return '';
+  const unitSystem = units || 'imperial';
+  
+  if (unitSystem === 'metric') {
+    return `${Math.round(kmh)} km/h`;
+  }
+  return `${Math.round(kmhToMph(kmh))} mph`;
+};

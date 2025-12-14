@@ -1,10 +1,10 @@
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWeather, WeatherCondition } from '@/hooks/useWeather';
 import { useAuth } from '@/hooks/useAuth';
-import { formatTemperature } from '@/lib/unitConversions';
+import { formatTemperature, formatWindSpeed } from '@/lib/unitConversions';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
   clear: Sun,
@@ -113,6 +113,19 @@ export function WeatherCard() {
               <p className="text-sm text-muted-foreground">
                 {conditionLabel}
               </p>
+              {/* Wind and Humidity */}
+              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Wind className="h-3 w-3" />
+                  {formatWindSpeed(weather.windSpeed, units)}
+                </span>
+                {weather.humidity != null && (
+                  <span className="flex items-center gap-1">
+                    <Droplets className="h-3 w-3" />
+                    {weather.humidity}%
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
