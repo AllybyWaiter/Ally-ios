@@ -43,8 +43,8 @@ serve(async (req) => {
 
     logger.info('Fetching weather', { latitude, longitude });
 
-    // Call Open-Meteo API (free, no API key required)
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&timezone=auto`;
+    // Call Open-Meteo API with current weather, humidity, and 5-day forecast
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max&forecast_days=5&timezone=auto`;
     
     const response = await fetch(apiUrl);
     
@@ -55,25 +55,41 @@ serve(async (req) => {
 
     const data = await response.json();
     
-    if (!data.current_weather) {
+    if (!data.current) {
       logger.error('No current weather in response', data);
       throw new Error('Invalid weather data received');
     }
 
-    const { weathercode, temperature, windspeed, is_day } = data.current_weather;
-    const condition = mapWeatherCode(weathercode);
+    const { weather_code, temperature_2m, wind_speed_10m, relative_humidity_2m, is_day } = data.current;
+    const condition = mapWeatherCode(weather_code);
+
+    // Build forecast array
+    const forecast = [];
+    if (data.daily && data.daily.time) {
+      for (let i = 0; i < data.daily.time.length; i++) {
+        forecast.push({
+          date: data.daily.time[i],
+          condition: mapWeatherCode(data.daily.weather_code[i]),
+          tempMax: Math.round(data.daily.temperature_2m_max[i]),
+          tempMin: Math.round(data.daily.temperature_2m_min[i]),
+          windSpeed: Math.round(data.daily.wind_speed_10m_max[i]),
+        });
+      }
+    }
 
     const weatherData = {
       condition,
-      weatherCode: weathercode,
-      temperature: Math.round(temperature),
+      weatherCode: weather_code,
+      temperature: Math.round(temperature_2m),
       temperatureUnit: 'celsius',
-      windSpeed: Math.round(windspeed),
+      windSpeed: Math.round(wind_speed_10m),
+      humidity: Math.round(relative_humidity_2m),
       isDay: is_day === 1,
       fetchedAt: new Date().toISOString(),
+      forecast,
     };
 
-    logger.info('Weather fetched successfully', { condition, temperature });
+    logger.info('Weather fetched successfully', { condition, temperature: temperature_2m, forecastDays: forecast.length });
 
     return new Response(
       JSON.stringify(weatherData),

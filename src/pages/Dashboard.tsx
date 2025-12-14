@@ -13,7 +13,7 @@ import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
-import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData, WeatherCard } from '@/components/dashboard';
+import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData, WeatherCard, WeatherForecast } from '@/components/dashboard';
 import { TrendAlertsBanner } from '@/components/dashboard/TrendAlertsBanner';
 import { DashboardBackground, DashboardGreeting } from '@/components/dashboard/DashboardHeroBanner';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
@@ -241,10 +241,11 @@ export default function Dashboard() {
           <TrendAlertsBanner />
         </SectionErrorBoundary>
 
-        {/* Weather Card */}
+        {/* Weather Card and Forecast */}
         <SectionErrorBoundary fallbackTitle="Failed to load weather" featureArea={FeatureArea.AQUARIUM}>
-          <div className="mb-6">
+          <div className="mb-6 space-y-3">
             <WeatherCard />
+            <WeatherForecast />
           </div>
         </SectionErrorBoundary>
 

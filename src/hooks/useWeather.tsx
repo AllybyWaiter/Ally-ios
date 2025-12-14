@@ -4,14 +4,24 @@ import { useAuth } from '@/hooks/useAuth';
 
 export type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'snow' | 'storm' | 'fog';
 
-interface WeatherData {
+export interface ForecastDay {
+  date: string;
+  condition: WeatherCondition;
+  tempMax: number;
+  tempMin: number;
+  windSpeed: number;
+}
+
+export interface WeatherData {
   condition: WeatherCondition;
   weatherCode: number;
   temperature: number;
   temperatureUnit: string;
   windSpeed: number;
+  humidity: number;
   isDay: boolean;
   fetchedAt: string;
+  forecast: ForecastDay[];
 }
 
 interface WeatherState {
