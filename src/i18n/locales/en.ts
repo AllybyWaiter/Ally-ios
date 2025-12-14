@@ -24,6 +24,7 @@ export const en = {
       required: "Required",
       yes: "Yes, that's correct",
       no: "No",
+      copied: "Copied",
     },
     settings: {
       title: "Settings",
@@ -138,6 +139,9 @@ export const en = {
       updateLocation: "Update",
       useNewLocation: "Use New Location",
       keepCurrent: "Keep Current",
+      viewInMaps: "View in Maps",
+      coordinates: "Coordinates",
+      copied: "Copied to clipboard",
     },
     waterTests: {
       title: "Water Test Logging",
