@@ -13,7 +13,7 @@ import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/ui/pull-to-refresh-indicator';
-import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData, CompactWeatherWidget } from '@/components/dashboard';
+import { DashboardStats, AllyCTA, AquariumGrid, useDashboardData, WeatherStatsCard } from '@/components/dashboard';
 import { TrendAlertsBanner } from '@/components/dashboard/TrendAlertsBanner';
 import { DashboardBackground, DashboardGreeting } from '@/components/dashboard/DashboardHeroBanner';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
@@ -241,9 +241,9 @@ export default function Dashboard() {
           <TrendAlertsBanner />
         </SectionErrorBoundary>
 
-        {/* Compact Weather Widget */}
+        {/* Weather Stats Card */}
         <SectionErrorBoundary fallbackTitle="Failed to load weather" featureArea={FeatureArea.AQUARIUM}>
-          <CompactWeatherWidget />
+          <WeatherStatsCard />
         </SectionErrorBoundary>
 
         {/* Stats Overview */}
