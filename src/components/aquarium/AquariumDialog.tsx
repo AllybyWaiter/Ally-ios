@@ -126,6 +126,12 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
         status: data.status,
         setup_date: data.setup_date?.toISOString().split('T')[0] || null,
         notes: data.notes || null,
+        // Include location if confirmed during update
+        ...(locationConfirmed === true && latitude && longitude ? {
+          latitude,
+          longitude,
+          location_name: locationName,
+        } : {}),
       };
 
       if (isEditMode) {
@@ -332,78 +338,132 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               )}
             />
 
-            {/* Location Detection for New Aquariums */}
-            {!isEditMode && (
-              <div className="space-y-2">
-                <FormLabel className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  {t('aquarium.location')} ({t('common.optional')})
-                </FormLabel>
-                
-                {locationLoading && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{t('aquarium.detectingLocation')}</span>
-                  </div>
-                )}
-
-                {!locationLoading && locationName && locationConfirmed === null && (
-                  <div className="space-y-2">
-                    <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
-                      {t('aquarium.locationConfirmation', { location: locationName })}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setLocationConfirmed(true)}
-                        className="flex-1"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        {t('common.yes')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setLocationConfirmed(false)}
-                        className="flex-1"
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        {t('aquarium.skipLocation')}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {locationConfirmed === true && locationName && (
-                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-2 rounded-md">
-                    <Check className="h-4 w-4" />
-                    <span>{locationName}</span>
-                  </div>
-                )}
-
-                {locationConfirmed === false && (
-                  <div className="text-sm text-muted-foreground">
-                    {t('aquarium.locationSkipped')}
-                  </div>
-                )}
-
-                {!locationLoading && !locationName && (
+            {/* Location Detection Section */}
+            <div className="space-y-2">
+              <FormLabel className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                {t('aquarium.location')} ({t('common.optional')})
+              </FormLabel>
+              
+              {/* Show saved location in edit mode */}
+              {isEditMode && aquarium?.location_name && locationConfirmed === null && (
+                <div className="flex items-center justify-between bg-muted px-3 py-2 rounded-md">
+                  <span className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    {aquarium.location_name}
+                  </span>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={detectLocation}
-                    disabled={locationLoading}
+                    onClick={() => {
+                      setLocationConfirmed(false);
+                      detectLocation();
+                    }}
                   >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {t('aquarium.detectLocation')}
+                    {t('aquarium.updateLocation')}
                   </Button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+
+              {locationLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{t('aquarium.detectingLocation')}</span>
+                </div>
+              )}
+
+              {!locationLoading && locationName && locationConfirmed === null && !aquarium?.location_name && (
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                    {t('aquarium.locationConfirmation', { location: locationName })}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLocationConfirmed(true)}
+                      className="flex-1"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      {t('common.yes')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLocationConfirmed(false)}
+                      className="flex-1"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      {t('aquarium.skipLocation')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* New location detected during update */}
+              {!locationLoading && locationName && locationConfirmed === null && isEditMode && aquarium?.location_name && (
+                <div className="space-y-2">
+                  <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                    {t('aquarium.updateLocationConfirmation', { location: locationName })}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLocationConfirmed(true)}
+                      className="flex-1"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      {t('aquarium.useNewLocation')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setLocationConfirmed(null);
+                        clearDetectedLocation();
+                      }}
+                      className="flex-1"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      {t('aquarium.keepCurrent')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {locationConfirmed === true && locationName && (
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-2 rounded-md">
+                  <Check className="h-4 w-4" />
+                  <span>{locationName}</span>
+                </div>
+              )}
+
+              {locationConfirmed === false && !isEditMode && (
+                <div className="text-sm text-muted-foreground">
+                  {t('aquarium.locationSkipped')}
+                </div>
+              )}
+
+              {/* Show detect button when no location exists and not currently detecting */}
+              {!locationLoading && !locationName && (!isEditMode || !aquarium?.location_name) && locationConfirmed !== true && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={detectLocation}
+                  disabled={locationLoading}
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  {t('aquarium.detectLocation')}
+                </Button>
+              )}
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
