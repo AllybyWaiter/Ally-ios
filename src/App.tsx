@@ -88,6 +88,7 @@ const Blog = lazyWithRetry(() => import("./pages/Blog"));
 const BlogPost = lazyWithRetry(() => import("./pages/BlogPost"));
 const FAQ = lazyWithRetry(() => import("./pages/FAQ"));
 const Contact = lazyWithRetry(() => import("./pages/Contact"));
+const Weather = lazyWithRetry(() => import("./pages/Weather"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -193,6 +194,18 @@ const App = () => (
                         <PageErrorBoundary pageName="Chat" featureArea="chat">
                           <Suspense fallback={<DashboardSkeleton />}>
                             <AllyChat />
+                          </Suspense>
+                        </PageErrorBoundary>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/weather" 
+                    element={
+                      <ProtectedRoute>
+                        <PageErrorBoundary pageName="Weather" featureArea="general">
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <Weather />
                           </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>

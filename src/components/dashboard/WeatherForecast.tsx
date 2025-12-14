@@ -1,8 +1,8 @@
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, SunDim } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { useAuth } from '@/hooks/useAuth';
-import { formatTemperature } from '@/lib/unitConversions';
+import { formatTemperature, getUVLevel } from '@/lib/unitConversions';
 import { format, parseISO } from 'date-fns';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
@@ -25,6 +25,7 @@ function ForecastDayCard({ day, units }: ForecastDayCardProps) {
   
   const highTemp = formatTemperature(day.tempMax, units, 'C');
   const lowTemp = formatTemperature(day.tempMin, units, 'C');
+  const uvLevel = getUVLevel(day.uvIndexMax);
 
   return (
     <div className="flex flex-col items-center gap-1 min-w-[4rem] py-2">
@@ -34,6 +35,12 @@ function ForecastDayCard({ day, units }: ForecastDayCardProps) {
         <span className="font-semibold">{highTemp}</span>
         <span className="text-muted-foreground">{lowTemp}</span>
       </div>
+      {day.uvIndexMax != null && day.uvIndexMax > 0 && (
+        <div className="flex items-center gap-0.5 text-[10px]">
+          <SunDim className="h-3 w-3" />
+          <span className={uvLevel.colorClass}>{day.uvIndexMax}</span>
+        </div>
+      )}
     </div>
   );
 }

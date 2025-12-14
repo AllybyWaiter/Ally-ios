@@ -10,15 +10,18 @@ export interface ForecastDay {
   tempMax: number;
   tempMin: number;
   windSpeed: number;
+  uvIndexMax: number;
 }
 
 export interface WeatherData {
   condition: WeatherCondition;
   weatherCode: number;
   temperature: number;
+  feelsLike: number;
   temperatureUnit: string;
   windSpeed: number;
   humidity: number;
+  uvIndex: number;
   isDay: boolean;
   fetchedAt: string;
   forecast: ForecastDay[];
