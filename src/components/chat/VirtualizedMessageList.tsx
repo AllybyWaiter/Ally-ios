@@ -160,7 +160,7 @@ const MessageContent = memo(({
                 </div>
               ) : (
                 <div className="inline-block bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2 max-w-[85%] break-words">
-                  <p className="text-sm leading-relaxed">{message.content}</p>
+                  <p className="text-sm leading-relaxed text-right">{message.content}</p>
                 </div>
               )}
             </>
