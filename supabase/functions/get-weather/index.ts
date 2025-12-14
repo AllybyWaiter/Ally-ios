@@ -43,8 +43,8 @@ serve(async (req) => {
 
     logger.info('Fetching weather', { latitude, longitude });
 
-    // Call Open-Meteo API with current weather, humidity, feels-like, UV, hourly, and 5-day forecast
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&hourly=temperature_2m,weather_code,is_day&forecast_hours=24&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max&forecast_days=5&timezone=auto`;
+    // Call Open-Meteo API with current weather, humidity, feels-like, UV, hourly, 5-day forecast, and sunrise/sunset
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&hourly=temperature_2m,weather_code,is_day&forecast_hours=24&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=5&timezone=auto`;
     
     const response = await fetch(apiUrl);
     
@@ -91,6 +91,10 @@ serve(async (req) => {
       }
     }
 
+    // Extract today's sunrise/sunset
+    const sunrise = data.daily?.sunrise?.[0] ?? null;
+    const sunset = data.daily?.sunset?.[0] ?? null;
+
     const weatherData = {
       condition,
       weatherCode: weather_code,
@@ -102,6 +106,8 @@ serve(async (req) => {
       uvIndex: Math.round(uv_index ?? 0),
       isDay: is_day === 1,
       fetchedAt: new Date().toISOString(),
+      sunrise,
+      sunset,
       hourlyForecast,
       forecast,
     };
