@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatTemperature } from '@/lib/unitConversions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronRight, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import type { WeatherCondition } from '@/hooks/useWeather';
 
 const weatherIcons: Record<WeatherCondition, React.ComponentType<{ className?: string }>> = {
@@ -45,6 +46,11 @@ export function CompactWeatherWidget() {
   const temperature = formatTemperature(weather.temperature, units, 'C');
   const feelsLike = formatTemperature(weather.feelsLike, units, 'C');
 
+  // Prepare sparkline chart data from hourly forecast (next 8 hours)
+  const chartData = weather.hourlyForecast?.slice(0, 8).map(hour => ({
+    temp: hour.temperature,
+  })) || [];
+
   return (
     <Link 
       to="/weather" 
@@ -58,7 +64,25 @@ export function CompactWeatherWidget() {
           · Feels {feelsLike}
         </span>
       </div>
-      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+      <div className="flex items-center gap-3">
+        {/* Mini hourly temperature sparkline - desktop only */}
+        {chartData.length > 0 && (
+          <div className="w-24 h-6 hidden sm:block">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+                <Area
+                  type="monotone"
+                  dataKey="temp"
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary) / 0.2)"
+                  strokeWidth={1.5}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+      </div>
     </Link>
   );
 }
