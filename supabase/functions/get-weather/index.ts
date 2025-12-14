@@ -43,8 +43,8 @@ serve(async (req) => {
 
     logger.info('Fetching weather', { latitude, longitude });
 
-    // Call Open-Meteo API with current weather, humidity, and 5-day forecast
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max&forecast_days=5&timezone=auto`;
+    // Call Open-Meteo API with current weather, humidity, feels-like, UV, and 5-day forecast
+    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max&forecast_days=5&timezone=auto`;
     
     const response = await fetch(apiUrl);
     
@@ -60,7 +60,7 @@ serve(async (req) => {
       throw new Error('Invalid weather data received');
     }
 
-    const { weather_code, temperature_2m, wind_speed_10m, relative_humidity_2m, is_day } = data.current;
+    const { weather_code, temperature_2m, apparent_temperature, wind_speed_10m, relative_humidity_2m, is_day, uv_index } = data.current;
     const condition = mapWeatherCode(weather_code);
 
     // Build forecast array
@@ -73,6 +73,7 @@ serve(async (req) => {
           tempMax: Math.round(data.daily.temperature_2m_max[i]),
           tempMin: Math.round(data.daily.temperature_2m_min[i]),
           windSpeed: Math.round(data.daily.wind_speed_10m_max[i]),
+          uvIndexMax: Math.round(data.daily.uv_index_max?.[i] ?? 0),
         });
       }
     }
@@ -81,9 +82,11 @@ serve(async (req) => {
       condition,
       weatherCode: weather_code,
       temperature: Math.round(temperature_2m),
+      feelsLike: Math.round(apparent_temperature),
       temperatureUnit: 'celsius',
       windSpeed: Math.round(wind_speed_10m),
       humidity: Math.round(relative_humidity_2m),
+      uvIndex: Math.round(uv_index ?? 0),
       isDay: is_day === 1,
       fetchedAt: new Date().toISOString(),
       forecast,
