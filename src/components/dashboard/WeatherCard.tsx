@@ -1,10 +1,10 @@
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWeather, WeatherCondition } from '@/hooks/useWeather';
 import { useAuth } from '@/hooks/useAuth';
-import { formatTemperature, formatWindSpeed } from '@/lib/unitConversions';
+import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
   clear: Sun,
@@ -75,12 +75,21 @@ export function WeatherCard() {
   const conditionLabel = weatherLabels[weather.condition] || weather.condition;
   
   // Format temperature based on user's unit preference
-  // Weather API returns temperature in the unit specified (temperatureUnit field)
   const displayTemp = formatTemperature(
     weather.temperature,
     units,
     weather.temperatureUnit === 'celsius' ? 'C' : 'F'
   );
+
+  // Format feels-like temperature
+  const feelsLikeTemp = formatTemperature(
+    weather.feelsLike,
+    units,
+    weather.temperatureUnit === 'celsius' ? 'C' : 'F'
+  );
+
+  // Get UV level info
+  const uvLevel = getUVLevel(weather.uvIndex);
 
   // Calculate time since last fetch
   const getTimeSinceUpdate = () => {
@@ -107,14 +116,21 @@ export function WeatherCard() {
             
             {/* Temperature and Condition */}
             <div>
-              <p className="text-2xl font-semibold tracking-tight">
-                {displayTemp}
-              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-semibold tracking-tight">
+                  {displayTemp}
+                </p>
+                {weather.feelsLike != null && weather.feelsLike !== weather.temperature && (
+                  <span className="text-xs text-muted-foreground">
+                    Feels {feelsLikeTemp}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {conditionLabel}
               </p>
-              {/* Wind and Humidity */}
-              <div className="flex gap-3 mt-1 text-xs text-muted-foreground">
+              {/* Wind, Humidity, UV */}
+              <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Wind className="h-3 w-3" />
                   {formatWindSpeed(weather.windSpeed, units)}
@@ -123,6 +139,13 @@ export function WeatherCard() {
                   <span className="flex items-center gap-1">
                     <Droplets className="h-3 w-3" />
                     {weather.humidity}%
+                  </span>
+                )}
+                {weather.uvIndex != null && (
+                  <span className="flex items-center gap-1">
+                    <SunDim className="h-3 w-3" />
+                    <span>UV {weather.uvIndex}</span>
+                    <span className={uvLevel.colorClass}>({uvLevel.label})</span>
                   </span>
                 )}
               </div>
