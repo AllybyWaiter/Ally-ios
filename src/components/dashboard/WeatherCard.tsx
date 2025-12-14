@@ -1,4 +1,5 @@
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -166,6 +167,13 @@ export function WeatherCard() {
             <span className="text-xs text-muted-foreground">
               {getTimeSinceUpdate()}
             </span>
+            <Link 
+              to="/weather" 
+              className="flex items-center gap-0.5 text-xs text-primary hover:underline"
+            >
+              Full forecast
+              <ChevronRight className="h-3 w-3" />
+            </Link>
           </div>
         </div>
       </CardContent>
