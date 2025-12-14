@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
+import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
 import { format, parseISO } from 'date-fns';
@@ -234,6 +235,9 @@ export default function Weather() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Hourly Forecast */}
+          <HourlyForecast />
 
           {/* 5-Day Forecast */}
           <Card className="glass-card">
