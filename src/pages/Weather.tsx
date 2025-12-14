@@ -281,9 +281,14 @@ export default function Weather() {
                 </div>
               )}
 
-              {/* Last Updated */}
-              <div className="flex items-center justify-center gap-1 mt-4 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+              {/* Location and Last Updated */}
+              <div className="flex flex-col items-center gap-1 mt-4 text-xs text-muted-foreground">
+                {weather.locationName && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    <span className="font-medium text-foreground">{weather.locationName}</span>
+                  </div>
+                )}
                 <span>Updated {getTimeSinceUpdate()}</span>
               </div>
             </CardContent>

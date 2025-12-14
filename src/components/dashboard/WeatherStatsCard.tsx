@@ -5,7 +5,7 @@ import { formatTemperature } from '@/lib/unitConversions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog,
-  Wind, Droplets, ChevronRight, Thermometer, Sunrise, Sunset
+  Wind, Droplets, ChevronRight, Thermometer, Sunrise, Sunset, MapPin
 } from 'lucide-react';
 import type { WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { format, parseISO } from 'date-fns';
@@ -97,6 +97,12 @@ export function WeatherStatsCard() {
               <span className="text-muted-foreground capitalize">{weather.condition}</span>
             </div>
             <span className="text-sm text-muted-foreground">Feels like {feelsLike}</span>
+            {weather.locationName && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                <MapPin className="h-3 w-3" />
+                <span>{weather.locationName.split(', ').slice(0, 2).join(', ')}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-foreground transition-colors">

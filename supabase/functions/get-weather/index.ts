@@ -43,10 +43,18 @@ serve(async (req) => {
 
     logger.info('Fetching weather', { latitude, longitude });
 
-    // Call Open-Meteo API with current weather, humidity, feels-like, UV, hourly, 5-day forecast, and sunrise/sunset
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&hourly=temperature_2m,weather_code,is_day&forecast_hours=24&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=5&timezone=auto`;
+    // Call Open-Meteo API and Nominatim reverse geocoding in parallel
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index&hourly=temperature_2m,weather_code,is_day&forecast_hours=24&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=5&timezone=auto`;
+    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`;
     
-    const response = await fetch(apiUrl);
+    const [weatherResponse, nominatimResponse] = await Promise.all([
+      fetch(weatherUrl),
+      fetch(nominatimUrl, {
+        headers: { 'User-Agent': 'AquaDex/1.0 (https://aquadex.app)' }
+      }).catch(() => null) // Graceful degradation if Nominatim fails
+    ]);
+    
+    const response = weatherResponse;
     
     if (!response.ok) {
       logger.error('Open-Meteo API error', { status: response.status });
@@ -95,6 +103,27 @@ serve(async (req) => {
     const sunrise = data.daily?.sunrise?.[0] ?? null;
     const sunset = data.daily?.sunset?.[0] ?? null;
 
+    // Parse location name from Nominatim response
+    let locationName: string | null = null;
+    if (nominatimResponse && nominatimResponse.ok) {
+      try {
+        const geoData = await nominatimResponse.json();
+        const address = geoData.address || {};
+        const city = address.city || address.town || address.village || address.county || address.municipality;
+        const state = address.state;
+        const countryCode = address.country_code?.toUpperCase();
+        
+        if (city) {
+          const parts = [city];
+          if (state) parts.push(state);
+          if (countryCode) parts.push(countryCode);
+          locationName = parts.join(', ');
+        }
+      } catch (e) {
+        logger.warn('Failed to parse Nominatim response', e);
+      }
+    }
+
     const weatherData = {
       condition,
       weatherCode: weather_code,
@@ -108,6 +137,7 @@ serve(async (req) => {
       fetchedAt: new Date().toISOString(),
       sunrise,
       sunset,
+      locationName,
       hourlyForecast,
       forecast,
     };
