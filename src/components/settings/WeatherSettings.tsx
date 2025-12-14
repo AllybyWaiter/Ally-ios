@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Cloud, RefreshCw, X } from 'lucide-react';
+import { Cloud, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useGeolocation } from '@/hooks/useGeolocation';
 import { useWeather } from '@/hooks/useWeather';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,12 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 export function WeatherSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { requestLocation, clearLocation, loading: geoLoading, permissionState } = useGeolocation();
   const { weather, enabled, refreshWeather, loading: weatherLoading } = useWeather();
   
   const [weatherEnabled, setWeatherEnabled] = useState(false);
-  const [hasLocation, setHasLocation] = useState(false);
-  const [locationLoading, setLocationLoading] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
   // Load current settings
   useEffect(() => {
@@ -27,15 +24,14 @@ export function WeatherSettings() {
     const loadSettings = async () => {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('latitude, longitude, weather_enabled')
+        .select('weather_enabled')
         .eq('user_id', user.id)
         .single();
 
       if (profile) {
         setWeatherEnabled(profile.weather_enabled || false);
-        setHasLocation(!!profile.latitude && !!profile.longitude);
       }
-      setLocationLoading(false);
+      setSettingsLoading(false);
     };
 
     loadSettings();
@@ -44,46 +40,60 @@ export function WeatherSettings() {
   const handleToggleWeather = async (enabled: boolean) => {
     if (!user?.id) return;
 
-    // If enabling without location, request location first
-    if (enabled && !hasLocation) {
-      const success = await requestLocation();
-      if (success) {
-        setHasLocation(true);
-        setWeatherEnabled(true);
+    // If enabling, request location permission first
+    if (enabled) {
+      if (!navigator.geolocation) {
+        toast({
+          title: "Location Not Supported",
+          description: "Your browser doesn't support geolocation.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      // Request location permission
+      navigator.geolocation.getCurrentPosition(
+        async () => {
+          // Permission granted, enable weather
+          setWeatherEnabled(true);
+          
+          await supabase
+            .from('profiles')
+            .update({ weather_enabled: true })
+            .eq('user_id', user.id);
+
+          toast({
+            title: "Weather Enabled",
+            description: "Your dashboard will now show weather-aware content based on your current location.",
+          });
+
+          // Refresh weather to get current data
+          refreshWeather();
+        },
+        (error) => {
+          console.error('Location permission denied:', error);
+          toast({
+            title: "Location Required",
+            description: "Please enable location access to use weather features.",
+            variant: "destructive",
+          });
+        },
+        { enableHighAccuracy: false, timeout: 10000 }
+      );
       return;
     }
 
-    setWeatherEnabled(enabled);
+    // Disabling weather
+    setWeatherEnabled(false);
     
     await supabase
       .from('profiles')
-      .update({ weather_enabled: enabled })
+      .update({ weather_enabled: false })
       .eq('user_id', user.id);
 
     toast({
-      title: enabled ? "Weather Enabled" : "Weather Disabled",
-      description: enabled 
-        ? "Your dashboard will now show weather-aware content."
-        : "Weather features have been turned off.",
-    });
-  };
-
-  const handleDetectLocation = async () => {
-    const success = await requestLocation();
-    if (success) {
-      setHasLocation(true);
-      setWeatherEnabled(true);
-    }
-  };
-
-  const handleClearLocation = async () => {
-    await clearLocation();
-    setHasLocation(false);
-    setWeatherEnabled(false);
-    toast({
-      title: "Location Cleared",
-      description: "Your location data has been removed.",
+      title: "Weather Disabled",
+      description: "Weather features have been turned off.",
     });
   };
 
@@ -99,7 +109,7 @@ export function WeatherSettings() {
     return labels[condition] || condition;
   };
 
-  if (locationLoading) {
+  if (settingsLoading) {
     return (
       <Card>
         <CardHeader>
@@ -123,7 +133,7 @@ export function WeatherSettings() {
           Weather Aware Dashboard
         </CardTitle>
         <CardDescription>
-          Enable weather-aware visuals on your dashboard based on your local weather conditions.
+          Enable weather-aware visuals on your dashboard. Weather updates automatically based on your current location, just like a native weather app.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -139,66 +149,33 @@ export function WeatherSettings() {
             id="weather-toggle"
             checked={weatherEnabled}
             onCheckedChange={handleToggleWeather}
-            disabled={geoLoading}
           />
         </div>
 
-        {/* Location Status */}
-        <div className="space-y-3">
-          <Label>Location</Label>
-          
-          {hasLocation ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md flex-1">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span>Location detected</span>
-                {weather && (
-                  <span className="ml-auto text-foreground">
-                    {getConditionLabel(weather.condition)}, {weather.temperature}°C
-                  </span>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={refreshWeather}
-                disabled={weatherLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${weatherLoading ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleClearLocation}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+        {/* Current Weather Display */}
+        {weatherEnabled && weather && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md flex-1">
+              <Cloud className="h-4 w-4 text-primary" />
+              <span>
+                {weather.locationName || 'Current location'}: {getConditionLabel(weather.condition)}, {weather.temperature}°{weather.temperatureUnit === 'fahrenheit' ? 'F' : 'C'}
+              </span>
             </div>
-          ) : (
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                onClick={handleDetectLocation}
-                disabled={geoLoading}
-                className="w-full"
-              >
-                <MapPin className="h-4 w-4 mr-2" />
-                {geoLoading ? 'Detecting...' : 'Detect My Location'}
-              </Button>
-              
-              {permissionState === 'denied' && (
-                <p className="text-sm text-destructive">
-                  Location permission was denied. Please enable it in your browser settings.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={refreshWeather}
+              disabled={weatherLoading}
+              title="Refresh weather"
+            >
+              <RefreshCw className={`h-4 w-4 ${weatherLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        )}
 
         {/* Privacy Notice */}
         <p className="text-xs text-muted-foreground">
-          Your location is only used to fetch local weather data and is stored securely in your profile. 
-          We never share your location with third parties.
+          Weather uses your device's current GPS location each time you open the app, so it always shows weather for where you are. Your location is not stored on our servers.
         </p>
       </CardContent>
     </Card>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,13 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, MapPin, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { gallonsToLiters, litersToGallons, getVolumeUnit } from "@/lib/unitConversions";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
 
 const aquariumSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -42,6 +43,9 @@ interface AquariumDialogProps {
     status: string;
     setup_date: string | null;
     notes: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    location_name?: string | null;
   };
 }
 
@@ -50,6 +54,25 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!aquarium;
+  
+  // Location detection for new aquariums
+  const { latitude, longitude, locationName, loading: locationLoading, detectLocation, clearDetectedLocation } = useLocationDetection();
+  const [locationConfirmed, setLocationConfirmed] = useState<boolean | null>(null);
+  const [locationDetectionAttempted, setLocationDetectionAttempted] = useState(false);
+
+  // Auto-detect location when dialog opens for new aquarium
+  useEffect(() => {
+    if (open && !isEditMode && !locationDetectionAttempted) {
+      setLocationDetectionAttempted(true);
+      detectLocation();
+    }
+    // Reset state when dialog closes
+    if (!open) {
+      setLocationConfirmed(null);
+      setLocationDetectionAttempted(false);
+      clearDetectedLocation();
+    }
+  }, [open, isEditMode, locationDetectionAttempted, detectLocation, clearDetectedLocation]);
   
   // Convert volume for display based on user preference
   const getDisplayVolume = (gallons: number | null) => {
@@ -118,10 +141,20 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
           description: t('aquarium.aquariumUpdated'),
         });
       } else {
-        // Include user_id only for new aquariums
+        // Include user_id and location (if confirmed) only for new aquariums
+        const insertData = {
+          ...updateData,
+          user_id: currentUser.id,
+          ...(locationConfirmed && latitude && longitude ? {
+            latitude,
+            longitude,
+            location_name: locationName,
+          } : {}),
+        };
+
         const { error } = await supabase
           .from("aquariums")
-          .insert([{ ...updateData, user_id: currentUser.id }]);
+          .insert([insertData]);
 
         if (error) throw error;
 
@@ -298,6 +331,79 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
                 </FormItem>
               )}
             />
+
+            {/* Location Detection for New Aquariums */}
+            {!isEditMode && (
+              <div className="space-y-2">
+                <FormLabel className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {t('aquarium.location')} ({t('common.optional')})
+                </FormLabel>
+                
+                {locationLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{t('aquarium.detectingLocation')}</span>
+                  </div>
+                )}
+
+                {!locationLoading && locationName && locationConfirmed === null && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                      {t('aquarium.locationConfirmation', { location: locationName })}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocationConfirmed(true)}
+                        className="flex-1"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        {t('common.yes')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocationConfirmed(false)}
+                        className="flex-1"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        {t('aquarium.skipLocation')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {locationConfirmed === true && locationName && (
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-2 rounded-md">
+                    <Check className="h-4 w-4" />
+                    <span>{locationName}</span>
+                  </div>
+                )}
+
+                {locationConfirmed === false && (
+                  <div className="text-sm text-muted-foreground">
+                    {t('aquarium.locationSkipped')}
+                  </div>
+                )}
+
+                {!locationLoading && !locationName && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={detectLocation}
+                    disabled={locationLoading}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {t('aquarium.detectLocation')}
+                  </Button>
+                )}
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>

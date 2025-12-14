@@ -22,6 +22,8 @@ export const en = {
       notes: "Notes",
       optional: "Optional",
       required: "Required",
+      yes: "Yes, that's correct",
+      no: "No",
     },
     settings: {
       title: "Settings",
@@ -125,6 +127,12 @@ export const en = {
       },
       notFound: "Aquarium not found",
       backToDashboard: "Back to Dashboard",
+      location: "Location",
+      detectingLocation: "Detecting your location...",
+      locationConfirmation: "Is this located at {{location}}?",
+      skipLocation: "Skip",
+      locationSkipped: "Location skipped",
+      detectLocation: "Detect Location",
     },
     waterTests: {
       title: "Water Test Logging",

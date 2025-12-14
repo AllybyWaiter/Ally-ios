@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { Waves, ArrowRight, CheckCircle, Calendar, Droplets, TestTube2, Camera } from 'lucide-react';
+import { Waves, ArrowRight, CheckCircle, Calendar, Droplets, TestTube2, Camera, MapPin, Check, X, Loader2 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useTranslation } from 'react-i18next';
+import { useLocationDetection } from '@/hooks/useLocationDetection';
 
 const aquariumSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
@@ -34,6 +35,10 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  // Location detection
+  const { latitude, longitude, locationName, loading: locationLoading, detectLocation, clearDetectedLocation } = useLocationDetection();
+  const [locationConfirmed, setLocationConfirmed] = useState<boolean | null>(null);
+
   // Form state
   const [name, setName] = useState('');
   const [type, setType] = useState('');
@@ -41,6 +46,11 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const [setupDate, setSetupDate] = useState('');
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Auto-detect location on mount
+  useEffect(() => {
+    detectLocation();
+  }, [detectLocation]);
 
   const isPoolOrSpa = type === 'pool' || type === 'spa';
   const totalSteps = isPoolOrSpa ? 4 : 3;
@@ -118,7 +128,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
         notes: notes.trim(),
       });
 
-      // Create aquarium
+      // Create aquarium with location if confirmed
       const { error: aquariumError } = await supabase
         .from('aquariums')
         .insert({
@@ -129,6 +139,11 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
           setup_date: validated.setup_date,
           notes: validated.notes || null,
           status: 'active',
+          ...(locationConfirmed && latitude && longitude ? {
+            latitude,
+            longitude,
+            location_name: locationName,
+          } : {}),
         });
 
       if (aquariumError) throw aquariumError;
@@ -226,6 +241,77 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                 />
                 {errors.name && (
                   <p className="text-sm text-destructive">{errors.name}</p>
+                )}
+              </div>
+
+              {/* Location Detection Section */}
+              <div className="space-y-3 pt-2 border-t">
+                <Label className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  {t('aquarium.location')} ({t('common.optional')})
+                </Label>
+                
+                {locationLoading && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{t('aquarium.detectingLocation')}</span>
+                  </div>
+                )}
+
+                {!locationLoading && locationName && locationConfirmed === null && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md">
+                      {t('aquarium.locationConfirmation', { location: locationName })}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocationConfirmed(true)}
+                        className="flex-1"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        {t('common.yes')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocationConfirmed(false)}
+                        className="flex-1"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        {t('aquarium.skipLocation')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {locationConfirmed === true && locationName && (
+                  <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 bg-green-500/10 px-3 py-2 rounded-md">
+                    <Check className="h-4 w-4" />
+                    <span>{locationName}</span>
+                  </div>
+                )}
+
+                {locationConfirmed === false && (
+                  <div className="text-sm text-muted-foreground">
+                    {t('aquarium.locationSkipped')}
+                  </div>
+                )}
+
+                {!locationLoading && !locationName && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={detectLocation}
+                    disabled={locationLoading}
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    {t('aquarium.detectLocation')}
+                  </Button>
                 )}
               </div>
 
