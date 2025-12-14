@@ -33,6 +33,7 @@ export interface WeatherData {
   fetchedAt: string;
   sunrise: string | null;
   sunset: string | null;
+  locationName: string | null;
   hourlyForecast: HourlyForecast[];
   forecast: ForecastDay[];
 }
