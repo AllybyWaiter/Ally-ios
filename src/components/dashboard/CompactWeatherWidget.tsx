@@ -51,6 +51,13 @@ export function CompactWeatherWidget() {
     temp: hour.temperature,
   })) || [];
 
+  // Calculate min/max for labels
+  const temps = chartData.map(d => d.temp);
+  const minTemp = temps.length > 0 ? Math.min(...temps) : null;
+  const maxTemp = temps.length > 0 ? Math.max(...temps) : null;
+  const lowLabel = minTemp !== null ? formatTemperature(minTemp, units, 'C') : '';
+  const highLabel = maxTemp !== null ? formatTemperature(maxTemp, units, 'C') : '';
+
   return (
     <Link 
       to="/weather" 
@@ -65,20 +72,28 @@ export function CompactWeatherWidget() {
         </span>
       </div>
       <div className="flex items-center gap-3">
-        {/* Mini hourly temperature sparkline - desktop only */}
+        {/* Mini hourly temperature sparkline with high/low labels - desktop only */}
         {chartData.length > 0 && (
-          <div className="w-24 h-6 hidden sm:block">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                <Area
-                  type="monotone"
-                  dataKey="temp"
-                  stroke="hsl(var(--primary))"
-                  fill="hsl(var(--primary) / 0.2)"
-                  strokeWidth={1.5}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="hidden sm:flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">
+              {lowLabel}<span className="text-[10px] ml-0.5 opacity-70">L</span>
+            </span>
+            <div className="w-20 h-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+                  <Area
+                    type="monotone"
+                    dataKey="temp"
+                    stroke="hsl(var(--primary))"
+                    fill="hsl(var(--primary) / 0.2)"
+                    strokeWidth={1.5}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {highLabel}<span className="text-[10px] ml-0.5 opacity-70">H</span>
+            </span>
           </div>
         )}
         <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
