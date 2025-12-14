@@ -17,6 +17,9 @@ export interface Aquarium {
   user_id: string;
   created_at: string;
   updated_at: string;
+  latitude: number | null;
+  longitude: number | null;
+  location_name: string | null;
 }
 
 export interface AquariumWithTaskCount extends Aquarium {
