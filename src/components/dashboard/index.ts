@@ -6,3 +6,4 @@ export { WeatherCard } from './WeatherCard';
 export { WeatherForecast } from './WeatherForecast';
 export { HourlyForecast } from './HourlyForecast';
 export { CompactWeatherWidget } from './CompactWeatherWidget';
+export { WeatherStatsCard } from './WeatherStatsCard';
