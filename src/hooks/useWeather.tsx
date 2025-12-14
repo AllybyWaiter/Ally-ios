@@ -13,6 +13,13 @@ export interface ForecastDay {
   uvIndexMax: number;
 }
 
+export interface HourlyForecast {
+  time: string;
+  temperature: number;
+  condition: WeatherCondition;
+  isDay: boolean;
+}
+
 export interface WeatherData {
   condition: WeatherCondition;
   weatherCode: number;
@@ -24,6 +31,7 @@ export interface WeatherData {
   uvIndex: number;
   isDay: boolean;
   fetchedAt: string;
+  hourlyForecast: HourlyForecast[];
   forecast: ForecastDay[];
 }
 
