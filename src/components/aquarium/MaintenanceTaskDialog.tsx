@@ -205,6 +205,20 @@ export const MaintenanceTaskDialog = ({
   const onSubmit = async (values: FormValues) => {
     setLoading(true);
     try {
+      // iOS PWA fix: Try to get session first, refresh if stale
+      const { data: sessionData } = await supabase.auth.getSession();
+      let currentUser = sessionData.session?.user;
+      
+      if (!currentUser) {
+        // Try refreshing the session once (handles iOS PWA stale sessions)
+        const { data: refreshData } = await supabase.auth.refreshSession();
+        currentUser = refreshData.session?.user;
+      }
+      
+      if (!currentUser) {
+        throw new Error("Session expired. Please sign in again.");
+      }
+
       // Calculate recurrence_days for non-custom intervals
       let recurrenceDays = values.recurrence_days;
       if (values.is_recurring && values.recurrence_interval && values.recurrence_interval !== 'custom') {
@@ -256,10 +270,11 @@ export const MaintenanceTaskDialog = ({
       queryClient.invalidateQueries({ queryKey: ["dashboardTaskCount"] });
       form.reset();
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to save task";
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -276,7 +291,7 @@ export const MaintenanceTaskDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create Task" : "Edit Task"}
