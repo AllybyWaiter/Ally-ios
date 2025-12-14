@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Droplets, LineChart, Shield, Smartphone, Zap, ArrowRight } from "lucide-react";
+import { Brain, Droplets, LineChart, Shield, Smartphone, CloudSun, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
@@ -20,9 +20,9 @@ const features = [
     description: "Monitor water parameters over time with beautiful, easy-to-read charts.",
   },
   {
-    icon: Zap,
-    title: "Instant Care Plans",
-    description: "Get personalized, step-by-step instructions to fix any water issue.",
+    icon: CloudSun,
+    title: "Weather Aware",
+    description: "Real time weather integration with hourly and 5 day forecasts to help plan outdoor maintenance.",
   },
   {
     icon: Shield,
@@ -32,7 +32,7 @@ const features = [
   {
     icon: Smartphone,
     title: "Mobile First",
-    description: "Manage your aquarium from anywhere with our sleek mobile app.",
+    description: "Manage your aquatic spaces from anywhere with our sleek mobile app.",
   },
 ];
 
