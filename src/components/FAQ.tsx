@@ -213,6 +213,39 @@ const FAQ = () => {
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          {/* Weather Features */}
+          <AccordionItem value="weather" className="border border-border/50 rounded-lg px-6 bg-card/30 backdrop-blur-sm">
+            <AccordionTrigger className="text-left hover:no-underline">
+              <span className="text-lg font-semibold">Weather Integration</span>
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground space-y-4 pt-2">
+              <div>
+                <p className="font-semibold text-foreground mb-2">What weather features does Ally offer?</p>
+                <p className="mb-2">Ally provides comprehensive weather integration to help you plan outdoor maintenance:</p>
+                <ul className="list-disc pl-6 space-y-1">
+                  <li><strong>Current conditions:</strong> Temperature, feels like, humidity, wind speed, and UV index</li>
+                  <li><strong>Hourly forecast:</strong> 24 hour temperature and conditions timeline</li>
+                  <li><strong>5 day forecast:</strong> Daily highs, lows, and UV levels for planning ahead</li>
+                  <li><strong>Dynamic dashboard:</strong> Weather aware backgrounds that change with conditions</li>
+                </ul>
+              </div>
+              
+              <div>
+                <p className="font-semibold text-foreground mb-2">How does weather help with water care?</p>
+                <p>
+                  Weather data is especially valuable for <strong>pool and spa owners</strong>. UV levels affect chlorine degradation, temperature impacts chemical balance, and knowing when rain is coming helps you plan shock treatments and water testing. Ally uses this data to provide smarter maintenance recommendations.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-semibold text-foreground mb-2">Is location sharing required?</p>
+                <p>
+                  Weather features are <strong>completely optional</strong>. You can enable them in Settings by sharing your location. If you prefer not to share location, Ally works perfectly without weather data. Your location is used only to fetch local weather and is never stored or shared.
+                </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
         </Accordion>
       </div>
     </section>
