@@ -81,7 +81,11 @@ export function DashboardGreeting() {
   const { userName } = useAuth();
   
   const firstName = userName?.split(' ')[0];
-  const personalizedGreeting = firstName ? `${greeting}, ${firstName}` : greeting;
+  const personalizedGreeting = firstName 
+    ? greeting.endsWith('?') 
+      ? `${greeting.slice(0, -1)}, ${firstName}?`
+      : `${greeting}, ${firstName}`
+    : greeting;
   
   const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
 
@@ -146,7 +150,11 @@ export function DashboardHeroBanner() {
   }, []);
 
   const firstName = userName?.split(' ')[0];
-  const personalizedGreeting = firstName ? `${greeting}, ${firstName}` : greeting;
+  const personalizedGreeting = firstName 
+    ? greeting.endsWith('?') 
+      ? `${greeting.slice(0, -1)}, ${firstName}?`
+      : `${greeting}, ${firstName}`
+    : greeting;
   
   const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
 
