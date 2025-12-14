@@ -118,56 +118,87 @@ export function useWeather() {
     }
   }, []);
 
-  // Load weather on mount if user has location saved
+  // Auto-detect GPS and fetch weather like native weather apps
+  const fetchWeatherForCurrentLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      setState(prev => ({ ...prev, loading: false, error: 'Geolocation not supported' }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, loading: true }));
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        await fetchWeather(latitude, longitude);
+      },
+      async (error) => {
+        console.warn('GPS failed, falling back to saved location:', error.message);
+        // Fallback to saved profile location
+        if (user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('latitude, longitude')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profile?.latitude && profile?.longitude) {
+            await fetchWeather(profile.latitude, profile.longitude);
+          } else {
+            setState(prev => ({ ...prev, loading: false, error: 'Location unavailable' }));
+          }
+        } else {
+          setState(prev => ({ ...prev, loading: false, error: 'Location unavailable' }));
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000, // 5 minutes - use cached GPS if available
+      }
+    );
+  }, [user?.id, fetchWeather]);
+
+  // Load weather on mount if user has weather enabled
   useEffect(() => {
     if (!user?.id) {
       setState(prev => ({ ...prev, initializing: false, loading: false }));
       return;
     }
 
-    const loadWeatherFromProfile = async () => {
+    const loadWeather = async () => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('latitude, longitude, weather_enabled')
+          .select('weather_enabled')
           .eq('user_id', user.id)
           .single();
 
-        if (profile?.weather_enabled && profile.latitude && profile.longitude) {
+        if (profile?.weather_enabled) {
           setState(prev => ({ ...prev, enabled: true }));
           
-          // Use cached weather if available
+          // Use cached weather if still valid
           const cached = getCachedWeather();
           if (cached) {
             setState(prev => ({ ...prev, weather: cached, loading: false, initializing: false }));
             return;
           }
 
-          // Fetch fresh weather
-          await fetchWeather(profile.latitude, profile.longitude);
+          // Fetch fresh weather using current GPS (like native weather app)
+          await fetchWeatherForCurrentLocation();
         }
       } finally {
         setState(prev => ({ ...prev, initializing: false, loading: false }));
       }
     };
 
-    loadWeatherFromProfile();
-  }, [user?.id, fetchWeather]);
+    loadWeather();
+  }, [user?.id, fetchWeatherForCurrentLocation]);
 
   const refreshWeather = useCallback(async () => {
-    if (!user?.id) return;
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('latitude, longitude, weather_enabled')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profile?.latitude && profile?.longitude) {
-      sessionStorage.removeItem(CACHE_KEY);
-      await fetchWeather(profile.latitude, profile.longitude);
-    }
-  }, [user?.id, fetchWeather]);
+    sessionStorage.removeItem(CACHE_KEY);
+    await fetchWeatherForCurrentLocation();
+  }, [fetchWeatherForCurrentLocation]);
 
   return {
     ...state,
