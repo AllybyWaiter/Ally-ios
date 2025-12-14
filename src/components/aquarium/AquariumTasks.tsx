@@ -62,8 +62,15 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
 
   const { data: tasks, isLoading } = useQuery({
     queryKey: queryKeys.tasks.list(aquariumId),
-    queryFn: () => fetchTasks(aquariumId),
-    enabled: (!effectiveAuthLoading && !!user) || (authFallbackReady && !!aquariumId),
+    queryFn: async () => {
+      // iOS PWA fix: Refresh session if stale before fetching
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        await supabase.auth.refreshSession();
+      }
+      return fetchTasks(aquariumId);
+    },
+    enabled: !effectiveAuthLoading && !!user && !!aquariumId,
     staleTime: 10000,
     retry: 2,
   });
