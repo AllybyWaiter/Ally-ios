@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, MoreVertical, Pencil, Trash2, MapPin } from "lucide-react";
+import { LocationMapPreview } from "@/components/aquarium/LocationMapPreview";
 import { AquariumOverview } from "@/components/aquarium/AquariumOverview";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
@@ -168,12 +169,7 @@ export default function AquariumDetail() {
             {aquarium.setup_date && (
               <span>Setup: {safeFormatDate(aquarium.setup_date, "PPP")}</span>
             )}
-            {aquarium.location_name ? (
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                {aquarium.location_name}
-              </span>
-            ) : (
+            {!aquarium.location_name && (
               <button
                 onClick={() => setEditDialogOpen(true)}
                 className="flex items-center gap-1 text-primary hover:underline"
@@ -185,6 +181,18 @@ export default function AquariumDetail() {
           </div>
           {aquarium.notes && (
             <p className="mt-3 text-muted-foreground">{aquarium.notes}</p>
+          )}
+          
+          {/* Map preview when location is saved */}
+          {aquarium.location_name && aquarium.latitude != null && aquarium.longitude != null && (
+            <div className="mt-4">
+              <LocationMapPreview
+                latitude={aquarium.latitude}
+                longitude={aquarium.longitude}
+                locationName={aquarium.location_name}
+                onUpdateLocation={() => setEditDialogOpen(true)}
+              />
+            </div>
           )}
         </div>
 
