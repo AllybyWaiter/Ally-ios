@@ -5,7 +5,7 @@ import { formatTemperature } from '@/lib/unitConversions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog,
-  Wind, Droplets, ChevronRight, Thermometer
+  Wind, Droplets, ChevronRight, Thermometer, Sunrise, Sunset
 } from 'lucide-react';
 import type { WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { format, parseISO } from 'date-fns';
@@ -106,7 +106,7 @@ export function WeatherStatsCard() {
       </Link>
 
       {/* Weather Metrics Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4">
         {/* Feels Like */}
         <div className="bg-background/40 rounded-lg p-3 text-center">
           <Thermometer className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
@@ -140,6 +140,24 @@ export function WeatherStatsCard() {
             </span>
           </div>
           <div className="text-xs text-muted-foreground">UV Index</div>
+        </div>
+
+        {/* Sunrise */}
+        <div className="bg-background/40 rounded-lg p-3 text-center">
+          <Sunrise className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+          <div className="text-sm font-medium text-foreground">
+            {weather.sunrise ? format(parseISO(weather.sunrise), 'h:mm a') : '--'}
+          </div>
+          <div className="text-xs text-muted-foreground">Sunrise</div>
+        </div>
+
+        {/* Sunset */}
+        <div className="bg-background/40 rounded-lg p-3 text-center">
+          <Sunset className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+          <div className="text-sm font-medium text-foreground">
+            {weather.sunset ? format(parseISO(weather.sunset), 'h:mm a') : '--'}
+          </div>
+          <div className="text-xs text-muted-foreground">Sunset</div>
         </div>
       </div>
 

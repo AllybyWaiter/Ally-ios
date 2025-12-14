@@ -31,6 +31,8 @@ export interface WeatherData {
   uvIndex: number;
   isDay: boolean;
   fetchedAt: string;
+  sunrise: string | null;
+  sunset: string | null;
   hourlyForecast: HourlyForecast[];
   forecast: ForecastDay[];
 }
