@@ -135,11 +135,26 @@ export const mphToKmh = (mph: number): number => {
 };
 
 export const formatWindSpeed = (kmh: number | null | undefined, units: UnitSystem | null): string => {
-  if (kmh === null || kmh === undefined || isNaN(kmh)) return '';
+  if (kmh == null || isNaN(kmh)) return '';
   const unitSystem = units || 'imperial';
   
   if (unitSystem === 'metric') {
     return `${Math.round(kmh)} km/h`;
   }
   return `${Math.round(kmhToMph(kmh))} mph`;
+};
+
+// UV Index helpers
+export interface UVLevel {
+  label: string;
+  colorClass: string;
+}
+
+export const getUVLevel = (uvIndex: number | null | undefined): UVLevel => {
+  if (uvIndex == null || isNaN(uvIndex)) return { label: 'Unknown', colorClass: 'text-muted-foreground' };
+  if (uvIndex <= 2) return { label: 'Low', colorClass: 'text-green-600 dark:text-green-400' };
+  if (uvIndex <= 5) return { label: 'Moderate', colorClass: 'text-yellow-600 dark:text-yellow-400' };
+  if (uvIndex <= 7) return { label: 'High', colorClass: 'text-orange-600 dark:text-orange-400' };
+  if (uvIndex <= 10) return { label: 'Very High', colorClass: 'text-red-600 dark:text-red-400' };
+  return { label: 'Extreme', colorClass: 'text-purple-600 dark:text-purple-400' };
 };
