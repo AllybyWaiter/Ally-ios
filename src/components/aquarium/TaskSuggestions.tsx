@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-
+import { queryKeys } from "@/lib/queryKeys";
+import { createMaintenanceTask } from "@/infrastructure/queries/maintenanceTasks";
 interface TaskSuggestion {
   title: string;
   description: string;
@@ -91,18 +92,14 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
         ? new Date(suggestion.recommendedDate).toISOString().split('T')[0]
         : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // Default: 7 days from now
 
-      const { error } = await supabase
-        .from('maintenance_tasks')
-        .insert({
-          aquarium_id: aquariumId,
-          task_name: suggestion.title,
-          task_type: suggestion.category,
-          due_date: dueDate,
-          notes: suggestion.reasoning || suggestion.description,
-          status: 'pending',
-        });
-
-      if (error) throw error;
+      await createMaintenanceTask({
+        aquarium_id: aquariumId,
+        task_name: suggestion.title,
+        task_type: suggestion.category,
+        due_date: dueDate,
+        notes: suggestion.reasoning || suggestion.description,
+        status: 'pending',
+      });
 
       toast({
         title: "Task Created",
@@ -112,10 +109,11 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
       // Remove the suggestion from the list
       setSuggestions(prev => prev.filter((_, i) => i !== index));
       
-      // Refresh tasks list
-      queryClient.invalidateQueries({ queryKey: ["tasks", aquariumId] });
-    } catch (error: any) {
-      console.error('Error creating task:', error);
+      // Refresh tasks list using query keys
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error creating task:', message);
       toast({
         title: "Error",
         description: "Failed to create task. Please try again.",
