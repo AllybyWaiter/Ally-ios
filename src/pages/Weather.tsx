@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -78,16 +77,8 @@ function ForecastCard({ day, units }: ForecastCardProps) {
 }
 
 export default function Weather() {
-  const navigate = useNavigate();
   const { weather, loading, error, enabled, refreshWeather, initializing } = useWeather();
   const { units, user } = useAuth();
-
-  // Redirect to settings if weather is not enabled (only after initialization completes)
-  useEffect(() => {
-    if (!initializing && !enabled && user) {
-      navigate('/settings', { replace: true });
-    }
-  }, [enabled, initializing, navigate, user]);
 
   // Loading state - show during initialization or active loading
   if ((initializing || loading) && !weather) {
@@ -99,6 +90,36 @@ export default function Weather() {
             <Skeleton className="h-48 w-full" />
             <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Weather not enabled - show friendly message instead of redirecting
+  if (!enabled && user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader />
+        <main className="container mx-auto px-4 pt-28 pb-8">
+          <div className="max-w-md mx-auto">
+            <Card className="glass-card">
+              <CardContent className="p-8 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mx-auto mb-4">
+                  <Cloud className="h-8 w-8 text-primary" />
+                </div>
+                <h2 className="text-lg font-semibold mb-2">Weather Not Enabled</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Enable weather in your settings to see current conditions and forecasts for your location.
+                </p>
+                <Button asChild>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Go to Settings
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </main>
       </div>
