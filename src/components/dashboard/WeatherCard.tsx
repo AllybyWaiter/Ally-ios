@@ -26,16 +26,16 @@ const weatherLabels: Record<WeatherCondition, string> = {
 };
 
 export function WeatherCard() {
-  const { weather, loading, error, enabled, refreshWeather } = useWeather();
+  const { weather, loading, error, enabled, refreshWeather, initializing } = useWeather();
   const { units } = useAuth();
 
-  // Don't render if weather is not enabled
-  if (!enabled) {
+  // Don't render if weather is not enabled (and we're done initializing)
+  if (!initializing && !enabled) {
     return null;
   }
 
-  // Loading state
-  if (loading && !weather) {
+  // Loading state - show during initialization or active loading
+  if ((initializing || loading) && !weather) {
     return (
       <Card className="glass-card">
         <CardContent className="p-4">

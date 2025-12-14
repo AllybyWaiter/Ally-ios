@@ -79,18 +79,18 @@ function ForecastCard({ day, units }: ForecastCardProps) {
 
 export default function Weather() {
   const navigate = useNavigate();
-  const { weather, loading, error, enabled, refreshWeather } = useWeather();
+  const { weather, loading, error, enabled, refreshWeather, initializing } = useWeather();
   const { units, user } = useAuth();
 
-  // Redirect to settings if weather is not enabled
+  // Redirect to settings if weather is not enabled (only after initialization completes)
   useEffect(() => {
-    if (!loading && !enabled && user) {
+    if (!initializing && !enabled && user) {
       navigate('/settings', { replace: true });
     }
-  }, [enabled, loading, navigate, user]);
+  }, [enabled, initializing, navigate, user]);
 
-  // Loading state
-  if (loading && !weather) {
+  // Loading state - show during initialization or active loading
+  if ((initializing || loading) && !weather) {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
