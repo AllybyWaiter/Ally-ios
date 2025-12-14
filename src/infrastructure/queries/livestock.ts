@@ -21,8 +21,18 @@ export interface Livestock {
   updated_at: string;
 }
 
+// Helper to ensure session is fresh (iOS PWA fix)
+async function ensureFreshSession() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    await supabase.auth.refreshSession();
+  }
+}
+
 // Fetch all livestock for an aquarium
 export async function fetchLivestock(aquariumId: string) {
+  await ensureFreshSession();
+  
   const { data, error } = await supabase
     .from('livestock')
     .select('*')

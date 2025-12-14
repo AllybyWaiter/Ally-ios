@@ -21,8 +21,18 @@ export interface Equipment {
   updated_at: string;
 }
 
+// Helper to ensure session is fresh (iOS PWA fix)
+async function ensureFreshSession() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    await supabase.auth.refreshSession();
+  }
+}
+
 // Fetch all equipment for an aquarium
 export async function fetchEquipment(aquariumId: string) {
+  await ensureFreshSession();
+  
   const { data, error } = await supabase
     .from('equipment')
     .select('*')

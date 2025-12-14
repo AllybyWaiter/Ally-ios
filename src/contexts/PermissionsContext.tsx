@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from './AuthContext';
+import { fetchRolesAndPermissions as fetchRolesAndPermissionsFromDAL } from '@/infrastructure/queries/permissions';
 
 interface PermissionsContextType {
   isAdmin: boolean;
@@ -25,21 +25,17 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const fetchRolesAndPermissions = useCallback(async (userId: string) => {
     console.log('🔵 Permissions: Fetching for:', userId);
     try {
-      const [rolesResult, permsResult] = await Promise.all([
-        supabase.from('user_roles').select('role').eq('user_id', userId),
-        (supabase as any).rpc('get_user_permissions', { _user_id: userId })
-      ]);
+      const { roles: userRoles, permissions: userPermissions, isAdmin: userIsAdmin } = 
+        await fetchRolesAndPermissionsFromDAL(userId);
 
-      const userRoles = rolesResult?.data?.map((r: any) => r.role) || [];
       setRoles(userRoles);
-      setIsAdmin(userRoles.includes('admin') || userRoles.includes('super_admin'));
-
-      const permissionNames = permsResult?.data?.map((p: any) => p.permission_name || p) || [];
-      setPermissions(permissionNames);
+      setPermissions(userPermissions);
+      setIsAdmin(userIsAdmin);
 
       console.log('🟢 Permissions: Loaded - roles:', userRoles.length);
-    } catch (error: any) {
-      console.error('🔴 Permissions: Fetch error:', error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error('🔴 Permissions: Fetch error:', message);
       setRoles([]);
       setPermissions([]);
       setIsAdmin(false);
