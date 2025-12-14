@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,7 +7,7 @@ import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInMinutes } from 'date-fns';
 import AppHeader from '@/components/AppHeader';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
@@ -248,6 +248,38 @@ export default function Weather() {
                   <span className="text-xs text-muted-foreground">UV Index</span>
                 </div>
               </div>
+
+              {/* Sun Times */}
+              {(weather.sunrise || weather.sunset) && (
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                    <Sunrise className="h-5 w-5 text-amber-500 mb-1" />
+                    <span className="text-sm font-medium">
+                      {weather.sunrise ? format(parseISO(weather.sunrise), 'h:mm a') : '--'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Sunrise</span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                    <Sunset className="h-5 w-5 text-orange-500 mb-1" />
+                    <span className="text-sm font-medium">
+                      {weather.sunset ? format(parseISO(weather.sunset), 'h:mm a') : '--'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Sunset</span>
+                  </div>
+                  <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                    <Sun className="h-5 w-5 text-yellow-500 mb-1" />
+                    <span className="text-sm font-medium">
+                      {weather.sunrise && weather.sunset ? (() => {
+                        const mins = differenceInMinutes(parseISO(weather.sunset), parseISO(weather.sunrise));
+                        const hours = Math.floor(mins / 60);
+                        const remainingMins = mins % 60;
+                        return `${hours}h ${remainingMins}m`;
+                      })() : '--'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">Daylight</span>
+                  </div>
+                </div>
+              )}
 
               {/* Last Updated */}
               <div className="flex items-center justify-center gap-1 mt-4 text-xs text-muted-foreground">
