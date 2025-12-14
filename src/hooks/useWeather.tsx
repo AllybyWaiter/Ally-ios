@@ -119,7 +119,7 @@ export function useWeather() {
   }, []);
 
   // Auto-detect GPS and fetch weather like native weather apps
-  const fetchWeatherForCurrentLocation = useCallback(async () => {
+  const fetchWeatherForCurrentLocation = useCallback(async (forceRefresh = false) => {
     if (!navigator.geolocation) {
       setState(prev => ({ ...prev, loading: false, error: 'Geolocation not supported' }));
       return;
@@ -152,9 +152,9 @@ export function useWeather() {
         }
       },
       {
-        enableHighAccuracy: false,
+        enableHighAccuracy: forceRefresh,
         timeout: 10000,
-        maximumAge: 300000, // 5 minutes - use cached GPS if available
+        maximumAge: forceRefresh ? 0 : 300000, // Force fresh GPS on refresh, otherwise use cached
       }
     );
   }, [user?.id, fetchWeather]);
@@ -197,7 +197,7 @@ export function useWeather() {
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(CACHE_KEY);
-    await fetchWeatherForCurrentLocation();
+    await fetchWeatherForCurrentLocation(true); // Force fresh GPS location
   }, [fetchWeatherForCurrentLocation]);
 
   return {
