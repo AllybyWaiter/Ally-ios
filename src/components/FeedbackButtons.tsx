@@ -3,6 +3,7 @@ import { ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
+import { createFeedback } from "@/infrastructure/queries/feedback";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +40,7 @@ export const FeedbackButtons = ({
         return;
       }
 
-      const { error } = await supabase.from("ai_feedback").insert({
+      await createFeedback({
         user_id: user.id,
         feature,
         message_id: messageId || null,
@@ -47,8 +48,6 @@ export const FeedbackButtons = ({
         rating,
         context: context || null,
       });
-
-      if (error) throw error;
 
       setSubmittedRating(rating);
       onFeedbackSubmitted?.(rating);
@@ -59,7 +58,8 @@ export const FeedbackButtons = ({
         toast.success("Thanks! We'll work to improve.");
       }
     } catch (error) {
-      console.error("Failed to submit feedback:", error);
+      const message = error instanceof Error ? error.message : "Failed to submit feedback";
+      console.error("Failed to submit feedback:", message);
       toast.error("Failed to submit feedback");
     } finally {
       setIsSubmitting(false);

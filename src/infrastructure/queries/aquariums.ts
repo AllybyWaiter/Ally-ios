@@ -23,8 +23,18 @@ export interface AquariumWithTaskCount extends Aquarium {
   maintenance_tasks: { count: number }[];
 }
 
+// Helper to ensure session is fresh (iOS PWA fix)
+async function ensureFreshSession() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    await supabase.auth.refreshSession();
+  }
+}
+
 // Fetch all aquariums for a user with pending task counts
 export async function fetchAquariumsWithTaskCounts(userId: string) {
+  await ensureFreshSession();
+  
   const { data, error } = await supabase
     .from('aquariums')
     .select(`
