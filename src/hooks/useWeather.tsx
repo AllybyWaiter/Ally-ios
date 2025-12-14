@@ -40,6 +40,7 @@ interface WeatherState {
   loading: boolean;
   error: string | null;
   enabled: boolean;
+  initializing: boolean;
 }
 
 const CACHE_KEY = 'aquadex_weather_cache';
@@ -77,9 +78,10 @@ export function useWeather() {
   const { user } = useAuth();
   const [state, setState] = useState<WeatherState>({
     weather: getCachedWeather(),
-    loading: false,
+    loading: true,
     error: null,
     enabled: false,
+    initializing: true,
   });
 
   const fetchWeather = useCallback(async (latitude: number, longitude: number) => {
@@ -115,27 +117,34 @@ export function useWeather() {
 
   // Load weather on mount if user has location saved
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setState(prev => ({ ...prev, initializing: false, loading: false }));
+      return;
+    }
 
     const loadWeatherFromProfile = async () => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('latitude, longitude, weather_enabled')
-        .eq('user_id', user.id)
-        .single();
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('latitude, longitude, weather_enabled')
+          .eq('user_id', user.id)
+          .single();
 
-      if (profile?.weather_enabled && profile.latitude && profile.longitude) {
-        setState(prev => ({ ...prev, enabled: true }));
-        
-        // Use cached weather if available
-        const cached = getCachedWeather();
-        if (cached) {
-          setState(prev => ({ ...prev, weather: cached }));
-          return;
+        if (profile?.weather_enabled && profile.latitude && profile.longitude) {
+          setState(prev => ({ ...prev, enabled: true }));
+          
+          // Use cached weather if available
+          const cached = getCachedWeather();
+          if (cached) {
+            setState(prev => ({ ...prev, weather: cached, loading: false, initializing: false }));
+            return;
+          }
+
+          // Fetch fresh weather
+          await fetchWeather(profile.latitude, profile.longitude);
         }
-
-        // Fetch fresh weather
-        await fetchWeather(profile.latitude, profile.longitude);
+      } finally {
+        setState(prev => ({ ...prev, initializing: false, loading: false }));
       }
     };
 
