@@ -275,6 +275,7 @@ export default function Dashboard() {
             canCreate={canCreateAquarium(aquariums.length)}
             maxAquariums={limits.maxAquariums}
             limitsLoading={limitsLoading}
+            waterBodyMix={hasOnlyPools ? 'pools' : hasMixed ? 'mixed' : 'aquariums'}
             onCreateAquarium={handleCreateAquarium}
             onEditAquarium={handleEditAquarium}
             onDeleteAquarium={handleDeleteClick}

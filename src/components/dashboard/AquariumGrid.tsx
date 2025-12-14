@@ -19,12 +19,15 @@ interface Aquarium {
   notes: string | null;
 }
 
+type WaterBodyMix = 'aquariums' | 'pools' | 'mixed';
+
 interface AquariumGridProps {
   aquariums: Aquarium[];
   units: UnitSystem;
   canCreate: boolean;
   maxAquariums: number;
   limitsLoading: boolean;
+  waterBodyMix: WaterBodyMix;
   onCreateAquarium: () => void;
   onEditAquarium: (aquarium: Aquarium) => void;
   onDeleteAquarium: (aquariumId: string) => void;
@@ -36,6 +39,7 @@ export function AquariumGrid({
   canCreate,
   maxAquariums,
   limitsLoading,
+  waterBodyMix,
   onCreateAquarium,
   onEditAquarium,
   onDeleteAquarium,
@@ -43,17 +47,45 @@ export function AquariumGrid({
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const getLabels = () => {
+    switch (waterBodyMix) {
+      case 'pools':
+        return {
+          title: t('dashboard.yourPools'),
+          addButton: t('dashboard.addPool'),
+          emptyTitle: t('dashboard.noPoolsYet'),
+          emptyMessage: t('dashboard.getStartedPoolMessage'),
+        };
+      case 'mixed':
+        return {
+          title: t('dashboard.yourWaterBodies'),
+          addButton: t('dashboard.addWaterBody'),
+          emptyTitle: t('dashboard.noWaterBodiesYet'),
+          emptyMessage: t('dashboard.getStartedWaterBodyMessage'),
+        };
+      default:
+        return {
+          title: t('dashboard.yourAquariums'),
+          addButton: t('dashboard.addAquarium'),
+          emptyTitle: t('dashboard.noAquariumsYet'),
+          emptyMessage: t('dashboard.getStartedMessage'),
+        };
+    }
+  };
+
+  const labels = getLabels();
+
   if (aquariums.length === 0) {
     return (
       <Card className="glass-card p-12 text-center animate-fade-up opacity-0">
         <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">{t('dashboard.noAquariumsYet')}</h3>
+        <h3 className="text-lg font-semibold mb-2">{labels.emptyTitle}</h3>
         <p className="text-muted-foreground mb-4">
-          {t('dashboard.getStartedMessage')}
+          {labels.emptyMessage}
         </p>
         <Button onClick={onCreateAquarium}>
           <Plus className="mr-2 h-4 w-4" />
-          {t('dashboard.addAquarium')}
+          {labels.addButton}
         </Button>
       </Card>
     );
@@ -63,7 +95,7 @@ export function AquariumGrid({
     <>
       <div className="flex justify-between items-center mb-4 animate-fade-up opacity-0" style={{ animationDelay: '200ms' }}>
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-semibold">{t('dashboard.yourAquariums')}</h2>
+          <h2 className="text-2xl font-semibold">{labels.title}</h2>
           {!limitsLoading && maxAquariums !== Infinity && (
             <Badge variant="secondary" className="text-xs">
               {aquariums.length}/{maxAquariums}
@@ -84,13 +116,13 @@ export function AquariumGrid({
                   ) : (
                     <Plus className="mr-2 h-4 w-4" />
                   )}
-                  {t('dashboard.addAquarium')}
+                  {labels.addButton}
                 </Button>
               </span>
             </TooltipTrigger>
             {!canCreate && (
               <TooltipContent>
-                <p>Upgrade your plan to add more aquariums</p>
+                <p>Upgrade your plan to add more water bodies</p>
               </TooltipContent>
             )}
           </Tooltip>
