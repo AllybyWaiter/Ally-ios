@@ -42,7 +42,8 @@ function base64UrlDecode(str: string): Uint8Array {
 async function createVapidJwt(
   audience: string,
   subject: string,
-  vapidPrivateKey: string
+  vapidPrivateKey: string,
+  vapidPublicKey: string
 ): Promise<string> {
   const header = { alg: 'ES256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
@@ -56,21 +57,27 @@ async function createVapidJwt(
   const payloadB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
   const unsignedToken = `${headerB64}.${payloadB64}`;
 
+  // Decode the keys
   const privateKeyBytes = base64UrlDecode(vapidPrivateKey);
+  const publicKeyBytes = base64UrlDecode(vapidPublicKey);
   
-  // Generate a new key pair and replace the d value with our private key
-  const keyPair = await crypto.subtle.generateKey(
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    true,
-    ['sign', 'verify']
-  );
+  // VAPID public key is 65 bytes: 0x04 || x (32 bytes) || y (32 bytes)
+  // Extract x and y coordinates from the public key
+  const x = publicKeyBytes.slice(1, 33);   // bytes 1-32
+  const y = publicKeyBytes.slice(33, 65);  // bytes 33-64
   
-  const exported = await crypto.subtle.exportKey('jwk', keyPair.privateKey);
-  exported.d = base64UrlEncode(privateKeyBytes);
+  // Create a complete, valid JWK with matching key components
+  const jwk = {
+    kty: 'EC',
+    crv: 'P-256',
+    d: base64UrlEncode(privateKeyBytes),
+    x: base64UrlEncode(x),
+    y: base64UrlEncode(y),
+  };
   
   const signingKey = await crypto.subtle.importKey(
     'jwk',
-    exported,
+    jwk,
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign']
@@ -265,7 +272,7 @@ async function sendWebPush(
     const endpointUrl = new URL(subscription.endpoint);
     const audience = `${endpointUrl.protocol}//${endpointUrl.host}`;
 
-    const jwt = await createVapidJwt(audience, vapidSubject, vapidPrivateKey);
+    const jwt = await createVapidJwt(audience, vapidSubject, vapidPrivateKey, vapidPublicKey);
 
     const { encrypted, salt, serverPublicKey } = await encryptPayload(
       payload,
