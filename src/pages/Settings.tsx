@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler, Palette, Globe, Shield, Crown, Brain, MapPin } from "lucide-react";
+import { ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, Languages, Ruler, Palette, Globe, Shield, Crown, Brain, MapPin, Bell } from "lucide-react";
+import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import MemoryManager from "@/components/settings/MemoryManager";
@@ -311,10 +312,14 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 h-auto p-1 bg-muted/50 backdrop-blur">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 h-auto p-1 bg-muted/50 backdrop-blur">
             <TabsTrigger value="profile" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Alerts</span>
             </TabsTrigger>
             <TabsTrigger value="memory" className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-md">
               <Brain className="h-4 w-4" />
@@ -341,6 +346,10 @@ const Settings = () => {
               <span className="hidden sm:inline">Plan</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="notifications" className="space-y-6">
+            <NotificationSettings />
+          </TabsContent>
 
           <TabsContent value="profile" className="space-y-6">
             <Card className="border-2 shadow-lg">

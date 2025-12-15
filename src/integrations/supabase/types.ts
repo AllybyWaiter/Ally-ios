@@ -700,6 +700,72 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          id: string
+          notification_type: string
+          reference_id: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_type: string
+          reference_id?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_type?: string
+          reference_id?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          announcements_enabled: boolean
+          created_at: string
+          id: string
+          push_enabled: boolean
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          reminder_hours_before: number
+          task_reminders_enabled: boolean
+          updated_at: string
+          user_id: string
+          water_alerts_enabled: boolean
+        }
+        Insert: {
+          announcements_enabled?: boolean
+          created_at?: string
+          id?: string
+          push_enabled?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          reminder_hours_before?: number
+          task_reminders_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          water_alerts_enabled?: boolean
+        }
+        Update: {
+          announcements_enabled?: boolean
+          created_at?: string
+          id?: string
+          push_enabled?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          reminder_hours_before?: number
+          task_reminders_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          water_alerts_enabled?: boolean
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string | null
@@ -884,6 +950,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weather_enabled?: boolean | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
