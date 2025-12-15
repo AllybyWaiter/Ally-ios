@@ -147,11 +147,8 @@ export function usePushNotifications() {
         return false;
       }
 
-      // Register push service worker
-      const registration = await navigator.serviceWorker.register('/sw-push.js', {
-        scope: '/'
-      });
-      await navigator.serviceWorker.ready;
+      // Use the main PWA service worker (already registered by VitePWA)
+      const registration = await navigator.serviceWorker.ready;
 
       // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
