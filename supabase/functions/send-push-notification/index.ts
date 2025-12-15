@@ -38,12 +38,68 @@ function base64UrlDecode(str: string): Uint8Array {
   return new Uint8Array([...binary].map(c => c.charCodeAt(0)));
 }
 
+// Validate VAPID keys format and return debug info
+function validateVapidKeys(
+  vapidPublicKey: string,
+  vapidPrivateKey: string,
+  vapidSubject: string,
+  requestId: string
+): { valid: boolean; errors: string[]; debug: Record<string, unknown> } {
+  const errors: string[] = [];
+  const debug: Record<string, unknown> = {};
+  
+  try {
+    const publicKeyBytes = base64UrlDecode(vapidPublicKey);
+    const privateKeyBytes = base64UrlDecode(vapidPrivateKey);
+    
+    debug.publicKeyLength = publicKeyBytes.length;
+    debug.privateKeyLength = privateKeyBytes.length;
+    debug.publicKeyFirstByte = publicKeyBytes[0]?.toString(16);
+    debug.vapidSubjectFormat = vapidSubject?.startsWith('mailto:') ? 'valid' : 'invalid';
+    debug.vapidSubjectValue = vapidSubject?.slice(0, 30);
+    
+    // VAPID public key should be 65 bytes (uncompressed EC point: 0x04 || x || y)
+    if (publicKeyBytes.length !== 65) {
+      errors.push(`Public key should be 65 bytes, got ${publicKeyBytes.length}`);
+    }
+    
+    // First byte must be 0x04 (uncompressed point format)
+    if (publicKeyBytes[0] !== 0x04) {
+      errors.push(`Public key must start with 0x04, got 0x${publicKeyBytes[0]?.toString(16)}`);
+    }
+    
+    // VAPID private key should be 32 bytes (EC P-256 private key)
+    if (privateKeyBytes.length !== 32) {
+      errors.push(`Private key should be 32 bytes, got ${privateKeyBytes.length}`);
+    }
+    
+    // VAPID subject must be mailto: format
+    if (!vapidSubject?.startsWith('mailto:')) {
+      errors.push(`VAPID_SUBJECT must start with 'mailto:', got '${vapidSubject?.slice(0, 20)}'`);
+    }
+    
+    console.log(JSON.stringify({ 
+      requestId, 
+      message: 'VAPID key validation', 
+      ...debug,
+      valid: errors.length === 0,
+      errors: errors.length > 0 ? errors : undefined
+    }));
+    
+  } catch (e) {
+    errors.push(`Key decode error: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  
+  return { valid: errors.length === 0, errors, debug };
+}
+
 // Create VAPID JWT for authorization
 async function createVapidJwt(
   audience: string,
   subject: string,
   vapidPrivateKey: string,
-  vapidPublicKey: string
+  vapidPublicKey: string,
+  requestId: string
 ): Promise<string> {
   const header = { alg: 'ES256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);
@@ -52,6 +108,14 @@ async function createVapidJwt(
     exp: now + 12 * 60 * 60,
     sub: subject,
   };
+
+  console.log(JSON.stringify({ 
+    requestId, 
+    message: 'JWT payload', 
+    audience, 
+    subject,
+    exp: payload.exp 
+  }));
 
   const headerB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(header)));
   const payloadB64 = base64UrlEncode(new TextEncoder().encode(JSON.stringify(payload)));
@@ -66,6 +130,17 @@ async function createVapidJwt(
   const x = publicKeyBytes.slice(1, 33);   // bytes 1-32
   const y = publicKeyBytes.slice(33, 65);  // bytes 33-64
   
+  // Log key extraction details
+  console.log(JSON.stringify({ 
+    requestId, 
+    message: 'Key extraction',
+    privateKeyLen: privateKeyBytes.length,
+    publicKeyLen: publicKeyBytes.length,
+    xLen: x.length,
+    yLen: y.length,
+    firstBytePublic: publicKeyBytes[0]?.toString(16)
+  }));
+  
   // Create a complete, valid JWK with matching key components
   const jwk = {
     kty: 'EC',
@@ -75,13 +150,32 @@ async function createVapidJwt(
     y: base64UrlEncode(y),
   };
   
-  const signingKey = await crypto.subtle.importKey(
-    'jwk',
-    jwk,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['sign']
-  );
+  console.log(JSON.stringify({ 
+    requestId, 
+    message: 'JWK created',
+    dLen: jwk.d.length,
+    xLen: jwk.x.length,
+    yLen: jwk.y.length,
+  }));
+  
+  let signingKey;
+  try {
+    signingKey = await crypto.subtle.importKey(
+      'jwk',
+      jwk,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+    console.log(JSON.stringify({ requestId, message: 'Key import successful' }));
+  } catch (importError) {
+    console.error(JSON.stringify({ 
+      requestId, 
+      error: 'Key import failed', 
+      message: importError instanceof Error ? importError.message : String(importError)
+    }));
+    throw importError;
+  }
 
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
@@ -90,6 +184,12 @@ async function createVapidJwt(
   );
 
   const signatureBytes = new Uint8Array(signature);
+  console.log(JSON.stringify({ 
+    requestId, 
+    message: 'Signature created', 
+    signatureLen: signatureBytes.length 
+  }));
+  
   let r: Uint8Array, s: Uint8Array;
   
   if (signatureBytes.length === 64) {
@@ -112,7 +212,15 @@ async function createVapidJwt(
   rawSig.set(r, 0);
   rawSig.set(s, 32);
 
-  return `${unsignedToken}.${base64UrlEncode(rawSig)}`;
+  const jwt = `${unsignedToken}.${base64UrlEncode(rawSig)}`;
+  console.log(JSON.stringify({ 
+    requestId, 
+    message: 'JWT created', 
+    jwtLength: jwt.length,
+    jwtParts: jwt.split('.').length
+  }));
+  
+  return jwt;
 }
 
 // HKDF key derivation
@@ -266,13 +374,21 @@ async function sendWebPush(
   payload: string,
   vapidPublicKey: string,
   vapidPrivateKey: string,
-  vapidSubject: string
+  vapidSubject: string,
+  requestId: string
 ): Promise<{ success: boolean; statusCode?: number; error?: string }> {
   try {
     const endpointUrl = new URL(subscription.endpoint);
     const audience = `${endpointUrl.protocol}//${endpointUrl.host}`;
 
-    const jwt = await createVapidJwt(audience, vapidSubject, vapidPrivateKey, vapidPublicKey);
+    console.log(JSON.stringify({ 
+      requestId, 
+      message: 'Sending to endpoint', 
+      audience,
+      endpointHost: endpointUrl.host
+    }));
+
+    const jwt = await createVapidJwt(audience, vapidSubject, vapidPrivateKey, vapidPublicKey, requestId);
 
     const { encrypted, salt, serverPublicKey } = await encryptPayload(
       payload,
@@ -282,10 +398,18 @@ async function sendWebPush(
 
     const body = buildEncryptedBody(encrypted, salt, serverPublicKey);
 
+    const authHeader = `vapid t=${jwt}, k=${vapidPublicKey}`;
+    console.log(JSON.stringify({ 
+      requestId, 
+      message: 'Auth header', 
+      headerLength: authHeader.length,
+      kParamLength: vapidPublicKey.length
+    }));
+
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: {
-        'Authorization': `vapid t=${jwt}, k=${vapidPublicKey}`,
+        'Authorization': authHeader,
         'Content-Type': 'application/octet-stream',
         'Content-Encoding': 'aes128gcm',
         'TTL': '86400',
@@ -298,12 +422,27 @@ async function sendWebPush(
       return { success: true, statusCode: response.status };
     }
 
+    const errorText = await response.text();
+    console.error(JSON.stringify({ 
+      requestId, 
+      error: 'Push response error', 
+      statusCode: response.status,
+      errorBody: errorText,
+      responseHeaders: Object.fromEntries(response.headers.entries())
+    }));
+
     return {
       success: false,
       statusCode: response.status,
-      error: await response.text(),
+      error: errorText,
     };
   } catch (error) {
+    console.error(JSON.stringify({ 
+      requestId, 
+      error: 'Push exception', 
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    }));
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
@@ -342,6 +481,18 @@ serve(async (req) => {
         JSON.stringify({ error: 'Push notifications not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Validate VAPID keys format
+    const validation = validateVapidKeys(vapidPublicKey, vapidPrivateKey, vapidSubject, requestId);
+    if (!validation.valid) {
+      console.error(JSON.stringify({ 
+        requestId, 
+        error: 'VAPID key validation failed', 
+        errors: validation.errors,
+        debug: validation.debug 
+      }));
+      // Continue anyway to see what error we get from push service
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -458,7 +609,8 @@ serve(async (req) => {
         pushPayload,
         vapidPublicKey,
         vapidPrivateKey,
-        vapidSubject
+        vapidSubject,
+        requestId
       );
 
       if (result.success) {
