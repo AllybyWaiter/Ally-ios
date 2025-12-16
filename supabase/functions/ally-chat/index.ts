@@ -32,6 +32,9 @@ const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 // GPT-5 models require max_completion_tokens instead of max_tokens
 const USES_COMPLETION_TOKENS = ['openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano'];
 
+// Only Gemini models support custom temperature (GPT-5 only supports default 1.0)
+const SUPPORTS_TEMPERATURE = ['google/gemini-2.5-flash', 'google/gemini-2.5-pro'];
+
 serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -193,8 +196,12 @@ serve(async (req) => {
         model: aiModel,
         messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
         stream: streaming,
-        temperature: 0.7,
       };
+      
+      // Only include temperature for models that support it (GPT-5 doesn't)
+      if (SUPPORTS_TEMPERATURE.includes(aiModel)) {
+        apiBody.temperature = 0.7;
+      }
       
       // Use max_completion_tokens for GPT-5 models
       if (usesCompletionTokens) {
@@ -275,8 +282,11 @@ serve(async (req) => {
         model: aiModel,
         messages: followUpMessages,
         stream: true,
-        temperature: 0.7,
       };
+      
+      if (SUPPORTS_TEMPERATURE.includes(aiModel)) {
+        followUpApiBody.temperature = 0.7;
+      }
       
       if (usesCompletionTokens) {
         followUpApiBody.max_completion_tokens = 4096;
