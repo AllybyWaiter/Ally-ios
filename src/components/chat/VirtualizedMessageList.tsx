@@ -9,7 +9,10 @@ import {
   Check,
   Edit2,
   X,
-  RotateCw
+  RotateCw,
+  Volume2,
+  VolumeX,
+  Loader2
 } from "lucide-react";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { TypingIndicator } from "@/components/TypingIndicator";
@@ -41,6 +44,12 @@ interface VirtualizedMessageListProps {
   onSaveEdit: () => void;
   onRegenerateResponse: (index: number) => void;
   onEditingContentChange: (content: string) => void;
+  // TTS props
+  onSpeak?: (content: string, messageId: string) => void;
+  onStopSpeaking?: () => void;
+  speakingMessageId?: string | null;
+  isSpeaking?: boolean;
+  isGeneratingTTS?: boolean;
 }
 
 const MessageContent = memo(({ 
@@ -56,7 +65,12 @@ const MessageContent = memo(({
   onCancelEdit,
   onSaveEdit,
   onRegenerateResponse,
-  onEditingContentChange
+  onEditingContentChange,
+  onSpeak,
+  onStopSpeaking,
+  speakingMessageId,
+  isSpeaking,
+  isGeneratingTTS
 }: {
   message: Message;
   index: number;
@@ -71,8 +85,16 @@ const MessageContent = memo(({
   onSaveEdit: () => void;
   onRegenerateResponse: (index: number) => void;
   onEditingContentChange: (content: string) => void;
+  onSpeak?: (content: string, messageId: string) => void;
+  onStopSpeaking?: () => void;
+  speakingMessageId?: string | null;
+  isSpeaking?: boolean;
+  isGeneratingTTS?: boolean;
 }) => {
   const isEditing = editingIndex === index;
+  const messageId = message.id || `msg-${index}`;
+  const isThisMessageSpeaking = speakingMessageId === messageId;
+  const isThisMessageGenerating = isGeneratingTTS && speakingMessageId === messageId;
 
   return (
     <div
@@ -184,6 +206,40 @@ const MessageContent = memo(({
         {/* Message actions */}
         {message.role === "assistant" && message.content && !isStreaming && (
           <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* TTS Speaker Button */}
+            {onSpeak && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-7 w-7",
+                      isThisMessageSpeaking && "text-primary"
+                    )}
+                    onClick={() => {
+                      if (isThisMessageSpeaking && isSpeaking) {
+                        onStopSpeaking?.();
+                      } else {
+                        onSpeak(message.content, messageId);
+                      }
+                    }}
+                    disabled={isThisMessageGenerating}
+                  >
+                    {isThisMessageGenerating ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isThisMessageSpeaking && isSpeaking ? (
+                      <VolumeX className="h-3 w-3" />
+                    ) : (
+                      <Volume2 className="h-3 w-3" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isThisMessageSpeaking && isSpeaking ? "Stop speaking" : "Read aloud"}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -203,7 +259,7 @@ const MessageContent = memo(({
             </Tooltip>
             <FeedbackButtons 
               feature="chat" 
-              messageId={message.id || `msg-${index}`}
+              messageId={messageId}
               context={{ messageContent: message.content.slice(0, 200) }}
             />
           </div>
@@ -258,7 +314,12 @@ export const VirtualizedMessageList = memo(({
   onCancelEdit,
   onSaveEdit,
   onRegenerateResponse,
-  onEditingContentChange
+  onEditingContentChange,
+  onSpeak,
+  onStopSpeaking,
+  speakingMessageId,
+  isSpeaking,
+  isGeneratingTTS
 }: VirtualizedMessageListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -344,6 +405,11 @@ export const VirtualizedMessageList = memo(({
                 onSaveEdit={onSaveEdit}
                 onRegenerateResponse={onRegenerateResponse}
                 onEditingContentChange={onEditingContentChange}
+                onSpeak={onSpeak}
+                onStopSpeaking={onStopSpeaking}
+                speakingMessageId={speakingMessageId}
+                isSpeaking={isSpeaking}
+                isGeneratingTTS={isGeneratingTTS}
               />
             </div>
           );
