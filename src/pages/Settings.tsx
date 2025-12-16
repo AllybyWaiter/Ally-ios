@@ -16,7 +16,7 @@ import {
   ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, 
   Languages, Ruler, Palette, Globe, Shield, Crown, Brain, MapPin, 
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
-  Mail, ChevronRight, Settings as SettingsIcon
+  Mail, ChevronRight, Settings as SettingsIcon, BookOpen
 } from "lucide-react";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useTheme } from "next-themes";
@@ -667,6 +667,17 @@ const Settings = () => {
                 <CardDescription>Get help and provide feedback</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
+                <Link to="/help" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Help Center</p>
+                      <p className="text-sm text-muted-foreground">Tutorials, guides, and articles</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+                
                 <Link to="/faq" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <HelpCircle className="h-5 w-5 text-muted-foreground" />
