@@ -192,6 +192,35 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_plant",
+      description: "Update existing plants in the user's aquarium. Use when user mentions changes to their plants - health changes, quantity changes, placement moves, or corrections. Examples: 'my java fern is melting', 'lost a few stems of rotala', 'moved the anubias to the back', 'the carpet is thriving now'.",
+      parameters: {
+        type: "object",
+        properties: {
+          plant_id: { type: "string", description: "ID of the plant to update (get from context)" },
+          quantity: { type: "number", description: "New quantity (if changed)" },
+          condition: { 
+            type: "string", 
+            enum: ["thriving", "healthy", "growing", "struggling", "melting", "dead"],
+            description: "Plant health condition"
+          },
+          placement: { 
+            type: "string", 
+            enum: ["foreground", "midground", "background", "floating", "attached"],
+            description: "New placement location (if moved)"
+          },
+          name: { type: "string", description: "Updated common name (if correcting)" },
+          species: { type: "string", description: "Updated species name (if correcting)" },
+          notes: { type: "string", description: "Updated notes" }
+        },
+        required: ["plant_id"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 
