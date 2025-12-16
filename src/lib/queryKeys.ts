@@ -80,6 +80,7 @@ export const queryKeys = {
     profile: (userId: string) => ['user', 'profile', userId] as const,
     memories: (userId: string) => ['user', 'memories', userId] as const,
     notifications: (userId: string) => ['user', 'notifications', userId] as const,
+    notificationHistory: (userId: string) => ['user', 'notification-history', userId] as const,
     roles: (userId: string) => ['user', 'roles', userId] as const,
   },
 
