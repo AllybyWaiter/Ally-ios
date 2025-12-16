@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Settings, Thermometer, Languages, Ruler, Moon, Sun, Monitor } from 'lucide-react';
+import { Ruler, Moon, Sun, Monitor, Languages, MapPin, Bell, Check, Loader2 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ interface PreferencesOnboardingProps {
 export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboardingProps) {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [permissionLoading, setPermissionLoading] = useState(false);
   const { toast } = useToast();
   const { setTheme } = useTheme();
   const { i18n, t } = useTranslation();
@@ -26,12 +27,143 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const [unitPreference, setUnitPreference] = useState<'metric' | 'imperial'>('imperial');
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('system');
   const [languagePreference, setLanguagePreference] = useState<'en' | 'es' | 'fr'>('en');
+  const [weatherEnabled, setWeatherEnabled] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  const totalSteps = 3;
+  const totalSteps = 5;
 
   const handleNext = () => {
     setStep(step + 1);
   };
+
+  const handleEnableWeather = async () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: t('preferencesOnboarding.step4.notSupported'),
+        variant: 'destructive',
+      });
+      handleNext();
+      return;
+    }
+
+    setPermissionLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          // Update profile with weather enabled and location
+          await supabase
+            .from('profiles')
+            .update({ 
+              weather_enabled: true,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            })
+            .eq('user_id', userId);
+
+          setWeatherEnabled(true);
+          toast({
+            title: t('preferencesOnboarding.step4.enabled'),
+          });
+        } catch (error) {
+          console.error('Failed to save weather settings:', error);
+        }
+        setPermissionLoading(false);
+        handleNext();
+      },
+      () => {
+        // Permission denied
+        setPermissionLoading(false);
+        toast({
+          title: t('preferencesOnboarding.step4.permissionDenied'),
+          description: t('preferencesOnboarding.step4.enableLater'),
+        });
+        handleNext();
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  };
+
+  const handleEnableNotifications = async () => {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      toast({
+        title: t('preferencesOnboarding.step5.notSupported'),
+        variant: 'destructive',
+      });
+      handleSubmit();
+      return;
+    }
+
+    setPermissionLoading(true);
+
+    try {
+      const permission = await Notification.requestPermission();
+
+      if (permission === 'granted') {
+        // Get VAPID key and subscribe
+        const { data: vapidData } = await supabase.functions.invoke('get-vapid-key');
+        
+        if (vapidData?.publicKey) {
+          const registration = await navigator.serviceWorker.ready;
+          const applicationServerKey = urlBase64ToUint8Array(vapidData.publicKey);
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
+          });
+          const subscriptionJson = subscription.toJSON();
+          
+          // Save subscription
+          await supabase.from('push_subscriptions').upsert({
+            user_id: userId,
+            endpoint: subscriptionJson.endpoint!,
+            p256dh: subscriptionJson.keys!.p256dh,
+            auth: subscriptionJson.keys!.auth,
+            user_agent: navigator.userAgent,
+          }, { onConflict: 'user_id,endpoint' });
+
+          // Save notification preferences
+          await supabase.from('notification_preferences').upsert({
+            user_id: userId,
+            push_enabled: true,
+            task_reminders_enabled: true,
+            water_alerts_enabled: true,
+            announcements_enabled: true,
+          }, { onConflict: 'user_id' });
+
+          setNotificationsEnabled(true);
+          toast({
+            title: t('preferencesOnboarding.step5.enabled'),
+          });
+        }
+      } else {
+        toast({
+          title: t('preferencesOnboarding.step5.permissionDenied'),
+          description: t('preferencesOnboarding.step5.enableLater'),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to enable notifications:', error);
+      toast({
+        title: t('preferencesOnboarding.step5.permissionDenied'),
+        description: t('preferencesOnboarding.step5.enableLater'),
+      });
+    }
+
+    setPermissionLoading(false);
+    handleSubmit();
+  };
+
+  // Helper function to convert VAPID key
+  function urlBase64ToUint8Array(base64String: string): Uint8Array {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -93,11 +225,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           </div>
 
           {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2">
-            {[1, 2, 3].map((i) => (
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
+            {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-colors ${
                     i <= step
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
@@ -107,7 +239,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 </div>
                 {i < totalSteps && (
                   <div
-                    className={`w-12 h-1 mx-2 transition-colors ${
+                    className={`w-6 sm:w-10 h-1 mx-1 transition-colors ${
                       i < step ? 'bg-primary' : 'bg-muted'
                     }`}
                   />
@@ -295,16 +427,144 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
                   {t('preferencesOnboarding.back')}
                 </Button>
-                <Button onClick={handleSubmit} disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <span className="animate-spin mr-2">⏳</span>
-                      {t('preferencesOnboarding.saving')}
-                    </>
-                  ) : (
-                    t('preferencesOnboarding.complete')
-                  )}
+                <Button onClick={handleNext} disabled={isLoading}>
+                  {t('preferencesOnboarding.next')}
                 </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Location & Weather */}
+          {step === 4 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
+              <div className="text-center mb-6">
+                <MapPin className="w-16 h-16 mx-auto text-primary mb-4" />
+                <CardTitle className="text-2xl">{t('preferencesOnboarding.step4.title')}</CardTitle>
+                <CardDescription>{t('preferencesOnboarding.step4.description')}</CardDescription>
+              </div>
+
+              {weatherEnabled ? (
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Check className="w-8 h-8 text-green-500" />
+                  </div>
+                  <p className="text-muted-foreground">{t('preferencesOnboarding.step4.enabled')}</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  <button
+                    onClick={handleEnableWeather}
+                    disabled={permissionLoading}
+                    className="p-6 rounded-lg border-2 border-primary bg-primary/5 transition-all text-left cursor-pointer touch-manipulation hover:bg-primary/10"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      {permissionLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <MapPin className="w-5 h-5" />
+                      )}
+                      <div className="font-semibold text-lg">
+                        {permissionLoading ? t('common.loading') : t('preferencesOnboarding.step4.enableButton')}
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('preferencesOnboarding.step4.enableDescription')}
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={handleNext}
+                    disabled={permissionLoading}
+                    className="p-6 rounded-lg border-2 border-border transition-all text-left cursor-pointer touch-manipulation hover:border-primary/50"
+                  >
+                    <div className="font-semibold text-lg mb-2">{t('preferencesOnboarding.step4.skipButton')}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('preferencesOnboarding.step4.skipDescription')}
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-4">
+                <Button onClick={() => setStep(3)} variant="outline" disabled={permissionLoading}>
+                  {t('preferencesOnboarding.back')}
+                </Button>
+                {weatherEnabled && (
+                  <Button onClick={handleNext}>
+                    {t('preferencesOnboarding.next')}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Push Notifications */}
+          {step === 5 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
+              <div className="text-center mb-6">
+                <Bell className="w-16 h-16 mx-auto text-primary mb-4" />
+                <CardTitle className="text-2xl">{t('preferencesOnboarding.step5.title')}</CardTitle>
+                <CardDescription>{t('preferencesOnboarding.step5.description')}</CardDescription>
+              </div>
+
+              {notificationsEnabled ? (
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Check className="w-8 h-8 text-green-500" />
+                  </div>
+                  <p className="text-muted-foreground">{t('preferencesOnboarding.step5.enabled')}</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  <button
+                    onClick={handleEnableNotifications}
+                    disabled={permissionLoading || isLoading}
+                    className="p-6 rounded-lg border-2 border-primary bg-primary/5 transition-all text-left cursor-pointer touch-manipulation hover:bg-primary/10"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      {permissionLoading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Bell className="w-5 h-5" />
+                      )}
+                      <div className="font-semibold text-lg">
+                        {permissionLoading ? t('common.loading') : t('preferencesOnboarding.step5.enableButton')}
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('preferencesOnboarding.step5.enableDescription')}
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={handleSubmit}
+                    disabled={permissionLoading || isLoading}
+                    className="p-6 rounded-lg border-2 border-border transition-all text-left cursor-pointer touch-manipulation hover:border-primary/50"
+                  >
+                    <div className="font-semibold text-lg mb-2">{t('preferencesOnboarding.step5.skipButton')}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {t('preferencesOnboarding.step5.skipDescription')}
+                    </div>
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-between pt-4">
+                <Button onClick={() => setStep(4)} variant="outline" disabled={permissionLoading || isLoading}>
+                  {t('preferencesOnboarding.back')}
+                </Button>
+                {notificationsEnabled && (
+                  <Button onClick={handleSubmit} disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {t('preferencesOnboarding.saving')}
+                      </>
+                    ) : (
+                      t('preferencesOnboarding.complete')
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           )}
