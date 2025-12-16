@@ -1,4 +1,5 @@
-import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -102,15 +103,32 @@ export default function NotificationSettings() {
           </div>
 
           {isSubscribed && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={sendTestNotification}
-              className="w-full sm:w-auto"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Send Test Notification
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendTestNotification('task_reminder')}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Test Task
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendTestNotification('water_alert')}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Test Alert
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sendTestNotification('announcement')}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Test Announcement
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -123,59 +141,110 @@ export default function NotificationSettings() {
             Choose which types of notifications you want to receive
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="task-reminders" className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-primary" />
-                Task Reminders
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Upcoming maintenance tasks and equipment maintenance
-              </p>
+        <CardContent className="space-y-6">
+          {/* Task Reminders */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="task-reminders" className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Task Reminders
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Upcoming maintenance tasks and equipment maintenance
+                </p>
+              </div>
+              <Switch
+                id="task-reminders"
+                checked={preferences.task_reminders_enabled}
+                onCheckedChange={(checked) => updatePreferences({ task_reminders_enabled: checked })}
+                disabled={!isSubscribed}
+              />
             </div>
-            <Switch
-              id="task-reminders"
-              checked={preferences.task_reminders_enabled}
-              onCheckedChange={(checked) => updatePreferences({ task_reminders_enabled: checked })}
-              disabled={!isSubscribed}
-            />
+            {preferences.task_reminders_enabled && (
+              <div className="flex items-center justify-between pl-6 border-l-2 border-muted">
+                <Label htmlFor="sound-task" className="text-sm flex items-center gap-2">
+                  {preferences.sound_task_reminders ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                  Sound & vibration
+                </Label>
+                <Switch
+                  id="sound-task"
+                  checked={preferences.sound_task_reminders}
+                  onCheckedChange={(checked) => updatePreferences({ sound_task_reminders: checked })}
+                  disabled={!isSubscribed}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="water-alerts" className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Water Test Alerts
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Trend alerts and parameter warnings from water tests
-              </p>
+          {/* Water Alerts */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="water-alerts" className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Water Test Alerts
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Trend alerts and parameter warnings from water tests
+                </p>
+              </div>
+              <Switch
+                id="water-alerts"
+                checked={preferences.water_alerts_enabled}
+                onCheckedChange={(checked) => updatePreferences({ water_alerts_enabled: checked })}
+                disabled={!isSubscribed}
+              />
             </div>
-            <Switch
-              id="water-alerts"
-              checked={preferences.water_alerts_enabled}
-              onCheckedChange={(checked) => updatePreferences({ water_alerts_enabled: checked })}
-              disabled={!isSubscribed}
-            />
+            {preferences.water_alerts_enabled && (
+              <div className="flex items-center justify-between pl-6 border-l-2 border-muted">
+                <Label htmlFor="sound-water" className="text-sm flex items-center gap-2">
+                  {preferences.sound_water_alerts ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                  Sound & vibration
+                </Label>
+                <Switch
+                  id="sound-water"
+                  checked={preferences.sound_water_alerts}
+                  onCheckedChange={(checked) => updatePreferences({ sound_water_alerts: checked })}
+                  disabled={!isSubscribed}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="announcements" className="flex items-center gap-2">
-                <Bell className="h-4 w-4 text-secondary" />
-                Announcements
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Important updates and announcements from Ally
-              </p>
+          {/* Announcements */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="announcements" className="flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-secondary" />
+                  Announcements
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Important updates and announcements from Ally
+                </p>
+              </div>
+              <Switch
+                id="announcements"
+                checked={preferences.announcements_enabled}
+                onCheckedChange={(checked) => updatePreferences({ announcements_enabled: checked })}
+                disabled={!isSubscribed}
+              />
             </div>
-            <Switch
-              id="announcements"
-              checked={preferences.announcements_enabled}
-              onCheckedChange={(checked) => updatePreferences({ announcements_enabled: checked })}
-              disabled={!isSubscribed}
-            />
+            {preferences.announcements_enabled && (
+              <div className="flex items-center justify-between pl-6 border-l-2 border-muted">
+                <Label htmlFor="sound-announcements" className="text-sm flex items-center gap-2">
+                  {preferences.sound_announcements ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                  Sound & vibration
+                </Label>
+                <Switch
+                  id="sound-announcements"
+                  checked={preferences.sound_announcements}
+                  onCheckedChange={(checked) => updatePreferences({ sound_announcements: checked })}
+                  disabled={!isSubscribed}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

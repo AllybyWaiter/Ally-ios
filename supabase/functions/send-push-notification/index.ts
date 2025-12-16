@@ -585,6 +585,18 @@ serve(async (req) => {
       );
     }
 
+    // Determine if notification should be silent based on user sound preferences
+    let silent = false;
+    if (prefs) {
+      if (notificationType === 'task_reminder' && prefs.sound_task_reminders === false) {
+        silent = true;
+      } else if (notificationType === 'water_alert' && prefs.sound_water_alerts === false) {
+        silent = true;
+      } else if (notificationType === 'announcement' && prefs.sound_announcements === false) {
+        silent = true;
+      }
+    }
+
     const pushPayload = JSON.stringify({
       title,
       body,
@@ -594,6 +606,7 @@ serve(async (req) => {
       referenceId,
       actions,
       requireInteraction,
+      silent,
     });
 
     let successCount = 0;

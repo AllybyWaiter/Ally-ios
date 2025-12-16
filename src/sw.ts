@@ -85,10 +85,18 @@ registerRoute(
 
 // ==================== PUSH NOTIFICATIONS ====================
 
+// Vibration patterns per notification type (in milliseconds)
+const vibrationPatterns: Record<string, number[]> = {
+  task_reminder: [100, 50, 100],           // Short gentle double pulse
+  water_alert: [300, 100, 300, 100, 300],  // Urgent triple pulse
+  announcement: [200, 100, 200],            // Standard double pulse
+  default: [200, 100, 200],
+};
+
 self.addEventListener('push', (event) => {
   console.log('[SW] Push event received');
   
-  let data = { title: 'Ally', body: 'You have a new notification' };
+  let data: Record<string, unknown> = { title: 'Ally', body: 'You have a new notification' };
   
   try {
     if (event.data) {
@@ -98,23 +106,28 @@ self.addEventListener('push', (event) => {
     console.error('[SW] Error parsing push data:', e);
   }
   
+  const notificationType = (data.notificationType as string) || 'default';
+  const vibrationPattern = vibrationPatterns[notificationType] || vibrationPatterns.default;
+  const isSilent = data.silent === true;
+  
   const options = {
-    body: data.body || 'You have a new notification',
+    body: (data.body as string) || 'You have a new notification',
     icon: '/icon-192.png',
     badge: '/favicon.png',
-    tag: (data as any).tag || 'ally-notification',
+    tag: (data.tag as string) || 'ally-notification',
     data: { 
-      url: (data as any).url || '/dashboard',
-      notificationType: (data as any).notificationType,
-      referenceId: (data as any).referenceId
+      url: (data.url as string) || '/dashboard',
+      notificationType,
+      referenceId: data.referenceId
     },
-    vibrate: [200, 100, 200],
-    requireInteraction: (data as any).requireInteraction || false,
-    renotify: (data as any).renotify || false
+    silent: isSilent,
+    vibrate: isSilent ? undefined : vibrationPattern,
+    requireInteraction: (data.requireInteraction as boolean) || false,
+    renotify: (data.renotify as boolean) || false
   };
   
   event.waitUntil(
-    self.registration.showNotification((data as any).title || 'Ally', options)
+    self.registration.showNotification((data.title as string) || 'Ally', options)
   );
 });
 
