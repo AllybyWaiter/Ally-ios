@@ -213,19 +213,72 @@ const Settings = () => {
     if (deleteConfirmText !== "DELETE") return;
     setLoading(true);
     try {
-      // In production, this would call an edge function to handle secure deletion
-      toast({ 
-        title: "Deletion request submitted", 
-        description: "Your account deletion has been scheduled. You will receive a confirmation email within 24 hours." 
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) {
+        throw new Error('No active session');
+      }
+
+      const response = await supabase.functions.invoke('delete-user-account', {
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` }
       });
+      
+      if (response.error) throw response.error;
+      
+      toast({ 
+        title: "Account deleted", 
+        description: "Your account and all data have been permanently deleted." 
+      });
+      
       setShowDeleteDialog(false);
       setDeleteConfirmText("");
       await signOut();
       navigate("/");
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: error.message || "Failed to delete account", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Platform-aware App Store rating
+  const handleRateApp = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    // App Store IDs - to be updated after store submission
+    const APP_STORE_ID = ""; // iOS App Store ID
+    const PLAY_STORE_ID = "app.aquadex.ally"; // Android package name
+    
+    if (isIOS && APP_STORE_ID) {
+      window.open(`https://apps.apple.com/app/id${APP_STORE_ID}?action=write-review`, '_blank');
+    } else if (isAndroid && PLAY_STORE_ID) {
+      window.open(`https://play.google.com/store/apps/details?id=${PLAY_STORE_ID}`, '_blank');
+    } else {
+      // Fallback for web/PWA or before store submission
+      navigate('/contact?type=feedback');
+      toast({ 
+        title: "Share Your Feedback", 
+        description: "App Store ratings coming soon! Share your feedback here instead." 
+      });
+    }
+  };
+
+  // Platform-aware subscription management
+  const handleManageSubscription = () => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      window.open('https://apps.apple.com/account/subscriptions', '_blank');
+    } else if (isAndroid) {
+      window.open('https://play.google.com/store/account/subscriptions', '_blank');
+    } else {
+      // Web users - redirect to contact for subscription help
+      toast({ 
+        title: "Manage Subscription", 
+        description: "Contact support to manage your subscription." 
+      });
+      navigate('/contact?type=general');
     }
   };
 
@@ -378,11 +431,21 @@ const Settings = () => {
                         </div>
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => navigate('/pricing')} className="flex-1">
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" onClick={() => navigate('/pricing')} className="w-full">
                         View Plans
                       </Button>
-                      <Button variant="outline" onClick={() => toast({ title: "Restore Purchases", description: "Purchases restored successfully." })}>
+                      {subscriptionTier && subscriptionTier !== 'free' && (
+                        <Button variant="outline" onClick={handleManageSubscription} className="w-full">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Manage Subscription
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => toast({ title: "Purchases Restored", description: "Your subscription status has been refreshed." })}
+                        className="w-full"
+                      >
                         Restore Purchases
                       </Button>
                     </div>
@@ -701,7 +764,7 @@ const Settings = () => {
                 </Link>
                 
                 <button 
-                  onClick={() => toast({ title: "Thank you!", description: "Taking you to the App Store..." })}
+                  onClick={handleRateApp}
                   className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors text-left"
                 >
                   <div className="flex items-center gap-3">
