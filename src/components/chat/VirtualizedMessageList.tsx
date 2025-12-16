@@ -12,10 +12,12 @@ import {
   RotateCw,
   Volume2,
   VolumeX,
-  Loader2
+  Loader2,
+  Brain
 } from "lucide-react";
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { TypingIndicator } from "@/components/TypingIndicator";
+import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -35,6 +37,7 @@ interface VirtualizedMessageListProps {
   messages: Message[];
   isLoading: boolean;
   isStreaming: boolean;
+  isThinking?: boolean;
   copiedIndex: number | null;
   editingIndex: number | null;
   editingContent: string;
@@ -306,6 +309,7 @@ export const VirtualizedMessageList = memo(({
   messages,
   isLoading,
   isStreaming,
+  isThinking = false,
   copiedIndex,
   editingIndex,
   editingContent,
@@ -368,10 +372,17 @@ export const VirtualizedMessageList = memo(({
                 }}
               >
                 <div className="flex gap-4 py-2">
-                  <div className="h-6 w-6 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0 mt-1">
-                    <Sparkles className="h-3 w-3 text-primary" />
+                  <div className={cn(
+                    "h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
+                    isThinking ? "bg-amber-500/10" : "bg-primary/5"
+                  )}>
+                    {isThinking ? (
+                      <Brain className="h-3 w-3 text-amber-500" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 text-primary" />
+                    )}
                   </div>
-                  <TypingIndicator />
+                  {isThinking ? <ThinkingIndicator /> : <TypingIndicator />}
                 </div>
               </div>
             );
