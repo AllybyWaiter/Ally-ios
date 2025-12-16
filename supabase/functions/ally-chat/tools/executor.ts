@@ -68,6 +68,9 @@ export async function executeToolCalls(
       case 'add_plant':
         result = await executeAddPlant(supabase, userId, functionArgs, toolCall.id, logger);
         break;
+      case 'update_livestock':
+        result = await executeUpdateLivestock(supabase, functionArgs, toolCall.id, logger);
+        break;
       default:
         logger.error('Unknown tool', { toolName: functionName });
         continue;
@@ -456,6 +459,79 @@ async function executeAddPlant(
       tool_call_id: toolCallId,
       role: 'tool',
       content: JSON.stringify({ success: false, error: 'Failed to add plant' })
+    };
+  }
+}
+
+async function executeUpdateLivestock(
+  supabase: SupabaseClient,
+  args: {
+    livestock_id: string;
+    quantity?: number;
+    health_status?: string;
+    name?: string;
+    species?: string;
+    notes?: string;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    // Build update object with only provided fields
+    const updates: Record<string, unknown> = {};
+    if (args.quantity !== undefined) updates.quantity = args.quantity;
+    if (args.health_status) updates.health_status = args.health_status;
+    if (args.name) updates.name = args.name;
+    if (args.species) updates.species = args.species;
+    if (args.notes !== undefined) updates.notes = args.notes;
+
+    if (Object.keys(updates).length === 0) {
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'No fields to update' })
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('livestock')
+      .update(updates)
+      .eq('id', args.livestock_id)
+      .select('name, quantity, health_status')
+      .single();
+
+    if (error) {
+      logger.error('Failed to update livestock', { error: error.message });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: error.message })
+      };
+    }
+
+    // Build confirmation message
+    const changes: string[] = [];
+    if (args.quantity !== undefined) changes.push(`quantity to ${args.quantity}`);
+    if (args.health_status) changes.push(`status to ${args.health_status}`);
+    if (args.name) changes.push(`name to ${args.name}`);
+    if (args.species) changes.push(`species to ${args.species}`);
+
+    logger.info('Livestock updated successfully', { livestockId: args.livestock_id, updates });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ 
+        success: true, 
+        message: `Updated ${data?.name || 'livestock'}: ${changes.join(', ')}`,
+        updated: data
+      })
+    };
+  } catch (e) {
+    logger.error('Error updating livestock', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to update livestock' })
     };
   }
 }
