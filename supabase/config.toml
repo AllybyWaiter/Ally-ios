@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.delete-user-account]
 verify_jwt = true
+
+[functions.elevenlabs-tts]
+verify_jwt = true
