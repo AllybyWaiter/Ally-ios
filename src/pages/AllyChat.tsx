@@ -14,7 +14,9 @@ import {
   Plus, 
   History, 
   Fish,
-  ArrowLeft
+  ArrowLeft,
+  Camera,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +25,7 @@ import { VirtualizedConversationList } from "@/components/chat/VirtualizedConver
 import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import { useConversationManager } from "@/hooks/useConversationManager";
+import { compressImage, validateImageFile } from "@/lib/imageCompression";
 
 interface Message {
   role: "user" | "assistant";
@@ -31,6 +34,7 @@ interface Message {
   id?: string;
   aquariumContext?: string | null;
   aquariumName?: string;
+  imageUrl?: string;
 }
 
 const quickQuestions = [
@@ -50,7 +54,10 @@ const AllyChat = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState<string>("");
+  const [pendingPhoto, setPendingPhoto] = useState<{ file: File; preview: string } | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { isStreaming, streamResponse } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
@@ -88,16 +95,72 @@ const AllyChat = () => {
     }
   }, [conversationManager]);
 
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file, 10); // 10MB max before compression
+    if (!validation.isValid) {
+      toast({
+        title: "Invalid image",
+        description: validation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCompressing(true);
+    try {
+      const compressedFile = await compressImage(file, 1, 1920, 0.8);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPendingPhoto({
+          file: compressedFile,
+          preview: reader.result as string,
+        });
+        setIsCompressing(false);
+      };
+      reader.onerror = () => {
+        toast({
+          title: "Error",
+          description: "Failed to process image",
+          variant: "destructive",
+        });
+        setIsCompressing(false);
+      };
+      reader.readAsDataURL(compressedFile);
+    } catch (error) {
+      console.error("Compression error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to compress image",
+        variant: "destructive",
+      });
+      setIsCompressing(false);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removePendingPhoto = () => {
+    setPendingPhoto(null);
+  };
+
   const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !pendingPhoto) || isLoading) return;
 
     const userMessage: Message = {
       role: "user",
-      content: input,
-      timestamp: new Date()
+      content: input || (pendingPhoto ? "Please analyze this photo" : ""),
+      timestamp: new Date(),
+      imageUrl: pendingPhoto?.preview,
     };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
+    setPendingPhoto(null);
     setIsLoading(true);
 
     const currentAquariumName = conversationManager.getSelectedAquariumName();
@@ -493,14 +556,65 @@ const AllyChat = () => {
 
               {/* Input */}
               <div className="p-3 lg:p-6 border-t bg-muted/30 flex-shrink-0 pb-safe">
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-3xl mx-auto space-y-2">
+                  {/* Photo Preview */}
+                  {pendingPhoto && (
+                    <div className="relative inline-block">
+                      <img
+                        src={pendingPhoto.preview}
+                        alt="Pending upload"
+                        className="h-20 w-20 object-cover rounded-lg border border-border"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                        onClick={removePendingPhoto}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                  
                   <div className="flex gap-2 items-end">
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={handlePhotoSelect}
+                    />
+                    
+                    {/* Photo button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-12 w-12 flex-shrink-0"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isLoading || isCompressing}
+                        >
+                          {isCompressing ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Camera className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Attach photo for analysis</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
                     <Textarea
                       ref={inputRef}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyPress}
-                      placeholder="Ask Ally anything about your aquarium..."
+                      placeholder={pendingPhoto ? "Add a message or send photo..." : "Ask Ally anything about your aquarium..."}
                       disabled={isLoading}
                       className="flex-1 min-h-[44px] max-h-[120px] lg:max-h-[200px] resize-none text-base"
                       rows={1}
@@ -509,7 +623,7 @@ const AllyChat = () => {
                       <TooltipTrigger asChild>
                         <Button
                           onClick={sendMessage}
-                          disabled={!input.trim() || isLoading}
+                          disabled={(!input.trim() && !pendingPhoto) || isLoading}
                           size="icon"
                           className="h-12 w-12"
                         >

@@ -45,8 +45,9 @@ serve(async (req) => {
         if (!msg.role || !['user', 'assistant', 'system'].includes(msg.role)) {
           errors.push({ field: `messages[${index}].role`, message: 'Invalid message role' });
         }
-        if (!msg.content && typeof msg.content !== 'string') {
-          errors.push({ field: `messages[${index}].content`, message: 'Message content is required' });
+        // Content can be empty if there's an image
+        if (!msg.content && typeof msg.content !== 'string' && !msg.imageUrl) {
+          errors.push({ field: `messages[${index}].content`, message: 'Message content or image is required' });
         }
       });
     }
@@ -55,6 +56,10 @@ serve(async (req) => {
       logger.warn('Validation failed', { errors });
       return validationErrorResponse(errors);
     }
+    
+    // Check if any message contains an image
+    const hasImages = messages.some((msg: { imageUrl?: string }) => msg.imageUrl);
+    logger.debug('Request contains images', { hasImages });
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
@@ -134,13 +139,31 @@ serve(async (req) => {
       subscriptionTier,
       hasMemoryAccess,
       memoryCount: memoryResult.memories?.length || 0,
-      messageCount: messages.length
+      messageCount: messages.length,
+      hasImages
     });
+
+    // Format messages for the API - handle multi-modal content
+    const formatMessageForApi = (msg: { role: string; content: string; imageUrl?: string }) => {
+      if (msg.imageUrl && msg.imageUrl.startsWith('data:image')) {
+        // Multi-modal message with image
+        return {
+          role: msg.role,
+          content: [
+            { type: "text", text: msg.content || "Please analyze this image" },
+            { type: "image_url", image_url: { url: msg.imageUrl } }
+          ]
+        };
+      }
+      return { role: msg.role, content: msg.content };
+    };
+
+    const formattedMessages = messages.map(formatMessageForApi);
 
     // Initial API call (non-streaming to check for tool calls)
     const apiBody: Record<string, unknown> = {
       model: AI_MODEL,
-      messages: [{ role: "system", content: systemPrompt }, ...messages],
+      messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
       stream: false,
       temperature: 0.7,
     };
@@ -149,7 +172,7 @@ serve(async (req) => {
       apiBody.tools = tools;
     }
 
-    logger.debug('Calling AI gateway (initial)', { hasTools: hasMemoryAccess });
+    logger.debug('Calling AI gateway (initial)', { hasTools: hasMemoryAccess, hasImages });
 
     const response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
@@ -240,7 +263,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: AI_MODEL,
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
         stream: true,
         temperature: 0.7,
       }),
