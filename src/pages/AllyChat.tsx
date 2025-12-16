@@ -511,6 +511,7 @@ const AllyChat = () => {
             messages={messages}
             isLoading={isLoading}
             isStreaming={isStreaming}
+            isThinking={isLoading && !isStreaming && selectedModel === 'thinking'}
             copiedIndex={copiedIndex}
             editingIndex={editingIndex}
             editingContent={editingContent}
