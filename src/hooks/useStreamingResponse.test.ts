@@ -45,6 +45,7 @@ describe('useStreamingResponse', () => {
       result.current.streamResponse(
         [{ role: 'user', content: 'Hello' }],
         null,
+        'standard',
         callbacks
       )
     ).rejects.toThrow('Authentication required');
@@ -91,6 +92,7 @@ describe('useStreamingResponse', () => {
       result.current.streamResponse(
         [{ role: 'user', content: 'Hello' }],
         null,
+        'standard',
         callbacks
       )
     ).rejects.toThrow('Failed to get response');
@@ -152,6 +154,7 @@ describe('useStreamingResponse', () => {
       streamResult = await result.current.streamResponse(
         [{ role: 'user', content: 'Hello' }],
         null,
+        'standard',
         callbacks
       );
     });
@@ -161,7 +164,7 @@ describe('useStreamingResponse', () => {
     expect(streamResult!).toBe('Hello World');
   });
 
-  it('should include aquarium ID in request when provided', async () => {
+  it('should include aquarium ID and model in request when provided', async () => {
     vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
       data: {
         session: {
@@ -202,6 +205,7 @@ describe('useStreamingResponse', () => {
       await result.current.streamResponse(
         [{ role: 'user', content: 'Hello' }],
         'aquarium-123',
+        'thinking',
         callbacks
       );
     });
@@ -210,6 +214,13 @@ describe('useStreamingResponse', () => {
       expect.stringContaining('/functions/v1/ally-chat'),
       expect.objectContaining({
         body: expect.stringContaining('"aquariumId":"aquarium-123"'),
+      })
+    );
+    
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/functions/v1/ally-chat'),
+      expect.objectContaining({
+        body: expect.stringContaining('"model":"thinking"'),
       })
     );
   });
@@ -268,6 +279,7 @@ describe('useStreamingResponse', () => {
       await result.current.streamResponse(
         [{ role: 'user', content: 'Hello' }],
         null,
+        'standard',
         callbacks
       );
     });
@@ -331,6 +343,7 @@ describe('useStreamingResponse', () => {
       await result.current.streamResponse(
         [{ role: 'user', content: 'Hello' }],
         null,
+        'standard',
         callbacks
       );
     });
