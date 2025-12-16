@@ -46,7 +46,7 @@ interface WeatherState {
   initializing: boolean;
 }
 
-const CACHE_KEY = 'aquadex_weather_cache';
+const CACHE_KEY = 'ally_weather_cache';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 function getCachedWeather(): WeatherData | null {
