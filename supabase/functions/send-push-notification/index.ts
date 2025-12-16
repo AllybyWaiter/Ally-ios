@@ -655,13 +655,16 @@ serve(async (req) => {
       console.log(JSON.stringify({ requestId, message: 'Cleaned expired subscriptions', count: expiredEndpoints.length }));
     }
 
-    if (successCount > 0 && referenceId) {
+    // Always log successful notifications for delivery history
+    if (successCount > 0) {
       await supabase
         .from('notification_log')
         .insert({
           user_id: userId,
           notification_type: notificationType || 'general',
-          reference_id: referenceId,
+          reference_id: referenceId || null,
+          title,
+          body,
         });
     }
 

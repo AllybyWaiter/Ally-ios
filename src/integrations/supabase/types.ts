@@ -702,24 +702,30 @@ export type Database = {
       }
       notification_log: {
         Row: {
+          body: string
           id: string
           notification_type: string
           reference_id: string | null
           sent_at: string
+          title: string
           user_id: string
         }
         Insert: {
+          body?: string
           id?: string
           notification_type: string
           reference_id?: string | null
           sent_at?: string
+          title?: string
           user_id: string
         }
         Update: {
+          body?: string
           id?: string
           notification_type?: string
           reference_id?: string | null
           sent_at?: string
+          title?: string
           user_id?: string
         }
         Relationships: []
