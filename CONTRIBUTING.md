@@ -1,6 +1,6 @@
-# Contributing to AquaDex
+# Contributing to Ally
 
-Thank you for your interest in contributing to AquaDex! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Ally! This document provides guidelines and instructions for contributing.
 
 ## Table of Contents
 
@@ -28,7 +28,7 @@ Thank you for your interest in contributing to AquaDex! This document provides g
 git clone <repository-url>
 
 # Navigate to project directory
-cd aquadex
+cd ally
 
 # Install dependencies
 npm install

@@ -37,7 +37,7 @@ const TermsOfService = () => {
           <section id="agreement">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Agreement to Terms</h2>
             <p className="leading-relaxed">
-              By accessing or using AquaDex ("the Service"), you agree to be bound by these Terms of Service ("Terms") and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing the Service. These Terms constitute a legally binding agreement between you and AquaDex.
+              By accessing or using Ally ("the Service"), you agree to be bound by these Terms of Service ("Terms") and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing the Service. These Terms constitute a legally binding agreement between you and WA.I.TER.
             </p>
           </section>
 
@@ -207,7 +207,7 @@ const TermsOfService = () => {
               In the event of a dispute arising from these Terms or your use of the Service:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Informal Resolution:</strong> You agree to first attempt to resolve any dispute informally by contacting us at <a href="mailto:legal@aquadex.app" className="text-primary hover:underline">legal@aquadex.app</a></li>
+              <li><strong>Informal Resolution:</strong> You agree to first attempt to resolve any dispute informally by contacting us at <a href="mailto:info@allybywaiter.com" className="text-primary hover:underline">info@allybywaiter.com</a></li>
               <li><strong>Good Faith Negotiation:</strong> Both parties agree to negotiate in good faith for at least 30 days before pursuing formal legal action</li>
               <li><strong>Arbitration:</strong> If informal resolution fails, disputes shall be resolved through binding arbitration in accordance with applicable arbitration rules</li>
               <li><strong>Class Action Waiver:</strong> You agree to resolve disputes on an individual basis and waive the right to participate in class action lawsuits</li>

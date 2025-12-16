@@ -195,7 +195,7 @@ const Settings = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `aquadex-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `ally-data-export-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -247,7 +247,7 @@ const Settings = () => {
     
     // App Store IDs - to be updated after store submission
     const APP_STORE_ID = ""; // iOS App Store ID
-    const PLAY_STORE_ID = "app.aquadex.ally"; // Android package name
+    const PLAY_STORE_ID = "com.allybywaiter.ally"; // Android package name
     
     if (isIOS && APP_STORE_ID) {
       window.open(`https://apps.apple.com/app/id${APP_STORE_ID}?action=write-review`, '_blank');

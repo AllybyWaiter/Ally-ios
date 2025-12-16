@@ -36,10 +36,10 @@ const inquiryTypes = [
 ];
 
 const contactInfo = [
-  { type: "General Inquiries", email: "hello@aquadex.app", icon: MessageSquare },
-  { type: "Partnerships", email: "partners@aquadex.app", icon: Users },
-  { type: "Business / Enterprise", email: "sales@aquadex.app", icon: Building2 },
-  { type: "Press / Media", email: "press@aquadex.app", icon: Newspaper },
+  { type: "General Inquiries", email: "info@allybywaiter.com", icon: MessageSquare },
+  { type: "Partnerships", email: "info@allybywaiter.com", icon: Users },
+  { type: "Business / Enterprise", email: "info@allybywaiter.com", icon: Building2 },
+  { type: "Press / Media", email: "info@allybywaiter.com", icon: Newspaper },
 ];
 
 const Contact = () => {

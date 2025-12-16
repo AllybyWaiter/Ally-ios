@@ -1,6 +1,6 @@
 # Testing Guide
 
-This guide covers the testing setup and practices for AquaDex.
+This guide covers the testing setup and practices for Ally.
 
 ## Table of Contents
 
@@ -501,9 +501,8 @@ export default defineConfig({
 ## Best Practices
 
 1. **Test behavior, not implementation** - Focus on what the component does, not how
-2. **Use semantic queries** - Prefer `getByRole`, `getByLabelText` over `getByTestId`
-3. **Test user interactions** - Use `userEvent` for realistic interaction simulation
-4. **Keep tests isolated** - Each test should be independent
-5. **Mock external dependencies** - Mock Supabase, APIs, etc.
-6. **Test edge cases** - Empty states, errors, loading states
-7. **Write descriptive test names** - Clear what's being tested
+2. **Use data-testid sparingly** - Prefer accessible queries (role, label, text)
+3. **Keep tests isolated** - Each test should be independent
+4. **Mock at boundaries** - Mock external services, not internal functions
+5. **Test edge cases** - Empty states, loading, errors, boundaries
+6. **Write readable tests** - Clear descriptions, meaningful assertions
