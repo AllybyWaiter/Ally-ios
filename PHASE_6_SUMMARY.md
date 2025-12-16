@@ -13,7 +13,7 @@ Phase 6 transforms Ally from a helpful assistant into a full-featured AI compani
 | 6c | Voice I/O | ✅ Complete | Speech-to-text input, text-to-speech output, hands-free mode |
 | 6d | AI-Powered Proactive Alerts | ✅ Complete | Predictive alerts replacing rule-based trends (Plus/Gold+) |
 | 6e | AI Image Generation | 🔲 Planned | Educational diagrams and visual guides |
-| 6f | Chat UX Enhancements | 🔲 Planned | Suggested questions, quick actions, confidence |
+| 6f | Chat UX Enhancements | ✅ Complete | Context-aware suggestions, quick actions, follow-ups |
 
 ---
 
@@ -188,13 +188,55 @@ AI alerts include additional fields:
 - Species identification guides
 - Equipment installation diagrams
 
-### Phase 6f: Chat UX Enhancements 🔲
+---
 
-**Features:**
-- Suggested follow-up questions
-- Quick action buttons (create task, log test)
-- Confidence indicators on AI responses
-- Source citations for advice
+## Phase 6f: Chat UX Enhancements ✅
+
+### Summary
+
+Enhanced the Ally Chat interface with context-aware suggestions, quick action buttons, and AI-generated follow-up questions for a more intelligent and guided conversation experience.
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Context-Aware Suggestions** | Dynamic question suggestions based on aquarium data, active alerts, overdue tasks, and water type |
+| **Conversation Starters** | Beautiful card-based UI for new conversations with categorized suggestions |
+| **Follow-Up Suggestions** | AI generates 2-3 relevant follow-up questions parsed from response |
+| **Quick Action Chips** | Actionable buttons (Log Test, Schedule Task) appear after relevant AI responses |
+| **Prefill Navigation** | "Ask Ally" from alerts navigates with pre-filled contextual question |
+| **Category Icons** | Visual icons for different question types (water, health, equipment, alerts) |
+
+### Question Categories
+
+| Category | Icon | Examples |
+|----------|------|----------|
+| Alert | ⚠️ | "Why is my pH trending down?" |
+| Water | 💧 | "What are ideal parameters?" |
+| Health | 🐟 | "Any fish compatibility concerns?" |
+| Maintenance | 🔧 | "What maintenance is overdue?" |
+| Equipment | ⚙️ | "Equipment maintenance tips" |
+| Getting Started | ❓ | "How do I set up my first tank?" |
+
+### Context Sources
+
+Suggestions dynamically generated based on:
+1. **Active Alerts** - Prioritizes critical/warning alerts
+2. **Overdue Tasks** - Maintenance reminders
+3. **Aquarium Type** - Type-specific questions (reef, pool, planted)
+4. **Livestock/Plants** - Species-specific care questions
+5. **Recent Tests** - Follow-up analysis questions
+
+### Files Created/Modified
+
+- `src/hooks/useSuggestedQuestions.ts` - **New** Context-aware question generation hook
+- `src/components/chat/ConversationStarters.tsx` - **New** Card-based suggestion UI
+- `src/components/chat/QuickActionChips.tsx` - **New** Action detection and buttons
+- `src/components/chat/FollowUpSuggestions.tsx` - **New** AI follow-up parser and display
+- `src/pages/AllyChat.tsx` - Integrated new components, added prefill navigation
+- `src/components/dashboard/TrendAlertsBanner.tsx` - Enhanced "Ask Ally" with navigation state
+- `supabase/functions/ally-chat/prompts/system.ts` - Added follow-up generation guidance
+- `src/infrastructure/queries/maintenanceTasks.ts` - Added `fetchUpcomingTasks` for context
 
 ---
 
@@ -241,6 +283,7 @@ Phase 6 significantly enhances Ally's capabilities:
 - **6b (Complete)**: Users can send photos for real-time AI vision analysis
 - **6c (Complete)**: Voice input/output with hands-free mode for maintenance scenarios
 - **6d (Complete)**: AI-powered predictive alerts for Plus/Gold+ subscribers
-- **6e-6f (Planned)**: Image generation, UX enhancements
+- **6e (Planned)**: Image generation for educational content
+- **6f (Complete)**: Context-aware suggestions, quick actions, and AI follow-ups
 
-The combination of tool execution, vision analysis, voice I/O, and proactive alerts transforms Ally from an advisor into a true AI companion that can see, hear, understand, predict, and act on behalf of users.
+The combination of tool execution, vision analysis, voice I/O, proactive alerts, and intelligent UX transforms Ally from an advisor into a true AI companion that can see, hear, understand, predict, and guide users through every aspect of aquatic care.

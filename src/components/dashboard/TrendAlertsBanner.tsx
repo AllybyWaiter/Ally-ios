@@ -207,7 +207,12 @@ export function TrendAlertsBanner() {
                         variant="outline"
                         size="sm"
                         className="h-7 text-xs"
-                        onClick={() => navigate(`/ally?context=alert&alertId=${alert.id}`)}
+                        onClick={() => navigate('/ally', { 
+                          state: { 
+                            prefillMessage: `Why is my ${alert.parameter_name} ${alert.alert_type}? ${alert.recommendation || ''}`.trim(),
+                            context: { alertId: alert.id, parameter: alert.parameter_name, severity: alert.severity }
+                          }
+                        })}
                       >
                         <MessageSquare className="h-3 w-3 mr-1" />
                         Ask Ally
