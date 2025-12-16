@@ -18,7 +18,9 @@ import {
   Camera,
   X,
   Mic,
-  Square
+  Square,
+  Volume2,
+  VolumeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +62,8 @@ const AllyChat = () => {
   const [editingContent, setEditingContent] = useState<string>("");
   const [pendingPhoto, setPendingPhoto] = useState<{ file: File; preview: string } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [wasVoiceInput, setWasVoiceInput] = useState(false);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -73,6 +77,7 @@ const AllyChat = () => {
       const text = await stopRecording();
       if (text) {
         setInput(prev => prev ? `${prev} ${text}` : text);
+        setWasVoiceInput(true);
       }
     } else {
       await startRecording();
@@ -175,9 +180,11 @@ const AllyChat = () => {
       timestamp: new Date(),
       imageUrl: pendingPhoto?.preview,
     };
+    const shouldAutoPlay = wasVoiceInput && autoPlayEnabled;
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setPendingPhoto(null);
+    setWasVoiceInput(false);
     setIsLoading(true);
 
     const currentAquariumName = conversationManager.getSelectedAquariumName();
@@ -217,6 +224,12 @@ const AllyChat = () => {
               timestamp: new Date()
             };
             await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+            
+            // Auto-play TTS if voice input was used and auto-play is enabled
+            if (shouldAutoPlay && content) {
+              const messageId = `auto-${Date.now()}`;
+              speak(content, messageId);
+            }
           },
           onError: (error) => {
             console.error("Stream error:", error);
@@ -680,10 +693,35 @@ const AllyChat = () => {
                       </TooltipContent>
                     </Tooltip>
                     
+                    {/* Auto-play toggle */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={autoPlayEnabled ? "default" : "outline"}
+                          size="icon"
+                          className="h-12 w-12 flex-shrink-0"
+                          onClick={() => setAutoPlayEnabled(!autoPlayEnabled)}
+                        >
+                          {autoPlayEnabled ? (
+                            <Volume2 className="h-5 w-5" />
+                          ) : (
+                            <VolumeOff className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{autoPlayEnabled ? "Auto-speak enabled" : "Auto-speak responses after voice input"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+
                     <Textarea
                       ref={inputRef}
                       value={input}
-                      onChange={(e) => setInput(e.target.value)}
+                      onChange={(e) => {
+                        setInput(e.target.value);
+                        // Clear voice input flag when user types manually
+                        if (wasVoiceInput) setWasVoiceInput(false);
+                      }}
                       onKeyDown={handleKeyPress}
                       placeholder={pendingPhoto ? "Add a message or send photo..." : "Ask Ally anything about your aquarium..."}
                       disabled={isLoading}
