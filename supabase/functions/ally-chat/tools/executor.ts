@@ -1,7 +1,7 @@
 /**
  * Tool Executor
  * 
- * Handles execution of AI tool calls (save_memory, add_equipment).
+ * Handles execution of AI tool calls.
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -47,13 +47,33 @@ export async function executeToolCalls(
 
     logger.debug('Executing tool', { toolName: functionName, args: functionArgs });
 
-    if (functionName === 'save_memory') {
-      const result = await executeSaveMemory(supabase, userId, functionArgs, toolCall.id, logger);
-      toolResults.push(result);
-    } else if (functionName === 'add_equipment') {
-      const result = await executeAddEquipment(supabase, functionArgs, toolCall.id, logger);
-      toolResults.push(result);
+    let result: ToolResult;
+    
+    switch (functionName) {
+      case 'save_memory':
+        result = await executeSaveMemory(supabase, userId, functionArgs, toolCall.id, logger);
+        break;
+      case 'add_equipment':
+        result = await executeAddEquipment(supabase, functionArgs, toolCall.id, logger);
+        break;
+      case 'create_task':
+        result = await executeCreateTask(supabase, functionArgs, toolCall.id, logger);
+        break;
+      case 'log_water_test':
+        result = await executeLogWaterTest(supabase, userId, functionArgs, toolCall.id, logger);
+        break;
+      case 'add_livestock':
+        result = await executeAddLivestock(supabase, userId, functionArgs, toolCall.id, logger);
+        break;
+      case 'add_plant':
+        result = await executeAddPlant(supabase, userId, functionArgs, toolCall.id, logger);
+        break;
+      default:
+        logger.error('Unknown tool', { toolName: functionName });
+        continue;
     }
+    
+    toolResults.push(result);
   }
 
   return toolResults;
@@ -149,6 +169,293 @@ async function executeAddEquipment(
       tool_call_id: toolCallId,
       role: 'tool',
       content: JSON.stringify({ success: false, error: 'Failed to add equipment' })
+    };
+  }
+}
+
+async function executeCreateTask(
+  supabase: SupabaseClient,
+  args: {
+    aquarium_id: string;
+    task_name: string;
+    task_type: string;
+    due_date: string;
+    notes?: string;
+    is_recurring?: boolean;
+    recurrence_interval?: string;
+    recurrence_days?: number;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    const { error } = await supabase
+      .from('maintenance_tasks')
+      .insert({
+        aquarium_id: args.aquarium_id,
+        task_name: args.task_name,
+        task_type: args.task_type,
+        due_date: args.due_date,
+        notes: args.notes || null,
+        is_recurring: args.is_recurring || false,
+        recurrence_interval: args.recurrence_interval || null,
+        recurrence_days: args.recurrence_days || null,
+        status: 'pending'
+      });
+
+    if (error) {
+      logger.error('Failed to create task', { error: error.message });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: error.message })
+      };
+    }
+
+    const recurringNote = args.is_recurring ? ` (recurring ${args.recurrence_interval})` : '';
+    logger.info('Task created successfully', { taskName: args.task_name, dueDate: args.due_date });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ 
+        success: true, 
+        message: `Task created: "${args.task_name}" due ${args.due_date}${recurringNote}` 
+      })
+    };
+  } catch (e) {
+    logger.error('Error creating task', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to create task' })
+    };
+  }
+}
+
+async function executeLogWaterTest(
+  supabase: SupabaseClient,
+  userId: string,
+  args: {
+    aquarium_id: string;
+    ph?: number;
+    ammonia?: number;
+    nitrite?: number;
+    nitrate?: number;
+    temperature?: number;
+    gh?: number;
+    kh?: number;
+    salinity?: number;
+    alkalinity?: number;
+    calcium?: number;
+    magnesium?: number;
+    phosphate?: number;
+    free_chlorine?: number;
+    total_chlorine?: number;
+    bromine?: number;
+    cyanuric_acid?: number;
+    calcium_hardness?: number;
+    salt?: number;
+    notes?: string;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    // Create the water test entry
+    const { data: waterTest, error: testError } = await supabase
+      .from('water_tests')
+      .insert({
+        aquarium_id: args.aquarium_id,
+        user_id: userId,
+        test_date: new Date().toISOString().split('T')[0],
+        entry_method: 'conversation',
+        notes: args.notes || 'Logged via Ally Chat'
+      })
+      .select('id')
+      .single();
+
+    if (testError || !waterTest) {
+      logger.error('Failed to create water test', { error: testError?.message });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: testError?.message || 'Failed to create water test' })
+      };
+    }
+
+    // Map parameters to their units and insert them
+    const parameterMap: Record<string, { value: number | undefined; unit: string }> = {
+      'pH': { value: args.ph, unit: 'pH' },
+      'Ammonia': { value: args.ammonia, unit: 'ppm' },
+      'Nitrite': { value: args.nitrite, unit: 'ppm' },
+      'Nitrate': { value: args.nitrate, unit: 'ppm' },
+      'Temperature': { value: args.temperature, unit: '°F' },
+      'GH': { value: args.gh, unit: 'dGH' },
+      'KH': { value: args.kh, unit: 'dKH' },
+      'Salinity': { value: args.salinity, unit: 'ppt' },
+      'Alkalinity': { value: args.alkalinity, unit: 'dKH' },
+      'Calcium': { value: args.calcium, unit: 'ppm' },
+      'Magnesium': { value: args.magnesium, unit: 'ppm' },
+      'Phosphate': { value: args.phosphate, unit: 'ppm' },
+      'Free Chlorine': { value: args.free_chlorine, unit: 'ppm' },
+      'Total Chlorine': { value: args.total_chlorine, unit: 'ppm' },
+      'Bromine': { value: args.bromine, unit: 'ppm' },
+      'Cyanuric Acid': { value: args.cyanuric_acid, unit: 'ppm' },
+      'Calcium Hardness': { value: args.calcium_hardness, unit: 'ppm' },
+      'Salt': { value: args.salt, unit: 'ppm' }
+    };
+
+    const parameters = Object.entries(parameterMap)
+      .filter(([_, param]) => param.value !== undefined && param.value !== null)
+      .map(([name, param]) => ({
+        test_id: waterTest.id,
+        parameter_name: name,
+        value: param.value!,
+        unit: param.unit
+      }));
+
+    if (parameters.length > 0) {
+      const { error: paramError } = await supabase
+        .from('test_parameters')
+        .insert(parameters);
+
+      if (paramError) {
+        logger.error('Failed to insert parameters', { error: paramError.message });
+      }
+    }
+
+    const loggedParams = parameters.map(p => `${p.parameter_name}: ${p.value}`).join(', ');
+    logger.info('Water test logged successfully', { testId: waterTest.id, paramCount: parameters.length });
+    
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ 
+        success: true, 
+        message: `Water test logged: ${loggedParams || 'No parameters provided'}`,
+        test_id: waterTest.id
+      })
+    };
+  } catch (e) {
+    logger.error('Error logging water test', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to log water test' })
+    };
+  }
+}
+
+async function executeAddLivestock(
+  supabase: SupabaseClient,
+  userId: string,
+  args: {
+    aquarium_id: string;
+    name: string;
+    species: string;
+    category: string;
+    quantity: number;
+    notes?: string;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    const { error } = await supabase
+      .from('livestock')
+      .insert({
+        aquarium_id: args.aquarium_id,
+        user_id: userId,
+        name: args.name,
+        species: args.species,
+        category: args.category,
+        quantity: args.quantity,
+        notes: args.notes || null,
+        health_status: 'healthy',
+        date_added: new Date().toISOString().split('T')[0]
+      });
+
+    if (error) {
+      logger.error('Failed to add livestock', { error: error.message });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: error.message })
+      };
+    }
+
+    logger.info('Livestock added successfully', { name: args.name, quantity: args.quantity });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ 
+        success: true, 
+        message: `Added ${args.quantity} ${args.name} (${args.species}) to the tank` 
+      })
+    };
+  } catch (e) {
+    logger.error('Error adding livestock', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to add livestock' })
+    };
+  }
+}
+
+async function executeAddPlant(
+  supabase: SupabaseClient,
+  userId: string,
+  args: {
+    aquarium_id: string;
+    name: string;
+    species: string;
+    quantity: number;
+    placement?: string;
+    notes?: string;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    const { error } = await supabase
+      .from('plants')
+      .insert({
+        aquarium_id: args.aquarium_id,
+        user_id: userId,
+        name: args.name,
+        species: args.species,
+        quantity: args.quantity,
+        placement: args.placement || 'midground',
+        notes: args.notes || null,
+        condition: 'healthy',
+        date_added: new Date().toISOString().split('T')[0]
+      });
+
+    if (error) {
+      logger.error('Failed to add plant', { error: error.message });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: error.message })
+      };
+    }
+
+    logger.info('Plant added successfully', { name: args.name, quantity: args.quantity });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ 
+        success: true, 
+        message: `Added ${args.quantity} ${args.name} (${args.species}) to the tank` 
+      })
+    };
+  } catch (e) {
+    logger.error('Error adding plant', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to add plant' })
     };
   }
 }
