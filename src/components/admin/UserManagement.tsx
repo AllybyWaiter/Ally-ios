@@ -70,8 +70,7 @@ export default function UserManagement() {
           schema: 'public',
           table: 'profiles'
         },
-        (payload) => {
-          console.log('Profile change detected:', payload);
+        () => {
           // Refresh the user list when any profile changes
           fetchUsers();
         }
@@ -94,29 +93,23 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     setLoading(true);
-    console.log('UserManagement: Starting to fetch users...');
     
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
-    console.log('UserManagement: Fetch complete', { data, error, dataCount: data?.length });
-
     if (error) {
-      console.error('UserManagement: Error fetching users:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch users',
         variant: 'destructive',
       });
     } else {
-      console.log('UserManagement: Setting users:', data?.length, 'users');
       setUsers(data || []);
       setFilteredUsers(data || []);
     }
     setLoading(false);
-    console.log('UserManagement: Loading set to false');
   };
 
   const handleEditUser = (user: UserProfile) => {
@@ -190,11 +183,7 @@ export default function UserManagement() {
       .filter(u => selectedUsers.has(u.id))
       .map(u => u.email);
 
-    // In a real app, this would call an edge function to send emails
-    console.log('Sending bulk email to:', selectedUserEmails);
-    console.log('Subject:', bulkEmailSubject);
-    console.log('Message:', bulkEmailMessage);
-
+    // TODO: Implement edge function to send emails
     toast({
       title: 'Bulk email queued',
       description: `Email will be sent to ${selectedUserEmails.length} users`,

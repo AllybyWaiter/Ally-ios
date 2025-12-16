@@ -59,7 +59,6 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
       );
 
       const { priority } = await priorityResponse.json();
-      console.log("AI detected priority:", priority);
 
       // Create support ticket with AI-determined priority
       const { data: ticket, error: ticketError } = await supabase

@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, session) => {
         if (!mounted) return;
 
-        console.log('🔵 Auth: State change:', event, 'Session:', !!session);
         setSession(session);
         setUser(session?.user ?? null);
 
