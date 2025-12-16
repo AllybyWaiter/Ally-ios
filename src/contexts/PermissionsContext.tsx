@@ -23,7 +23,6 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
   const [permissionsLoading, setPermissionsLoading] = useState(true);
 
   const fetchRolesAndPermissions = useCallback(async (userId: string) => {
-    console.log('🔵 Permissions: Fetching for:', userId);
     try {
       const { roles: userRoles, permissions: userPermissions, isAdmin: userIsAdmin } = 
         await fetchRolesAndPermissionsFromDAL(userId);
@@ -31,8 +30,6 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       setRoles(userRoles);
       setPermissions(userPermissions);
       setIsAdmin(userIsAdmin);
-
-      console.log('🟢 Permissions: Loaded - roles:', userRoles.length);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       console.error('🔴 Permissions: Fetch error:', message);
