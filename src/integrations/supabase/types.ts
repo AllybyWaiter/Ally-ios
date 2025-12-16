@@ -733,6 +733,9 @@ export type Database = {
           quiet_hours_end: string | null
           quiet_hours_start: string | null
           reminder_hours_before: number
+          sound_announcements: boolean
+          sound_task_reminders: boolean
+          sound_water_alerts: boolean
           task_reminders_enabled: boolean
           updated_at: string
           user_id: string
@@ -746,6 +749,9 @@ export type Database = {
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           reminder_hours_before?: number
+          sound_announcements?: boolean
+          sound_task_reminders?: boolean
+          sound_water_alerts?: boolean
           task_reminders_enabled?: boolean
           updated_at?: string
           user_id: string
@@ -759,6 +765,9 @@ export type Database = {
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           reminder_hours_before?: number
+          sound_announcements?: boolean
+          sound_task_reminders?: boolean
+          sound_water_alerts?: boolean
           task_reminders_enabled?: boolean
           updated_at?: string
           user_id?: string
