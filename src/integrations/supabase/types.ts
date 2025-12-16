@@ -561,6 +561,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          primary_photo_url: string | null
           quantity: number
           species: string
           updated_at: string
@@ -575,6 +576,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          primary_photo_url?: string | null
           quantity?: number
           species: string
           updated_at?: string
@@ -589,6 +591,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          primary_photo_url?: string | null
           quantity?: number
           species?: string
           updated_at?: string
@@ -600,6 +603,47 @@ export type Database = {
             columns: ["aquarium_id"]
             isOneToOne: false
             referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      livestock_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          livestock_id: string
+          photo_url: string
+          taken_at: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          livestock_id: string
+          photo_url: string
+          taken_at?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          livestock_id?: string
+          photo_url?: string
+          taken_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livestock_photos_livestock_id_fkey"
+            columns: ["livestock_id"]
+            isOneToOne: false
+            referencedRelation: "livestock"
             referencedColumns: ["id"]
           },
         ]
