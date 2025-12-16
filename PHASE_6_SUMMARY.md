@@ -2,16 +2,16 @@
 
 ## Overview
 
-Phase 6 transforms Ally from a helpful assistant into a full-featured AI companion that can manage aquatic spaces through natural conversation, analyze photos in real-time, and proactively assist users.
+Phase 6 transforms Ally from a helpful assistant into a full-featured AI companion that can manage aquatic spaces through natural conversation, analyze photos in real-time, respond via voice, and proactively alert users to potential problems before they occur.
 
 ## Roadmap Status
 
 | Phase | Feature | Status | Description |
 |-------|---------|--------|-------------|
-| 6a | Tool Expansion | ✅ Complete | 6 AI tools for database actions via chat |
+| 6a | Tool Expansion | ✅ Complete | 9 AI tools for database actions via chat |
 | 6b | In-Chat Photo Analysis | ✅ Complete | Multi-modal vision analysis in conversations |
-| 6c | Voice I/O | 🔲 Planned | Speech-to-text input, text-to-speech output |
-| 6d | AI-Powered Proactive Alerts | 🔲 Planned | Predictive alerts replacing rule-based trends |
+| 6c | Voice I/O | ✅ Complete | Speech-to-text input, text-to-speech output, hands-free mode |
+| 6d | AI-Powered Proactive Alerts | ✅ Complete | Predictive alerts replacing rule-based trends (Plus/Gold+) |
 | 6e | AI Image Generation | 🔲 Planned | Educational diagrams and visual guides |
 | 6f | Chat UX Enhancements | 🔲 Planned | Suggested questions, quick actions, confidence |
 
@@ -33,58 +33,15 @@ Ally can now perform actions directly on user data through natural conversation.
 | `log_water_test` | Record water parameters from conversation | "My pH is 8.2, ammonia 0, nitrite 0, nitrate 10" |
 | `add_livestock` | Add fish/invertebrates/corals | "I added 6 neon tetras today" |
 | `add_plant` | Add plants to aquarium profiles | "I planted some java fern" |
+| `update_livestock` | Update existing livestock health/quantity | "Lost 2 tetras" |
+| `update_plant` | Update existing plant condition | "My java fern is melting" |
+| `update_equipment` | Update equipment maintenance dates | "Just cleaned my filter" |
 
 ### Files Modified
 
 - `supabase/functions/ally-chat/tools/index.ts` - Tool definitions with JSON schemas
 - `supabase/functions/ally-chat/tools/executor.ts` - Tool execution logic with database operations
 - `supabase/functions/ally-chat/prompts/system.ts` - System prompt with tool usage guidance
-
-### Example Conversations
-
-**Creating a Task:**
-```
-User: "Can you remind me to clean my filter next Saturday?"
-Ally: "I've created a filter cleaning task for Saturday. I'll make sure you get a reminder!"
-→ Tool called: create_task({ task_name: "Clean filter", task_type: "filter_cleaning", due_date: "2024-12-21" })
-```
-
-**Logging Water Test:**
-```
-User: "Just tested my water - pH 7.8, ammonia 0, nitrite 0, nitrate 15"
-Ally: "Great results! I've logged those parameters. Your water chemistry looks stable."
-→ Tool called: log_water_test({ parameters: [{ name: "pH", value: 7.8 }, ...] })
-```
-
-**Adding Livestock:**
-```
-User: "I picked up 4 cardinal tetras from the LFS today"
-Ally: "Exciting! I've added 4 cardinal tetras to your tank. They should school beautifully with your existing fish."
-→ Tool called: add_livestock({ name: "Cardinal Tetra", species: "Paracheirodon axelrodi", quantity: 4 })
-```
-
-### Technical Implementation
-
-```typescript
-// Tool definition structure (tools/index.ts)
-{
-  type: "function",
-  function: {
-    name: "create_task",
-    description: "Create a maintenance task for the user's aquarium",
-    parameters: {
-      type: "object",
-      properties: {
-        task_name: { type: "string" },
-        task_type: { type: "string", enum: ["water_change", "filter_cleaning", ...] },
-        due_date: { type: "string", format: "date" },
-        notes: { type: "string" }
-      },
-      required: ["task_name", "task_type", "due_date"]
-    }
-  }
-}
-```
 
 ---
 
@@ -113,83 +70,115 @@ Users can now send photos directly in Ally Chat for real-time AI vision analysis
 - `supabase/functions/ally-chat/index.ts` - Gemini Vision API integration
 - `supabase/functions/ally-chat/prompts/system.ts` - Image analysis guidance in system prompt
 
+---
+
+## Phase 6c: Voice I/O ✅
+
+### Summary
+
+Users can speak to Ally and receive spoken responses, enabling hands-free operation while performing tank maintenance.
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Speech-to-Text** | Microphone button for voice input using OpenAI Whisper |
+| **Text-to-Speech** | ElevenLabs Sarah voice for natural spoken responses |
+| **Auto-Play** | Toggle to automatically speak responses aloud |
+| **Hands-Free Mode** | Auto-send transcribed messages when auto-play is enabled |
+
 ### User Experience
 
-1. **Attach Photo** - Camera button next to send, supports mobile camera or file picker
-2. **Preview** - Thumbnail preview with option to remove before sending
-3. **Compression** - Auto-compressed to max 1MB, 1920px for fast upload
-4. **Analysis** - Ally streams detailed analysis with specific observations
-5. **History** - Photos displayed as thumbnails in chat history
+1. Tap microphone → speak your question
+2. Transcribed text auto-populates (and auto-sends if hands-free enabled)
+3. Ally responds in text AND speaks the response if auto-play is on
+4. Visual indicator shows "Hands-free mode active"
+
+### Files Modified
+
+- `src/pages/AllyChat.tsx` - Voice recording button, auto-send logic, TTS integration
+- `src/hooks/useVoiceRecording.tsx` - Microphone capture and state management
+- `src/hooks/useTTS.tsx` - ElevenLabs TTS playback
+- `supabase/functions/transcribe-audio/index.ts` - OpenAI Whisper integration
+- `supabase/functions/elevenlabs-tts/index.ts` - ElevenLabs voice synthesis
+
+---
+
+## Phase 6d: AI-Powered Proactive Alerts ✅
+
+### Summary
+
+AI-powered trend analysis replaces rule-based detection for Plus/Gold+ subscribers. The system predicts problems before they become critical, considers livestock sensitivities, and provides personalized recommendations.
+
+### Tier Gating
+
+| Tier | Alert System |
+|------|-------------|
+| Free | Rule-based alerts only |
+| Basic | Rule-based alerts only |
+| **Plus** | ✅ AI-powered predictive alerts |
+| **Gold** | ✅ AI-powered predictive alerts |
+| Business | ✅ AI-powered predictive alerts |
+| Enterprise | ✅ AI-powered predictive alerts |
+
+### New Alert Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `predictive` | AI predicts problem before it occurs | "At current rate, nitrate will exceed safe levels for your corals within 7 days" |
+| `seasonal` | Season-specific warnings | "Winter approaching - monitor heater as tank temp may fluctuate" |
+| `stocking` | Livestock-aware warnings | "pH trending down toward stress range for your discus (prefer 6.8+)" |
+| `correlation` | Multi-parameter insights | "Rising nitrates with falling pH suggests overfeeding - reduce by 20%" |
+
+### Enhanced Alert Data
+
+AI alerts include additional fields:
+- `recommendation` - Specific actionable advice
+- `timeframe` - When to take action
+- `affected_inhabitants` - Which livestock/plants are at risk
+- `confidence` - AI confidence score (0.0-1.0)
+- `analysis_model` - 'ai' or 'rule' to identify source
+
+### User Experience
+
+**Free/Basic Users:**
+- See rule-based trend alerts (existing behavior)
+- See "Upgrade to Plus" prompt with AI benefits
+- No recommendations, affected inhabitants, or predictive alerts
+
+**Plus/Gold+ Users:**
+- See AI-powered predictive alerts
+- Get personalized recommendations
+- See affected livestock/plants
+- Get "Ask Ally" quick action button
+- Receive enhanced push notifications with recommendations
+
+### Files Created/Modified
+
+- `supabase/functions/analyze-water-trends-ai/index.ts` - **New** AI analysis with Lovable AI
+- `src/hooks/usePlanLimits.tsx` - Added `hasAITrendAlerts` flag
+- `src/infrastructure/queries/waterTestAlerts.ts` - Updated interface, tier-aware routing
+- `src/components/dashboard/TrendAlertsBanner.tsx` - Enhanced UI with recommendations
+- `src/components/water-tests/hooks/useWaterTestForm.ts` - Routes to correct endpoint
 
 ### Technical Implementation
 
-**Frontend (AllyChat.tsx):**
-```typescript
-// Photo state management
-const [pendingPhoto, setPendingPhoto] = useState<{
-  file: File;
-  preview: string;
-} | null>(null);
+**AI Analysis Flow:**
+1. Water test submitted → `triggerTrendAnalysis(aquariumId, userId, hasAITrendAlerts)`
+2. Routes to `analyze-water-trends-ai` (Plus/Gold) or `analyze-water-trends` (Free/Basic)
+3. AI function fetches aquarium context: livestock, plants, equipment, user preferences
+4. Calls Lovable AI (Gemini 2.5 Flash) with structured tool output
+5. AI returns predictive alerts with recommendations
+6. Alerts saved with `analysis_model: 'ai'`
 
-// Compression before upload
-const compressedFile = await compressImage(file, 1, 1920, 0.8);
-
-// Message with image
-const userMessage: Message = {
-  role: "user",
-  content: input || "Please analyze this photo",
-  imageUrl: pendingPhoto?.preview,
-};
-```
-
-**Backend (ally-chat/index.ts):**
-```typescript
-// Multi-modal message formatting for Gemini Vision
-if (msg.imageUrl?.startsWith('data:image')) {
-  return {
-    role: msg.role,
-    content: [
-      { type: "text", text: msg.content },
-      { type: "image_url", image_url: { url: msg.imageUrl } }
-    ]
-  };
-}
-```
-
-### Testing Scenarios
-
-| Scenario | Expected Result |
-|----------|-----------------|
-| Photo of fish with ich spots | Identifies white spots, recommends salt/heat treatment |
-| Photo of green hair algae | Identifies algae type, suggests manual removal + reduce lighting |
-| Photo of cloudy filter output | Identifies flow issue, recommends cleaning/media replacement |
-| Photo of yellowing plant leaves | Diagnoses iron/potassium deficiency, suggests fertilizer |
-| Full tank shot | Provides overall assessment, stocking advice, aquascaping tips |
+**Fallback Behavior:**
+- If AI call fails, automatically falls back to rule-based analysis
+- Alerts marked with `analysis_model: 'rule'` when fallback is used
+- Users always receive alerts, AI just enhances them for Plus/Gold
 
 ---
 
 ## Planned Phases
-
-### Phase 6c: Voice I/O 🔲
-
-**Features:**
-- Microphone button for speech-to-text input
-- Text-to-speech output for Ally's responses (ElevenLabs)
-- Hands-free mode for accessibility
-- Voice activity detection
-
-**Files to Create/Modify:**
-- `src/hooks/useVoiceRecording.tsx` - Speech-to-text capture
-- `src/hooks/useTextToSpeech.tsx` - TTS playback
-- `supabase/functions/transcribe-audio/index.ts` - Whisper API integration
-
-### Phase 6d: AI-Powered Proactive Alerts 🔲
-
-**Features:**
-- Replace rule-based trend detection with AI analysis
-- Predictive alerts before problems occur
-- Personalized recommendations based on user history
-- Integration with push notifications
 
 ### Phase 6e: AI Image Generation 🔲
 
@@ -211,8 +200,6 @@ if (msg.imageUrl?.startsWith('data:image')) {
 
 ## Production Readiness & Monitoring
 
-*Preserved from original Phase 6 implementation.*
-
 ### Rate Limiting System
 
 **Tier-based rate limits for premium features:**
@@ -221,6 +208,7 @@ if (msg.imageUrl?.startsWith('data:image')) {
 |---------|------|------|------|------------|
 | Water Test Photo Analysis | 5/hour | 25/hour | 100/hour | 1000/hour |
 | AI Chat | 10/hour | 50/hour | 200/hour | 1000/hour |
+| AI Trend Analysis | N/A | 10/hour | 50/hour | 500/hour |
 | Maintenance Suggestions | 20/day | 100/day | 500/day | 5000/day |
 
 **Features:**
@@ -231,17 +219,6 @@ if (msg.imageUrl?.startsWith('data:image')) {
 - ✅ Automatic usage tracking in `activity_logs`
 - ✅ Sentry breadcrumbs for rate limit events
 - ✅ LocalStorage-based rate limiting (client-side)
-
-**Usage:**
-```typescript
-const rateLimit = useFeatureRateLimit('water-test-photo');
-
-const handleAction = async () => {
-  const canProceed = await rateLimit.checkLimit();
-  if (!canProceed) return;
-  // Proceed with action
-};
-```
 
 ### Performance Monitoring
 
@@ -254,39 +231,16 @@ const handleAction = async () => {
 - ✅ Slow operation warnings (>1s)
 - ✅ Sentry integration for all metrics
 
-**Key Metrics Tracked:**
-- DNS lookup time
-- TCP connection time
-- Request/response time
-- DOM processing time
-- Load event time
-- Total page load time
-
-**Usage:**
-```typescript
-const result = await measurePerformance(
-  'water-test-photo-analysis',
-  () => apiCall(),
-  FeatureArea.WATER_TESTS
-);
-```
-
-### Configuration
-
-**Adjusting Rate Limits:**
-Edit `RATE_LIMITS` in `src/hooks/useFeatureRateLimit.tsx`
-
-**Performance Thresholds:**
-Edit thresholds in `src/lib/performanceMonitor.ts`
-
 ---
 
 ## Summary
 
 Phase 6 significantly enhances Ally's capabilities:
 
-- **6a (Complete)**: Ally can now take actions on user data through 6 conversational tools
+- **6a (Complete)**: Ally can now take actions on user data through 9 conversational tools
 - **6b (Complete)**: Users can send photos for real-time AI vision analysis
-- **6c-6f (Planned)**: Voice I/O, proactive alerts, image generation, UX enhancements
+- **6c (Complete)**: Voice input/output with hands-free mode for maintenance scenarios
+- **6d (Complete)**: AI-powered predictive alerts for Plus/Gold+ subscribers
+- **6e-6f (Planned)**: Image generation, UX enhancements
 
-The combination of tool execution and vision analysis transforms Ally from an advisor into a true AI companion that can see, understand, and act on behalf of users.
+The combination of tool execution, vision analysis, voice I/O, and proactive alerts transforms Ally from an advisor into a true AI companion that can see, hear, understand, predict, and act on behalf of users.

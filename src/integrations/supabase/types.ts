@@ -1263,8 +1263,11 @@ export type Database = {
       }
       water_test_alerts: {
         Row: {
+          affected_inhabitants: string[] | null
           alert_type: string
+          analysis_model: string | null
           aquarium_id: string
+          confidence: number | null
           created_at: string
           details: Json | null
           dismissed_at: string | null
@@ -1272,13 +1275,19 @@ export type Database = {
           is_dismissed: boolean
           message: string
           parameter_name: string
+          predicted_impact: string | null
+          recommendation: string | null
           severity: string
+          timeframe: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          affected_inhabitants?: string[] | null
           alert_type: string
+          analysis_model?: string | null
           aquarium_id: string
+          confidence?: number | null
           created_at?: string
           details?: Json | null
           dismissed_at?: string | null
@@ -1286,13 +1295,19 @@ export type Database = {
           is_dismissed?: boolean
           message: string
           parameter_name: string
+          predicted_impact?: string | null
+          recommendation?: string | null
           severity?: string
+          timeframe?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          affected_inhabitants?: string[] | null
           alert_type?: string
+          analysis_model?: string | null
           aquarium_id?: string
+          confidence?: number | null
           created_at?: string
           details?: Json | null
           dismissed_at?: string | null
@@ -1300,7 +1315,10 @@ export type Database = {
           is_dismissed?: boolean
           message?: string
           parameter_name?: string
+          predicted_impact?: string | null
+          recommendation?: string | null
           severity?: string
+          timeframe?: string | null
           updated_at?: string
           user_id?: string
         }

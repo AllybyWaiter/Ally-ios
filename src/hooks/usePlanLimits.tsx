@@ -11,6 +11,7 @@ export interface PlanLimits {
   hasMultiTankManagement: boolean;
   hasExportHistory: boolean;
   hasReasoningModel: boolean; // Ally 1.0 Thinking
+  hasAITrendAlerts: boolean; // AI-powered predictive alerts
 }
 
 const PLAN_LIMITS: Record<string, PlanLimits> = {
@@ -22,6 +23,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasMultiTankManagement: false,
     hasExportHistory: false,
     hasReasoningModel: false,
+    hasAITrendAlerts: false,
   },
   basic: {
     maxAquariums: 1,
@@ -31,6 +33,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasMultiTankManagement: false,
     hasExportHistory: false,
     hasReasoningModel: false,
+    hasAITrendAlerts: false,
   },
   plus: {
     maxAquariums: 3,
@@ -40,6 +43,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasMultiTankManagement: false,
     hasExportHistory: false,
     hasReasoningModel: false,
+    hasAITrendAlerts: true,
   },
   gold: {
     maxAquariums: 10,
@@ -49,6 +53,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasMultiTankManagement: true,
     hasExportHistory: true,
     hasReasoningModel: true,
+    hasAITrendAlerts: true,
   },
   business: {
     maxAquariums: Infinity,
@@ -58,6 +63,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasMultiTankManagement: true,
     hasExportHistory: true,
     hasReasoningModel: true,
+    hasAITrendAlerts: true,
   },
   enterprise: {
     maxAquariums: Infinity,
@@ -67,6 +73,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasMultiTankManagement: true,
     hasExportHistory: true,
     hasReasoningModel: true,
+    hasAITrendAlerts: true,
   },
 };
 
