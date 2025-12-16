@@ -93,40 +93,40 @@ export function AquariumGrid({
 
   return (
     <>
-      <div className="flex justify-between items-center mb-4 animate-fade-up opacity-0" style={{ animationDelay: '200ms' }}>
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-semibold">{labels.title}</h2>
+      <div className="flex justify-between items-start mb-4 animate-fade-up opacity-0" style={{ animationDelay: '200ms' }}>
+        <h2 className="text-2xl font-semibold">{labels.title}</h2>
+        <div className="flex items-center gap-2 flex-shrink-0">
           {!limitsLoading && maxAquariums !== Infinity && (
             <Badge variant="secondary" className="text-xs">
               {aquariums.length}/{maxAquariums}
             </Badge>
           )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button 
+                    onClick={onCreateAquarium}
+                    disabled={!canCreate}
+                    className={!canCreate ? 'opacity-50' : ''}
+                  >
+                    {!canCreate ? (
+                      <Lock className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    {labels.addButton}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canCreate && (
+                <TooltipContent>
+                  <p>Upgrade your plan to add more water bodies</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <Button 
-                  onClick={onCreateAquarium}
-                  disabled={!canCreate}
-                  className={!canCreate ? 'opacity-50' : ''}
-                >
-                  {!canCreate ? (
-                    <Lock className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Plus className="mr-2 h-4 w-4" />
-                  )}
-                  {labels.addButton}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {!canCreate && (
-              <TooltipContent>
-                <p>Upgrade your plan to add more water bodies</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
       </div>
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
