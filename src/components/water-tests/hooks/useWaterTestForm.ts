@@ -237,8 +237,9 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
       });
 
       // Trigger trend analysis in background (non-blocking)
+      // Routes to AI or rule-based function based on tier
       if (user) {
-        triggerTrendAnalysis(aquarium.id, user.id);
+        triggerTrendAnalysis(aquarium.id, user.id, limits.hasAITrendAlerts);
         // Invalidate alerts cache after a short delay to allow edge function to complete
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.alerts(user.id) });
