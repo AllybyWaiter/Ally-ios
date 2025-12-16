@@ -11,7 +11,7 @@ export interface WaterTestAlert {
   user_id: string;
   aquarium_id: string;
   parameter_name: string;
-  alert_type: 'rising' | 'falling' | 'unstable' | 'approaching_threshold';
+  alert_type: 'rising' | 'falling' | 'unstable' | 'approaching_threshold' | 'predictive' | 'seasonal' | 'stocking' | 'correlation';
   severity: 'info' | 'warning' | 'critical';
   message: string;
   details: {
@@ -27,6 +27,13 @@ export interface WaterTestAlert {
   dismissed_at: string | null;
   created_at: string;
   updated_at: string;
+  // AI-powered alert fields (Plus/Gold only)
+  recommendation: string | null;
+  timeframe: string | null;
+  affected_inhabitants: string[] | null;
+  confidence: number | null;
+  analysis_model: 'rule' | 'ai' | null;
+  predicted_impact: string | null;
 }
 
 /**
@@ -106,14 +113,21 @@ export async function dismissAquariumAlerts(aquariumId: string): Promise<void> {
 
 /**
  * Trigger trend analysis for an aquarium
+ * Routes to AI or rule-based function based on tier
  */
-export async function triggerTrendAnalysis(aquariumId: string, userId: string): Promise<void> {
-  const { error } = await supabase.functions.invoke('analyze-water-trends', {
+export async function triggerTrendAnalysis(
+  aquariumId: string, 
+  userId: string,
+  hasAITrendAlerts: boolean = false
+): Promise<void> {
+  const functionName = hasAITrendAlerts ? 'analyze-water-trends-ai' : 'analyze-water-trends';
+  
+  const { error } = await supabase.functions.invoke(functionName, {
     body: { aquariumId, userId },
   });
 
   if (error) {
-    console.error('Error triggering trend analysis:', error);
+    console.error(`Error triggering trend analysis (${functionName}):`, error);
     // Don't throw - trend analysis is non-critical
   }
 }
