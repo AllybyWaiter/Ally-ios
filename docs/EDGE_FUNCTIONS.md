@@ -1,6 +1,6 @@
 # Edge Functions Development Guide
 
-This guide covers how to create and maintain Supabase Edge Functions for AquaDex.
+This guide covers how to create and maintain Supabase Edge Functions for Ally.
 
 ## Table of Contents
 
@@ -499,10 +499,4 @@ const { data, error } = await supabase.functions.invoke('my-function', {
 
 ### Checking Logs
 
-View logs in Lovable Cloud dashboard or use:
-
-```typescript
-// Add detailed logging during development
-logger.info('Step 1 complete', { intermediateResult });
-logger.info('Step 2 complete', { finalResult });
-```
+Use the Lovable Cloud dashboard or Supabase dashboard to view edge function logs.

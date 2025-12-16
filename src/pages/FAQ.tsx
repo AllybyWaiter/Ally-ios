@@ -247,7 +247,7 @@ const FAQ = () => {
         },
         {
           q: "What are my privacy rights?",
-          a: "You have the right to access, correct, or delete your data at any time. Request a complete copy of your data, ask us to correct inaccuracies, or delete specific information. Under GDPR and CCPA, you have additional rights including data portability and the right to object to processing. Contact privacy@aquadex.app for any privacy requests or questions."
+          a: "You have the right to access, correct, or delete your data at any time. Request a complete copy of your data, ask us to correct inaccuracies, or delete specific information. Under GDPR and CCPA, you have additional rights including data portability and the right to object to processing. Contact info@allybywaiter.com for any privacy requests or questions."
         }
       ]
     },
@@ -308,7 +308,7 @@ const FAQ = () => {
         },
         {
           q: "Can I request features?",
-          a: "Absolutely! We love hearing from users. Request features through the support chat, email feedback@aquadex.app, or join our community Discord. We review all suggestions and prioritize based on user demand and feasibility. Many current features came directly from beta tester feedback. The most requested features often get fast-tracked into development."
+          a: "Absolutely! We love hearing from users. Request features through the support chat, email info@allybywaiter.com, or join our community Discord. We review all suggestions and prioritize based on user demand and feasibility. Many current features came directly from beta tester feedback. The most requested features often get fast-tracked into development."
         }
       ]
     }

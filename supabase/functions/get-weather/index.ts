@@ -50,7 +50,7 @@ serve(async (req) => {
     const [weatherResponse, nominatimResponse] = await Promise.all([
       fetch(weatherUrl),
       fetch(nominatimUrl, {
-        headers: { 'User-Agent': 'AquaDex/1.0 (https://aquadex.app)' }
+        headers: { 'User-Agent': 'Ally/1.0 (https://allybywaiter.com)' }
       }).catch(() => null) // Graceful degradation if Nominatim fails
     ]);
     

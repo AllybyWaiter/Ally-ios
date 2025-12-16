@@ -219,7 +219,7 @@ describe('Contact', () => {
     it('displays contact email addresses', () => {
       renderContact();
       
-      expect(screen.getByText(/hello@aquadex.app/i)).toBeInTheDocument();
+      expect(screen.getByText(/info@allybywaiter.com/i)).toBeInTheDocument();
     });
 
     it('displays response time info', () => {

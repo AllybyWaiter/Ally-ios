@@ -4,7 +4,7 @@ import { X, Cookie } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const COOKIE_CONSENT_KEY = "aquadex_cookie_consent";
+const COOKIE_CONSENT_KEY = "ally_cookie_consent";
 
 type ConsentStatus = "accepted" | "declined" | null;
 
