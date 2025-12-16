@@ -36,7 +36,6 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (userId: string) => {
-    console.log('🔵 Profile: Fetching for:', userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -60,7 +59,6 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         setOnboardingCompleted(data.onboarding_completed === true);
         setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
         setUserContext(userId, undefined, data.name || undefined);
-        console.log('🟢 Profile: Loaded - name:', data.name);
       } else {
         console.warn('⚠️ Profile: No data for user');
         setOnboardingCompleted(false);
@@ -109,8 +107,6 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState !== 'visible' || !user || !isInitialAuthComplete) return;
-
-      console.log('🔵 Profile: Visibility recovery...');
       
       const recoveryTimeout = setTimeout(() => {
         setProfileLoading(false);

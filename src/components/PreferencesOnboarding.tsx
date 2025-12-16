@@ -37,8 +37,6 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
     setIsLoading(true);
 
     try {
-      console.log('Saving preferences - marking onboarding as complete');
-      
       // Update profile with preferences AND mark onboarding as complete
       const { error: profileError } = await supabase
         .from('profiles')
@@ -51,11 +49,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
         .eq('user_id', userId);
 
       if (profileError) {
-        console.error('Profile update error:', profileError);
         throw profileError;
       }
-
-      console.log('Profile updated successfully, refreshing session...');
 
       // Apply preferences immediately
       setTheme(themePreference);
@@ -66,8 +61,6 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
       
       // Extra safety: Small delay to ensure state propagates
       await new Promise(resolve => setTimeout(resolve, 100));
-
-      console.log('Session refreshed, onboarding should be complete');
 
       toast({
         title: t('preferencesOnboarding.success'),
