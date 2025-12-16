@@ -58,6 +58,7 @@ export const queryKeys = {
     all: ['livestock'] as const,
     list: (aquariumId: string) => ['livestock', 'list', aquariumId] as const,
     detail: (id: string) => ['livestock', 'detail', id] as const,
+    photos: (livestockId: string) => ['livestock', 'photos', livestockId] as const,
   },
 
   // Plants

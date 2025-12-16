@@ -246,6 +246,7 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
                           livestock={item}
                           onEdit={handleEditLivestock}
                           onDelete={handleDeleteLivestockClick}
+                          userId={user?.id || ''}
                         />
                       ))}
                     </div>

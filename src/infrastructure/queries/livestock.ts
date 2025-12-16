@@ -17,6 +17,7 @@ export interface Livestock {
   date_added: string;
   health_status: string;
   notes: string | null;
+  primary_photo_url: string | null;
   created_at: string;
   updated_at: string;
 }
