@@ -73,3 +73,134 @@ export async function fetchUserFeedback(userId: string) {
   if (error) throw error;
   return data as AIFeedback[];
 }
+
+// Training data interfaces
+export interface TrainingDataEntry {
+  id: string;
+  feature: string;
+  rating: string;
+  feedback_text: string | null;
+  created_at: string;
+  context: Record<string, any> | null;
+  message_id: string | null;
+  water_test_id: string | null;
+  user_message?: string | null;
+  assistant_message?: string | null;
+  conversation_id?: string | null;
+}
+
+// Fetch training data with full message context for chat feedback
+export async function fetchTrainingData(options?: {
+  feature?: string;
+  rating?: 'positive' | 'negative';
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+}): Promise<TrainingDataEntry[]> {
+  let query = supabase
+    .from('ai_feedback')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (options?.feature) {
+    query = query.eq('feature', options.feature);
+  }
+  if (options?.rating) {
+    query = query.eq('rating', options.rating);
+  }
+  if (options?.startDate) {
+    query = query.gte('created_at', options.startDate);
+  }
+  if (options?.endDate) {
+    query = query.lte('created_at', options.endDate);
+  }
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data: feedbackData, error: feedbackError } = await query;
+  if (feedbackError) throw feedbackError;
+
+  // For chat feedback, fetch the associated messages
+  const chatFeedback = feedbackData?.filter(f => f.feature === 'chat' && f.message_id) || [];
+  const messageIds = chatFeedback.map(f => f.message_id).filter(Boolean) as string[];
+
+  let messagesMap: Record<string, { content: string; conversation_id: string }> = {};
+  let conversationMessagesMap: Record<string, Array<{ role: string; content: string; created_at: string }>> = {};
+
+  if (messageIds.length > 0) {
+    // Fetch the assistant messages that were rated
+    const { data: messages } = await supabase
+      .from('chat_messages')
+      .select('id, content, conversation_id, role, created_at')
+      .in('id', messageIds);
+
+    messages?.forEach(m => {
+      messagesMap[m.id] = { content: m.content, conversation_id: m.conversation_id };
+    });
+
+    // Get unique conversation IDs to fetch preceding user messages
+    const conversationIds = [...new Set(messages?.map(m => m.conversation_id) || [])];
+    
+    if (conversationIds.length > 0) {
+      const { data: allMessages } = await supabase
+        .from('chat_messages')
+        .select('id, content, conversation_id, role, created_at')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: true });
+
+      // Group messages by conversation
+      allMessages?.forEach(m => {
+        if (!conversationMessagesMap[m.conversation_id]) {
+          conversationMessagesMap[m.conversation_id] = [];
+        }
+        conversationMessagesMap[m.conversation_id].push({
+          role: m.role,
+          content: m.content,
+          created_at: m.created_at
+        });
+      });
+    }
+  }
+
+  // Enrich feedback with message content
+  return (feedbackData || []).map(feedback => {
+    const entry: TrainingDataEntry = {
+      id: feedback.id,
+      feature: feedback.feature,
+      rating: feedback.rating,
+      feedback_text: feedback.feedback_text,
+      created_at: feedback.created_at,
+      context: feedback.context as Record<string, any> | null,
+      message_id: feedback.message_id,
+      water_test_id: feedback.water_test_id,
+      user_message: null,
+      assistant_message: null,
+      conversation_id: null
+    };
+
+    if (feedback.feature === 'chat' && feedback.message_id && messagesMap[feedback.message_id]) {
+      const messageInfo = messagesMap[feedback.message_id];
+      entry.assistant_message = messageInfo.content;
+      entry.conversation_id = messageInfo.conversation_id;
+
+      // Find the preceding user message
+      const conversationMessages = conversationMessagesMap[messageInfo.conversation_id] || [];
+      const assistantMsgIndex = conversationMessages.findIndex(
+        m => m.content === messageInfo.content && m.role === 'assistant'
+      );
+      
+      if (assistantMsgIndex > 0) {
+        // Find the last user message before this assistant message
+        for (let i = assistantMsgIndex - 1; i >= 0; i--) {
+          if (conversationMessages[i].role === 'user') {
+            entry.user_message = conversationMessages[i].content;
+            break;
+          }
+        }
+      }
+    }
+
+    return entry;
+  });
+}
