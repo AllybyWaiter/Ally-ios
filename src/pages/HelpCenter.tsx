@@ -277,11 +277,12 @@ const HelpCenter = () => {
 
         {/* Main Content */}
         <section className="container mx-auto px-4">
-          <Tabs defaultValue="videos" className="space-y-8">
+          <Tabs defaultValue="guides" className="space-y-8">
             <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 h-auto p-1 bg-muted/50">
-              <TabsTrigger value="videos" className="gap-2 py-3">
+              <TabsTrigger value="videos" className="gap-2 py-3 relative">
                 <PlayCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Videos</span>
+                <Badge variant="secondary" className="absolute -top-2 -right-1 text-[10px] px-1.5 py-0">Soon</Badge>
               </TabsTrigger>
               <TabsTrigger value="guides" className="gap-2 py-3">
                 <BookOpen className="h-4 w-4" />
@@ -293,45 +294,24 @@ const HelpCenter = () => {
               </TabsTrigger>
             </TabsList>
 
-            {/* Video Tutorials Tab */}
+            {/* Video Tutorials Tab - Coming Soon */}
             <TabsContent value="videos" className="space-y-6">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-2">Video Tutorials</h2>
-                <p className="text-muted-foreground">Watch step by step guides for common tasks</p>
-              </div>
-              
-              {filteredVideos.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  No videos found matching "{searchQuery}"
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-6">
+                  <PlayCircle className="h-10 w-10 text-muted-foreground" />
                 </div>
-              ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredVideos.map((video) => (
-                    <Card 
-                      key={video.id} 
-                      className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 group"
-                      onClick={() => setSelectedVideo(video)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-4 relative overflow-hidden">
-                          <span className="text-5xl">{video.thumbnail}</span>
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                            <PlayCircle className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
-                        <CardTitle className="text-lg">{video.title}</CardTitle>
-                        <CardDescription>{video.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{video.duration}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                <h2 className="text-2xl font-bold mb-2">Video Tutorials Coming Soon</h2>
+                <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                  We're creating step by step video guides to help you get the most out of Ally. Check back soon!
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {["Getting Started", "Water Testing", "AI Photo Analysis", "Maintenance Tasks", "Equipment Tracking", "Ally Chat"].map((topic) => (
+                    <Badge key={topic} variant="outline" className="text-sm">
+                      {topic}
+                    </Badge>
                   ))}
                 </div>
-              )}
+              </div>
             </TabsContent>
 
             {/* Quick Start Guides Tab */}
