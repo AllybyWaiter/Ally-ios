@@ -259,7 +259,7 @@ const MessageContent = memo(({
             </Tooltip>
             <FeedbackButtons 
               feature="chat" 
-              messageId={messageId}
+              messageId={message.id}
               context={{ messageContent: message.content.slice(0, 200) }}
             />
           </div>
