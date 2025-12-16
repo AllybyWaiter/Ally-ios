@@ -20,6 +20,8 @@ interface StreamingCallbacks {
   onError: (error: Error) => void;
 }
 
+type ModelType = 'standard' | 'thinking';
+
 const UPDATE_INTERVAL = 30; // ms between state updates
 
 export function useStreamingResponse() {
@@ -35,6 +37,7 @@ export function useStreamingResponse() {
   const streamResponse = useCallback(async (
     messages: Message[],
     aquariumId: string | null,
+    model: ModelType = 'standard',
     callbacks: StreamingCallbacks
   ): Promise<string> => {
     // Check authentication
@@ -75,6 +78,7 @@ export function useStreamingResponse() {
       body: JSON.stringify({
         messages: formattedMessages,
         aquariumId,
+        model, // Pass model selection to backend
       }),
     });
 

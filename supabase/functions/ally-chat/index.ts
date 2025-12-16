@@ -20,7 +20,13 @@ import { buildAquariumContext } from './context/aquarium.ts';
 import { buildMemoryContext } from './context/memory.ts';
 import { buildSystemPrompt } from './prompts/system.ts';
 
-const AI_MODEL = "google/gemini-2.5-pro";
+// Model configuration
+const AI_MODELS = {
+  standard: "google/gemini-2.5-pro",
+  thinking: "openai/o4-mini-2025-04-16" // Reasoning model
+};
+
+const GOLD_TIERS = ['gold', 'business', 'enterprise'];
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 serve(async (req) => {
@@ -32,7 +38,7 @@ serve(async (req) => {
   try {
     // Parse and validate request
     const body = await req.json();
-    const { messages, aquariumId } = body;
+    const { messages, aquariumId, model: requestedModel } = body;
     
     const errors = collectErrors(
       validateUuid(aquariumId, 'aquariumId', { required: false })
@@ -114,6 +120,22 @@ serve(async (req) => {
     const skillLevel = profile?.skill_level || 'beginner';
     const subscriptionTier = profile?.subscription_tier || 'free';
     const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
+    
+    // Validate model selection - server-side check for Gold access
+    const canUseThinking = GOLD_TIERS.includes(subscriptionTier);
+    const selectedModel = (requestedModel === 'thinking' && canUseThinking) 
+      ? 'thinking' 
+      : 'standard';
+    const aiModel = AI_MODELS[selectedModel];
+    const isReasoningModel = selectedModel === 'thinking';
+    
+    logger.info('Model selection', { 
+      requested: requestedModel, 
+      selected: selectedModel, 
+      aiModel,
+      canUseThinking,
+      subscriptionTier 
+    });
 
     // Build context using modules
     const aquariumResult = aquariumId 
@@ -140,7 +162,9 @@ serve(async (req) => {
       hasMemoryAccess,
       memoryCount: memoryResult.memories?.length || 0,
       messageCount: messages.length,
-      hasImages
+      hasImages,
+      selectedModel,
+      isReasoningModel
     });
 
     // Format messages for the API - handle multi-modal content
@@ -160,19 +184,40 @@ serve(async (req) => {
 
     const formattedMessages = messages.map(formatMessageForApi);
 
-    // Initial API call (non-streaming to check for tool calls)
-    const apiBody: Record<string, unknown> = {
-      model: AI_MODEL,
-      messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
-      stream: false,
-      temperature: 0.7,
+    // Build API body with model-specific parameters
+    // Note: Reasoning models (o3, o4-mini) don't support temperature
+    const buildApiBody = (streaming: boolean): Record<string, unknown> => {
+      const apiBody: Record<string, unknown> = {
+        model: aiModel,
+        messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
+        stream: streaming,
+      };
+      
+      // Only include temperature for non-reasoning models
+      if (!isReasoningModel) {
+        apiBody.temperature = 0.7;
+      }
+      
+      // Use max_completion_tokens for OpenAI models
+      if (isReasoningModel) {
+        apiBody.max_completion_tokens = 4096;
+      }
+      
+      if (hasMemoryAccess && !streaming) {
+        apiBody.tools = tools;
+      }
+      
+      return apiBody;
     };
-    
-    if (hasMemoryAccess) {
-      apiBody.tools = tools;
-    }
 
-    logger.debug('Calling AI gateway (initial)', { hasTools: hasMemoryAccess, hasImages });
+    // Initial API call (non-streaming to check for tool calls)
+    const initialApiBody = buildApiBody(false);
+    
+    logger.debug('Calling AI gateway (initial)', { 
+      hasTools: hasMemoryAccess, 
+      hasImages,
+      model: aiModel 
+    });
 
     const response = await fetch(AI_GATEWAY_URL, {
       method: "POST",
@@ -180,7 +225,7 @@ serve(async (req) => {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(apiBody),
+      body: JSON.stringify(initialApiBody),
     });
 
     if (!response.ok) {
@@ -228,18 +273,27 @@ serve(async (req) => {
 
       logger.debug('Calling AI gateway (follow-up with tool results)');
 
+      const followUpApiBody: Record<string, unknown> = {
+        model: aiModel,
+        messages: followUpMessages,
+        stream: true,
+      };
+      
+      if (!isReasoningModel) {
+        followUpApiBody.temperature = 0.7;
+      }
+      
+      if (isReasoningModel) {
+        followUpApiBody.max_completion_tokens = 4096;
+      }
+
       const followUpResponse = await fetch(AI_GATEWAY_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          messages: followUpMessages,
-          stream: true,
-          temperature: 0.7,
-        }),
+        body: JSON.stringify(followUpApiBody),
       });
 
       if (!followUpResponse.ok) {
@@ -255,18 +309,17 @@ serve(async (req) => {
     // No tool calls - stream the response directly
     logger.debug('Calling AI gateway (streaming, no tools)');
     
+    const streamApiBody = buildApiBody(true);
+    // Remove tools for streaming call
+    delete streamApiBody.tools;
+    
     const streamResponse = await fetch(AI_GATEWAY_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
-        stream: true,
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(streamApiBody),
     });
 
     if (!streamResponse.ok) {
@@ -275,7 +328,7 @@ serve(async (req) => {
       return createErrorResponse('Failed to process stream request', logger, { status: 502 });
     }
 
-    logger.info('Streaming response');
+    logger.info('Streaming response', { model: aiModel });
     return createStreamResponse(streamResponse.body);
   } catch (error) {
     logger.error('Unexpected error', { error: error instanceof Error ? error.message : 'Unknown error' });

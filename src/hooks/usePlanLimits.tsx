@@ -10,6 +10,7 @@ export interface PlanLimits {
   hasAllyMemory: boolean;
   hasMultiTankManagement: boolean;
   hasExportHistory: boolean;
+  hasReasoningModel: boolean; // Ally 1.0 Thinking
 }
 
 const PLAN_LIMITS: Record<string, PlanLimits> = {
@@ -20,6 +21,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasAllyMemory: false,
     hasMultiTankManagement: false,
     hasExportHistory: false,
+    hasReasoningModel: false,
   },
   basic: {
     maxAquariums: 1,
@@ -28,6 +30,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasAllyMemory: false,
     hasMultiTankManagement: false,
     hasExportHistory: false,
+    hasReasoningModel: false,
   },
   plus: {
     maxAquariums: 3,
@@ -36,6 +39,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasAllyMemory: true,
     hasMultiTankManagement: false,
     hasExportHistory: false,
+    hasReasoningModel: false,
   },
   gold: {
     maxAquariums: 10,
@@ -44,6 +48,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasAllyMemory: true,
     hasMultiTankManagement: true,
     hasExportHistory: true,
+    hasReasoningModel: true,
   },
   business: {
     maxAquariums: Infinity,
@@ -52,6 +57,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasAllyMemory: true,
     hasMultiTankManagement: true,
     hasExportHistory: true,
+    hasReasoningModel: true,
   },
   enterprise: {
     maxAquariums: Infinity,
@@ -60,6 +66,7 @@ const PLAN_LIMITS: Record<string, PlanLimits> = {
     hasAllyMemory: true,
     hasMultiTankManagement: true,
     hasExportHistory: true,
+    hasReasoningModel: true,
   },
 };
 
