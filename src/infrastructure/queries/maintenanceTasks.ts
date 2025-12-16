@@ -58,3 +58,28 @@ export async function createMaintenanceTask(task: {
   if (error) throw error;
   return data as MaintenanceTask;
 }
+
+// Fetch upcoming and overdue tasks for a user
+export async function fetchUpcomingTasks(userId: string) {
+  await ensureFreshSession();
+  
+  // Get tasks due within the next 7 days or overdue
+  const today = new Date();
+  const weekFromNow = new Date();
+  weekFromNow.setDate(today.getDate() + 7);
+  
+  const { data, error } = await supabase
+    .from('maintenance_tasks')
+    .select(`
+      *,
+      aquariums!inner(user_id)
+    `)
+    .eq('aquariums.user_id', userId)
+    .neq('status', 'completed')
+    .lte('due_date', weekFromNow.toISOString().split('T')[0])
+    .order('due_date', { ascending: true })
+    .limit(20);
+
+  if (error) throw error;
+  return (data || []) as MaintenanceTask[];
+}

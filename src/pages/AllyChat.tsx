@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -27,8 +27,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { VirtualizedConversationList } from "@/components/chat/VirtualizedConversationList";
 import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
+import { ConversationStarters } from "@/components/chat/ConversationStarters";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import { useConversationManager } from "@/hooks/useConversationManager";
+import { useSuggestedQuestions } from "@/hooks/useSuggestedQuestions";
 import { compressImage, validateImageFile } from "@/lib/imageCompression";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { useTTS } from "@/hooks/useTTS";
@@ -71,15 +73,9 @@ const MODEL_OPTIONS: ModelOption[] = [
   }
 ];
 
-const quickQuestions = [
-  "What are ideal water parameters?",
-  "Help with cloudy water",
-  "Fish compatibility check",
-  "Equipment recommendations",
-];
-
 const AllyChat = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -101,6 +97,13 @@ const AllyChat = () => {
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
   const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
   const { limits } = usePlanLimits();
+  
+  // Context-aware suggested questions
+  const { suggestions, hasAlerts } = useSuggestedQuestions({
+    selectedAquariumId: conversationManager.selectedAquarium === 'general' ? null : conversationManager.selectedAquarium,
+    aquariums: conversationManager.aquariums,
+    hasMessages: messages.length > 1,
+  });
 
   const canUseThinking = limits.hasReasoningModel;
 
@@ -140,6 +143,18 @@ const AllyChat = () => {
   useEffect(() => {
     initializeChat();
   }, []);
+
+  // Handle prefilled messages from navigation (e.g., "Ask Ally" from alerts)
+  useEffect(() => {
+    const state = location.state as { prefillMessage?: string; context?: Record<string, unknown> } | null;
+    if (state?.prefillMessage && !input) {
+      setInput(state.prefillMessage);
+      // Clear the state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+      // Auto-send after a brief delay
+      setTimeout(() => setAutoSendPending(true), 300);
+    }
+  }, [location.state]);
 
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -529,24 +544,17 @@ const AllyChat = () => {
           />
         </main>
 
-        {/* Quick Questions */}
+        {/* Conversation Starters */}
         {messages.length <= 2 && !isLoading && (
-          <div className="px-4 pb-3 flex flex-wrap gap-2 max-w-3xl mx-auto w-full">
-            {quickQuestions.map((question, index) => (
-              <Button
-                key={index}
-                onClick={() => {
-                  setInput(question);
-                  setTimeout(() => sendMessage(), 100);
-                }}
-                variant="outline"
-                size="sm"
-                className="text-xs"
-              >
-                {question}
-              </Button>
-            ))}
-          </div>
+          <ConversationStarters
+            suggestions={suggestions}
+            hasAquariums={conversationManager.aquariums.length > 0}
+            hasAlerts={hasAlerts}
+            onSelectQuestion={(question) => {
+              setInput(question);
+              setTimeout(() => sendMessage(), 100);
+            }}
+          />
         )}
 
         {/* Input Area */}
