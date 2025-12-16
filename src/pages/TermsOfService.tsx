@@ -136,7 +136,7 @@ const TermsOfService = () => {
               <li><strong>Continuous Improvement:</strong> AI models and recommendations may change over time as we improve the Service</li>
             </ul>
             <p className="leading-relaxed mt-4">
-              <strong>Disclaimer:</strong> Aquarium care involves living organisms with complex needs. Always verify AI suggestions against reputable sources and consult with experienced aquarists or veterinarians for health related concerns. AquaDex is not responsible for the health or wellbeing of your aquatic life.
+              <strong>Disclaimer:</strong> Aquarium care involves living organisms with complex needs. Always verify AI suggestions against reputable sources and consult with experienced aquarists or veterinarians for health related concerns. Ally is not responsible for the health or wellbeing of your aquatic life.
             </p>
           </section>
 
@@ -149,7 +149,7 @@ const TermsOfService = () => {
               <li>In any way that violates any applicable laws or regulations</li>
               <li>To exploit, harm, or attempt to exploit or harm minors</li>
               <li>To transmit any advertising, promotional material, or spam</li>
-              <li>To impersonate or attempt to impersonate AquaDex, employees, or other users</li>
+              <li>To impersonate or attempt to impersonate Ally, WA.I.TER, employees, or other users</li>
               <li>To engage in any automated use of the system or circumvent rate limits</li>
               <li>To interfere with or circumvent security features</li>
               <li>To upload malicious code, viruses, or harmful data</li>
@@ -161,7 +161,7 @@ const TermsOfService = () => {
           <section id="ip">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">9. Intellectual Property</h2>
             <p className="leading-relaxed">
-              The Service and its original content, features, and functionality (excluding user content) are and will remain the exclusive property of AquaDex and its licensors. This includes our trademarks, logos, design, code, and documentation. You may not use our intellectual property without prior written consent. The Service is protected by copyright, trademark, and other laws.
+              The Service and its original content, features, and functionality (excluding user content) are and will remain the exclusive property of WA.I.TER and its licensors. This includes our trademarks, logos, design, code, and documentation. You may not use our intellectual property without prior written consent. The Service is protected by copyright, trademark, and other laws.
             </p>
           </section>
 
@@ -175,14 +175,14 @@ const TermsOfService = () => {
           <section id="liability">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">11. Limitation of Liability</h2>
             <p className="leading-relaxed">
-              IN NO EVENT SHALL AQUADEX, ITS DIRECTORS, EMPLOYEES, PARTNERS, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATING TO YOUR USE OF THE SERVICE, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF PROFITS, HARM TO AQUATIC LIFE, OR PROPERTY DAMAGE, WHETHER BASED ON WARRANTY, CONTRACT, TORT, OR ANY OTHER LEGAL THEORY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE 12 MONTHS PRECEDING THE CLAIM.
+              IN NO EVENT SHALL WA.I.TER, ITS DIRECTORS, EMPLOYEES, PARTNERS, OR AGENTS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATING TO YOUR USE OF THE SERVICE, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, LOSS OF PROFITS, HARM TO AQUATIC LIFE, OR PROPERTY DAMAGE, WHETHER BASED ON WARRANTY, CONTRACT, TORT, OR ANY OTHER LEGAL THEORY, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE 12 MONTHS PRECEDING THE CLAIM.
             </p>
           </section>
 
           <section id="indemnification">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">12. Indemnification</h2>
             <p className="leading-relaxed">
-              You agree to indemnify, defend, and hold harmless AquaDex and its officers, directors, employees, agents, and affiliates from and against any claims, damages, obligations, losses, liabilities, costs, or expenses (including attorney's fees) arising from: (a) your use of the Service; (b) your violation of these Terms; (c) your violation of any third party rights; or (d) your user content. We reserve the right to assume exclusive defense and control of any matter subject to indemnification by you.
+              You agree to indemnify, defend, and hold harmless WA.I.TER and its officers, directors, employees, agents, and affiliates from and against any claims, damages, obligations, losses, liabilities, costs, or expenses (including attorney's fees) arising from: (a) your use of the Service; (b) your violation of these Terms; (c) your violation of any third party rights; or (d) your user content. We reserve the right to assume exclusive defense and control of any matter subject to indemnification by you.
             </p>
           </section>
 
@@ -234,7 +234,7 @@ const TermsOfService = () => {
               If you have any questions about these Terms of Service, please contact us:
             </p>
             <ul className="list-none space-y-2 mt-4 ml-4">
-              <li><strong>Email:</strong> <a href="mailto:legal@aquadex.app" className="text-primary hover:underline">legal@aquadex.app</a></li>
+              <li><strong>Email:</strong> <a href="mailto:info@allybywaiter.com" className="text-primary hover:underline">info@allybywaiter.com</a></li>
               <li><strong>Support:</strong> Use the in app support chat or contact form</li>
             </ul>
           </section>
