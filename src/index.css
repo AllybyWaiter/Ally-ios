@@ -339,3 +339,47 @@ All colors MUST be HSL.
 .recording-pulse {
   animation: recording-pulse 1.5s ease-in-out infinite;
 }
+
+/* Thinking indicator animations */
+@keyframes thinking-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes thinking-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  75%, 100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes thinking-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-thinking-pulse {
+  animation: thinking-pulse 2s ease-in-out infinite;
+}
+
+.animate-thinking-ping {
+  animation: thinking-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-thinking-spin {
+  animation: thinking-spin 2s linear infinite;
+}
