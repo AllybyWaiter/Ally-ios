@@ -74,6 +74,9 @@ export async function executeToolCalls(
       case 'update_plant':
         result = await executeUpdatePlant(supabase, functionArgs, toolCall.id, logger);
         break;
+      case 'update_equipment':
+        result = await executeUpdateEquipment(supabase, functionArgs, toolCall.id, logger);
+        break;
       default:
         logger.error('Unknown tool', { toolName: functionName });
         continue;
@@ -611,6 +614,85 @@ async function executeUpdatePlant(
       tool_call_id: toolCallId,
       role: 'tool',
       content: JSON.stringify({ success: false, error: 'Failed to update plant' })
+    };
+  }
+}
+
+async function executeUpdateEquipment(
+  supabase: SupabaseClient,
+  args: {
+    equipment_id: string;
+    name?: string;
+    equipment_type?: string;
+    brand?: string;
+    model?: string;
+    maintenance_interval_days?: number;
+    last_maintenance_date?: string;
+    notes?: string;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    // Build update object with only provided fields
+    const updates: Record<string, unknown> = {};
+    if (args.name) updates.name = args.name;
+    if (args.equipment_type) updates.equipment_type = args.equipment_type;
+    if (args.brand) updates.brand = args.brand;
+    if (args.model) updates.model = args.model;
+    if (args.maintenance_interval_days !== undefined) updates.maintenance_interval_days = args.maintenance_interval_days;
+    if (args.last_maintenance_date) updates.last_maintenance_date = args.last_maintenance_date;
+    if (args.notes !== undefined) updates.notes = args.notes;
+
+    if (Object.keys(updates).length === 0) {
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'No fields to update' })
+      };
+    }
+
+    const { data, error } = await supabase
+      .from('equipment')
+      .update(updates)
+      .eq('id', args.equipment_id)
+      .select('name, equipment_type, brand, model, last_maintenance_date, maintenance_interval_days')
+      .single();
+
+    if (error) {
+      logger.error('Failed to update equipment', { error: error.message });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: error.message })
+      };
+    }
+
+    // Build confirmation message
+    const changes: string[] = [];
+    if (args.last_maintenance_date) changes.push(`logged maintenance on ${args.last_maintenance_date}`);
+    if (args.maintenance_interval_days !== undefined) changes.push(`maintenance interval to every ${args.maintenance_interval_days} days`);
+    if (args.name) changes.push(`name to ${args.name}`);
+    if (args.brand) changes.push(`brand to ${args.brand}`);
+    if (args.model) changes.push(`model to ${args.model}`);
+    if (args.equipment_type) changes.push(`type to ${args.equipment_type}`);
+
+    logger.info('Equipment updated successfully', { equipmentId: args.equipment_id, updates });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ 
+        success: true, 
+        message: `Updated ${data?.name || 'equipment'}: ${changes.join(', ')}`,
+        updated: data
+      })
+    };
+  } catch (e) {
+    logger.error('Error updating equipment', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to update equipment' })
     };
   }
 }
