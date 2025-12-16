@@ -30,8 +30,6 @@ export function useDashboardData() {
       return;
     }
     
-    console.log('loadAquariums: Fetching with userId:', userId);
-    
     try {
       const data = await fetchAquariumsWithTaskCounts(userId);
       

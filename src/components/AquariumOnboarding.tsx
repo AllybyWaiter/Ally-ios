@@ -148,10 +148,6 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
       if (aquariumError) throw aquariumError;
 
-      // Note: Preferences onboarding already set onboarding_completed to true
-      // This is just for the aquarium setup, so we don't need to update it again
-      console.log('Aquarium onboarding complete');
-
       toast({
         title: t('aquariumOnboarding.success'),
         description: t('aquariumOnboarding.successDescription'),
