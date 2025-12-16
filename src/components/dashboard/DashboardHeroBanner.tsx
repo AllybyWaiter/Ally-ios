@@ -84,7 +84,9 @@ export function DashboardGreeting() {
   const personalizedGreeting = firstName 
     ? greeting.endsWith('?') 
       ? `${greeting.slice(0, -1)}, ${firstName}?`
-      : `${greeting}, ${firstName}`
+      : greeting.endsWith('!')
+        ? `${greeting.slice(0, -1)}, ${firstName}!`
+        : `${greeting}, ${firstName}`
     : greeting;
   
   const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
@@ -153,7 +155,9 @@ export function DashboardHeroBanner() {
   const personalizedGreeting = firstName 
     ? greeting.endsWith('?') 
       ? `${greeting.slice(0, -1)}, ${firstName}?`
-      : `${greeting}, ${firstName}`
+      : greeting.endsWith('!')
+        ? `${greeting.slice(0, -1)}, ${firstName}!`
+        : `${greeting}, ${firstName}`
     : greeting;
   
   const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
