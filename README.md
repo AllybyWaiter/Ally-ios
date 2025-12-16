@@ -1,12 +1,12 @@
-# AquaDex - Smart Aquarium Management
+# Ally - Smart Aquatic Space Management
 
-AquaDex is a comprehensive aquarium management application featuring AI-powered assistance, water test tracking, maintenance scheduling, and more.
+Ally is a comprehensive aquatic space management application featuring AI-powered assistance, water test tracking, maintenance scheduling, and more. Manage aquariums, pools, spas, and ponds with ease.
 
 ## Features
 
-- 🐠 **Aquarium Management** - Track multiple tanks with livestock, plants, and equipment
+- 🐠 **Aquatic Space Management** - Track multiple tanks, pools, and spas with livestock, plants, and equipment
 - 💧 **Water Testing** - Log parameters manually or via AI photo analysis
-- 🤖 **Ally AI Chat** - Get personalized aquarium advice with memory
+- 🤖 **Ally AI Chat** - Get personalized aquatic care advice with memory
 - 📅 **Task Calendar** - Schedule and track maintenance tasks
 - 📊 **Analytics** - Visualize water parameters over time
 - 📱 **PWA Support** - Install as a native-like app on mobile
@@ -115,7 +115,7 @@ The codebase has undergone a comprehensive 4-phase refactoring:
 - ✅ **Phase 1**: Security hardening (validation, rate limiting, logging)
 - ✅ **Phase 2**: Architecture (context split, DAL, component modularization)
 - ✅ **Phase 3**: Performance (optimistic updates, memoization, virtualization)
-- 🔄 **Phase 4**: Testing & polish (in progress)
+- ✅ **Phase 4**: Testing & polish (complete)
 
 ## Environment
 

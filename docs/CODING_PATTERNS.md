@@ -1,6 +1,6 @@
-# AquaDex Coding Patterns
+# Ally Coding Patterns
 
-This document describes the established coding patterns and conventions used throughout the AquaDex codebase.
+This document describes the established coding patterns and conventions used throughout the Ally codebase.
 
 ## Table of Contents
 
@@ -505,55 +505,59 @@ function MyForm() {
 
 ## Component Structure
 
-### Standard Component Template
+### Single Responsibility
 
 ```typescript
-import { memo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface MyComponentProps {
-  title: string;
-  items: Item[];
-  onItemClick: (id: string) => void;
-}
-
-export const MyComponent = memo(function MyComponent({
-  title,
-  items,
-  onItemClick,
-}: MyComponentProps) {
-  // Hooks at the top
-  const { user } = useAuth();
-
-  // Early returns for loading/empty states
-  if (!items.length) {
-    return <EmptyState message="No items found" />;
-  }
-
-  // Main render
+// ✅ Good - focused component
+function TaskCard({ task, onComplete }: TaskCardProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {items.map(item => (
-          <ItemCard 
-            key={item.id} 
-            item={item} 
-            onClick={() => onItemClick(item.id)} 
-          />
-        ))}
-      </CardContent>
+      <p>{task.name}</p>
+      <Button onClick={() => onComplete(task.id)}>Done</Button>
     </Card>
   );
-});
+}
+
+// ❌ Bad - doing too much
+function TaskManager() {
+  // fetching, filtering, sorting, rendering, editing, deleting...
+}
 ```
 
-### File Naming Conventions
+### Composition over Configuration
 
-- Components: `PascalCase.tsx` (e.g., `TaskCard.tsx`)
-- Hooks: `camelCase.ts` with `use` prefix (e.g., `useWaterTestForm.ts`)
-- Utilities: `camelCase.ts` (e.g., `formatters.ts`)
-- Types: Inline or `types.ts` in feature folder
-- Tests: `*.test.ts` or `*.test.tsx`
+```typescript
+// ✅ Good - composable
+<Card>
+  <CardHeader>
+    <CardTitle>{title}</CardTitle>
+  </CardHeader>
+  <CardContent>{children}</CardContent>
+  <CardFooter>{actions}</CardFooter>
+</Card>
+
+// ❌ Bad - monolithic props
+<Card 
+  title={title}
+  content={content}
+  actions={actions}
+  showHeader={true}
+  headerVariant="large"
+  // ...many more props
+/>
+```
+
+### Co-location
+
+Keep related files together:
+
+```
+src/components/water-tests/
+├── WaterTestForm.tsx
+├── WaterTestHistory.tsx
+├── WaterTestCharts.tsx
+├── hooks/
+│   ├── useWaterTestForm.ts
+│   └── usePhotoAnalysis.ts
+└── index.ts
+```
