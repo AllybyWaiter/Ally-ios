@@ -25,6 +25,7 @@ interface Message {
   id?: string;
   aquariumContext?: string | null;
   aquariumName?: string;
+  imageUrl?: string;
 }
 
 interface VirtualizedMessageListProps {
@@ -159,8 +160,21 @@ const MessageContent = memo(({
                   </Button>
                 </div>
               ) : (
-                <div className="inline-block bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2 max-w-[85%] break-words">
-                  <p className="text-sm leading-relaxed text-right">{message.content}</p>
+                <div className="flex flex-col items-end gap-2 max-w-[85%]">
+                  {/* Image thumbnail if present */}
+                  {message.imageUrl && (
+                    <img
+                      src={message.imageUrl}
+                      alt="Attached photo"
+                      className="max-h-48 max-w-full rounded-lg border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(message.imageUrl, '_blank')}
+                    />
+                  )}
+                  {message.content && (
+                    <div className="inline-block bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2 break-words">
+                      <p className="text-sm leading-relaxed text-right">{message.content}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </>

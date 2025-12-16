@@ -10,6 +10,7 @@ interface Message {
   id?: string;
   aquariumContext?: string | null;
   aquariumName?: string;
+  imageUrl?: string;
 }
 
 interface StreamingCallbacks {
@@ -50,6 +51,21 @@ export function useStreamingResponse() {
 
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
 
+    // Format messages for API - convert imageUrl to proper format
+    const formattedMessages = messages.map(msg => {
+      if (msg.imageUrl && msg.imageUrl.startsWith('data:image')) {
+        return {
+          role: msg.role,
+          content: msg.content,
+          imageUrl: msg.imageUrl,
+        };
+      }
+      return {
+        role: msg.role,
+        content: msg.content,
+      };
+    });
+
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -57,7 +73,7 @@ export function useStreamingResponse() {
         Authorization: `Bearer ${session.data.session.access_token}`,
       },
       body: JSON.stringify({
-        messages,
+        messages: formattedMessages,
         aquariumId,
       }),
     });
