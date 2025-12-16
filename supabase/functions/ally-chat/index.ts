@@ -22,12 +22,15 @@ import { buildSystemPrompt } from './prompts/system.ts';
 
 // Model configuration
 const AI_MODELS = {
-  standard: "google/gemini-2.5-pro",
-  thinking: "openai/o4-mini-2025-04-16" // Reasoning model
+  standard: "google/gemini-2.5-flash",  // Fast, balanced
+  thinking: "openai/gpt-5"              // Powerful reasoning for Gold users
 };
 
 const GOLD_TIERS = ['gold', 'business', 'enterprise'];
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+// GPT-5 models require max_completion_tokens instead of max_tokens
+const USES_COMPLETION_TOKENS = ['openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano'];
 
 serve(async (req) => {
   const corsResponse = handleCors(req);
@@ -127,7 +130,7 @@ serve(async (req) => {
       ? 'thinking' 
       : 'standard';
     const aiModel = AI_MODELS[selectedModel];
-    const isReasoningModel = selectedModel === 'thinking';
+    const usesCompletionTokens = USES_COMPLETION_TOKENS.includes(aiModel);
     
     logger.info('Model selection', { 
       requested: requestedModel, 
@@ -164,7 +167,7 @@ serve(async (req) => {
       messageCount: messages.length,
       hasImages,
       selectedModel,
-      isReasoningModel
+      usesCompletionTokens
     });
 
     // Format messages for the API - handle multi-modal content
@@ -185,21 +188,16 @@ serve(async (req) => {
     const formattedMessages = messages.map(formatMessageForApi);
 
     // Build API body with model-specific parameters
-    // Note: Reasoning models (o3, o4-mini) don't support temperature
     const buildApiBody = (streaming: boolean): Record<string, unknown> => {
       const apiBody: Record<string, unknown> = {
         model: aiModel,
         messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
         stream: streaming,
+        temperature: 0.7,
       };
       
-      // Only include temperature for non-reasoning models
-      if (!isReasoningModel) {
-        apiBody.temperature = 0.7;
-      }
-      
-      // Use max_completion_tokens for OpenAI models
-      if (isReasoningModel) {
+      // Use max_completion_tokens for GPT-5 models
+      if (usesCompletionTokens) {
         apiBody.max_completion_tokens = 4096;
       }
       
@@ -277,13 +275,10 @@ serve(async (req) => {
         model: aiModel,
         messages: followUpMessages,
         stream: true,
+        temperature: 0.7,
       };
       
-      if (!isReasoningModel) {
-        followUpApiBody.temperature = 0.7;
-      }
-      
-      if (isReasoningModel) {
+      if (usesCompletionTokens) {
         followUpApiBody.max_completion_tokens = 4096;
       }
 
