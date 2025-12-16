@@ -29,6 +29,7 @@ import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import { useConversationManager } from "@/hooks/useConversationManager";
 import { compressImage, validateImageFile } from "@/lib/imageCompression";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
+import { useTTS } from "@/hooks/useTTS";
 
 interface Message {
   role: "user" | "assistant";
@@ -65,6 +66,7 @@ const AllyChat = () => {
   const { isStreaming, streamResponse } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
+  const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
 
   const handleMicClick = async () => {
     if (isRecording) {
@@ -546,6 +548,11 @@ const AllyChat = () => {
                   onSaveEdit={saveEdit}
                   onRegenerateResponse={handleRegenerateResponse}
                   onEditingContentChange={setEditingContent}
+                  onSpeak={speak}
+                  onStopSpeaking={stopSpeaking}
+                  speakingMessageId={speakingMessageId}
+                  isSpeaking={isSpeaking}
+                  isGeneratingTTS={isGeneratingTTS}
                 />
               </div>
 
