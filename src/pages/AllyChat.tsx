@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Send, 
   Loader2, 
@@ -14,13 +13,14 @@ import {
   Plus, 
   History, 
   Fish,
-  ArrowLeft,
   Camera,
   X,
   Mic,
   Square,
-  Volume2,
-  VolumeOff
+  ChevronDown,
+  Lock,
+  Brain,
+  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,7 @@ import { useConversationManager } from "@/hooks/useConversationManager";
 import { compressImage, validateImageFile } from "@/lib/imageCompression";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { useTTS } from "@/hooks/useTTS";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface Message {
   role: "user" | "assistant";
@@ -42,6 +43,33 @@ interface Message {
   aquariumName?: string;
   imageUrl?: string;
 }
+
+type ModelType = 'standard' | 'thinking';
+
+interface ModelOption {
+  id: ModelType;
+  name: string;
+  description: string;
+  icon: typeof Sparkles;
+  requiresGold: boolean;
+}
+
+const MODEL_OPTIONS: ModelOption[] = [
+  { 
+    id: 'standard', 
+    name: 'Ally 1.0', 
+    description: 'Fast & helpful',
+    icon: Zap,
+    requiresGold: false 
+  },
+  { 
+    id: 'thinking', 
+    name: 'Ally 1.0 Thinking', 
+    description: 'Deep reasoning',
+    icon: Brain,
+    requiresGold: true
+  }
+];
 
 const quickQuestions = [
   "What are ideal water parameters?",
@@ -63,8 +91,8 @@ const AllyChat = () => {
   const [pendingPhoto, setPendingPhoto] = useState<{ file: File; preview: string } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
-  const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
   const [autoSendPending, setAutoSendPending] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<ModelType>('standard');
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -72,6 +100,22 @@ const AllyChat = () => {
   const conversationManager = useConversationManager(userId);
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
   const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
+  const { limits } = usePlanLimits();
+
+  const canUseThinking = limits.hasReasoningModel;
+
+  const handleModelSelect = (modelId: ModelType) => {
+    if (modelId === 'thinking' && !canUseThinking) {
+      toast({
+        title: "Gold membership required",
+        description: "Upgrade to Gold to access Ally 1.0 Thinking with deep reasoning capabilities.",
+      });
+      return;
+    }
+    setSelectedModel(modelId);
+  };
+
+  const selectedModelOption = MODEL_OPTIONS.find(m => m.id === selectedModel) || MODEL_OPTIONS[0];
 
   const handleMicClick = async () => {
     if (isRecording) {
@@ -79,17 +123,13 @@ const AllyChat = () => {
       if (text) {
         setInput(prev => prev ? `${prev} ${text}` : text);
         setWasVoiceInput(true);
-        // If hands-free mode is enabled, auto-send after transcription
-        if (autoPlayEnabled) {
-          setAutoSendPending(true);
-        }
+        setAutoSendPending(true);
       }
     } else {
       await startRecording();
     }
   };
 
-  // Auto-send after voice transcription when hands-free mode is enabled
   useEffect(() => {
     if (autoSendPending && input.trim() && !isLoading) {
       setAutoSendPending(false);
@@ -134,7 +174,7 @@ const AllyChat = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validation = validateImageFile(file, 10); // 10MB max before compression
+    const validation = validateImageFile(file, 10);
     if (!validation.isValid) {
       toast({
         title: "Invalid image",
@@ -165,7 +205,6 @@ const AllyChat = () => {
       };
       reader.readAsDataURL(compressedFile);
     } catch (error) {
-      console.error("Compression error:", error);
       toast({
         title: "Error",
         description: "Failed to compress image",
@@ -174,7 +213,6 @@ const AllyChat = () => {
       setIsCompressing(false);
     }
 
-    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -193,7 +231,7 @@ const AllyChat = () => {
       timestamp: new Date(),
       imageUrl: pendingPhoto?.preview,
     };
-    const shouldAutoPlay = wasVoiceInput && autoPlayEnabled;
+    const shouldAutoPlay = wasVoiceInput;
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setPendingPhoto(null);
@@ -207,6 +245,7 @@ const AllyChat = () => {
       const fullContent = await streamResponse(
         [...messages, userMessage],
         conversationManager.getAquariumIdForApi(),
+        selectedModel,
         {
           onStreamStart: () => {
             setMessages(prev => [...prev, {
@@ -238,7 +277,6 @@ const AllyChat = () => {
             };
             await conversationManager.saveConversation(userMessage, finalAssistantMessage);
             
-            // Auto-play TTS if voice input was used and auto-play is enabled
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
               speak(content, messageId);
@@ -293,21 +331,16 @@ const AllyChat = () => {
 
     if (!messageToEdit || messageToEdit.role !== "user") return;
 
-    // Update local state
     messageToEdit.content = editingContent.trim();
 
-    // Remove all messages after the edited one
     const newMessages = updatedMessages.slice(0, editingIndex + 1);
     setMessages(newMessages);
 
-    // Update in database
     await conversationManager.updateMessageInDb(editingIndex, editingContent.trim());
 
-    // Clear editing state
     setEditingIndex(null);
     setEditingContent("");
 
-    // Regenerate assistant response
     setIsLoading(true);
 
     const currentAquariumName = conversationManager.getSelectedAquariumName();
@@ -317,6 +350,7 @@ const AllyChat = () => {
       await streamResponse(
         newMessages,
         conversationManager.getAquariumIdForApi(),
+        selectedModel,
         {
           onStreamStart: () => {
             setMessages(prev => [...prev, {
@@ -362,410 +396,319 @@ const AllyChat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [editingIndex, editingContent, messages, conversationManager, streamResponse, toast]);
+  }, [editingIndex, editingContent, messages, conversationManager, streamResponse, toast, selectedModel]);
 
   const handleRegenerateResponse = useCallback((index: number) => {
-    // Find the user message and regenerate from there
     if (messages[index]?.role === "user") {
       startEditMessage(index, messages[index].content);
-      // Then immediately save to trigger regeneration
       setTimeout(() => saveEdit(), 0);
     }
   }, [messages, startEditMessage, saveEdit]);
 
   return (
     <TooltipProvider>
-      <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-background via-background to-primary/5 overflow-hidden">
-        <div className="hidden lg:block">
-          <AppHeader />
-        </div>
-
-        <main className="flex-1 lg:container lg:mx-auto lg:px-4 lg:py-8 lg:pt-28 lg:max-w-7xl overflow-hidden">
-          <div className="flex gap-4 h-full lg:h-[calc(100vh-12rem)]">
-            {/* Desktop Sidebar */}
-            <Card className="hidden lg:block w-80 shadow-lg">
-              <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-primary/5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleStartNewConversation}
-                      className="w-full gap-2"
-                      size="lg"
-                    >
-                      <Plus className="h-4 w-4" />
-                      New Conversation
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Start a fresh conversation with Ally</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-
-              <div className="h-[calc(100%-8rem)] p-4">
-                <h3 className="text-sm font-semibold text-muted-foreground px-2 mb-3">
-                  Recent Conversations
-                </h3>
-                <VirtualizedConversationList
-                  conversations={conversationManager.conversations}
-                  currentConversationId={conversationManager.currentConversationId}
-                  onLoadConversation={handleLoadConversation}
-                  onDeleteConversation={handleDeleteConversation}
-                />
-              </div>
-            </Card>
-
-            {/* Main Chat Area */}
-            <Card className="flex-1 shadow-lg flex flex-col rounded-none lg:rounded-lg border-0 lg:border">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-primary via-primary to-primary/90 p-3 lg:p-6 pt-safe border-b flex-shrink-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {/* Mobile Back Button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
-                      onClick={() => navigate('/dashboard')}
-                    >
-                      <ArrowLeft className="h-5 w-5" />
-                    </Button>
-
-                    {/* Mobile History Button */}
-                    <Sheet>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SheetTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="lg:hidden text-primary-foreground hover:bg-primary-foreground/10 flex-shrink-0"
-                            >
-                              <History className="h-5 w-5" />
-                            </Button>
-                          </SheetTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View chat history</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <SheetContent side="left" className="w-80">
-                        <SheetHeader>
-                          <SheetTitle>Chat History</SheetTitle>
-                        </SheetHeader>
-                        <div className="h-[calc(100vh-10rem)] mt-6">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                onClick={handleStartNewConversation}
-                                className="w-full gap-2 mb-4"
-                              >
-                                <Plus className="h-4 w-4" />
-                                New Conversation
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Start a fresh conversation with Ally</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <VirtualizedConversationList
-                            conversations={conversationManager.conversations}
-                            currentConversationId={conversationManager.currentConversationId}
-                            onLoadConversation={handleLoadConversation}
-                            onDeleteConversation={handleDeleteConversation}
-                          />
-                        </div>
-                      </SheetContent>
-                    </Sheet>
-
-                    <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="h-6 w-6 text-primary-foreground" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h1 className="text-2xl font-bold text-primary-foreground truncate">Chat with Ally</h1>
-                      <p className="text-sm text-primary-foreground/80 truncate">Your AI Aquarium Expert</p>
-                    </div>
-                  </div>
-
-                  {/* Aquarium Selector */}
-                  {conversationManager.aquariums.length > 0 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <Select
-                            value={conversationManager.selectedAquarium}
-                            onValueChange={conversationManager.setSelectedAquarium}
-                          >
-                            <SelectTrigger className="w-[200px] bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hidden sm:flex">
-                              <Fish className="h-4 w-4 mr-2" />
-                              <SelectValue placeholder="Select aquarium" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="general">
-                                <span className="flex items-center gap-2">
-                                  <Sparkles className="h-4 w-4" />
-                                  General Advice
-                                </span>
-                              </SelectItem>
-                              {conversationManager.aquariums.map((aq) => (
-                                <SelectItem key={aq.id} value={aq.id}>
-                                  <span className="flex items-center gap-2">
-                                    <Fish className="h-4 w-4" />
-                                    {aq.name} ({aq.type})
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Get advice specific to your aquarium</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+      <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
+        {/* Minimal Header */}
+        <header className="flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-safe">
+          {/* Left: History */}
+          <div className="flex items-center gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <History className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <SheetHeader>
+                  <SheetTitle>Chat History</SheetTitle>
+                </SheetHeader>
+                <div className="h-[calc(100vh-10rem)] mt-6">
+                  <Button
+                    onClick={handleStartNewConversation}
+                    className="w-full gap-2 mb-4"
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Chat
+                  </Button>
+                  <VirtualizedConversationList
+                    conversations={conversationManager.conversations}
+                    currentConversationId={conversationManager.currentConversationId}
+                    onLoadConversation={handleLoadConversation}
+                    onDeleteConversation={handleDeleteConversation}
+                  />
                 </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
-                {/* Mobile aquarium selector */}
-                {conversationManager.aquariums.length > 0 && (
-                  <div className="mt-3 sm:hidden">
-                    <p className="text-xs text-primary-foreground/70 mb-1">Current context:</p>
-                    <Select
-                      value={conversationManager.selectedAquarium}
-                      onValueChange={conversationManager.setSelectedAquarium}
-                    >
-                      <SelectTrigger className="w-full bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20">
-                        <Fish className="h-4 w-4 mr-2" />
-                        <SelectValue placeholder="Select aquarium" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">
-                          <span className="flex items-center gap-2">
-                            <Sparkles className="h-4 w-4" />
-                            General Advice
+          {/* Center: Model Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-2 font-medium">
+                <selectedModelOption.icon className="h-4 w-4" />
+                {selectedModelOption.name}
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-56">
+              {MODEL_OPTIONS.map((model) => {
+                const isLocked = model.requiresGold && !canUseThinking;
+                return (
+                  <DropdownMenuItem
+                    key={model.id}
+                    onClick={() => handleModelSelect(model.id)}
+                    className={cn(
+                      "flex items-start gap-3 p-3 cursor-pointer",
+                      selectedModel === model.id && "bg-accent"
+                    )}
+                  >
+                    <model.icon className={cn(
+                      "h-5 w-5 mt-0.5",
+                      isLocked && "opacity-50"
+                    )} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "font-medium",
+                          isLocked && "opacity-50"
+                        )}>
+                          {model.name}
+                        </span>
+                        {isLocked && <Lock className="h-3 w-3 text-muted-foreground" />}
+                        {model.requiresGold && (
+                          <span className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium">
+                            Gold
                           </span>
-                        </SelectItem>
-                        {conversationManager.aquariums.map((aq) => (
-                          <SelectItem key={aq.id} value={aq.id}>
-                            <span className="flex items-center gap-2">
-                              <Fish className="h-4 w-4" />
-                              {aq.name} ({aq.type})
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                        )}
+                      </div>
+                      <p className={cn(
+                        "text-xs text-muted-foreground",
+                        isLocked && "opacity-50"
+                      )}>
+                        {model.description}
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Right: New Chat */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9"
+            onClick={handleStartNewConversation}
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </header>
+
+        {/* Messages Area */}
+        <main className="flex-1 overflow-hidden">
+          <VirtualizedMessageList
+            messages={messages}
+            isLoading={isLoading}
+            isStreaming={isStreaming}
+            copiedIndex={copiedIndex}
+            editingIndex={editingIndex}
+            editingContent={editingContent}
+            onCopy={copyMessage}
+            onStartEdit={startEditMessage}
+            onCancelEdit={cancelEdit}
+            onSaveEdit={saveEdit}
+            onRegenerateResponse={handleRegenerateResponse}
+            onEditingContentChange={setEditingContent}
+            onSpeak={speak}
+            onStopSpeaking={stopSpeaking}
+            speakingMessageId={speakingMessageId}
+            isSpeaking={isSpeaking}
+            isGeneratingTTS={isGeneratingTTS}
+          />
+        </main>
+
+        {/* Quick Questions */}
+        {messages.length <= 2 && !isLoading && (
+          <div className="px-4 pb-3 flex flex-wrap gap-2 max-w-3xl mx-auto w-full">
+            {quickQuestions.map((question, index) => (
+              <Button
+                key={index}
+                onClick={() => {
+                  setInput(question);
+                  setTimeout(() => sendMessage(), 100);
+                }}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                {question}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Input Area */}
+        <div className="border-t bg-background p-4 pb-safe">
+          <div className="max-w-3xl mx-auto space-y-3">
+            {/* Recording Status */}
+            {(isRecording || isProcessing) && (
+              <div className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+                isRecording 
+                  ? "bg-destructive/10 text-destructive" 
+                  : "bg-primary/10 text-primary"
+              )}>
+                {isRecording ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-destructive recording-pulse" />
+                    Recording... Tap mic to stop
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Transcribing...
+                  </>
                 )}
               </div>
+            )}
 
-              {/* Messages - Using VirtualizedMessageList */}
-              <div className="flex-1 overflow-hidden">
-                <VirtualizedMessageList
-                  messages={messages}
-                  isLoading={isLoading}
-                  isStreaming={isStreaming}
-                  copiedIndex={copiedIndex}
-                  editingIndex={editingIndex}
-                  editingContent={editingContent}
-                  onCopy={copyMessage}
-                  onStartEdit={startEditMessage}
-                  onCancelEdit={cancelEdit}
-                  onSaveEdit={saveEdit}
-                  onRegenerateResponse={handleRegenerateResponse}
-                  onEditingContentChange={setEditingContent}
-                  onSpeak={speak}
-                  onStopSpeaking={stopSpeaking}
-                  speakingMessageId={speakingMessageId}
-                  isSpeaking={isSpeaking}
-                  isGeneratingTTS={isGeneratingTTS}
+            {/* Photo Preview */}
+            {pendingPhoto && (
+              <div className="relative inline-block">
+                <img
+                  src={pendingPhoto.preview}
+                  alt="Pending upload"
+                  className="h-20 w-20 object-cover rounded-lg border border-border"
                 />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={removePendingPhoto}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
               </div>
+            )}
 
-              {/* Quick Questions */}
-              {messages.length <= 2 && !isLoading && (
-                <div className="px-4 lg:px-6 pb-3 lg:pb-4 flex flex-wrap gap-2 max-w-3xl mx-auto w-full flex-shrink-0">
-                  {quickQuestions.map((question, index) => (
-                    <Button
-                      key={index}
-                      onClick={() => {
-                        setInput(question);
-                        setTimeout(() => sendMessage(), 100);
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs hover-scale"
-                    >
-                      {question}
-                    </Button>
+            {/* Aquarium Context Chip */}
+            {conversationManager.aquariums.length > 0 && (
+              <Select
+                value={conversationManager.selectedAquarium}
+                onValueChange={conversationManager.setSelectedAquarium}
+              >
+                <SelectTrigger className="w-fit h-8 text-xs gap-2 bg-muted/50 border-0">
+                  <Fish className="h-3 w-3" />
+                  <SelectValue placeholder="Context" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-3 w-3" />
+                      General Advice
+                    </span>
+                  </SelectItem>
+                  {conversationManager.aquariums.map((aq) => (
+                    <SelectItem key={aq.id} value={aq.id}>
+                      <span className="flex items-center gap-2">
+                        <Fish className="h-3 w-3" />
+                        {aq.name}
+                      </span>
+                    </SelectItem>
                   ))}
-                </div>
-              )}
-
-              {/* Input */}
-              <div className="p-3 lg:p-6 border-t bg-muted/30 flex-shrink-0 pb-safe">
-                <div className="max-w-3xl mx-auto space-y-2">
-                  {/* Recording Status Indicator */}
-                  {(isRecording || isProcessing) && (
-                    <div className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
-                      isRecording 
-                        ? "bg-destructive/10 text-destructive" 
-                        : "bg-primary/10 text-primary"
-                    )}>
-                      {isRecording ? (
-                        <>
-                          <div className="h-2 w-2 rounded-full bg-destructive recording-pulse" />
-                          Recording... Tap mic to stop
-                        </>
-                      ) : (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Transcribing...
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Photo Preview */}
-                  {pendingPhoto && (
-                    <div className="relative inline-block">
-                      <img
-                        src={pendingPhoto.preview}
-                        alt="Pending upload"
-                        className="h-20 w-20 object-cover rounded-lg border border-border"
-                      />
+                </SelectContent>
+              </Select>
+            )}
+            
+            {/* Input Row */}
+            <div className="flex gap-2 items-end">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              
+              <div className="flex-1 flex items-end gap-2 bg-muted/50 rounded-2xl p-2 pl-4">
+                <Textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    if (wasVoiceInput) setWasVoiceInput(false);
+                  }}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Message Ally..."
+                  disabled={isLoading}
+                  className="flex-1 min-h-[24px] max-h-[120px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
+                  rows={1}
+                />
+                
+                {/* Inline Actions */}
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
-                        variant="destructive"
+                        variant="ghost"
                         size="icon"
-                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                        onClick={removePendingPhoto}
+                        className="h-8 w-8 rounded-full"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isLoading || isCompressing || isRecording || isProcessing}
                       >
-                        <X className="h-3 w-3" />
+                        {isCompressing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Camera className="h-4 w-4" />
+                        )}
                       </Button>
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2 items-end">
-                    {/* Hidden file input */}
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handlePhotoSelect}
-                    />
-                    
-                    {/* Photo button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-12 w-12 flex-shrink-0"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isLoading || isCompressing || isRecording || isProcessing}
-                        >
-                          {isCompressing ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <Camera className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Attach photo for analysis</p>
-                      </TooltipContent>
-                    </Tooltip>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Attach photo</p></TooltipContent>
+                  </Tooltip>
 
-                    {/* Microphone button */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={isRecording ? "destructive" : "outline"}
-                          size="icon"
-                          className={cn(
-                            "h-12 w-12 flex-shrink-0",
-                            isRecording && "recording-pulse"
-                          )}
-                          onClick={handleMicClick}
-                          disabled={isLoading || isProcessing}
-                        >
-                          {isProcessing ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : isRecording ? (
-                            <Square className="h-5 w-5" />
-                          ) : (
-                            <Mic className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{isRecording ? "Stop recording" : "Voice input"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    
-                    {/* Auto-play toggle */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={autoPlayEnabled ? "default" : "outline"}
-                          size="icon"
-                          className="h-12 w-12 flex-shrink-0"
-                          onClick={() => setAutoPlayEnabled(!autoPlayEnabled)}
-                        >
-                          {autoPlayEnabled ? (
-                            <Volume2 className="h-5 w-5" />
-                          ) : (
-                            <VolumeOff className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{autoPlayEnabled ? "Hands-free mode: auto-send & speak" : "Enable hands-free voice conversation"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Textarea
-                      ref={inputRef}
-                      value={input}
-                      onChange={(e) => {
-                        setInput(e.target.value);
-                        // Clear voice input flag when user types manually
-                        if (wasVoiceInput) setWasVoiceInput(false);
-                      }}
-                      onKeyDown={handleKeyPress}
-                      placeholder={pendingPhoto ? "Add a message or send photo..." : "Ask Ally anything about your aquarium..."}
-                      disabled={isLoading}
-                      className="flex-1 min-h-[44px] max-h-[120px] lg:max-h-[200px] resize-none text-base"
-                      rows={1}
-                    />
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={sendMessage}
-                          disabled={(!input.trim() && !pendingPhoto) || isLoading}
-                          size="icon"
-                          className="h-12 w-12"
-                        >
-                          {isLoading ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                          ) : (
-                            <Send className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Send message</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isRecording ? "destructive" : "ghost"}
+                        size="icon"
+                        className={cn(
+                          "h-8 w-8 rounded-full",
+                          isRecording && "recording-pulse"
+                        )}
+                        onClick={handleMicClick}
+                        disabled={isLoading || isProcessing}
+                      >
+                        {isProcessing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : isRecording ? (
+                          <Square className="h-4 w-4" />
+                        ) : (
+                          <Mic className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>{isRecording ? "Stop" : "Voice"}</p></TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
-            </Card>
+
+              <Button
+                onClick={sendMessage}
+                disabled={(!input.trim() && !pendingPhoto) || isLoading}
+                size="icon"
+                className="h-10 w-10 rounded-full"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
           </div>
-        </main>
+        </div>
       </div>
     </TooltipProvider>
   );
