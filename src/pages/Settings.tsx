@@ -832,13 +832,13 @@ const Settings = () => {
                 <div className="p-4 rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">AquaDex</p>
+                      <p className="font-medium">Ally by WA.I.TER</p>
                       <p className="text-sm text-muted-foreground">Version {APP_VERSION}</p>
                     </div>
                     <Badge variant="secondary">Closed Beta</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    © {new Date().getFullYear()} AquaDex. All rights reserved.
+                    © {new Date().getFullYear()} WA.I.TER. All rights reserved.
                   </p>
                 </div>
               </CardContent>
