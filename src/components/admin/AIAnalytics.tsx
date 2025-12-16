@@ -20,8 +20,10 @@ import {
   Download,
   Target,
   Activity,
-  LineChart as LineChartIcon
+  LineChart as LineChartIcon,
+  Database
 } from 'lucide-react';
+import AITrainingData from './AITrainingData';
 import { formatDate } from '@/lib/formatters';
 import {
   ChartConfig,
@@ -564,6 +566,10 @@ export default function AIAnalytics() {
           <TabsTrigger value="recent">
             <Activity className="mr-2 h-4 w-4" />
             Recent Activity
+          </TabsTrigger>
+          <TabsTrigger value="training">
+            <Database className="mr-2 h-4 w-4" />
+            Training Data
           </TabsTrigger>
         </TabsList>
 
@@ -1184,6 +1190,11 @@ export default function AIAnalytics() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Training Data Tab */}
+        <TabsContent value="training">
+          <AITrainingData />
         </TabsContent>
       </Tabs>
     </div>
