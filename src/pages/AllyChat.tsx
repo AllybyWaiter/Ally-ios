@@ -64,6 +64,7 @@ const AllyChat = () => {
   const [isCompressing, setIsCompressing] = useState(false);
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(false);
+  const [autoSendPending, setAutoSendPending] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,11 +79,23 @@ const AllyChat = () => {
       if (text) {
         setInput(prev => prev ? `${prev} ${text}` : text);
         setWasVoiceInput(true);
+        // If hands-free mode is enabled, auto-send after transcription
+        if (autoPlayEnabled) {
+          setAutoSendPending(true);
+        }
       }
     } else {
       await startRecording();
     }
   };
+
+  // Auto-send after voice transcription when hands-free mode is enabled
+  useEffect(() => {
+    if (autoSendPending && input.trim() && !isLoading) {
+      setAutoSendPending(false);
+      sendMessage();
+    }
+  }, [autoSendPending, input, isLoading]);
 
   useEffect(() => {
     initializeChat();
@@ -710,7 +723,7 @@ const AllyChat = () => {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{autoPlayEnabled ? "Auto-speak enabled" : "Auto-speak responses after voice input"}</p>
+                        <p>{autoPlayEnabled ? "Hands-free mode: auto-send & speak" : "Enable hands-free voice conversation"}</p>
                       </TooltipContent>
                     </Tooltip>
 
