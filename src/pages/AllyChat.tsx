@@ -16,7 +16,9 @@ import {
   Fish,
   ArrowLeft,
   Camera,
-  X
+  X,
+  Mic,
+  Square
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +28,7 @@ import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import { useConversationManager } from "@/hooks/useConversationManager";
 import { compressImage, validateImageFile } from "@/lib/imageCompression";
+import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 
 interface Message {
   role: "user" | "assistant";
@@ -61,6 +64,18 @@ const AllyChat = () => {
 
   const { isStreaming, streamResponse } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
+  const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
+
+  const handleMicClick = async () => {
+    if (isRecording) {
+      const text = await stopRecording();
+      if (text) {
+        setInput(prev => prev ? `${prev} ${text}` : text);
+      }
+    } else {
+      await startRecording();
+    }
+  };
 
   useEffect(() => {
     initializeChat();
@@ -557,6 +572,28 @@ const AllyChat = () => {
               {/* Input */}
               <div className="p-3 lg:p-6 border-t bg-muted/30 flex-shrink-0 pb-safe">
                 <div className="max-w-3xl mx-auto space-y-2">
+                  {/* Recording Status Indicator */}
+                  {(isRecording || isProcessing) && (
+                    <div className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+                      isRecording 
+                        ? "bg-destructive/10 text-destructive" 
+                        : "bg-primary/10 text-primary"
+                    )}>
+                      {isRecording ? (
+                        <>
+                          <div className="h-2 w-2 rounded-full bg-destructive recording-pulse" />
+                          Recording... Tap mic to stop
+                        </>
+                      ) : (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Transcribing...
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {/* Photo Preview */}
                   {pendingPhoto && (
                     <div className="relative inline-block">
@@ -595,7 +632,7 @@ const AllyChat = () => {
                           size="icon"
                           className="h-12 w-12 flex-shrink-0"
                           onClick={() => fileInputRef.current?.click()}
-                          disabled={isLoading || isCompressing}
+                          disabled={isLoading || isCompressing || isRecording || isProcessing}
                         >
                           {isCompressing ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
@@ -606,6 +643,33 @@ const AllyChat = () => {
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>Attach photo for analysis</p>
+                      </TooltipContent>
+                    </Tooltip>
+
+                    {/* Microphone button */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isRecording ? "destructive" : "outline"}
+                          size="icon"
+                          className={cn(
+                            "h-12 w-12 flex-shrink-0",
+                            isRecording && "recording-pulse"
+                          )}
+                          onClick={handleMicClick}
+                          disabled={isLoading || isProcessing}
+                        >
+                          {isProcessing ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : isRecording ? (
+                            <Square className="h-5 w-5" />
+                          ) : (
+                            <Mic className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{isRecording ? "Stop recording" : "Voice input"}</p>
                       </TooltipContent>
                     </Tooltip>
                     
