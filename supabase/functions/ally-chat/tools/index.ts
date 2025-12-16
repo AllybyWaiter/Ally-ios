@@ -168,6 +168,30 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_livestock",
+      description: "Update existing livestock in the user's aquarium. Use when user mentions changes to their livestock - deaths, health changes, quantity changes, or corrections to details. Examples: 'lost a neon tetra', 'one of my fish died', 'my betta looks sick', 'actually I have 8 not 6', 'the clownfish seems stressed'.",
+      parameters: {
+        type: "object",
+        properties: {
+          livestock_id: { type: "string", description: "ID of the livestock to update (get from context)" },
+          quantity: { type: "number", description: "New quantity (if changed)" },
+          health_status: { 
+            type: "string", 
+            enum: ["healthy", "sick", "stressed", "quarantine", "deceased"],
+            description: "New health status"
+          },
+          name: { type: "string", description: "Updated common name (if correcting)" },
+          species: { type: "string", description: "Updated species name (if correcting)" },
+          notes: { type: "string", description: "Updated notes" }
+        },
+        required: ["livestock_id"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 
