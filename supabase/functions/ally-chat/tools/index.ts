@@ -221,6 +221,32 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_equipment",
+      description: "Update existing equipment in the user's aquarium. Use when user mentions changes to their equipment - maintenance performed, corrections to details, or schedule changes. Examples: 'just cleaned my filter', 'that heater is 300W not 200W', 'check skimmer monthly now', 'it's a Tunze not Jebao'.",
+      parameters: {
+        type: "object",
+        properties: {
+          equipment_id: { type: "string", description: "ID of the equipment to update (get from context)" },
+          name: { type: "string", description: "Updated equipment name (if correcting)" },
+          equipment_type: { 
+            type: "string", 
+            enum: ["Filter", "Heater", "Light", "Pump", "Skimmer", "CO2 System", "Air Pump", "Wavemaker", "RO/DI System", "Auto Top Off", "Dosing Pump", "Reactor", "UV Sterilizer", "Chiller", "Controller", "Salt Chlorine Generator", "Pool Cleaner", "Other"],
+            description: "Updated equipment type (if correcting)"
+          },
+          brand: { type: "string", description: "Updated brand name (if correcting)" },
+          model: { type: "string", description: "Updated model name/number (if correcting)" },
+          maintenance_interval_days: { type: "number", description: "New maintenance interval in days" },
+          last_maintenance_date: { type: "string", description: "Date of last maintenance (YYYY-MM-DD format) - use today's date when user says they just cleaned/serviced something" },
+          notes: { type: "string", description: "Updated notes" }
+        },
+        required: ["equipment_id"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 
