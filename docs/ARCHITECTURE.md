@@ -1,4 +1,4 @@
-# AquaDex Architecture Overview
+# Ally Architecture Overview
 
 ## Technology Stack
 

@@ -34,7 +34,7 @@ const PrivacyPolicy = () => {
           <section id="introduction">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Introduction</h2>
             <p className="leading-relaxed">
-              Welcome to AquaDex ("we," "our," or "us"). Your privacy is critically important to us. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our aquarium management services. By using AquaDex, you consent to the data practices described in this policy.
+              Welcome to Ally ("we," "our," or "us"). Your privacy is critically important to us. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our aquatic space management services. By using Ally, you consent to the data practices described in this policy.
             </p>
           </section>
 
@@ -159,7 +159,7 @@ const PrivacyPolicy = () => {
               <li><strong>Withdraw Consent:</strong> Withdraw previously given consent at any time</li>
             </ul>
             <p className="leading-relaxed mt-4">
-              To exercise any of these rights, please contact us at <a href="mailto:privacy@aquadex.app" className="text-primary hover:underline">privacy@aquadex.app</a>.
+              To exercise any of these rights, please contact us at <a href="mailto:info@allybywaiter.com" className="text-primary hover:underline">info@allybywaiter.com</a>.
             </p>
           </section>
 
@@ -198,7 +198,7 @@ const PrivacyPolicy = () => {
               If you have any questions about this Privacy Policy or our data practices, please contact us:
             </p>
             <ul className="list-none space-y-2 mt-4 ml-4">
-              <li><strong>Email:</strong> <a href="mailto:privacy@aquadex.app" className="text-primary hover:underline">privacy@aquadex.app</a></li>
+              <li><strong>Email:</strong> <a href="mailto:info@allybywaiter.com" className="text-primary hover:underline">info@allybywaiter.com</a></li>
               <li><strong>Support:</strong> Use the in app support chat or contact form</li>
             </ul>
           </section>

@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Content-Disposition': `attachment; filename="aquadex-data-export-${new Date().toISOString().split('T')[0]}.json"`
+          'Content-Disposition': `attachment; filename="ally-data-export-${new Date().toISOString().split('T')[0]}.json"`
         } 
       }
     );
