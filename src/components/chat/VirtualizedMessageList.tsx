@@ -148,6 +148,19 @@ const MessageContent = memo(({
     charsPerSecond: 60, // Natural reading pace
   });
 
+  // Split content into stable and fading parts for smooth animation
+  const fadeChars = 3;
+  const stableContent = useMemo(() => {
+    if (!isTypewriterActive || displayedContent.length <= fadeChars) return '';
+    return displayedContent.slice(0, -fadeChars);
+  }, [isTypewriterActive, displayedContent, fadeChars]);
+  
+  const fadingContent = useMemo(() => {
+    if (!isTypewriterActive) return '';
+    if (displayedContent.length <= fadeChars) return displayedContent;
+    return displayedContent.slice(-fadeChars);
+  }, [isTypewriterActive, displayedContent, fadeChars]);
+
   return (
     <div
       className={cn(
@@ -173,7 +186,8 @@ const MessageContent = memo(({
             <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
               {isTypewriterActive ? (
                 <p className="whitespace-pre-wrap leading-relaxed">
-                  {displayedContent}
+                  {stableContent}
+                  <span className="typewriter-fade">{fadingContent}</span>
                   <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
                 </p>
               ) : (
