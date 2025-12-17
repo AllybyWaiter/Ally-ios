@@ -1,5 +1,6 @@
 import { toast as sonnerToast } from "sonner";
 import { CheckCircle, XCircle, AlertTriangle, Info, Loader2 } from "lucide-react";
+import { triggerHaptic } from "@/hooks/useHaptics";
 
 type ToastType = "success" | "error" | "warning" | "info" | "loading";
 
@@ -41,6 +42,15 @@ const ToastIcon = ({ type }: { type: ToastType }) => {
 
 const createToast = (type: ToastType, title: string, options?: ToastOptions) => {
   const duration = options?.duration ?? TOAST_DURATIONS[type];
+  
+  // Trigger haptic feedback based on toast type
+  if (type === "success") {
+    triggerHaptic("success");
+  } else if (type === "error") {
+    triggerHaptic("error");
+  } else if (type === "warning") {
+    triggerHaptic("medium");
+  }
   
   return sonnerToast(title, {
     description: options?.description,

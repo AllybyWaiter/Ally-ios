@@ -3,6 +3,7 @@ import { Home, MessageSquare, Droplets, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardVisibility } from "@/hooks/useKeyboardVisibility";
+import { triggerHaptic } from "@/hooks/useHaptics";
 
 interface NavItem {
   icon: typeof Home;
@@ -47,6 +48,7 @@ export function MobileBottomNav() {
             <Link
               key={item.path}
               to={item.path}
+              onClick={() => triggerHaptic('light')}
               className={cn(
                 "flex flex-col items-center justify-center flex-1 h-full px-2 transition-colors relative",
                 "active:bg-accent/50 tap-highlight-transparent",
