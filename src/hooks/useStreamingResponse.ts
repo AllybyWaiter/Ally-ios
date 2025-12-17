@@ -22,17 +22,16 @@ interface StreamingCallbacks {
 
 type ModelType = 'standard' | 'thinking';
 
-const UPDATE_INTERVAL = 30; // ms between state updates
+const UPDATE_INTERVAL = 16; // ~60fps for smooth typewriter effect
 
 export function useStreamingResponse() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isStreaming, setIsStreaming] = useState(false);
   
-  // Token batching refs for smoother streaming
-  const tokenBufferRef = useRef<string>("");
-  const lastUpdateRef = useRef<number>(0);
+  // Accumulated content ref
   const assistantMessageRef = useRef<string>("");
+  const lastUpdateRef = useRef<number>(0);
 
   const streamResponse = useCallback(async (
     messages: Message[],
@@ -91,23 +90,23 @@ export function useStreamingResponse() {
     let textBuffer = "";
     let streamDone = false;
 
-    // Reset token batching
-    tokenBufferRef.current = "";
+    // Reset state
     lastUpdateRef.current = Date.now();
     assistantMessageRef.current = "";
     setIsStreaming(true);
     callbacks.onStreamStart();
 
-    // Batched update function
-    const flushTokenBuffer = (forceFlush = false) => {
+    // Update function - sends tokens immediately for smooth typewriter
+    const updateContent = (content: string) => {
       const now = Date.now();
-      if (forceFlush || now - lastUpdateRef.current >= UPDATE_INTERVAL) {
-        if (tokenBufferRef.current) {
-          assistantMessageRef.current += tokenBufferRef.current;
-          tokenBufferRef.current = "";
-          lastUpdateRef.current = now;
-          callbacks.onToken(assistantMessageRef.current);
-        }
+      // Throttle updates to ~60fps to avoid excessive re-renders
+      if (now - lastUpdateRef.current >= UPDATE_INTERVAL) {
+        assistantMessageRef.current += content;
+        lastUpdateRef.current = now;
+        callbacks.onToken(assistantMessageRef.current);
+      } else {
+        // Buffer very rapid tokens
+        assistantMessageRef.current += content;
       }
     };
 
@@ -136,8 +135,7 @@ export function useStreamingResponse() {
           const parsed = JSON.parse(jsonStr);
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
-            tokenBufferRef.current += content;
-            flushTokenBuffer();
+            updateContent(content);
           }
         } catch {
           textBuffer = line + "\n" + textBuffer;
@@ -146,8 +144,8 @@ export function useStreamingResponse() {
       }
     }
 
-    // Final flush to ensure all tokens are rendered
-    flushTokenBuffer(true);
+    // Final update to ensure all content is sent
+    callbacks.onToken(assistantMessageRef.current);
     setIsStreaming(false);
     
     const finalContent = assistantMessageRef.current;
