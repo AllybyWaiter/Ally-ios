@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import TaskCalendar from './TaskCalendar';
 
 // Mock navigate
@@ -14,6 +15,12 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+// Mock useIsMobile - default to desktop mode
+const mockUseIsMobile = vi.fn(() => false);
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => mockUseIsMobile(),
+}));
 
 // Mock useAuth
 vi.mock('@/hooks/useAuth', () => ({
@@ -102,6 +109,7 @@ const renderTaskCalendar = () => {
 describe('TaskCalendar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseIsMobile.mockReturnValue(false); // Default to desktop
   });
 
   describe('Page Rendering', () => {
@@ -121,11 +129,11 @@ describe('TaskCalendar', () => {
       renderTaskCalendar();
       
       const now = new Date();
-      const monthYear = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const monthYear = format(now, 'MMM yyyy');
       expect(screen.getByText(monthYear)).toBeInTheDocument();
     });
 
-    it('renders day headers', () => {
+    it('renders day headers on desktop', () => {
       renderTaskCalendar();
       
       expect(screen.getByText('Sun')).toBeInTheDocument();
@@ -135,16 +143,6 @@ describe('TaskCalendar', () => {
       expect(screen.getByText('Thu')).toBeInTheDocument();
       expect(screen.getByText('Fri')).toBeInTheDocument();
       expect(screen.getByText('Sat')).toBeInTheDocument();
-    });
-
-    it('renders back button that navigates to dashboard', async () => {
-      const user = userEvent.setup();
-      renderTaskCalendar();
-      
-      const backButton = screen.getByRole('button', { name: /back/i });
-      await user.click(backButton);
-      
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
     });
   });
 
@@ -204,15 +202,62 @@ describe('TaskCalendar', () => {
     });
   });
 
-  describe('Responsive Layout', () => {
-    it('renders properly structured calendar grid', () => {
+  describe('Mobile View', () => {
+    beforeEach(() => {
+      mockUseIsMobile.mockReturnValue(true);
+    });
+
+    it('renders abbreviated day headers on mobile', () => {
       renderTaskCalendar();
       
-      // Verify the 7-column grid for days of week
+      // Mobile shows single-letter day headers
+      const dayHeaders = screen.getAllByText(/^[SMTWF]$/);
+      expect(dayHeaders.length).toBeGreaterThanOrEqual(7);
+    });
+
+    it('renders collapsible legend on mobile', () => {
+      renderTaskCalendar();
+      
+      // Legend should be present and collapsible
+      expect(screen.getByText(/task types/i)).toBeInTheDocument();
+    });
+
+    it('opens day sheet when tapping a day with tasks', async () => {
+      const user = userEvent.setup();
+      renderTaskCalendar();
+      
+      // Find today's date number and click it
+      const today = new Date().getDate().toString();
+      const todayCell = screen.getByText(today);
+      await user.click(todayCell);
+      
+      // Sheet should open (tasks are mocked for today)
+      await waitFor(() => {
+        expect(screen.getByText(/Water Change/)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Desktop View', () => {
+    beforeEach(() => {
+      mockUseIsMobile.mockReturnValue(false);
+    });
+
+    it('renders full day headers on desktop', () => {
+      renderTaskCalendar();
+      
       const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       dayHeaders.forEach(day => {
         expect(screen.getByText(day)).toBeInTheDocument();
       });
+    });
+
+    it('displays task cards inline on desktop', () => {
+      renderTaskCalendar();
+      
+      // Tasks should be visible directly on the calendar
+      expect(screen.getByText('Water Change')).toBeInTheDocument();
+      expect(screen.getByText('Filter Clean')).toBeInTheDocument();
     });
   });
 });
