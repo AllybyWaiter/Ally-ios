@@ -38,7 +38,7 @@ const FAQ = () => {
               <div>
                 <p className="font-semibold text-foreground mb-2">What is Ally 1.0 Thinking?</p>
                 <p>
-                  Ally 1.0 Thinking is our premium AI model that uses GPT-5 reasoning for complex questions. It provides deeper analysis and more thorough explanations for challenging water chemistry problems. Available for Gold, Business, and Enterprise tier users.
+                  Ally 1.0 Thinking is our premium AI model that uses advanced reasoning for complex questions. It provides deeper analysis and more thorough explanations for challenging water chemistry problems. Available for Gold, Business, and Enterprise tier users.
                 </p>
               </div>
             </AccordionContent>
