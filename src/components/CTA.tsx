@@ -17,7 +17,7 @@ const CTA = () => {
             <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
               Join the Closed Beta
             </h2>
-            <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto mb-10">We're hand selecting aquarium enthusiasts for our closed beta. Join the waitlist and get priority access when we launch.</p>
+            <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto mb-10">We're hand-selecting water care enthusiasts for our closed beta. Join the waitlist for priority access to AI-powered care for your aquarium, pool, or spa.</p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button variant="heroOutline" size="lg" className="text-lg px-8 bg-white text-primary hover:bg-white/90 border-none" onClick={() => setShowWaitlist(true)}>
