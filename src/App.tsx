@@ -13,6 +13,7 @@ import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import CookieConsent from "@/components/CookieConsent";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { lazy, Suspense, ComponentType, useEffect } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
 import { FeatureArea } from "@/lib/sentry";
@@ -118,6 +119,7 @@ const App = () => (
                 <BrowserRouter>
                   <ScrollToTop />
                   <CookieConsent />
+                  <MobileBottomNav />
                   <Routes>
                   <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
                   <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><About /></Suspense></PageErrorBoundary>} />

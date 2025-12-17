@@ -124,7 +124,7 @@ export default function AquariumDetail() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container mx-auto px-4 py-8 pt-24 mt-safe">
+      <main className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe">
         <Button
           variant="ghost"
           onClick={() => navigate("/dashboard")}
