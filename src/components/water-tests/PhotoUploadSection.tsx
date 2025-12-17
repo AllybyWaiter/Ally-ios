@@ -28,9 +28,9 @@ export function PhotoUploadSection({
       <div className="flex items-center gap-2">
         <Camera className="h-5 w-5 text-primary" aria-hidden="true" />
         <h3 className="font-semibold" id="photo-analysis-heading">AI Photo Analysis</h3>
-        <Badge variant="secondary" className="ml-auto" aria-label="Powered by Google Gemini AI">
+        <Badge variant="secondary" className="ml-auto" aria-label="AI-Powered analysis">
           <Sparkles className="h-3 w-3 mr-1" aria-hidden="true" />
-          Powered by Gemini
+          AI-Powered
         </Badge>
       </div>
       <p className="text-sm text-muted-foreground" id="photo-analysis-description">

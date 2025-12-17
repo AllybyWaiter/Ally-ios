@@ -72,23 +72,23 @@ const aiCapabilities = [
   {
     icon: Brain,
     title: "Ally 1.0 Standard",
-    description: "Powered by Gemini 2.5 Flash for fast, accurate responses to everyday water care questions.",
+    description: "Fast, accurate AI responses to everyday water care questions.",
   },
   {
     icon: Sparkles,
     title: "Ally 1.0 Thinking",
-    description: "GPT-5 reasoning model for complex chemistry analysis. Deep thinking for your toughest questions.",
+    description: "Advanced reasoning for complex chemistry analysis. Deep thinking for your toughest questions.",
     badge: "Gold+",
   },
   {
     icon: Mic,
     title: "Voice Input",
-    description: "Speak naturally using OpenAI Whisper transcription. Perfect for hands-free operation.",
+    description: "Speak naturally with voice recognition. Perfect for hands-free operation.",
   },
   {
     icon: Volume2,
     title: "Voice Output",
-    description: "ElevenLabs text-to-speech brings Ally's responses to life with natural spoken audio.",
+    description: "Natural voice synthesis brings Ally's responses to life with spoken audio.",
   },
   {
     icon: Zap,
