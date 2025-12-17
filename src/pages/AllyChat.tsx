@@ -549,7 +549,7 @@ const AllyChat = () => {
         </main>
 
         {/* Conversation Starters */}
-        {messages.length <= 2 && !isLoading && (
+        {!messages.some(m => m.role === 'user') && !isLoading && (
           <ConversationStarters
             suggestions={suggestions}
             hasAquariums={conversationManager.aquariums.length > 0}
