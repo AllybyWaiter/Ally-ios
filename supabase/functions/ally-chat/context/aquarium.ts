@@ -17,10 +17,10 @@ export async function buildAquariumContext(
   supabase: SupabaseClient,
   aquariumId: string
 ): Promise<AquariumContext> {
-  // Fetch aquarium with equipment and water tests
+  // Fetch aquarium with equipment (water tests fetched separately with limit)
   const { data: aquarium } = await supabase
     .from('aquariums')
-    .select('*, water_tests(*), equipment(*)')
+    .select('*, equipment(*)')
     .eq('id', aquariumId)
     .single();
 
@@ -32,12 +32,26 @@ export async function buildAquariumContext(
     };
   }
 
-  // Fetch livestock, plants, and active alerts
-  const [{ data: livestock }, { data: plants }, { data: alerts }] = await Promise.all([
+  // Fetch livestock, plants, alerts, and recent water tests in parallel
+  // Limit water tests to last 10 for performance (most relevant for context)
+  const [
+    { data: livestock }, 
+    { data: plants }, 
+    { data: alerts },
+    { data: waterTests }
+  ] = await Promise.all([
     supabase.from('livestock').select('*').eq('aquarium_id', aquariumId),
     supabase.from('plants').select('*').eq('aquarium_id', aquariumId),
     supabase.from('water_test_alerts').select('*').eq('aquarium_id', aquariumId).eq('is_dismissed', false),
+    supabase.from('water_tests')
+      .select('*, test_parameters(*)')
+      .eq('aquarium_id', aquariumId)
+      .order('test_date', { ascending: false })
+      .limit(10),
   ]);
+  
+  // Attach water tests to aquarium object for context building
+  const aquariumWithTests = { ...aquarium, water_tests: waterTests };
 
   const waterType = getWaterType(aquarium.type);
 
@@ -51,7 +65,7 @@ Current Aquarium Context:
 - Status: ${aquarium.status}
 ${aquarium.notes ? `- Notes: ${aquarium.notes}` : ''}
 
-Recent Water Tests: ${aquarium.water_tests?.length || 0} tests on record
+Recent Water Tests: ${waterTests?.length || 0} tests on record (showing last 10)
 
 Equipment (${aquarium.equipment?.length || 0} total):
 ${aquarium.equipment && aquarium.equipment.length > 0 
@@ -77,6 +91,6 @@ ${alerts && alerts.length > 0
   return {
     context,
     waterType,
-    aquariumData: aquarium,
+    aquariumData: aquariumWithTests,
   };
 }
