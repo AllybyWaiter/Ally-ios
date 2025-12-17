@@ -1,6 +1,6 @@
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Cloud, CloudRain, CloudSnow, Sun, CloudFog } from 'lucide-react';
 
 const WEATHER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -12,54 +12,117 @@ const WEATHER_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   fog: CloudFog,
 };
 
-// Full-page background component
-export function DashboardBackground() {
-  const { imagePath, weather, weatherEnabled } = useTimeOfDay();
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [currentImage, setCurrentImage] = useState(imagePath);
+// Check WebP support once
+let webpSupported: boolean | null = null;
+function checkWebPSupport(): Promise<boolean> {
+  if (webpSupported !== null) return Promise.resolve(webpSupported);
+  
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      webpSupported = img.width > 0 && img.height > 0;
+      resolve(webpSupported);
+    };
+    img.onerror = () => {
+      webpSupported = false;
+      resolve(false);
+    };
+    img.src = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';
+  });
+}
 
-  useEffect(() => {
-    if (imagePath !== currentImage) {
-      setImageLoaded(false);
+// Preload an image and return the working path
+async function loadImageWithFallback(webpPath: string, jpgPath: string): Promise<string> {
+  const supportsWebP = await checkWebPSupport();
+  
+  // Try WebP first if supported
+  if (supportsWebP) {
+    return new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => {
-        setCurrentImage(imagePath);
-        setImageLoaded(true);
-      };
+      img.onload = () => resolve(webpPath);
       img.onerror = () => {
-        const fallbackPath = imagePath.replace(/-(?:rain|cloudy|snow)\.jpg$/, '.jpg');
-        if (fallbackPath !== imagePath) {
-          setCurrentImage(fallbackPath);
+        // WebP file doesn't exist, fallback to JPG
+        const jpgImg = new Image();
+        jpgImg.onload = () => resolve(jpgPath);
+        jpgImg.onerror = () => resolve(jpgPath); // Return JPG path anyway
+        jpgImg.src = jpgPath;
+      };
+      img.src = webpPath;
+    });
+  }
+  
+  // Load JPG directly
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(jpgPath);
+    img.onerror = () => resolve(jpgPath);
+    img.src = jpgPath;
+  });
+}
+
+// Full-page background component with WebP support and lazy loading
+export function DashboardBackground() {
+  const { imagePathWebP, imagePathJpg, weather, weatherEnabled } = useTimeOfDay();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [currentImage, setCurrentImage] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hasLoaded = useRef(false);
+
+  // Load image with WebP fallback
+  useEffect(() => {
+    let cancelled = false;
+    
+    async function loadImage() {
+      setImageLoaded(false);
+      
+      try {
+        const imagePath = await loadImageWithFallback(imagePathWebP, imagePathJpg);
+        
+        if (!cancelled) {
+          // Handle weather variant fallback
+          const img = new Image();
+          img.onload = () => {
+            if (!cancelled) {
+              setCurrentImage(imagePath);
+              setImageLoaded(true);
+              hasLoaded.current = true;
+            }
+          };
+          img.onerror = () => {
+            if (!cancelled) {
+              // Fallback to non-weather variant
+              const fallbackPath = imagePathJpg.replace(/-(?:rain|cloudy|snow)\.(webp|jpg)$/, '.jpg');
+              setCurrentImage(fallbackPath);
+              setImageLoaded(true);
+              hasLoaded.current = true;
+            }
+          };
+          img.src = imagePath;
+        }
+      } catch {
+        if (!cancelled) {
+          setCurrentImage(imagePathJpg);
           setImageLoaded(true);
         }
-      };
-      img.src = imagePath;
-    }
-  }, [imagePath, currentImage]);
-
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => {
-      const fallbackPath = currentImage.replace(/-(?:rain|cloudy|snow)\.jpg$/, '.jpg');
-      if (fallbackPath !== currentImage) {
-        setCurrentImage(fallbackPath);
-        const fallbackImg = new Image();
-        fallbackImg.onload = () => setImageLoaded(true);
-        fallbackImg.src = fallbackPath;
       }
+    }
+    
+    loadImage();
+    
+    return () => {
+      cancelled = true;
     };
-    img.src = currentImage;
-  }, []);
+  }, [imagePathWebP, imagePathJpg]);
 
   return (
     <>
       {/* Fixed full-screen background image */}
       <div
+        ref={containerRef}
         className={`fixed inset-0 bg-cover bg-center transition-opacity duration-1000 z-0 ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{ backgroundImage: `url(${currentImage})` }}
+        style={{ backgroundImage: currentImage ? `url(${currentImage})` : undefined }}
       />
       
       {/* Fallback gradient while loading */}
@@ -105,53 +168,55 @@ export function DashboardGreeting() {
   );
 }
 
-// Legacy banner export for backward compatibility
+// Legacy banner export for backward compatibility with WebP support
 export function DashboardHeroBanner() {
-  const { imagePath, greeting, weather, weatherEnabled } = useTimeOfDay();
+  const { imagePathWebP, imagePathJpg, greeting, weather, weatherEnabled } = useTimeOfDay();
   const { userName } = useAuth();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [currentImage, setCurrentImage] = useState(imagePath);
-  const [fallbackToDefault, setFallbackToDefault] = useState(false);
+  const [currentImage, setCurrentImage] = useState('');
 
-  // Handle smooth transition when image changes
+  // Load image with WebP fallback
   useEffect(() => {
-    if (imagePath !== currentImage) {
+    let cancelled = false;
+    
+    async function loadImage() {
       setImageLoaded(false);
-      setFallbackToDefault(false);
-      const img = new Image();
-      img.onload = () => {
-        setCurrentImage(imagePath);
-        setImageLoaded(true);
-      };
-      img.onerror = () => {
-        // If weather-specific image fails, fallback to time-only image
-        const fallbackPath = imagePath.replace(/-(?:rain|cloudy|snow)\.jpg$/, '.jpg');
-        if (fallbackPath !== imagePath) {
-          setFallbackToDefault(true);
-          setCurrentImage(fallbackPath);
+      
+      try {
+        const imagePath = await loadImageWithFallback(imagePathWebP, imagePathJpg);
+        
+        if (!cancelled) {
+          const img = new Image();
+          img.onload = () => {
+            if (!cancelled) {
+              setCurrentImage(imagePath);
+              setImageLoaded(true);
+            }
+          };
+          img.onerror = () => {
+            if (!cancelled) {
+              // Fallback to non-weather variant
+              const fallbackPath = imagePathJpg.replace(/-(?:rain|cloudy|snow)\.(webp|jpg)$/, '.jpg');
+              setCurrentImage(fallbackPath);
+              setImageLoaded(true);
+            }
+          };
+          img.src = imagePath;
+        }
+      } catch {
+        if (!cancelled) {
+          setCurrentImage(imagePathJpg);
           setImageLoaded(true);
         }
-      };
-      img.src = imagePath;
-    }
-  }, [imagePath, currentImage]);
-
-  // Initial load
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => setImageLoaded(true);
-    img.onerror = () => {
-      // Fallback to time-only on initial load error
-      const fallbackPath = currentImage.replace(/-(?:rain|cloudy|snow)\.jpg$/, '.jpg');
-      if (fallbackPath !== currentImage) {
-        setCurrentImage(fallbackPath);
-        const fallbackImg = new Image();
-        fallbackImg.onload = () => setImageLoaded(true);
-        fallbackImg.src = fallbackPath;
       }
+    }
+    
+    loadImage();
+    
+    return () => {
+      cancelled = true;
     };
-    img.src = currentImage;
-  }, []);
+  }, [imagePathWebP, imagePathJpg]);
 
   const firstName = userName?.split(' ')[0];
   const personalizedGreeting = firstName 
@@ -173,7 +238,7 @@ export function DashboardHeroBanner() {
         className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{ backgroundImage: `url(${currentImage})` }}
+        style={{ backgroundImage: currentImage ? `url(${currentImage})` : undefined }}
       />
       
       {/* Fallback gradient while loading */}

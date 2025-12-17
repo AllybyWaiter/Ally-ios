@@ -6,6 +6,8 @@ type TimeSlot = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night' | 'late-n
 interface TimeOfDayInfo {
   slot: TimeSlot;
   imagePath: string;
+  imagePathWebP: string;
+  imagePathJpg: string;
   greeting: string;
   weather: WeatherCondition | null;
   weatherEnabled: boolean;
@@ -80,15 +82,25 @@ function getTimeSlot(hour: number): TimeSlot {
   return 'late-night';
 }
 
-function getImagePath(slot: TimeSlot, weather: WeatherCondition | null, weatherEnabled: boolean): string {
+function getImageBasePath(slot: TimeSlot, weather: WeatherCondition | null, weatherEnabled: boolean): string {
   // If weather is enabled and we have weather data, try weather-specific image
   if (weatherEnabled && weather && weather !== 'clear') {
     // Weather variants: rain, cloudy, snow (fog and storm can fallback to cloudy/rain)
     const weatherVariant = weather === 'storm' ? 'rain' : weather === 'fog' ? 'cloudy' : weather;
-    return `/images/dashboard/${slot}-${weatherVariant}.jpg`;
+    return `/images/dashboard/${slot}-${weatherVariant}`;
   }
   // Default to time-only image
-  return `/images/dashboard/${slot}.jpg`;
+  return `/images/dashboard/${slot}`;
+}
+
+function getImagePaths(slot: TimeSlot, weather: WeatherCondition | null, weatherEnabled: boolean) {
+  const basePath = getImageBasePath(slot, weather, weatherEnabled);
+  return {
+    webp: `${basePath}.webp`,
+    jpg: `${basePath}.jpg`,
+    // Default to JPG until WebP versions are available
+    default: `${basePath}.jpg`,
+  };
 }
 
 function getGreeting(slot: TimeSlot, weather: WeatherCondition | null, weatherEnabled: boolean): string {
@@ -105,9 +117,12 @@ export function useTimeOfDay(): TimeOfDayInfo {
   const [timeInfo, setTimeInfo] = useState<TimeOfDayInfo>(() => {
     const hour = new Date().getHours();
     const slot = getTimeSlot(hour);
+    const paths = getImagePaths(slot, weatherCondition, weatherEnabled);
     return {
       slot,
-      imagePath: getImagePath(slot, weatherCondition, weatherEnabled),
+      imagePath: paths.default,
+      imagePathWebP: paths.webp,
+      imagePathJpg: paths.jpg,
       greeting: getGreeting(slot, weatherCondition, weatherEnabled),
       weather: weatherCondition,
       weatherEnabled,
@@ -118,10 +133,13 @@ export function useTimeOfDay(): TimeOfDayInfo {
   useEffect(() => {
     const hour = new Date().getHours();
     const slot = getTimeSlot(hour);
+    const paths = getImagePaths(slot, weatherCondition, weatherEnabled);
     
     setTimeInfo({
       slot,
-      imagePath: getImagePath(slot, weatherCondition, weatherEnabled),
+      imagePath: paths.default,
+      imagePathWebP: paths.webp,
+      imagePathJpg: paths.jpg,
       greeting: getGreeting(slot, weatherCondition, weatherEnabled),
       weather: weatherCondition,
       weatherEnabled,
@@ -136,9 +154,12 @@ export function useTimeOfDay(): TimeOfDayInfo {
       
       setTimeInfo(prev => {
         if (prev.slot !== slot || prev.weather !== weatherCondition || prev.weatherEnabled !== weatherEnabled) {
+          const paths = getImagePaths(slot, weatherCondition, weatherEnabled);
           return {
             slot,
-            imagePath: getImagePath(slot, weatherCondition, weatherEnabled),
+            imagePath: paths.default,
+            imagePathWebP: paths.webp,
+            imagePathJpg: paths.jpg,
             greeting: getGreeting(slot, weatherCondition, weatherEnabled),
             weather: weatherCondition,
             weatherEnabled,
