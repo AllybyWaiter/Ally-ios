@@ -15,7 +15,7 @@ import { CalendarIcon, Loader2, MapPin, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { useAuth } from "@/hooks/useAuth";
 import { gallonsToLiters, litersToGallons, getVolumeUnit } from "@/lib/unitConversions";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
@@ -142,10 +142,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
 
         if (error) throw error;
 
-        toast({
-          title: t('common.success'),
-          description: t('aquarium.aquariumUpdated'),
-        });
+        toast.success(t('aquarium.aquariumUpdated'));
       } else {
         // Include user_id and location (if confirmed) only for new aquariums
         const insertData = {
@@ -164,10 +161,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
 
         if (error) throw error;
 
-        toast({
-          title: t('common.success'),
-          description: t('aquarium.aquariumCreated'),
-        });
+        toast.success(t('aquarium.aquariumCreated'));
       }
 
       form.reset();
@@ -176,11 +170,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
     } catch (error) {
       console.error("Error saving aquarium:", error);
       const errorMessage = error instanceof Error ? error.message : t(isEditMode ? 'aquarium.failedToUpdate' : 'aquarium.failedToCreate');
-      toast({
-        title: t('common.error'),
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

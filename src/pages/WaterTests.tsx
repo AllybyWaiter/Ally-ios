@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
@@ -7,10 +7,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WaterTestForm } from "@/components/water-tests/WaterTestForm";
 import { WaterTestHistory } from "@/components/water-tests/WaterTestHistory";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
-import { Loader2 } from "lucide-react";
 import { queryKeys } from "@/lib/queryKeys";
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
+import { 
+  WaterTestFormSkeleton, 
+  WaterTestHistorySkeleton, 
+  WaterTestChartsSkeleton 
+} from "@/components/water-tests/WaterTestSkeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const WaterTests = () => {
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
@@ -44,8 +49,17 @@ const WaterTests = () => {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="container mx-auto px-4 py-8 pt-24 mt-safe">
+          <div className="mb-6">
+            <Skeleton className="h-10 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="mb-6">
+            <Skeleton className="h-4 w-32 mb-2" />
+            <Skeleton className="h-10 w-64" />
+          </div>
+          <Skeleton className="h-10 w-full md:w-96 mb-6" />
+          <WaterTestFormSkeleton />
         </div>
       </div>
     );
@@ -103,25 +117,31 @@ const WaterTests = () => {
 
           <TabsContent value="log">
             <SectionErrorBoundary fallbackTitle="Failed to load test form" featureArea={FeatureArea.WATER_TESTS}>
-              {selectedAquarium && (
-                <WaterTestForm aquarium={selectedAquarium} />
-              )}
+              <Suspense fallback={<WaterTestFormSkeleton />}>
+                {selectedAquarium && (
+                  <WaterTestForm aquarium={selectedAquarium} />
+                )}
+              </Suspense>
             </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="history">
             <SectionErrorBoundary fallbackTitle="Failed to load test history" featureArea={FeatureArea.WATER_TESTS}>
-              {selectedAquarium && (
-                <WaterTestHistory aquariumId={selectedAquarium.id} />
-              )}
+              <Suspense fallback={<WaterTestHistorySkeleton />}>
+                {selectedAquarium && (
+                  <WaterTestHistory aquariumId={selectedAquarium.id} />
+                )}
+              </Suspense>
             </SectionErrorBoundary>
           </TabsContent>
 
           <TabsContent value="charts">
             <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
-              {selectedAquarium && (
-                <WaterTestCharts aquarium={selectedAquarium} />
-              )}
+              <Suspense fallback={<WaterTestChartsSkeleton />}>
+                {selectedAquarium && (
+                  <WaterTestCharts aquarium={selectedAquarium} />
+                )}
+              </Suspense>
             </SectionErrorBoundary>
           </TabsContent>
         </Tabs>
