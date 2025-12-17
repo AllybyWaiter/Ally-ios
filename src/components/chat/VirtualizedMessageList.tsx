@@ -1,4 +1,4 @@
-import { useRef, useEffect, memo, useCallback } from "react";
+import { useRef, useEffect, memo, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,47 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+// Memoized markdown components to prevent recreation on every render
+const markdownComponents = {
+  code({ node, inline, className, children, ...props }: any) {
+    const match = /language-(\w+)/.exec(className || '');
+    return !inline && match ? (
+      <SyntaxHighlighter
+        style={oneDark}
+        language={match[1]}
+        PreTag="div"
+        className="rounded-md my-2 text-sm"
+        customStyle={{
+          margin: 0,
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+        }}
+        {...props}
+      >
+        {String(children).replace(/\n$/, '')}
+      </SyntaxHighlighter>
+    ) : (
+      <code className={cn("bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono", className)} {...props}>
+        {children}
+      </code>
+    );
+  },
+  a: ({ children, href }: any) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+      {children}
+    </a>
+  ),
+};
+
+// Memoized markdown renderer component - only re-renders when content changes
+const MemoizedMarkdown = memo(({ content }: { content: string }) => (
+  <ReactMarkdown components={markdownComponents}>
+    {content}
+  </ReactMarkdown>
+));
+
+MemoizedMarkdown.displayName = "MemoizedMarkdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -128,40 +169,7 @@ const MessageContent = memo(({
                   <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
                 </p>
               ) : (
-                <ReactMarkdown
-                  components={{
-                    code({ node, inline, className, children, ...props }: any) {
-                      const match = /language-(\w+)/.exec(className || '');
-                      return !inline && match ? (
-                        <SyntaxHighlighter
-                          style={oneDark}
-                          language={match[1]}
-                          PreTag="div"
-                          className="rounded-md my-2 text-sm"
-                          customStyle={{
-                            margin: 0,
-                            borderRadius: '0.375rem',
-                            fontSize: '0.875rem',
-                          }}
-                          {...props}
-                        >
-                          {String(children).replace(/\n$/, '')}
-                        </SyntaxHighlighter>
-                      ) : (
-                        <code className={cn("bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono", className)} {...props}>
-                          {children}
-                        </code>
-                      );
-                    },
-                    a: ({ children, href }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
-                        {children}
-                      </a>
-                    ),
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
+                <MemoizedMarkdown content={message.content} />
               )}
             </div>
           ) : (
