@@ -433,7 +433,7 @@ const AllyChat = () => {
                   <History className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80">
+              <SheetContent side="left" className="w-80 pt-safe">
                 <SheetHeader>
                   <SheetTitle>Chat History</SheetTitle>
                 </SheetHeader>
