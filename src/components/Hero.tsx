@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Mic, Download, Bell } from "lucide-react";
 import heroImage from "@/assets/hero-aquarium.jpg";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { useNavigate } from "react-router-dom";
@@ -29,10 +29,26 @@ const Hero = () => {
           Crystal Clear Water, Effortlessly Maintained
         </h1>
         
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-10">
+        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
           Meet <span className="font-semibold text-foreground">Ally by WA.I.TER</span>, your AI powered water care assistant. 
           No expertise needed. Just smart, personalized care for your aquarium, pool, or spa.
         </p>
+
+        {/* Feature Badges */}
+        <div className="flex flex-wrap gap-3 justify-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/50 backdrop-blur-sm rounded-full border border-border/50">
+            <Mic className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Voice Enabled</span>
+          </div>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/50 backdrop-blur-sm rounded-full border border-border/50">
+            <Download className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Works Offline</span>
+          </div>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/50 backdrop-blur-sm rounded-full border border-border/50">
+            <Bell className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Push Notifications</span>
+          </div>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
