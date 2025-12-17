@@ -81,12 +81,28 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" },
         },
+        "shimmer": {
+          "100%": { transform: "translateX(100%)" },
+        },
+        "checkmark": {
+          "0%": { strokeDashoffset: "100", opacity: "0" },
+          "50%": { opacity: "1" },
+          "100%": { strokeDashoffset: "0", opacity: "1" },
+        },
+        "scale-check": {
+          "0%": { transform: "scale(0)" },
+          "50%": { transform: "scale(1.2)" },
+          "100%": { transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-up": "fade-up 0.5s ease-out forwards",
         "float": "float 3s ease-in-out infinite",
+        "shimmer": "shimmer 2s infinite",
+        "checkmark": "checkmark 0.5s ease-out forwards",
+        "scale-check": "scale-check 0.4s ease-out forwards",
       },
     },
   },
