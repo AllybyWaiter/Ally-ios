@@ -116,12 +116,20 @@ serve(async (req) => {
       return createErrorResponse('AI service not configured', logger, { status: 500 });
     }
 
-    // Fetch user profile
-    const { data: profile } = await supabase
+    // Fetch profile and context in parallel for better performance
+    const profilePromise = supabase
       .from('profiles')
       .select('skill_level, subscription_tier')
       .eq('user_id', authUser.id)
       .single();
+    
+    // Start aquarium context fetch immediately (doesn't depend on profile)
+    const aquariumPromise = aquariumId 
+      ? buildAquariumContext(supabase, aquariumId)
+      : Promise.resolve({ context: '', waterType: 'freshwater', aquariumData: null });
+
+    // Wait for profile first to determine memory access
+    const { data: profile } = await profilePromise;
     
     const skillLevel = profile?.skill_level || 'beginner';
     const subscriptionTier = profile?.subscription_tier || 'free';
@@ -143,11 +151,10 @@ serve(async (req) => {
       subscriptionTier 
     });
 
-    // Build context using modules
-    const aquariumResult = aquariumId 
-      ? await buildAquariumContext(supabase, aquariumId)
-      : { context: '', waterType: 'freshwater', aquariumData: null };
+    // Wait for aquarium context (was started in parallel with profile fetch)
+    const aquariumResult = await aquariumPromise;
 
+    // Now fetch memory context (depends on aquarium waterType)
     const memoryResult = hasMemoryAccess
       ? await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType)
       : { context: '', memories: [] };
