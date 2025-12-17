@@ -1,23 +1,23 @@
-import { Camera, Sparkles, CheckCircle2 } from "lucide-react";
+import { Camera, Sparkles, CheckCircle2, Mic } from "lucide-react";
 
 const steps = [
   {
     icon: Camera,
     number: "01",
     title: "Test Your Water",
-    description: "Use any standard test kit and snap a photo of your results.",
+    description: "Use any standard test kit and snap a photo — or speak to Ally hands-free.",
   },
   {
     icon: Sparkles,
     number: "02",
     title: "AI Does the Work",
-    description: "Ally analyzes your water chemistry in seconds using advanced AI.",
+    description: "Ally analyzes your water chemistry in seconds with proactive trend detection.",
   },
   {
     icon: CheckCircle2,
     number: "03",
     title: "Follow the Plan",
-    description: "Get clear, actionable steps to achieve and maintain perfect water.",
+    description: "Get clear, actionable steps with voice responses and push notifications.",
   },
 ];
 
@@ -30,7 +30,7 @@ const HowItWorks = () => {
             Three Steps to Perfect Water
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Maintaining your aquarium has never been easier. No chemistry degree required.
+            Maintaining your aquarium, pool, or spa has never been easier. No chemistry degree required.
           </p>
         </div>
 
