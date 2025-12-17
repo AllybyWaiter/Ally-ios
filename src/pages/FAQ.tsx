@@ -51,11 +51,11 @@ const FAQ = () => {
         },
         {
           q: "What is Ally 1.0 Thinking?",
-          a: "Ally 1.0 Thinking is our premium AI model that uses GPT-5 reasoning for complex questions. It provides deeper analysis and more thorough explanations for challenging water chemistry problems. Available for Gold, Business, and Enterprise tier users. Standard Ally 1.0 uses Gemini 2.5 Flash for fast, accurate everyday responses."
+          a: "Ally 1.0 Thinking is our premium AI model that uses advanced reasoning for complex questions. It provides deeper analysis and more thorough explanations for challenging water chemistry problems. Available for Gold, Business, and Enterprise tier users."
         },
         {
           q: "Can I talk to Ally using my voice?",
-          a: "Yes! Ally supports full voice interaction. Tap the microphone to speak your question using OpenAI Whisper transcription. You can also have Ally speak responses aloud using ElevenLabs text-to-speech. Enable hands-free mode for fully voice-driven conversations where your messages auto-send and responses auto-speak."
+          a: "Yes! Ally supports full voice interaction. Tap the microphone to speak your question with built-in voice recognition. You can also have Ally speak responses aloud with natural voice synthesis. Enable hands-free mode for fully voice-driven conversations where your messages auto-send and responses auto-speak."
         },
         {
           q: "Which test kits work with photo analysis?",
