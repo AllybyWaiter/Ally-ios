@@ -165,13 +165,15 @@ serve(async (req) => {
       ? await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType)
       : { context: '', memories: [] };
 
-    // Build system prompt using module
+    // Build system prompt using module (water-type-specific for reduced token usage)
     const systemPrompt = buildSystemPrompt({
       hasMemoryAccess,
       aquariumId,
       memoryContext: memoryResult.context,
       aquariumContext: aquariumResult.context,
       skillLevel,
+      waterType: aquariumResult.waterType as 'freshwater' | 'saltwater' | 'brackish' | 'pool' | 'spa' | null,
+      aquariumType: aquariumResult.aquariumData?.type,
     });
 
     logger.info('Processing chat request', { 
