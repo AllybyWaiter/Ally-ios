@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { parseFollowUpSuggestions, FollowUpSuggestions } from "./FollowUpSuggestions";
 
 // Memoized markdown components to prevent recreation on every render
 const markdownComponents = {
@@ -95,6 +96,8 @@ interface VirtualizedMessageListProps {
   speakingMessageId?: string | null;
   isSpeaking?: boolean;
   isGeneratingTTS?: boolean;
+  // Follow-up suggestions
+  onSelectSuggestion?: (suggestion: string) => void;
 }
 
 const MessageContent = memo(({ 
@@ -115,7 +118,8 @@ const MessageContent = memo(({
   onStopSpeaking,
   speakingMessageId,
   isSpeaking,
-  isGeneratingTTS
+  isGeneratingTTS,
+  onSelectSuggestion
 }: {
   message: Message;
   index: number;
@@ -135,15 +139,24 @@ const MessageContent = memo(({
   speakingMessageId?: string | null;
   isSpeaking?: boolean;
   isGeneratingTTS?: boolean;
+  onSelectSuggestion?: (suggestion: string) => void;
 }) => {
   const isEditing = editingIndex === index;
   const messageId = message.id || `msg-${index}`;
   const isThisMessageSpeaking = speakingMessageId === messageId;
   const isThisMessageGenerating = isGeneratingTTS && speakingMessageId === messageId;
   
+  // Parse follow-up suggestions from assistant messages
+  const { cleanContent, suggestions } = useMemo(() => {
+    if (message.role !== 'assistant') {
+      return { cleanContent: message.content, suggestions: [] };
+    }
+    return parseFollowUpSuggestions(message.content);
+  }, [message.content, message.role]);
+  
   // Smooth typewriter effect for streaming assistant messages
   const isTypewriterActive = isStreaming && isLastMessage && message.role === "assistant";
-  const { displayedContent } = useTypewriterEffect(message.content, {
+  const { displayedContent } = useTypewriterEffect(cleanContent, {
     isActive: isTypewriterActive,
     charsPerSecond: 60, // Natural reading pace
   });
@@ -191,7 +204,14 @@ const MessageContent = memo(({
                   <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
                 </p>
               ) : (
-                <MemoizedMarkdown content={message.content} />
+                <MemoizedMarkdown content={cleanContent} />
+              )}
+              {/* Follow-up suggestions for assistant messages */}
+              {!isStreaming && suggestions.length > 0 && onSelectSuggestion && (
+                <FollowUpSuggestions 
+                  suggestions={suggestions} 
+                  onSelectSuggestion={onSelectSuggestion} 
+                />
               )}
             </div>
           ) : (
@@ -247,7 +267,7 @@ const MessageContent = memo(({
                     variant="ghost"
                     size="icon"
                     className={cn(
-                      "h-7 w-7",
+                      "h-7 w-7 text-muted-foreground hover:text-foreground",
                       isThisMessageSpeaking && "text-primary"
                     )}
                     onClick={() => {
@@ -353,7 +373,8 @@ export const VirtualizedMessageList = memo(({
   onStopSpeaking,
   speakingMessageId,
   isSpeaking,
-  isGeneratingTTS
+  isGeneratingTTS,
+  onSelectSuggestion
 }: VirtualizedMessageListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -451,6 +472,7 @@ export const VirtualizedMessageList = memo(({
                 speakingMessageId={speakingMessageId}
                 isSpeaking={isSpeaking}
                 isGeneratingTTS={isGeneratingTTS}
+                onSelectSuggestion={onSelectSuggestion}
               />
             </div>
           );
