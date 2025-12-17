@@ -1,6 +1,20 @@
 @import 'react-quill/dist/quill.snow.css';
 
 @tailwind base;
+
+/* Disable tap highlight on mobile */
+.tap-highlight-transparent {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbar during swipe gestures */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 @tailwind components;
 @tailwind utilities;
 
