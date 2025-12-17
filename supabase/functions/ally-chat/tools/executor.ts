@@ -276,7 +276,7 @@ async function executeLogWaterTest(
       .insert({
         aquarium_id: args.aquarium_id,
         user_id: userId,
-        test_date: new Date().toISOString().split('T')[0],
+        test_date: new Date().toISOString(),
         entry_method: 'conversation',
         notes: args.notes || 'Logged via Ally Chat'
       })
