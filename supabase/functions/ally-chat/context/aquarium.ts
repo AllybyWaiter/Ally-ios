@@ -65,7 +65,18 @@ Current Aquarium Context:
 - Status: ${aquarium.status}
 ${aquarium.notes ? `- Notes: ${aquarium.notes}` : ''}
 
-Recent Water Tests: ${waterTests?.length || 0} tests on record (showing last 10)
+Recent Water Tests (${waterTests?.length || 0} total):
+${waterTests && waterTests.length > 0 
+  ? waterTests.slice(0, 5).map((test: any) => {
+      const testDate = new Date(test.test_date);
+      const daysAgo = Math.floor((Date.now() - testDate.getTime()) / (1000 * 60 * 60 * 24));
+      const dateStr = testDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const params = test.test_parameters?.map((p: any) => 
+        `${p.parameter_name}: ${p.value}${p.unit || ''} (${p.status || 'unknown'})`
+      ).join(', ') || 'No parameters recorded';
+      return `  - ${dateStr} (${daysAgo} days ago): ${params}`;
+    }).join('\n')
+  : '  No water tests recorded yet'}
 
 Equipment (${aquarium.equipment?.length || 0} total):
 ${aquarium.equipment && aquarium.equipment.length > 0 
