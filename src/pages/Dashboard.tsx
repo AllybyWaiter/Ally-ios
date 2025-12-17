@@ -232,7 +232,7 @@ export default function Dashboard() {
           isRefreshing={isRefreshing}
         />
         
-        <main className="container mx-auto px-4 py-6 pt-24 mt-safe">
+        <main className="container mx-auto px-4 py-6 pt-24 pb-20 md:pb-6 mt-safe">
           {/* Personalized Greeting */}
           <DashboardGreeting />
 
