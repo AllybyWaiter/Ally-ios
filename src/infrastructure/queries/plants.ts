@@ -17,6 +17,7 @@ export interface Plant {
   date_added: string;
   condition: string;
   notes: string | null;
+  primary_photo_url: string | null;
   created_at: string;
   updated_at: string;
 }
