@@ -541,6 +541,10 @@ const AllyChat = () => {
             speakingMessageId={speakingMessageId}
             isSpeaking={isSpeaking}
             isGeneratingTTS={isGeneratingTTS}
+            onSelectSuggestion={(suggestion) => {
+              setInput(suggestion);
+              setTimeout(() => sendMessage(), 100);
+            }}
           />
         </main>
 
