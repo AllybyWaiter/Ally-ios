@@ -397,3 +397,19 @@ All colors MUST be HSL.
 .animate-thinking-spin {
   animation: thinking-spin 2s linear infinite;
 }
+
+/* Typewriter character fade-in animation */
+@keyframes typewriter-char-fade {
+  0% {
+    opacity: 0;
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.typewriter-fade {
+  animation: typewriter-char-fade 150ms ease-out forwards;
+}
