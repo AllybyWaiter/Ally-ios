@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { 
   Search, PlayCircle, BookOpen, FileText, HelpCircle, 
   Droplets, Wrench, Settings, Fish, Waves, MessageSquare,
-  ChevronRight, ExternalLink, Clock, CheckCircle
+  ChevronRight, ExternalLink, Clock, CheckCircle,
+  Mic, Camera, Bell, Download, Brain, Sun, Smartphone
 } from "lucide-react";
 
 // Video tutorials data
@@ -64,6 +65,63 @@ const videoTutorials = [
     description: "Get personalized advice from your AI assistant",
     duration: "4 min",
     thumbnail: "💬",
+    videoUrl: ""
+  },
+  // New video tutorials
+  {
+    id: "voice-commands",
+    title: "Voice Commands & Hands-Free Mode",
+    description: "Talk to Ally using your voice and get spoken responses",
+    duration: "4 min",
+    thumbnail: "🎤",
+    videoUrl: ""
+  },
+  {
+    id: "photo-galleries",
+    title: "Livestock & Plant Photo Galleries",
+    description: "Track your aquatic life with visual photo journals",
+    duration: "3 min",
+    thumbnail: "📷",
+    videoUrl: ""
+  },
+  {
+    id: "thinking-mode",
+    title: "Using Ally 1.0 Thinking Mode",
+    description: "Get deeper AI reasoning for complex questions",
+    duration: "3 min",
+    thumbnail: "🧠",
+    videoUrl: ""
+  },
+  {
+    id: "push-notifications",
+    title: "Setting Up Push Notifications",
+    description: "Configure alerts for tasks, water issues, and announcements",
+    duration: "3 min",
+    thumbnail: "🔔",
+    videoUrl: ""
+  },
+  {
+    id: "weather-features",
+    title: "Weather-Aware Maintenance",
+    description: "Let weather conditions guide your maintenance schedule",
+    duration: "3 min",
+    thumbnail: "🌤️",
+    videoUrl: ""
+  },
+  {
+    id: "pwa-install",
+    title: "Install Ally on Your Device",
+    description: "Add Ally to your home screen for instant access",
+    duration: "2 min",
+    thumbnail: "📱",
+    videoUrl: ""
+  },
+  {
+    id: "proactive-alerts",
+    title: "Understanding Proactive Alerts",
+    description: "How Ally predicts and warns you about water issues",
+    duration: "3 min",
+    thumbnail: "⚠️",
     videoUrl: ""
   }
 ];
@@ -125,6 +183,63 @@ const quickStartGuides = [
       "Monitor temperature and pH balance",
       "Schedule filter cleaning tasks"
     ]
+  },
+  // New quick start guides
+  {
+    id: "voice-mode",
+    title: "Voice & Hands-Free Mode",
+    description: "Control Ally with your voice for truly effortless management",
+    icon: Mic,
+    color: "text-amber-500",
+    steps: [
+      "Open Ally Chat and tap the microphone icon",
+      "Speak your question clearly and wait for transcription",
+      "Enable auto-play for spoken responses",
+      "Turn on hands-free mode for automatic send and speak",
+      "Use voice while your hands are busy (water changes, feeding)"
+    ]
+  },
+  {
+    id: "photo-galleries",
+    title: "Photo Gallery Tracking",
+    description: "Create visual journals for your livestock and plants",
+    icon: Camera,
+    color: "text-pink-500",
+    steps: [
+      "Navigate to any livestock or plant in your aquatic space",
+      "Tap 'View Photos' or open the detail dialog",
+      "Add photos with captions and dates taken",
+      "Set a primary photo to display on cards",
+      "Compare photos over time to track health and growth"
+    ]
+  },
+  {
+    id: "notifications",
+    title: "Notifications & Alerts Setup",
+    description: "Never miss important maintenance reminders or water issues",
+    icon: Bell,
+    color: "text-red-500",
+    steps: [
+      "Go to Settings > Preferences > Notifications",
+      "Enable push notifications when prompted",
+      "Choose which categories to receive (tasks, water alerts, announcements)",
+      "Set quiet hours to avoid notifications at night",
+      "Customize vibration patterns and sounds per category"
+    ]
+  },
+  {
+    id: "installation",
+    title: "Install Ally on Your Device",
+    description: "Add Ally to your home screen for a native app experience",
+    icon: Download,
+    color: "text-green-500",
+    steps: [
+      "On iOS: Tap Share icon > 'Add to Home Screen'",
+      "On Android: Tap menu > 'Install App' or 'Add to Home Screen'",
+      "Accept the installation prompt",
+      "Launch Ally from your home screen like any app",
+      "Enjoy offline access and faster loading"
+    ]
   }
 ];
 
@@ -169,7 +284,9 @@ const helpArticles = [
       { title: "Add fish and corals", difficulty: "Beginner", content: "From Livestock, tap Add to enter species name, quantity, date added, and health status. Track individual specimens or groups." },
       { title: "Track health status", difficulty: "Beginner", content: "Update health status (Healthy, Stressed, Sick, Quarantine) to monitor changes over time and identify patterns." },
       { title: "Log additions and losses", difficulty: "Beginner", content: "Update quantities when you add new fish or experience losses. This helps track your tank's biological history." },
-      { title: "Add plants and placement", difficulty: "Beginner", content: "Track aquatic plants with species, quantity, placement (foreground, midground, background), and condition." }
+      { title: "Add plants and placement", difficulty: "Beginner", content: "Track aquatic plants with species, quantity, placement (foreground, midground, background), and condition." },
+      { title: "Create a photo journal", difficulty: "Beginner", content: "Document your fish and plants over time with photo galleries. Open any livestock or plant, go to Photos tab, and start adding images with captions." },
+      { title: "Set primary photos", difficulty: "Beginner", content: "Choose a showcase photo for each fish or plant. The primary photo appears on cards in your aquarium view." }
     ]
   },
   {
@@ -189,7 +306,56 @@ const helpArticles = [
       { title: "Update your profile", difficulty: "Beginner", content: "Go to Settings > Account > Profile to update your display name, experience level, and other preferences." },
       { title: "Change subscription", difficulty: "Beginner", content: "View and change your plan from Settings > Account > Subscription, or visit the Pricing page for plan comparisons." },
       { title: "Export your data", difficulty: "Beginner", content: "Download all your data from Settings > Account > Data & Privacy > Download My Data. You'll receive a JSON file." },
-      { title: "Notification preferences", difficulty: "Beginner", content: "Customize which notifications you receive, set quiet hours, and manage sound preferences in Settings > Preferences > Notifications." }
+      { title: "Notification preferences", difficulty: "Beginner", content: "Customize which notifications you receive, set quiet hours, and manage sound preferences in Settings > Preferences > Notifications." },
+      { title: "Install Ally on your phone", difficulty: "Beginner", content: "Ally works as a Progressive Web App. On iOS, tap Share > Add to Home Screen. On Android, tap Menu > Install App. Access Ally instantly from your home screen." },
+      { title: "Use Ally offline", difficulty: "Beginner", content: "Ally caches key data for offline access. View your aquariums and recent tests without internet. Changes sync when you reconnect." }
+    ]
+  },
+  // New help article categories
+  {
+    category: "AI Features",
+    icon: Brain,
+    articles: [
+      { title: "What is Ally 1.0 Thinking?", difficulty: "Beginner", content: "Thinking mode uses GPT-5 for deeper reasoning on complex questions. Look for the brain icon when you need detailed analysis, troubleshooting, or expert-level advice. Available for Gold+ subscribers." },
+      { title: "Use voice commands", difficulty: "Beginner", content: "Tap the microphone in Ally Chat, speak your question, and Ally will transcribe it. Perfect for hands-free use during water changes or feeding." },
+      { title: "Enable hands-free mode", difficulty: "Beginner", content: "Turn on auto-play and auto-send for fully hands-free conversations. Speak your question, it sends automatically, and Ally speaks the response back to you." },
+      { title: "Proactive alerts explained", difficulty: "Intermediate", content: "Ally analyzes your water test history to detect rising, falling, or unstable patterns. AI-powered alerts (Plus+) provide personalized recommendations with confidence scores." },
+      { title: "Quick actions and suggestions", difficulty: "Beginner", content: "After Ally responds, you'll see quick action buttons (Log Test, Schedule Task, View Tank). Tap them to jump directly to that action pre-filled with context." },
+      { title: "Update data through chat", difficulty: "Intermediate", content: "Ask Ally to update your livestock, plants, or equipment. Say 'Update my Betta to sick status' and Ally will make the change for you." }
+    ]
+  },
+  {
+    category: "Photo Galleries",
+    icon: Camera,
+    articles: [
+      { title: "Add photos to livestock", difficulty: "Beginner", content: "Open any fish or invertebrate, go to the Photos tab, and tap Add Photo. Upload from gallery or take a new picture with captions and date." },
+      { title: "Add photos to plants", difficulty: "Beginner", content: "Open any plant, go to the Photos tab, and add photos to track growth over time. Great for documenting propagation and trimming." },
+      { title: "Set a primary photo", difficulty: "Beginner", content: "In the photo gallery, tap the star icon on any photo to set it as the primary image. This photo will appear on the livestock or plant card." },
+      { title: "View photo timeline", difficulty: "Beginner", content: "Photos are displayed chronologically. Scroll through to see health changes, color development, and growth progression over time." },
+      { title: "Delete or manage photos", difficulty: "Beginner", content: "In the Photos tab, tap the trash icon to delete photos. You can also update captions and dates after upload." }
+    ]
+  },
+  {
+    category: "Notifications & Alerts",
+    icon: Bell,
+    articles: [
+      { title: "Enable push notifications", difficulty: "Beginner", content: "Go to Settings > Preferences > Notifications and toggle on 'Enable Notifications'. Accept the browser permission prompt to receive alerts." },
+      { title: "Customize notification types", difficulty: "Beginner", content: "Choose which notifications to receive: task reminders, water quality alerts, and admin announcements. Toggle each category on or off." },
+      { title: "Set reminder timing", difficulty: "Beginner", content: "Choose when to receive task reminders: 24 hours, 12 hours, 6 hours, or 1 hour before due. Adjust based on your schedule." },
+      { title: "Configure quiet hours", difficulty: "Beginner", content: "Set quiet hours to pause notifications during sleep. Define start and end times to avoid late-night alerts." },
+      { title: "Customize vibration and sounds", difficulty: "Intermediate", content: "Each notification type has unique vibration patterns. Toggle sound on/off per category so you can identify alert types by feel." },
+      { title: "View notification history", difficulty: "Beginner", content: "Tap the bell icon in the header to see past notifications. View Announcements and Activity (push delivery history) in separate tabs." }
+    ]
+  },
+  {
+    category: "Weather Integration",
+    icon: Sun,
+    articles: [
+      { title: "Enable weather features", difficulty: "Beginner", content: "Go to Settings > Preferences > Weather and enable weather features. Share your location to see current conditions and forecasts." },
+      { title: "Weather on your dashboard", difficulty: "Beginner", content: "Your dashboard shows current temperature, conditions, UV index, and humidity. Weather updates automatically when you open the app." },
+      { title: "Weather-aware task suggestions", difficulty: "Intermediate", content: "For pools and spas, Ally considers weather when suggesting tasks. High UV prompts chlorine checks; rain forecasts suggest pH testing." },
+      { title: "View detailed weather page", difficulty: "Beginner", content: "Tap the weather card or navigate to Weather for 5-day forecast, hourly temperatures, sunrise/sunset times, and more." },
+      { title: "Set aquatic space location", difficulty: "Intermediate", content: "Each pool or aquarium can have its own location. When creating a new space, confirm the detected location or skip to add later." }
     ]
   }
 ];
@@ -305,11 +471,16 @@ const HelpCenter = () => {
                   We're creating step by step video guides to help you get the most out of Ally. Check back soon!
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {["Getting Started", "Water Testing", "AI Photo Analysis", "Maintenance Tasks", "Equipment Tracking", "Ally Chat"].map((topic) => (
-                    <Badge key={topic} variant="outline" className="text-sm">
-                      {topic}
+                  {filteredVideos.slice(0, 8).map((video) => (
+                    <Badge key={video.id} variant="outline" className="text-sm">
+                      {video.title}
                     </Badge>
                   ))}
+                  {filteredVideos.length > 8 && (
+                    <Badge variant="outline" className="text-sm">
+                      +{filteredVideos.length - 8} more
+                    </Badge>
+                  )}
                 </div>
               </div>
             </TabsContent>
