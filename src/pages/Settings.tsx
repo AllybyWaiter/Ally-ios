@@ -286,7 +286,7 @@ const Settings = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pt-safe">
-      <div className="container mx-auto px-4 py-8 pt-12 pb-safe max-w-4xl">
+      <div className="container mx-auto px-4 py-8 pt-12 pb-24 md:pb-8 max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={() => navigate("/dashboard")} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
