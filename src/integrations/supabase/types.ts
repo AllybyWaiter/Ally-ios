@@ -893,6 +893,47 @@ export type Database = {
           },
         ]
       }
+      plant_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          is_primary: boolean | null
+          photo_url: string
+          plant_id: string
+          taken_at: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          photo_url: string
+          plant_id: string
+          taken_at?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          is_primary?: boolean | null
+          photo_url?: string
+          plant_id?: string
+          taken_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_photos_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plants: {
         Row: {
           aquarium_id: string
@@ -903,6 +944,7 @@ export type Database = {
           name: string
           notes: string | null
           placement: string
+          primary_photo_url: string | null
           quantity: number
           species: string
           updated_at: string
@@ -917,6 +959,7 @@ export type Database = {
           name: string
           notes?: string | null
           placement?: string
+          primary_photo_url?: string | null
           quantity?: number
           species: string
           updated_at?: string
@@ -931,6 +974,7 @@ export type Database = {
           name?: string
           notes?: string | null
           placement?: string
+          primary_photo_url?: string | null
           quantity?: number
           species?: string
           updated_at?: string

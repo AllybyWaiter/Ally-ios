@@ -66,6 +66,7 @@ export const queryKeys = {
     all: ['plants'] as const,
     list: (aquariumId: string) => ['plants', 'list', aquariumId] as const,
     detail: (id: string) => ['plants', 'detail', id] as const,
+    photos: (plantId: string) => ['plants', 'photos', plantId] as const,
   },
 
   // Chat
