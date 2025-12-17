@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { Search, Sparkles, TestTube, Database, Shield, DollarSign, Settings, Calendar, Users, Rocket, HelpCircle, Zap, Droplets } from "lucide-react";
+import { Search, Sparkles, TestTube, Database, Shield, DollarSign, Settings, Calendar, Users, Rocket, HelpCircle, Zap, Droplets, Camera, Bell } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
@@ -50,16 +50,54 @@ const FAQ = () => {
           a: "Ally's AI achieves an average 98% accuracy in interpreting water test results when readings are entered correctly or photos are clear and well lit. Our AI has been trained on thousands of test kit images from aquariums, pools, and spas and is constantly improving. The AI excels at recognizing patterns, suggesting maintenance schedules, and providing personalized care recommendations based on your aquatic space's history."
         },
         {
+          q: "What is Ally 1.0 Thinking?",
+          a: "Ally 1.0 Thinking is our premium AI model that uses GPT-5 reasoning for complex questions. It provides deeper analysis and more thorough explanations for challenging water chemistry problems. Available for Gold, Business, and Enterprise tier users. Standard Ally 1.0 uses Gemini 2.5 Flash for fast, accurate everyday responses."
+        },
+        {
+          q: "Can I talk to Ally using my voice?",
+          a: "Yes! Ally supports full voice interaction. Tap the microphone to speak your question using OpenAI Whisper transcription. You can also have Ally speak responses aloud using ElevenLabs text-to-speech. Enable hands-free mode for fully voice-driven conversations where your messages auto-send and responses auto-speak."
+        },
+        {
           q: "Which test kits work with photo analysis?",
-          a: "Ally supports test strips and liquid reagent kits from standard brands. For aquariums: API Master Test Kits, Tetra EasyStrips, Seachem MultiTest, Salifert marine kits, and Aquaforest test kits. For pools and spas: Clorox, AquaChek, Taylor test strips and liquid kits. Ally can also read digital salt reader displays for saltwater pools. Most conventional color based test kits will work. Digital meters with unconventional displays may not be compatible for photo analysis, but you can always manually enter values."
+          a: "Ally supports test strips and liquid reagent kits from standard brands. For aquariums: API Master Test Kits, Tetra EasyStrips, Seachem MultiTest, Salifert marine kits, and Aquaforest test kits. For pools and spas: Clorox, AquaChek, Taylor test strips and liquid kits. Ally can also read digital salt reader displays for saltwater pools."
         },
         {
-          q: "What if my photo doesn't analyze correctly?",
-          a: "If the AI confidence is low or results seem off, Ally will flag the reading and prompt you to retake the photo or manually verify the values. Common issues include poor lighting, blurry images, or faded test strips. You can always switch to manual entry mode to input values directly. Our AI learns from corrections to improve future accuracy."
+          q: "What are proactive AI alerts?",
+          a: "Ally's AI analyzes your water test history to detect concerning patterns before they become problems. Rising nitrates, falling pH, unstable parameters - Ally spots these trends and alerts you with specific recommendations, timeframes, and which inhabitants might be affected. AI-powered alerts are available for Plus tier and above."
+        }
+      ]
+    },
+    {
+      id: "photo-galleries",
+      title: "Photo Galleries",
+      icon: Camera,
+      questions: [
+        {
+          q: "Can I take photos of my fish and plants?",
+          a: "Yes! Ally includes photo galleries for both livestock and plants. Create a visual journal of your fish, invertebrates, corals, and plants over time. Add captions, dates, and set primary profile photos for each. Photos are compressed automatically for fast uploads."
         },
         {
-          q: "How does Ally interpret water test results?",
-          a: "Ally compares your test results against ideal ranges for your specific aquatic space type. For aquariums, it considers the nitrogen cycle and livestock needs. For pools, it focuses on sanitization and safety. For spas, it accounts for higher temperatures and different chemical balance requirements. The AI considers your equipment, tank age, and historical trends to provide context aware recommendations."
+          q: "How do I track health changes visually?",
+          a: "Each livestock and plant entry has a dedicated Photos tab. Upload photos over time to create a timeline that helps you track growth, color changes, and health. This visual history is invaluable for identifying gradual changes or diagnosing issues with help from Ally's AI."
+        }
+      ]
+    },
+    {
+      id: "notifications-pwa",
+      title: "Notifications & Installation",
+      icon: Bell,
+      questions: [
+        {
+          q: "What notifications does Ally send?",
+          a: "Ally sends three types of push notifications: task reminders (upcoming and overdue maintenance), water alerts (critical parameter warnings and trend alerts), and announcements (app updates and tips). Each type has distinct vibration patterns so you can tell them apart."
+        },
+        {
+          q: "Can I install Ally on my phone?",
+          a: "Yes! Ally is a Progressive Web App (PWA) that can be installed on any device. On iOS, tap Share then 'Add to Home Screen'. On Android, you'll see an install prompt automatically. Once installed, it works like a native app with its own icon and push notifications."
+        },
+        {
+          q: "Does Ally work offline?",
+          a: "Ally caches your data locally so you can view your aquatic spaces, test history, and tasks even without internet. AI features and syncing require a connection, but previously loaded data remains accessible offline."
         }
       ]
     },
