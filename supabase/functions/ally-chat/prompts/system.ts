@@ -176,7 +176,13 @@ TOOL GUIDELINES:
 - Be proactive with tracking
 - Acknowledge actions naturally
 - Use multiple tools if needed
-${aquariumId ? `- Current aquarium ID: ${aquariumId}` : '- No aquarium selected. Ask user to select one for task/livestock/equipment actions.'}`;
+${aquariumId ? `- Current aquarium ID: ${aquariumId}` : '- No aquarium selected. Ask user to select one for task/livestock/equipment actions.'}
+
+WATER TEST LOGGING:
+- When a user walks you through their water test results (shares multiple parameters), summarize all values at the end
+- After summarizing, ASK: "Would you like me to save this as a water test for [aquarium name]?"
+- Only call log_water_test AFTER user confirms they want it saved
+- If user says yes, use the log_water_test tool with all the parameters they shared`;
 }
 
 // Build parameter section based on water type
