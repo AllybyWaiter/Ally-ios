@@ -18,6 +18,7 @@ import {
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
+import { useTypewriterEffect } from "@/hooks/useTypewriterEffect";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -139,6 +140,13 @@ const MessageContent = memo(({
   const messageId = message.id || `msg-${index}`;
   const isThisMessageSpeaking = speakingMessageId === messageId;
   const isThisMessageGenerating = isGeneratingTTS && speakingMessageId === messageId;
+  
+  // Smooth typewriter effect for streaming assistant messages
+  const isTypewriterActive = isStreaming && isLastMessage && message.role === "assistant";
+  const { displayedContent } = useTypewriterEffect(message.content, {
+    isActive: isTypewriterActive,
+    charsPerSecond: 60, // Natural reading pace
+  });
 
   return (
     <div
@@ -163,9 +171,9 @@ const MessageContent = memo(({
         )}>
           {message.role === "assistant" ? (
             <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
-              {isStreaming && isLastMessage ? (
+              {isTypewriterActive ? (
                 <p className="whitespace-pre-wrap leading-relaxed">
-                  {message.content}
+                  {displayedContent}
                   <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
                 </p>
               ) : (
