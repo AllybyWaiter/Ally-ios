@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -549,17 +550,25 @@ const AllyChat = () => {
         </main>
 
         {/* Conversation Starters */}
-        {!messages.some(m => m.role === 'user') && !isLoading && (
-          <ConversationStarters
-            suggestions={suggestions}
-            hasAquariums={conversationManager.aquariums.length > 0}
-            hasAlerts={hasAlerts}
-            onSelectQuestion={(question) => {
-              setInput(question);
-              setTimeout(() => sendMessage(), 100);
-            }}
-          />
-        )}
+        <AnimatePresence>
+          {!messages.some(m => m.role === 'user') && !isLoading && (
+            <motion.div
+              initial={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <ConversationStarters
+                suggestions={suggestions}
+                hasAquariums={conversationManager.aquariums.length > 0}
+                hasAlerts={hasAlerts}
+                onSelectQuestion={(question) => {
+                  setInput(question);
+                  setTimeout(() => sendMessage(), 100);
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input Area */}
         <div className="border-t bg-background p-4 pb-safe">
