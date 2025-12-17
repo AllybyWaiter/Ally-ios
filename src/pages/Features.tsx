@@ -29,6 +29,14 @@ import {
   CheckCircle,
   PlayCircle,
   Star,
+  Mic,
+  Volume2,
+  ImageIcon,
+  TrendingUp,
+  Download,
+  Leaf,
+  AlertTriangle,
+  Repeat,
 } from "lucide-react";
 
 const coreDifferentiators = [
@@ -60,6 +68,86 @@ const coreDifferentiators = [
   },
 ];
 
+const aiCapabilities = [
+  {
+    icon: Brain,
+    title: "Ally 1.0 Standard",
+    description: "Powered by Gemini 2.5 Flash for fast, accurate responses to everyday water care questions.",
+  },
+  {
+    icon: Sparkles,
+    title: "Ally 1.0 Thinking",
+    description: "GPT-5 reasoning model for complex chemistry analysis. Deep thinking for your toughest questions.",
+    badge: "Gold+",
+  },
+  {
+    icon: Mic,
+    title: "Voice Input",
+    description: "Speak naturally using OpenAI Whisper transcription. Perfect for hands-free operation.",
+  },
+  {
+    icon: Volume2,
+    title: "Voice Output",
+    description: "ElevenLabs text-to-speech brings Ally's responses to life with natural spoken audio.",
+  },
+  {
+    icon: Zap,
+    title: "Hands-Free Mode",
+    description: "Auto-send and auto-speak for fully voice-driven conversations. Just talk and listen.",
+  },
+  {
+    icon: Target,
+    title: "Context-Aware Suggestions",
+    description: "Quick actions and follow-up questions based on your conversation and aquarium state.",
+  },
+];
+
+const photoGalleryFeatures = [
+  {
+    icon: Fish,
+    title: "Livestock Photo Journals",
+    description: "Create visual timelines for each fish, invertebrate, or coral. Track health and growth over time.",
+  },
+  {
+    icon: Leaf,
+    title: "Plant Growth Tracking",
+    description: "Document your planted tank journey with photos showing growth progression and placement changes.",
+  },
+  {
+    icon: ImageIcon,
+    title: "Primary Profile Photos",
+    description: "Set a primary photo for each inhabitant that displays on cards for quick visual identification.",
+  },
+  {
+    icon: Camera,
+    title: "Caption & Date Tracking",
+    description: "Add captions and dates to photos. Build a complete visual history of your aquatic space.",
+  },
+];
+
+const proactiveAlertFeatures = [
+  {
+    icon: TrendingUp,
+    title: "Rising & Falling Trends",
+    description: "AI detects consecutive increases or decreases in parameters and alerts you before they become problems.",
+  },
+  {
+    icon: AlertTriangle,
+    title: "Predictive Recommendations",
+    description: "Get specific action steps, timeframes, and which inhabitants might be affected by parameter changes.",
+  },
+  {
+    icon: Activity,
+    title: "Instability Detection",
+    description: "High variance in readings triggers alerts to help you stabilize your water chemistry.",
+  },
+  {
+    icon: Bell,
+    title: "Push Alert Delivery",
+    description: "Critical alerts sent directly to your device with customizable vibration patterns and sounds.",
+  },
+];
+
 const testingFeatures = [
   {
     icon: Camera,
@@ -82,12 +170,12 @@ const monitoringFeatures = [
   {
     icon: Clock,
     title: "Smart Reminders",
-    description: "Never miss a test or maintenance task with intelligent notifications.",
+    description: "Never miss a test or maintenance task with intelligent push notifications.",
   },
   {
-    icon: Activity,
-    title: "Space Specific Thresholds",
-    description: "Custom alerts based on your unique water parameters and goals.",
+    icon: Repeat,
+    title: "Recurring Tasks",
+    description: "Set tasks to repeat daily, weekly, monthly, or custom intervals. Next occurrence auto-creates on completion.",
   },
   {
     icon: Wrench,
@@ -130,6 +218,24 @@ const hardwareFeatures = [
   },
 ];
 
+const pwaFeatures = [
+  {
+    icon: Download,
+    title: "Install on Any Device",
+    description: "Add Ally to your home screen on iOS, Android, or desktop. Works like a native app.",
+  },
+  {
+    icon: Bell,
+    title: "Push Notifications",
+    description: "Receive task reminders, water alerts, and announcements even when the app isn't open.",
+  },
+  {
+    icon: Zap,
+    title: "Offline Access",
+    description: "View your aquatic spaces, test history, and tasks even without internet connection.",
+  },
+];
+
 const trustMetrics = [
   {
     icon: Zap,
@@ -166,7 +272,7 @@ const Features = () => {
             The Complete Ally<br />Experience
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            From intelligent water testing to automated dosing, discover how Ally makes aquarium care effortless.
+            From intelligent water testing to voice-powered conversations, discover how Ally makes aquatic care effortless.
           </p>
         </div>
       </section>
@@ -193,15 +299,22 @@ const Features = () => {
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">Real Time Monitoring</h3>
-                    <p>Track water parameters with beautiful, intuitive charts</p>
+                    <h3 className="font-semibold text-foreground mb-1">Voice Commands</h3>
+                    <p>Talk to Ally hands-free with voice input and spoken responses</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">Step by Step Plans</h3>
-                    <p>Follow personalized 14 day plans to achieve crystal clear water</p>
+                    <h3 className="font-semibold text-foreground mb-1">Push Notifications</h3>
+                    <p>Never miss a task or water alert with smart push notifications</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Works Offline</h3>
+                    <p>Access your data anytime, even without internet connection</p>
                   </div>
                 </div>
               </div>
@@ -214,6 +327,128 @@ const Features = () => {
                 className="relative z-10 w-full max-w-sm mx-auto drop-shadow-2xl"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Capabilities - NEW SECTION */}
+      <section className="py-20 px-4 bg-gradient-hero">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4" variant="secondary">
+              Powered by Advanced AI
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              AI Capabilities
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Multiple AI models, voice interaction, and intelligent suggestions make Ally your smartest water care companion.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {aiCapabilities.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card 
+                  key={index}
+                  className="border hover:border-primary transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-xl font-semibold">{feature.title}</h3>
+                      {feature.badge && (
+                        <Badge variant="secondary" className="ml-2 text-xs">{feature.badge}</Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Photo Galleries - NEW SECTION */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <div className="w-16 h-16 rounded-full bg-gradient-water flex items-center justify-center mx-auto mb-4">
+              <Camera className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Photo Galleries
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Create visual journals for your livestock and plants. Track growth, health, and changes over time.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {photoGalleryFeatures.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card 
+                  key={index}
+                  className="border hover:border-primary transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Proactive Alerts - NEW SECTION */}
+      <section className="py-20 px-4 bg-gradient-hero">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4" variant="secondary">
+              AI-Powered Prevention
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Proactive Alerts
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              AI analyzes your water test history to detect concerning trends before they become problems.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {proactiveAlertFeatures.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card 
+                  key={index}
+                  className="border hover:border-primary transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+          
+          <div className="text-center mt-8">
+            <Badge variant="outline" className="text-sm">
+              AI-powered alerts available for Plus, Gold, Business & Enterprise tiers
+            </Badge>
           </div>
         </div>
       </section>
@@ -323,7 +558,7 @@ const Features = () => {
               Monitoring & Alerts
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Stay ahead of problems with intelligent monitoring and timely reminders.
+              Stay ahead of problems with intelligent monitoring, recurring tasks, and push notifications.
             </p>
           </div>
 
@@ -349,8 +584,45 @@ const Features = () => {
         </div>
       </section>
 
-      {/* Actionable Insights */}
+      {/* PWA Features - NEW SECTION */}
       <section className="py-20 px-4 bg-gradient-hero">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4" variant="secondary">
+              Progressive Web App
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Install Anywhere
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Ally works on any device with the power of a native app. Install it once, use it everywhere.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {pwaFeatures.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card 
+                  key={index}
+                  className="border hover:border-primary transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm"
+                >
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Actionable Insights */}
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <div className="w-16 h-16 rounded-full bg-gradient-water flex items-center justify-center mx-auto mb-4">
@@ -392,7 +664,7 @@ const Features = () => {
       </section>
 
       {/* Hardware Integration */}
-      <section className="py-20 px-4">
+      <section className="py-20 px-4 bg-gradient-hero">
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <div className="w-16 h-16 rounded-full bg-gradient-water flex items-center justify-center mx-auto mb-4">
@@ -432,7 +704,7 @@ const Features = () => {
       </section>
 
       {/* Trust & Proof */}
-      <section className="py-20 px-4 bg-gradient-hero">
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4" variant="secondary">
