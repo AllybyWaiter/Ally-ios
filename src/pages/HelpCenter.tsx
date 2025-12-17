@@ -316,7 +316,7 @@ const helpArticles = [
     category: "AI Features",
     icon: Brain,
     articles: [
-      { title: "What is Ally 1.0 Thinking?", difficulty: "Beginner", content: "Thinking mode uses GPT-5 for deeper reasoning on complex questions. Look for the brain icon when you need detailed analysis, troubleshooting, or expert-level advice. Available for Gold+ subscribers." },
+      { title: "What is Ally 1.0 Thinking?", difficulty: "Beginner", content: "Thinking mode uses advanced AI reasoning for deeper analysis on complex questions. Look for the brain icon when you need detailed analysis, troubleshooting, or expert-level advice. Available for Gold+ subscribers." },
       { title: "Use voice commands", difficulty: "Beginner", content: "Tap the microphone in Ally Chat, speak your question, and Ally will transcribe it. Perfect for hands-free use during water changes or feeding." },
       { title: "Enable hands-free mode", difficulty: "Beginner", content: "Turn on auto-play and auto-send for fully hands-free conversations. Speak your question, it sends automatically, and Ally speaks the response back to you." },
       { title: "Proactive alerts explained", difficulty: "Intermediate", content: "Ally analyzes your water test history to detect rising, falling, or unstable patterns. AI-powered alerts (Plus+) provide personalized recommendations with confidence scores." },
