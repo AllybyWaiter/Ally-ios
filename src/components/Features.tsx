@@ -1,13 +1,18 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Droplets, LineChart, Shield, Smartphone, CloudSun, ArrowRight } from "lucide-react";
+import { Brain, Droplets, LineChart, Shield, Smartphone, CloudSun, ArrowRight, Mic, Bell, Camera } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
   {
     icon: Brain,
     title: "AI-Powered Analysis",
-    description: "Advanced algorithms understand your water chemistry and provide instant recommendations.",
+    description: "Advanced AI with optional Thinking mode for deeper reasoning on complex water chemistry questions.",
+  },
+  {
+    icon: Mic,
+    title: "Voice Commands",
+    description: "Talk to Ally hands-free. Voice input and spoken responses for truly effortless care.",
   },
   {
     icon: Droplets,
@@ -15,9 +20,19 @@ const features = [
     description: "Just snap a photo of your test results. Ally handles the complex analysis.",
   },
   {
+    icon: Camera,
+    title: "Photo Journals",
+    description: "Track your livestock and plants with visual photo galleries over time.",
+  },
+  {
     icon: LineChart,
-    title: "Smart Tracking",
-    description: "Monitor water parameters over time with beautiful, easy-to-read charts.",
+    title: "Proactive Alerts",
+    description: "AI-powered trend detection warns you before problems arise with predictive recommendations.",
+  },
+  {
+    icon: Bell,
+    title: "Smart Notifications",
+    description: "Customizable push alerts for tasks, water issues, and maintenance reminders.",
   },
   {
     icon: CloudSun,
@@ -27,12 +42,12 @@ const features = [
   {
     icon: Shield,
     title: "Preventive Care",
-    description: "Proactive alerts help you maintain perfect water before problems arise.",
+    description: "Recurring tasks and AI suggestions help you maintain perfect water before problems arise.",
   },
   {
     icon: Smartphone,
-    title: "Mobile First",
-    description: "Manage your aquatic spaces from anywhere with our sleek mobile app.",
+    title: "Install Anywhere",
+    description: "Install as a PWA on any device. Works offline and sends push notifications like a native app.",
   },
 ];
 
