@@ -197,7 +197,7 @@ const MessageContent = memo(({
                   )}
                   {message.content && (
                     <div className="inline-block bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2 break-words">
-                      <p className="text-sm leading-relaxed text-right">{message.content}</p>
+                      <p className="text-sm leading-relaxed">{message.content}</p>
                     </div>
                   )}
                 </div>
