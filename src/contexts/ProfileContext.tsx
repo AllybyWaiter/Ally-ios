@@ -35,7 +35,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const fetchUserProfile = useCallback(async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -45,7 +45,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('🔴 Profile: Fetch error:', error.message);
-        setOnboardingCompleted(false);
+        // Retry once before giving up - don't reset onboardingCompleted on temporary errors
+        if (retryCount < 1) {
+          console.warn('⚠️ Profile: Retrying fetch...');
+          return fetchUserProfile(userId, retryCount + 1);
+        }
+        // Don't set onboardingCompleted to false on errors - preserve existing state
         return;
       }
 
@@ -60,12 +65,18 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
         setUserContext(userId, undefined, data.name || undefined);
       } else {
-        console.warn('⚠️ Profile: No data for user');
+        // No profile row exists - this is a genuinely new user who needs onboarding
+        console.warn('⚠️ Profile: No data for user - new user needs onboarding');
         setOnboardingCompleted(false);
       }
     } catch (error: any) {
       console.error('🔴 Profile: Exception:', error.message);
-      setOnboardingCompleted(false);
+      // Retry once on exception
+      if (retryCount < 1) {
+        console.warn('⚠️ Profile: Retrying after exception...');
+        return fetchUserProfile(userId, retryCount + 1);
+      }
+      // Don't set onboardingCompleted to false on errors - preserve existing state
     }
   }, []);
 
@@ -77,7 +88,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     setLanguagePreference(null);
     setUnitPreference(null);
     setHemisphere(null);
-    setOnboardingCompleted(false);
+    // Use null (unknown) instead of false - we don't know onboarding state when logged out
+    setOnboardingCompleted(null);
   }, []);
 
   useEffect(() => {
@@ -93,7 +105,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
     const profileTimeout = setTimeout(() => {
       console.warn('⚠️ Profile: Timeout, continuing...');
-      setOnboardingCompleted(prev => prev === null ? false : prev);
+      // Don't default to false on timeout - preserve existing state or leave as null
+      // Dashboard will handle null state appropriately
       setProfileLoading(false);
     }, PROFILE_TIMEOUT_MS);
 
@@ -110,7 +123,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       
       const recoveryTimeout = setTimeout(() => {
         setProfileLoading(false);
-        setOnboardingCompleted(prev => prev === null ? false : prev);
+        // Don't default to false on visibility recovery - preserve existing state
       }, 1500);
 
       try {
