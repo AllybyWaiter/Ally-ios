@@ -1,53 +1,53 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Droplets, LineChart, Shield, Smartphone, CloudSun, ArrowRight, Mic, Bell, Camera } from "lucide-react";
+import { Brain, Camera, LineChart, Shield, Smartphone, CloudSun, ArrowRight, Mic, Bell, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
   {
     icon: Brain,
-    title: "AI-Powered Analysis",
-    description: "Advanced AI with optional Thinking mode for deeper reasoning on complex water chemistry questions.",
+    title: "Smart AI Assistant",
+    description: "Ask anything about water care. Ally understands your setup and gives personalized advice.",
   },
   {
     icon: Mic,
-    title: "Voice Commands",
-    description: "Talk to Ally hands-free. Voice input and spoken responses for truly effortless care.",
-  },
-  {
-    icon: Droplets,
-    title: "Simple Testing",
-    description: "Just snap a photo of your test results. Ally handles the complex analysis.",
+    title: "Voice Enabled",
+    description: "Talk to Ally hands-free. Ask questions, log results, and get spoken responses.",
   },
   {
     icon: Camera,
-    title: "Photo Journals",
-    description: "Track your livestock and plants with visual photo galleries over time.",
+    title: "Photo Testing",
+    description: "Snap a photo of your test strip. Ally reads it and tells you what to do next.",
+  },
+  {
+    icon: Image,
+    title: "Visual Journals",
+    description: "Track your fish, corals, and plants with photo galleries. See changes over time.",
   },
   {
     icon: LineChart,
-    title: "Proactive Alerts",
-    description: "AI-powered trend detection warns you before problems arise with predictive recommendations.",
+    title: "Trend Alerts",
+    description: "Ally watches your water data and warns you before small issues become big problems.",
   },
   {
     icon: Bell,
-    title: "Smart Notifications",
-    description: "Customizable push alerts for tasks, water issues, and maintenance reminders.",
+    title: "Smart Reminders",
+    description: "Never miss a water change again. Get push notifications for tasks and alerts.",
   },
   {
     icon: CloudSun,
     title: "Weather Aware",
-    description: "Real time weather integration with hourly and 5 day forecasts to help plan outdoor maintenance.",
+    description: "Pool and spa owners get maintenance tips based on real-time weather conditions.",
   },
   {
     icon: Shield,
     title: "Preventive Care",
-    description: "Recurring tasks and AI suggestions help you maintain perfect water before problems arise.",
+    description: "Recurring tasks and smart suggestions keep your water perfect effortlessly.",
   },
   {
     icon: Smartphone,
-    title: "Install Anywhere",
-    description: "Install as a PWA on any device. Works offline and sends push notifications like a native app.",
+    title: "Works Everywhere",
+    description: "Install on any device. Works offline and feels like a native app.",
   },
 ];
 
@@ -60,7 +60,7 @@ const Features = () => {
             Everything You Need,<br />Nothing You Don't
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Sophisticated technology, simple experience. That's the Ally difference.
+            Sophisticated technology, simple experience. For aquariums, pools, and spas.
           </p>
         </div>
 
