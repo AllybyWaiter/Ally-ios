@@ -11,7 +11,7 @@ const AppShowcase = () => {
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               The Tesla of Water Care in Your Pocket
             </h2>
-            <p className="text-xl text-muted-foreground mb-8">Our sleek, intuitive app puts professional grade water analysis at your fingertips. Designed for simplicity, powered by cutting edge AI.</p>
+            <p className="text-xl text-muted-foreground mb-8">Professional water care for aquariums, pools, and spas. Designed for simplicity, powered by intelligent AI.</p>
             
             <div className="space-y-4">
               <div className="flex items-start gap-3">
@@ -21,8 +21,8 @@ const AppShowcase = () => {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-1">Real Time Monitoring</h4>
-                  <p className="text-muted-foreground">Track all parameters in one beautiful dashboard</p>
+                  <h4 className="font-semibold mb-1">Voice & Photo Input</h4>
+                  <p className="text-muted-foreground">Talk to Ally or snap a photo. No typing required.</p>
                 </div>
               </div>
               
@@ -34,7 +34,7 @@ const AppShowcase = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-1">Smart Notifications</h4>
-                  <p className="text-muted-foreground">Never miss a maintenance task or water issue</p>
+                  <p className="text-muted-foreground">Push alerts for tasks, trends, and maintenance reminders.</p>
                 </div>
               </div>
               
@@ -45,8 +45,8 @@ const AppShowcase = () => {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-1">Historical Insights</h4>
-                  <p className="text-muted-foreground">Understand trends and optimize your care routine</p>
+                  <h4 className="font-semibold mb-1">Trend Detection</h4>
+                  <p className="text-muted-foreground">AI spots issues before they become problems.</p>
                 </div>
               </div>
             </div>
