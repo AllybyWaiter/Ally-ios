@@ -1,4 +1,4 @@
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, Moon } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, Moon, Droplets } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useWeather, WeatherCondition, HourlyForecast as HourlyForecastType } from '@/hooks/useWeather';
@@ -25,6 +25,7 @@ function HourlyItem({ hour, units, isNow }: HourlyItemProps) {
   const icons = weatherIcons[hour.condition] || weatherIcons.clear;
   const Icon = hour.isDay ? icons.day : icons.night;
   const time = parseISO(hour.time);
+  const showPrecip = hour.precipitationProbability != null && hour.precipitationProbability >= 20;
   
   return (
     <div 
@@ -41,6 +42,12 @@ function HourlyItem({ hour, units, isNow }: HourlyItemProps) {
       <span className="text-sm font-semibold">
         {formatTemperature(hour.temperature, units, 'C')}
       </span>
+      {showPrecip && (
+        <div className="flex items-center gap-0.5 text-blue-500">
+          <Droplets className="h-3 w-3" />
+          <span className="text-[10px] font-medium">{hour.precipitationProbability}%</span>
+        </div>
+      )}
     </div>
   );
 }
