@@ -91,6 +91,7 @@ const FAQ = lazyWithRetry(() => import("./pages/FAQ"));
 const Contact = lazyWithRetry(() => import("./pages/Contact"));
 const Weather = lazyWithRetry(() => import("./pages/Weather"));
 const HelpCenter = lazyWithRetry(() => import("./pages/HelpCenter"));
+const Compare = lazyWithRetry(() => import("./pages/Compare"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -128,6 +129,7 @@ const App = () => (
                   <Route path="/pricing" element={<PageErrorBoundary pageName="Pricing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Pricing /></Suspense></PageErrorBoundary>} />
                   <Route path="/faq" element={<PageErrorBoundary pageName="FAQ" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><FAQ /></Suspense></PageErrorBoundary>} />
                   <Route path="/help" element={<PageErrorBoundary pageName="Help Center" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><HelpCenter /></Suspense></PageErrorBoundary>} />
+                  <Route path="/compare" element={<PageErrorBoundary pageName="Compare" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Compare /></Suspense></PageErrorBoundary>} />
                   <Route path="/contact" element={<PageErrorBoundary pageName="Contact" featureArea="general"><Suspense fallback={<FormSkeleton />}><Contact /></Suspense></PageErrorBoundary>} />
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
                   <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />

@@ -4,7 +4,49 @@
 # Sitemap location
 Sitemap: https://allybywaiter.com/sitemap.xml
 
-# Allow all major crawlers
+# LLM-friendly content files
+# See https://llmstxt.org for specification
+# llms.txt: https://allybywaiter.com/llms.txt
+# llms-full.txt: https://allybywaiter.com/llms-full.txt
+
+# AI Crawlers - Explicitly Allowed
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Claude-Web
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: anthropic-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# Standard Search Engine Crawlers
 User-agent: Googlebot
 Allow: /
 
@@ -55,3 +97,5 @@ Allow: /favicon.png
 Allow: /og-image.png
 Allow: /apple-touch-icon.png
 Allow: /manifest.webmanifest
+Allow: /llms.txt
+Allow: /llms-full.txt
