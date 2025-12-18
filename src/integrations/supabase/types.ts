@@ -140,11 +140,16 @@ export type Database = {
           longitude: number | null
           name: string
           notes: string | null
+          pool_adjustments: Json | null
+          pool_dimensions: Json | null
+          pool_shape: string | null
           setup_date: string | null
           status: string | null
           type: string
           updated_at: string
           user_id: string
+          volume_calculation_method: string | null
+          volume_confidence_range: Json | null
           volume_gallons: number | null
         }
         Insert: {
@@ -155,11 +160,16 @@ export type Database = {
           longitude?: number | null
           name: string
           notes?: string | null
+          pool_adjustments?: Json | null
+          pool_dimensions?: Json | null
+          pool_shape?: string | null
           setup_date?: string | null
           status?: string | null
           type: string
           updated_at?: string
           user_id: string
+          volume_calculation_method?: string | null
+          volume_confidence_range?: Json | null
           volume_gallons?: number | null
         }
         Update: {
@@ -170,11 +180,16 @@ export type Database = {
           longitude?: number | null
           name?: string
           notes?: string | null
+          pool_adjustments?: Json | null
+          pool_dimensions?: Json | null
+          pool_shape?: string | null
           setup_date?: string | null
           status?: string | null
           type?: string
           updated_at?: string
           user_id?: string
+          volume_calculation_method?: string | null
+          volume_confidence_range?: Json | null
           volume_gallons?: number | null
         }
         Relationships: []
