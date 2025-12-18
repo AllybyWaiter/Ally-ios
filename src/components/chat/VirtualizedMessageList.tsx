@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { parseFollowUpSuggestions, FollowUpSuggestions } from "./FollowUpSuggestions";
+import { parseFollowUpSuggestions, FollowUpSuggestions, type FollowUpItem } from "./FollowUpSuggestions";
 
 // Memoized markdown components to prevent recreation on every render
 const markdownComponents = {
