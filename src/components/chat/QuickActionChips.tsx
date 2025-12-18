@@ -262,9 +262,35 @@ export const QuickActionChips = React.memo(function QuickActionChips({
       onAction(action);
     }
 
+    // Actions that require an aquariumId
+    const requiresAquarium = ['add_livestock', 'add_plant', 'add_equipment', 'dose_treatment'];
+    if (requiresAquarium.includes(action.type) && !aquariumId) {
+      toast.info('Please select an aquarium first from your dashboard');
+      navigate('/dashboard');
+      return;
+    }
+
     // Show toast if configured
     if (config.toastMessage) {
       toast.info(config.toastMessage);
+    }
+
+    // Handle dynamic routes (require aquariumId in path)
+    if (action.type === 'add_livestock') {
+      navigate(`/aquarium/${aquariumId}?tab=livestock&addNew=livestock`);
+      return;
+    }
+    if (action.type === 'add_plant') {
+      navigate(`/aquarium/${aquariumId}?tab=livestock&addNew=plant`);
+      return;
+    }
+    if (action.type === 'add_equipment') {
+      navigate(`/aquarium/${aquariumId}?tab=equipment&addNew=true`);
+      return;
+    }
+    if (action.type === 'dose_treatment') {
+      navigate(`/water-tests?aquariumId=${aquariumId}&tab=log&addNote=treatment`);
+      return;
     }
 
     // Navigate if route exists
@@ -273,9 +299,12 @@ export const QuickActionChips = React.memo(function QuickActionChips({
       if (aquariumId) params.set('aquariumId', aquariumId);
       
       // Add action-specific params
-      if (action.type === 'schedule_water_change' && action.payload?.percent) {
+      if (action.type === 'schedule_water_change') {
+        params.set('newTask', 'true');
         params.set('taskType', 'water_change');
-        params.set('taskName', `${action.payload.percent}% Water Change`);
+        if (action.payload?.percent) {
+          params.set('taskName', `${action.payload.percent}% Water Change`);
+        }
       }
       if (action.type === 'create_task' || action.type === 'schedule_maintenance') {
         params.set('newTask', 'true');

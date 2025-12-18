@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,12 +21,13 @@ import { EquipmentCard } from "./EquipmentCard";
 import { queryKeys } from "@/lib/queryKeys";
 import { fetchEquipment, deleteEquipment, type Equipment } from "@/infrastructure/queries";
 
-interface AquariumEquipmentProps {
+export interface AquariumEquipmentProps {
   aquariumId: string;
   aquariumType?: string;
+  initialAddNew?: boolean;
 }
 
-export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater' }: AquariumEquipmentProps) => {
+export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', initialAddNew = false }: AquariumEquipmentProps) => {
   const { user, loading: authLoading } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
@@ -34,6 +35,13 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater' }: A
   const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+
+  // Auto-open dialog based on URL param
+  useEffect(() => {
+    if (initialAddNew) {
+      setDialogOpen(true);
+    }
+  }, [initialAddNew]);
 
   const { data: equipment, isLoading } = useQuery({
     queryKey: queryKeys.equipment.list(aquariumId),
