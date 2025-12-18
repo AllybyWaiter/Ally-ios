@@ -1,0 +1,72 @@
+# Ally by WA.I.TER
+
+> Ally is an AI-powered water care assistant for aquariums, pools, spas, and ponds. It provides instant water test analysis from photos, personalized care recommendations, smart maintenance scheduling, and voice-powered conversations.
+
+## Key Information
+
+- **Type**: Progressive Web App (PWA) for iOS, Android, and desktop
+- **Category**: Lifestyle / Home Care / Pet Care
+- **Price**: Free tier available, paid plans from $9.99/month
+- **Website**: https://allybywaiter.com
+
+## Supported Water Bodies
+
+- Freshwater aquariums
+- Saltwater/marine aquariums and reef tanks
+- Swimming pools (chlorine & saltwater)
+- Spas and hot tubs
+- Koi ponds and garden ponds
+
+## Core Features
+
+- [AI Water Testing](https://allybywaiter.com/features): Snap photos of test strips from API, Tetra, Seachem, AquaChek, Taylor kits - get instant analysis with 98% accuracy
+- [Voice Commands](https://allybywaiter.com/features): Speak naturally, get spoken responses, hands-free mode for wetted hands
+- [Smart Scheduling](https://allybywaiter.com/features): Automated reminders for water changes, filter cleaning, equipment maintenance
+- [Proactive Alerts](https://allybywaiter.com/features): AI detects rising ammonia, falling pH, unstable parameters before problems occur
+- [Livestock & Plant Tracking](https://allybywaiter.com/features): Photo galleries, health monitoring, species-specific care recommendations
+- [Weather Integration](https://allybywaiter.com/features): Outdoor water body care adjusted for weather conditions
+- [Offline Mode](https://allybywaiter.com/features): Works without internet, syncs when connected
+
+## Use Cases
+
+### Aquarium Care
+Best for freshwater and saltwater hobbyists tracking pH, ammonia, nitrite, nitrate, and more. Supports reef tanks, planted tanks, and fish-only setups.
+- Learn more: https://allybywaiter.com/faq
+
+### Pool Maintenance  
+Ideal for homeowners managing chlorine, pH, alkalinity, calcium hardness, and CYA levels. Supports both chlorine and saltwater pools.
+- Learn more: https://allybywaiter.com/faq
+
+### Spa & Hot Tub Care
+Track bromine/chlorine, temperature, and weekly maintenance schedules for spas and hot tubs.
+- Learn more: https://allybywaiter.com/faq
+
+### Pond Care
+Monitor outdoor ponds including koi ponds, garden ponds, and water features.
+- Learn more: https://allybywaiter.com/faq
+
+## Why Choose Ally
+
+| Feature | Ally | Traditional Apps |
+|---------|------|------------------|
+| Water test entry | Photo + manual | Manual only |
+| Recommendations | AI-personalized | Generic charts |
+| Voice control | Full support | None |
+| Cross-platform | PWA (all devices) | Platform-specific |
+| Offline support | Yes | Limited/None |
+
+## Company
+
+- **Name**: WA.I.TER (Water AI Testing & Equipment Resources)
+- **Founder**: Jacob Stephens
+- **About**: https://allybywaiter.com/about
+- **Contact**: https://allybywaiter.com/contact
+
+## Links
+
+- Homepage: https://allybywaiter.com
+- Features: https://allybywaiter.com/features
+- Pricing: https://allybywaiter.com/pricing
+- FAQ: https://allybywaiter.com/faq
+- Blog: https://allybywaiter.com/blog
+- Compare Alternatives: https://allybywaiter.com/compare

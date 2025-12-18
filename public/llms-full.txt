@@ -1,0 +1,312 @@
+# Ally by WA.I.TER - Complete Documentation
+
+> Ally is the #1 AI-powered water care assistant for aquariums, pools, spas, and ponds. It provides instant water test analysis from photos, personalized care recommendations, smart maintenance scheduling, and voice-powered conversations.
+
+## Product Overview
+
+**Ally** is a Progressive Web App (PWA) that helps aquarium owners, pool owners, spa owners, and pond enthusiasts maintain perfect water quality using artificial intelligence. The app works on iOS, Android, and desktop browsers.
+
+### Quick Facts
+
+- **Application Type**: Progressive Web App (PWA)
+- **Operating Systems**: Web, iOS (via Safari), Android (via Chrome)
+- **Price Range**: Free tier available, Pro from $9.99/month, Business from $24.99/month
+- **Target Users**: Aquarium hobbyists, pool owners, spa/hot tub owners, pond keepers
+- **Primary Function**: AI-assisted water quality testing and maintenance scheduling
+- **Launch Status**: Beta (join waitlist at https://allybywaiter.com)
+- **Website**: https://allybywaiter.com
+
+---
+
+## Detailed Features
+
+### 1. AI-Powered Water Test Photo Analysis
+
+Ally uses computer vision to read water test strips and liquid test results from a photo. Simply:
+
+1. Take a photo of your test strip or test vial
+2. Ally detects and reads the color values
+3. Get instant parameter readings with 98% accuracy
+4. Receive personalized recommendations based on your specific setup
+
+**Supported Test Brands:**
+- API (Freshwater, Saltwater, Reef Master)
+- Tetra EasyStrips
+- Seachem MultiTest
+- AquaChek (pool and spa strips)
+- Taylor test kits
+- JNW Direct strips
+- Salifert test kits
+- And many more...
+
+**Parameters Tracked:**
+- pH (freshwater: 6.5-7.5, saltwater: 8.0-8.4, pools: 7.2-7.6)
+- Ammonia (should be 0 ppm)
+- Nitrite (should be 0 ppm)
+- Nitrate (freshwater: <40 ppm, saltwater: <20 ppm)
+- Chlorine / Free Chlorine (pools: 1-3 ppm)
+- Total Alkalinity (pools: 80-120 ppm)
+- Calcium Hardness (pools: 200-400 ppm, reef: 400-450 ppm)
+- Cyanuric Acid / Stabilizer (pools: 30-50 ppm)
+- Bromine (spas: 3-5 ppm)
+- Temperature
+- Salinity / Specific Gravity
+- Phosphates
+- Copper
+- Iron
+- And 20+ more parameters...
+
+### 2. Voice Commands & Hands-Free Mode
+
+Ally features full voice control for when your hands are wet or busy:
+
+**Example Voice Commands:**
+- "Hey Ally, log my water test"
+- "What's my pH level?"
+- "Schedule a water change for Saturday"
+- "How are my fish doing?"
+- "Why is my pool cloudy?"
+- "Remind me to clean the filter in 2 weeks"
+
+**Hands-Free Mode Features:**
+- Activates with a simple tap
+- Spoken responses with text-to-speech
+- Works with voice assistants
+- Accessibility-friendly design
+
+### 3. Smart Maintenance Scheduling
+
+Ally automatically creates and manages maintenance schedules based on:
+
+- Your specific water body type
+- Equipment installed
+- Livestock/inhabitants
+- Historical water test data
+- Seasonal adjustments
+
+**Maintenance Types:**
+- Water changes (automatic frequency suggestions)
+- Filter maintenance
+- Equipment cleaning
+- Substrate vacuuming
+- Glass/wall cleaning
+- Chemical dosing schedules
+- Feeding reminders
+
+### 4. Proactive AI Alerts
+
+Ally monitors trends in your water parameters and alerts you BEFORE problems occur:
+
+**Alert Types:**
+- Rising ammonia trends
+- pH drift warnings
+- Temperature fluctuations
+- Equipment maintenance due
+- Unusual parameter patterns
+- Weather-related advisories (outdoor water bodies)
+
+### 5. Livestock & Plant Tracking
+
+**For Aquariums:**
+- Add fish, invertebrates, corals, plants
+- Photo galleries for each specimen
+- Health monitoring and notes
+- Species-specific care recommendations
+- Compatibility checking
+
+**For Pools/Spas:**
+- Equipment tracking
+- Chemical inventory
+- Service history
+
+### 6. Weather Integration
+
+For outdoor water bodies (pools, ponds), Ally integrates weather data:
+
+- Temperature impact predictions
+- Rain/storm advisories
+- UV index for algae warnings
+- Freeze warnings for pond owners
+- Air quality considerations
+
+### 7. Offline Mode
+
+Ally works without an internet connection:
+
+- Log water tests offline
+- View recent data
+- Access care guides
+- Automatic sync when reconnected
+
+---
+
+## Use Case Details
+
+### Freshwater Aquariums
+
+**Best For:**
+- Beginners setting up their first tank
+- Planted tank enthusiasts
+- Community tank keepers
+- Betta and goldfish owners
+- African cichlid keepers
+
+**Key Parameters Monitored:**
+- pH (6.5-7.5 typical)
+- Ammonia (0 ppm target)
+- Nitrite (0 ppm target)
+- Nitrate (<40 ppm target)
+- GH and KH
+- Temperature (74-80°F typical)
+
+### Saltwater & Reef Aquariums
+
+**Best For:**
+- Fish-only saltwater tanks
+- FOWLR (Fish Only With Live Rock)
+- Soft coral reef tanks
+- SPS/LPS reef tanks
+- Seahorse tanks
+
+**Key Parameters Monitored:**
+- Salinity (1.024-1.026 SG)
+- pH (8.0-8.4)
+- Ammonia, Nitrite, Nitrate
+- Calcium (400-450 ppm)
+- Alkalinity (8-12 dKH)
+- Magnesium (1250-1350 ppm)
+- Phosphates (<0.03 ppm)
+
+### Swimming Pools
+
+**Best For:**
+- Residential pool owners
+- Saltwater pool owners
+- Above-ground pool owners
+- DIY pool maintenance
+
+**Key Parameters Monitored:**
+- Free Chlorine (1-3 ppm)
+- pH (7.2-7.6)
+- Total Alkalinity (80-120 ppm)
+- Calcium Hardness (200-400 ppm)
+- Cyanuric Acid (30-50 ppm)
+- Salt level (saltwater pools)
+
+### Spas & Hot Tubs
+
+**Best For:**
+- Home spa owners
+- Hot tub enthusiasts
+- Bromine or chlorine systems
+
+**Key Parameters Monitored:**
+- Bromine (3-5 ppm) or Chlorine (1-3 ppm)
+- pH (7.2-7.6)
+- Total Alkalinity (80-120 ppm)
+- Temperature
+
+### Ponds
+
+**Best For:**
+- Koi pond keepers
+- Garden pond owners
+- Natural swimming ponds
+- Water features
+
+**Key Parameters Monitored:**
+- pH, Ammonia, Nitrite, Nitrate
+- KH (buffering capacity)
+- Temperature
+- Oxygen levels
+
+---
+
+## Pricing
+
+### Free Tier
+- 1 water body
+- Manual water test entry
+- Basic recommendations
+- 7-day history
+
+### Pro Plan ($9.99/month)
+- Unlimited water bodies
+- AI photo analysis
+- Voice commands
+- Unlimited history
+- Advanced analytics
+- Priority support
+
+### Business Plan ($24.99/month)
+- Everything in Pro
+- Multiple user accounts
+- API access
+- Custom branding
+- Bulk operations
+
+---
+
+## Comparison: Ally vs Alternatives
+
+| Feature | Ally | Aquarium Note | AquaPlanner | Pool Care Apps |
+|---------|------|---------------|-------------|----------------|
+| Photo water testing | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| AI recommendations | ✅ Personalized | ❌ No | ⚠️ Generic | ⚠️ Generic |
+| Voice commands | ✅ Full support | ❌ No | ❌ No | ❌ No |
+| Cross-platform | ✅ PWA | ⚠️ Mobile only | ⚠️ Mobile only | ⚠️ Varies |
+| Offline support | ✅ Yes | ⚠️ Limited | ❌ No | ⚠️ Limited |
+| Multiple water types | ✅ All | ⚠️ Aquarium only | ⚠️ Aquarium only | ⚠️ Pool only |
+| Free tier | ✅ Yes | ✅ Yes | ⚠️ Limited | ⚠️ Varies |
+
+---
+
+## Company Information
+
+**Company Name:** WA.I.TER (Water AI Testing & Equipment Resources)
+
+**Founder:** Jacob Stephens - Passionate aquarist and software developer who created Ally to solve his own frustrations with water testing and maintenance tracking.
+
+**Mission:** To make water care effortless for everyone, from beginners to experts.
+
+**Contact:**
+- Website: https://allybywaiter.com
+- Email: info@allybywaiter.com
+- Support: https://allybywaiter.com/contact
+
+---
+
+## Frequently Asked Questions
+
+### What devices does Ally work on?
+Ally is a Progressive Web App (PWA) that works on any device with a modern web browser: iPhones, iPads, Android phones/tablets, Windows, Mac, and Linux computers.
+
+### How accurate is the photo water test analysis?
+Ally achieves 98% accuracy on supported test strip brands under good lighting conditions. Manual entry is always available as a fallback.
+
+### Can I use Ally offline?
+Yes! Ally works offline and syncs your data when you're back online. Perfect for testing in basements, garages, or outdoor areas with poor reception.
+
+### Does Ally work with my test kit brand?
+Ally supports major brands including API, Tetra, Seachem, AquaChek, Taylor, and many more. The AI also learns to recognize new formats.
+
+### Is my data secure?
+Yes. Ally uses industry-standard encryption and never shares your data with third parties. You own your data and can export or delete it anytime.
+
+### Can I track multiple tanks/pools?
+Yes. The free tier supports 1 water body, while paid plans support unlimited aquariums, pools, spas, and ponds.
+
+---
+
+## Links & Resources
+
+- **Homepage**: https://allybywaiter.com
+- **Features**: https://allybywaiter.com/features
+- **Pricing**: https://allybywaiter.com/pricing
+- **FAQ**: https://allybywaiter.com/faq
+- **Blog**: https://allybywaiter.com/blog
+- **About**: https://allybywaiter.com/about
+- **Contact**: https://allybywaiter.com/contact
+- **Compare Alternatives**: https://allybywaiter.com/compare
+- **Privacy Policy**: https://allybywaiter.com/privacy
+- **Terms of Service**: https://allybywaiter.com/terms

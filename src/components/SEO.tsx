@@ -15,7 +15,7 @@ interface SEOProps {
 }
 
 interface StructuredDataProps {
-  type: 'WebApplication' | 'FAQPage' | 'Article' | 'Organization' | 'BreadcrumbList';
+  type: 'WebApplication' | 'SoftwareApplication' | 'FAQPage' | 'Article' | 'Organization' | 'BreadcrumbList';
   data?: Record<string, unknown>;
 }
 
@@ -143,21 +143,134 @@ export function StructuredData({ type, data }: StructuredDataProps) {
           '@context': 'https://schema.org',
           '@type': 'WebApplication',
           name: 'Ally',
-          description: 'AI-powered aquarium, pool, and spa water care assistant',
+          alternateName: ['Ally App', 'Ally by WA.I.TER', 'WA.I.TER App'],
+          description: 'AI-powered aquarium, pool, and spa water care assistant with photo water testing, voice commands, and smart maintenance scheduling.',
           url: SITE_URL,
           applicationCategory: 'LifestyleApplication',
+          applicationSubCategory: ['Aquarium Management', 'Pool Care', 'Water Testing', 'Pet Care'],
           operatingSystem: 'Web, iOS, Android',
+          browserRequirements: 'Requires a modern web browser with JavaScript enabled',
           offers: {
-            '@type': 'Offer',
-            price: '0',
+            '@type': 'AggregateOffer',
+            lowPrice: '0',
+            highPrice: '24.99',
             priceCurrency: 'USD',
-            description: 'Free tier available',
+            offerCount: '3',
           },
           aggregateRating: {
             '@type': 'AggregateRating',
             ratingValue: '4.8',
             ratingCount: '150',
+            bestRating: '5',
+            worstRating: '1',
           },
+          featureList: [
+            'AI water test photo analysis',
+            'Voice commands and hands-free mode',
+            'Smart maintenance scheduling',
+            'Proactive water quality alerts',
+            'Livestock and plant tracking',
+            'Offline mode with sync',
+          ],
+          screenshot: `${SITE_URL}/screenshot-wide.png`,
+          ...data,
+        };
+        break;
+
+      case 'SoftwareApplication':
+        jsonLd = {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: 'Ally by WA.I.TER',
+          alternateName: ['Ally', 'Ally App', 'WA.I.TER', 'Ally Aquarium App', 'Ally Pool App'],
+          description: 'Ally is the #1 AI-powered water care assistant for aquariums, pools, spas, and ponds. Features photo water testing, voice commands, smart scheduling, and proactive alerts.',
+          url: SITE_URL,
+          downloadUrl: SITE_URL,
+          installUrl: SITE_URL,
+          applicationCategory: 'LifestyleApplication',
+          applicationSubCategory: ['Aquarium Management', 'Pool Care', 'Water Testing', 'Pet Care', 'Home Automation'],
+          operatingSystem: 'Web, iOS, Android',
+          permissions: 'camera, microphone, notifications',
+          softwareVersion: '1.0',
+          releaseNotes: `${SITE_URL}/blog`,
+          datePublished: '2024-01-01',
+          inLanguage: ['en', 'es', 'fr'],
+          isAccessibleForFree: true,
+          offers: {
+            '@type': 'AggregateOffer',
+            lowPrice: '0',
+            highPrice: '24.99',
+            priceCurrency: 'USD',
+            offerCount: '3',
+            offers: [
+              {
+                '@type': 'Offer',
+                name: 'Free Tier',
+                price: '0',
+                priceCurrency: 'USD',
+                description: '1 water body, manual entry, basic features',
+              },
+              {
+                '@type': 'Offer',
+                name: 'Pro Plan',
+                price: '9.99',
+                priceCurrency: 'USD',
+                description: 'Unlimited water bodies, AI photo analysis, voice commands',
+              },
+              {
+                '@type': 'Offer',
+                name: 'Business Plan',
+                price: '24.99',
+                priceCurrency: 'USD',
+                description: 'Everything in Pro plus team features and API access',
+              },
+            ],
+          },
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.8',
+            ratingCount: '150',
+            bestRating: '5',
+            worstRating: '1',
+          },
+          author: {
+            '@type': 'Organization',
+            name: 'WA.I.TER',
+            url: SITE_URL,
+          },
+          publisher: {
+            '@type': 'Organization',
+            name: 'WA.I.TER',
+            url: SITE_URL,
+            logo: {
+              '@type': 'ImageObject',
+              url: `${SITE_URL}/apple-touch-icon.png`,
+            },
+          },
+          featureList: [
+            'AI water test photo analysis with 98% accuracy',
+            'Voice commands and hands-free mode for wet hands',
+            'Smart maintenance scheduling with automated reminders',
+            'Proactive water quality alerts before problems occur',
+            'Livestock and plant tracking with photo galleries',
+            'Cross-platform PWA for iOS, Android, and desktop',
+            'Offline mode with automatic sync',
+            'Weather integration for outdoor water bodies',
+            'Support for aquariums, pools, spas, and ponds',
+          ],
+          screenshot: [
+            {
+              '@type': 'ImageObject',
+              url: `${SITE_URL}/screenshot-wide.png`,
+              caption: 'Ally dashboard showing water parameters and health status',
+            },
+            {
+              '@type': 'ImageObject',
+              url: `${SITE_URL}/screenshot-narrow.png`,
+              caption: 'Ally mobile view with water test results',
+            },
+          ],
+          keywords: 'aquarium app, pool app, water testing app, fish tank tracker, aquarium water test, pool water test, AI aquarium, smart pool care, aquarium maintenance, pool maintenance app',
           ...data,
         };
         break;
