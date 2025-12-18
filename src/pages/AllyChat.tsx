@@ -547,6 +547,7 @@ const AllyChat = () => {
               // Focus input so user can fill in the template blanks - don't auto-send
               inputRef.current?.focus();
             }}
+            aquariumId={conversationManager.selectedAquarium === 'general' ? null : conversationManager.selectedAquarium}
           />
         </main>
 
