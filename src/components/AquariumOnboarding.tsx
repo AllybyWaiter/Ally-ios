@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
-import { Waves, ArrowRight, CheckCircle, Calendar, Droplets, TestTube2, Camera, MapPin, Check, X, Loader2 } from 'lucide-react';
+import { Waves, ArrowRight, CheckCircle, Calendar, Droplets, TestTube2, Camera, MapPin, Check, X, Loader2, Calculator } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 import { useTranslation } from 'react-i18next';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
@@ -364,6 +365,15 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                 />
                 {errors.volume_gallons && (
                   <p className="text-sm text-destructive">{errors.volume_gallons}</p>
+                )}
+                {isPoolOrSpa && (
+                  <Link 
+                    to="/chat?message=Help me calculate how many gallons my pool holds"
+                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
+                  >
+                    <Calculator className="h-3.5 w-3.5" />
+                    Not sure? Let Ally help you calculate →
+                  </Link>
                 )}
               </div>
 
