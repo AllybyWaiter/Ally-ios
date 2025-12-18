@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, Component, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Critical: ensure Leaflet CSS is loaded
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Play, Pause, SkipBack, SkipForward, Radar, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Radar, AlertTriangle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 // Leaflet icon fix is applied inside component useEffect to prevent iOS PWA module-level crashes
@@ -42,6 +42,50 @@ interface WeatherRadarProps {
   onReady?: () => void;
 }
 
+// Local error boundary specifically for the map
+interface MapErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class MapErrorBoundary extends Component<{ children: ReactNode; onRetry: () => void }, MapErrorBoundaryState> {
+  constructor(props: { children: ReactNode; onRetry: () => void }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): MapErrorBoundaryState {
+    console.error('[Radar] MapErrorBoundary caught error:', error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('[Radar] MapErrorBoundary componentDidCatch:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center bg-muted/50 gap-3">
+          <p className="text-muted-foreground text-sm">Map failed to load</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              this.props.onRetry();
+            }}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Severity color mapping
 const getSeverityColor = (severity: string): string => {
   switch (severity) {
@@ -73,12 +117,35 @@ const getSeverityBgClass = (severity: string): string => {
   }
 };
 
-// Component to update map center when coordinates change
+// Component to track when map has fully mounted
+function MapMountTracker({ onMounted }: { onMounted: () => void }) {
+  const map = useMap();
+  const calledRef = useRef(false);
+  
+  useEffect(() => {
+    if (map && !calledRef.current) {
+      console.log('[Radar] MapMountTracker: map is available, signaling mounted');
+      calledRef.current = true;
+      // Small delay to ensure map is fully rendered
+      setTimeout(() => {
+        onMounted();
+      }, 100);
+    }
+  }, [map, onMounted]);
+  
+  return null;
+}
+
+// Component to update map center when coordinates change - only renders after map is mounted
 function MapUpdater({ latitude, longitude }: { latitude: number; longitude: number }) {
   const map = useMap();
   
   useEffect(() => {
-    map.setView([latitude, longitude], map.getZoom());
+    try {
+      map.setView([latitude, longitude], map.getZoom());
+    } catch (err) {
+      console.error('[Radar] MapUpdater error:', err);
+    }
   }, [latitude, longitude, map]);
   
   return null;
@@ -91,8 +158,12 @@ function MapResizer() {
   useEffect(() => {
     // Force map to recalculate after mount and visibility
     const timer = setTimeout(() => {
-      console.log('[Radar] MapResizer: invalidating size');
-      map.invalidateSize();
+      try {
+        console.log('[Radar] MapResizer: invalidating size');
+        map.invalidateSize();
+      } catch (err) {
+        console.error('[Radar] MapResizer error:', err);
+      }
     }, 100);
     return () => clearTimeout(timer);
   }, [map]);
@@ -106,21 +177,29 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
   const layerRef = useRef<L.TileLayer | null>(null);
 
   useEffect(() => {
-    if (layerRef.current) {
-      map.removeLayer(layerRef.current);
-    }
+    try {
+      if (layerRef.current) {
+        map.removeLayer(layerRef.current);
+      }
 
-    if (framePath) {
-      const tileUrl = `https://tilecache.rainviewer.com${framePath}/256/{z}/{x}/{y}/2/1_1.png`;
-      layerRef.current = L.tileLayer(tileUrl, {
-        opacity,
-        zIndex: 100,
-      }).addTo(map);
+      if (framePath) {
+        const tileUrl = `https://tilecache.rainviewer.com${framePath}/256/{z}/{x}/{y}/2/1_1.png`;
+        layerRef.current = L.tileLayer(tileUrl, {
+          opacity,
+          zIndex: 100,
+        }).addTo(map);
+      }
+    } catch (err) {
+      console.error('[Radar] RadarLayer error:', err);
     }
 
     return () => {
-      if (layerRef.current) {
-        map.removeLayer(layerRef.current);
+      try {
+        if (layerRef.current) {
+          map.removeLayer(layerRef.current);
+        }
+      } catch (err) {
+        console.error('[Radar] RadarLayer cleanup error:', err);
       }
     };
   }, [framePath, opacity, map]);
@@ -128,24 +207,48 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
   return null;
 }
 
-// Validate GeoJSON geometry before rendering
+// Enhanced GeoJSON validation with coordinate checking
 function isValidGeometry(geom: any): geom is GeoJSON.Geometry {
   if (!geom || typeof geom !== 'object') return false;
   if (!geom.type) return false;
-  // MultiPolygon, Polygon, Point, etc. have coordinates
-  // GeometryCollection has geometries
-  return Array.isArray(geom.coordinates) || Array.isArray(geom.geometries);
+  
+  // Check coordinates are valid numbers (not NaN or Infinity)
+  const validateCoords = (coords: any): boolean => {
+    if (!Array.isArray(coords)) return false;
+    
+    // Check if it's a coordinate pair [lon, lat]
+    if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      return Number.isFinite(coords[0]) && Number.isFinite(coords[1]);
+    }
+    
+    // Otherwise it's a nested array, validate each element
+    return coords.every((c) => validateCoords(c));
+  };
+  
+  if (geom.type === 'GeometryCollection') {
+    return Array.isArray(geom.geometries) && geom.geometries.every((g: any) => isValidGeometry(g));
+  }
+  
+  return Array.isArray(geom.coordinates) && validateCoords(geom.coordinates);
 }
 
-// Alert polygons layer
+// Alert polygons layer - with hardened error handling
 function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlerts: boolean }) {
-  if (!showAlerts) return null;
+  if (!showAlerts || !alerts || alerts.length === 0) return null;
 
   return (
     <>
       {alerts.map((alert) => {
         // Validate geometry before rendering
-        if (!alert.geometry || !isValidGeometry(alert.geometry)) return null;
+        if (!alert.geometry) {
+          console.log('[Radar] AlertsLayer: skipping alert without geometry:', alert.id);
+          return null;
+        }
+        
+        if (!isValidGeometry(alert.geometry)) {
+          console.log('[Radar] AlertsLayer: skipping alert with invalid geometry:', alert.id);
+          return null;
+        }
         
         try {
           const geoJsonData: GeoJSON.Feature = {
@@ -169,7 +272,7 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
             />
           );
         } catch (err) {
-          console.error('Failed to render alert geometry:', alert.id, err);
+          console.error('[Radar] AlertsLayer: Failed to render alert geometry:', alert.id, err);
           return null;
         }
       })}
@@ -186,6 +289,8 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leafletReady, setLeafletReady] = useState(false);
+  const [mapMounted, setMapMounted] = useState(false); // Staged rendering: track when map is mounted
+  const [retryKey, setRetryKey] = useState(0); // Key to force re-mount on retry
   const intervalRef = useRef<number | null>(null);
 
   // Alert state
@@ -193,6 +298,19 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   const [showAlerts, setShowAlerts] = useState(true);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [alertsLoading, setAlertsLoading] = useState(false);
+
+  // Callback for MapMountTracker
+  const handleMapMounted = useCallback(() => {
+    console.log('[Radar] handleMapMounted called - map is fully mounted');
+    setMapMounted(true);
+  }, []);
+
+  // Handle retry from error boundary
+  const handleRetry = useCallback(() => {
+    console.log('[Radar] handleRetry called - resetting state');
+    setMapMounted(false);
+    setRetryKey(prev => prev + 1);
+  }, []);
 
   // Fix Leaflet default marker icon inside useEffect to prevent iOS PWA module-level crashes
   useEffect(() => {
@@ -213,19 +331,14 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
     }
   }, []);
 
-  // Signal ready when leaflet is configured - INDEPENDENT of data loading
-  // This prevents timeout if API is slow, as the map itself is ready to display
+  // Signal ready when MAP is mounted (not just leaflet configured)
+  // This ensures the MapContainer has fully initialized before clearing timeout
   useEffect(() => {
-    if (leafletReady && onReady) {
-      console.log('[Radar] leafletReady is true, scheduling onReady callback');
-      // Delay slightly to ensure DOM is painted and map container is mounted
-      const timer = setTimeout(() => {
-        console.log('[Radar] Signaling onReady (map initialized)');
-        onReady();
-      }, 300);
-      return () => clearTimeout(timer);
+    if (mapMounted && onReady) {
+      console.log('[Radar] Map is mounted, signaling onReady');
+      onReady();
     }
-  }, [leafletReady, onReady]); // Removed isLoading dependency - signal ready once map is initialized
+  }, [mapMounted, onReady]);
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
@@ -415,33 +528,48 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Map Container */}
+        {/* Map Container with Error Boundary */}
         <div className="relative h-64 md:h-80">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-[1000]">
               <div className="animate-pulse text-muted-foreground">Loading radar...</div>
             </div>
           )}
-          <MapContainer
-            center={[latitude, longitude]}
-            zoom={7}
-            scrollWheelZoom={false}
-            className="h-full w-full z-0"
-            attributionControl={false}
-          >
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-            />
-            <RadarLayer 
-              framePath={currentFrame?.path ?? null} 
-              opacity={0.7} 
-            />
-            <AlertsLayer alerts={alerts} showAlerts={showAlerts} />
-            <Marker position={[latitude, longitude]} />
-            <MapUpdater latitude={latitude} longitude={longitude} />
-            <MapResizer />
-          </MapContainer>
+          <MapErrorBoundary onRetry={handleRetry}>
+            <MapContainer
+              key={retryKey}
+              center={[latitude, longitude]}
+              zoom={7}
+              scrollWheelZoom={false}
+              className="h-full w-full z-0"
+              attributionControl={false}
+            >
+              {/* Phase 1: Essential components - always render */}
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+              />
+              <Marker position={[latitude, longitude]} />
+              <MapMountTracker onMounted={handleMapMounted} />
+              
+              {/* Phase 2: Non-essential components - only render after map is mounted */}
+              {mapMounted && (
+                <>
+                  <RadarLayer 
+                    framePath={currentFrame?.path ?? null} 
+                    opacity={0.7} 
+                  />
+                  <MapUpdater latitude={latitude} longitude={longitude} />
+                  <MapResizer />
+                </>
+              )}
+              
+              {/* Phase 3: Alert layer - only render after map mounted AND alerts loaded */}
+              {mapMounted && !alertsLoading && (
+                <AlertsLayer alerts={alerts} showAlerts={showAlerts} />
+              )}
+            </MapContainer>
+          </MapErrorBoundary>
 
           {/* Timestamp Badge */}
           {frameTime && (
