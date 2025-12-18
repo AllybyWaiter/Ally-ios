@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon, Radar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,8 +18,14 @@ import {
   MoonPhaseWidget,
   TemperatureChart,
   AquaticInsights,
-  WeatherRadar
 } from '@/components/weather';
+
+// Lazy load WeatherRadar to prevent iOS PWA module-level crashes with Leaflet
+const LazyWeatherRadar = React.lazy(() => 
+  import('@/components/weather/WeatherRadar').then(module => ({ 
+    default: module.WeatherRadar 
+  }))
+);
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
   clear: Sun,
@@ -66,7 +72,23 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
 
   return (
     <ErrorBoundaryRadar onError={() => setHasError(true)}>
-      <WeatherRadar latitude={latitude} longitude={longitude} />
+      <Suspense fallback={
+        <Card className="glass-card overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Radar className="h-5 w-5" />
+              Weather Radar
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="h-64 md:h-80 flex items-center justify-center">
+              <div className="animate-pulse text-muted-foreground">Loading radar...</div>
+            </div>
+          </CardContent>
+        </Card>
+      }>
+        <LazyWeatherRadar latitude={latitude} longitude={longitude} />
+      </Suspense>
     </ErrorBoundaryRadar>
   );
 }
