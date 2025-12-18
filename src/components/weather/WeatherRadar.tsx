@@ -264,18 +264,14 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
 }
 
 export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps) {
-  console.log('[Radar] WeatherRadar component rendering', { latitude, longitude });
-  
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leafletReady, setLeafletReady] = useState(false);
-  const [mapMounted, setMapMounted] = useState(false); // Staged rendering: track when map is mounted
-  const [stage2Ready, setStage2Ready] = useState(false); // Staged: RadarLayer etc.
-  const [stage3Ready, setStage3Ready] = useState(false); // Staged: AlertsLayer
-  const [retryKey, setRetryKey] = useState(0); // Key to force re-mount on retry
+  const [mapMounted, setMapMounted] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const intervalRef = useRef<number | null>(null);
 
   // Alert state
@@ -286,46 +282,17 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
 
   // whenReady callback - fires when MapContainer is fully initialized
   const handleMapReady = useCallback(() => {
-    console.log('[Radar] whenReady fired - map is initialized');
     setMapMounted(true);
   }, []);
 
-  // Staged rendering: delay stage2 components after map mounts
-  useEffect(() => {
-    if (mapMounted) {
-      console.log('[Radar] Map mounted, scheduling stage2 in 300ms');
-      const timer = setTimeout(() => {
-        console.log('[Radar] Stage2 ready (RadarLayer, MapUpdater, MapResizer)');
-        setStage2Ready(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [mapMounted]);
-
-  // Staged rendering: delay stage3 (alerts) after stage2
-  useEffect(() => {
-    if (stage2Ready && !alertsLoading) {
-      console.log('[Radar] Stage2 ready + alerts loaded, scheduling stage3 in 200ms');
-      const timer = setTimeout(() => {
-        console.log('[Radar] Stage3 ready (AlertsLayer)');
-        setStage3Ready(true);
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [stage2Ready, alertsLoading]);
-
   // Handle retry from error boundary
   const handleRetry = useCallback(() => {
-    console.log('[Radar] handleRetry called - resetting state');
     setMapMounted(false);
-    setStage2Ready(false);
-    setStage3Ready(false);
     setRetryKey(prev => prev + 1);
   }, []);
 
   // Fix Leaflet default marker icon inside useEffect to prevent iOS PWA module-level crashes
   useEffect(() => {
-    console.log('[Radar] Configuring Leaflet icons...');
     try {
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -333,20 +300,16 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       });
-      console.log('[Radar] Leaflet icons configured, setting leafletReady = true');
       setLeafletReady(true);
     } catch (err) {
       console.error('[Radar] Failed to configure Leaflet icons:', err);
-      // Still mark as ready - marker will just use default broken icon
       setLeafletReady(true);
     }
   }, []);
 
-  // Signal ready when MAP is mounted (not just leaflet configured)
-  // This ensures the MapContainer has fully initialized before clearing timeout
+  // Signal ready when map is mounted
   useEffect(() => {
     if (mapMounted && onReady) {
-      console.log('[Radar] Map is mounted, signaling onReady');
       onReady();
     }
   }, [mapMounted, onReady]);
@@ -354,7 +317,6 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   // Fetch radar frames from RainViewer
   useEffect(() => {
     const fetchRadarFrames = async () => {
-      console.log('[Radar] Starting RainViewer fetch...');
       try {
         setIsLoading(true);
         setError(null);
@@ -363,14 +325,12 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         
         const data: RainViewerResponse = await response.json();
         const allFrames = [...data.radar.past, ...data.radar.nowcast];
-        console.log('[Radar] RainViewer fetch complete, frames:', allFrames.length);
         setFrames(allFrames);
         setCurrentFrameIndex(data.radar.past.length - 1);
       } catch (err) {
         setError('Unable to load radar data');
         console.error('[Radar] Radar fetch error:', err);
       } finally {
-        console.log('[Radar] Setting isLoading = false');
         setIsLoading(false);
       }
     };
@@ -556,20 +516,17 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
               attributionControl={false}
               whenReady={handleMapReady}
             >
-              {/* Stage 1: Essential components - always render */}
               <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
               />
               <Marker position={[latitude, longitude]} />
               
-              {/* Stage 2: Components using useMap() - render with delay after map mounts */}
-              {stage2Ready && <RadarLayer framePath={currentFrame?.path ?? null} opacity={0.7} />}
-              {stage2Ready && <MapUpdater latitude={latitude} longitude={longitude} />}
-              {stage2Ready && <MapResizer />}
-              
-              {/* Stage 3: Alert layer - render after stage2 AND alerts loaded */}
-              {stage3Ready && <AlertsLayer alerts={alerts} showAlerts={showAlerts} />}
+              {/* Components using useMap() - render after map is mounted */}
+              {mapMounted && <RadarLayer framePath={currentFrame?.path ?? null} opacity={0.7} />}
+              {mapMounted && <MapUpdater latitude={latitude} longitude={longitude} />}
+              {mapMounted && <MapResizer />}
+              {mapMounted && <AlertsLayer alerts={alerts} showAlerts={showAlerts} />}
             </MapContainer>
           </MapErrorBoundary>
 
