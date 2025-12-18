@@ -77,7 +77,9 @@ export function LazyLoadWithTimeout({
       window.clearTimeout(timeoutRef.current);
     }
 
+    console.log('[LazyLoadWithTimeout] Timeout started:', timeoutMs, 'ms');
     timeoutRef.current = window.setTimeout(() => {
+      console.log('[LazyLoadWithTimeout] Timeout fired - component did not signal ready in time');
       setIsTimedOut(true);
       onTimeout?.();
     }, timeoutMs);
@@ -91,6 +93,7 @@ export function LazyLoadWithTimeout({
 
   useEffect(() => {
     if (isLoaded && timeoutRef.current != null) {
+      console.log('[LazyLoadWithTimeout] Component signaled ready - clearing timeout');
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
