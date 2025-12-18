@@ -17,7 +17,8 @@ import {
   TrendingDown, 
   Minus,
   ArrowRight,
-  Clock
+  Clock,
+  TestTube2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -182,16 +183,28 @@ export function QuickHealthView({
         </div>
       )}
 
-      {/* View Details Button */}
+      {/* Action Buttons */}
       {!compact && (
-        <Button 
-          onClick={handleViewDetails}
-          className="w-full mt-4 gap-2"
-          variant="secondary"
-        >
-          View Details
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+        <div className="flex flex-col gap-2 mt-4">
+          <Button 
+            onClick={() => {
+              onClose?.();
+              navigate(`/water-tests?aquariumId=${aquariumId}`);
+            }}
+            className="w-full gap-2"
+          >
+            <TestTube2 className="w-4 h-4" />
+            Quick Log Water Test
+          </Button>
+          <Button 
+            onClick={handleViewDetails}
+            className="w-full gap-2"
+            variant="secondary"
+          >
+            View Details
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
       )}
     </motion.div>
   );
