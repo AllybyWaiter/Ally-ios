@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
@@ -63,7 +63,8 @@ export default function Dashboard() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   
-  const handlePullRefresh = async () => {
+  // Memoized handlers
+  const handlePullRefresh = useCallback(async () => {
     if (user) {
       await loadAquariums(user.id);
       toast({ 
@@ -71,7 +72,7 @@ export default function Dashboard() {
         description: `Updated ${new Date().toLocaleTimeString()}`
       });
     }
-  };
+  }, [user, loadAquariums, toast]);
   
   const { isRefreshing, pullDistance, isPastThreshold } = usePullToRefresh(containerRef, {
     onRefresh: handlePullRefresh,
@@ -79,7 +80,16 @@ export default function Dashboard() {
     disabled: loading || authLoading || !isMobile
   });
 
-  const hasStaffRole = hasAnyRole(['admin', 'moderator', 'editor']) || hasPermission('moderate_support');
+  // Memoized computed values
+  const hasStaffRole = useMemo(() => 
+    hasAnyRole(['admin', 'moderator', 'editor']) || hasPermission('moderate_support'),
+    [hasAnyRole, hasPermission]
+  );
+
+  const waterBodyMix = useMemo(() => 
+    hasOnlyPools ? 'pools' : hasMixed ? 'mixed' : 'aquariums',
+    [hasOnlyPools, hasMixed]
+  );
 
   // Hard maximum loading timeout
   useEffect(() => {
@@ -155,17 +165,18 @@ export default function Dashboard() {
     }
   }, [dataFetched, aquariums.length, showPreferencesOnboarding]);
 
-  const handlePreferencesComplete = async () => {
+  // Memoized event handlers
+  const handlePreferencesComplete = useCallback(async () => {
     setShowPreferencesOnboarding(false);
     await loadAquariums(user?.id);
-  };
+  }, [loadAquariums, user?.id]);
 
-  const handleAquariumOnboardingComplete = async () => {
+  const handleAquariumOnboardingComplete = useCallback(async () => {
     setShowAquariumOnboarding(false);
     await loadAquariums(user?.id);
-  };
+  }, [loadAquariums, user?.id]);
 
-  const handleCreateAquarium = () => {
+  const handleCreateAquarium = useCallback(() => {
     if (!canCreateAquarium(aquariums.length)) {
       const upgradeTier = getUpgradeSuggestion();
       toast({
@@ -177,24 +188,24 @@ export default function Dashboard() {
     }
     setEditingAquarium(undefined);
     setAquariumDialogOpen(true);
-  };
+  }, [canCreateAquarium, aquariums.length, getUpgradeSuggestion, tier, limits.maxAquariums, toast]);
 
-  const handleEditAquarium = (aquarium: Aquarium) => {
+  const handleEditAquarium = useCallback((aquarium: Aquarium) => {
     setEditingAquarium(aquarium);
     setAquariumDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteClick = (aquariumId: string) => {
+  const handleDeleteClick = useCallback((aquariumId: string) => {
     setDeletingAquariumId(aquariumId);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deletingAquariumId) return;
     await deleteAquarium(deletingAquariumId, user?.id);
     setDeleteDialogOpen(false);
     setDeletingAquariumId(null);
-  };
+  }, [deletingAquariumId, deleteAquarium, user?.id]);
 
   if (loading || authLoading) {
     return <DashboardSkeleton />;
@@ -275,7 +286,7 @@ export default function Dashboard() {
             canCreate={canCreateAquarium(aquariums.length)}
             maxAquariums={limits.maxAquariums}
             limitsLoading={limitsLoading}
-            waterBodyMix={hasOnlyPools ? 'pools' : hasMixed ? 'mixed' : 'aquariums'}
+            waterBodyMix={waterBodyMix}
             onCreateAquarium={handleCreateAquarium}
             onEditAquarium={handleEditAquarium}
             onDeleteAquarium={handleDeleteClick}
