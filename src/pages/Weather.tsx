@@ -23,18 +23,22 @@ import {
 import { Loader2 } from 'lucide-react';
 
 // Lazy load WeatherRadar to prevent iOS PWA module-level crashes with Leaflet.
-const LazyWeatherRadar = React.lazy(() =>
-  import('@/components/weather/WeatherRadar')
-    .then((module) => ({ default: module.WeatherRadar }))
+const LazyWeatherRadar = React.lazy(() => {
+  console.log('[Radar] Starting lazy import...');
+  return import('@/components/weather/WeatherRadar')
+    .then((module) => {
+      console.log('[Radar] Import successful');
+      return { default: module.WeatherRadar };
+    })
     .catch((err) => {
-      console.error('Failed to lazy-load WeatherRadar:', err);
+      console.error('[Radar] Import failed:', err);
       return {
         default: function WeatherRadarLazyLoadError() {
           throw err;
         },
       };
-    })
-);
+    });
+});
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
   clear: Sun,
@@ -77,7 +81,7 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
 
   return (
     <LazyLoadWithTimeout
-      timeoutMs={10000}
+      timeoutMs={15000}
       errorTitle="Unable to load radar"
       icon={<Radar className="h-5 w-5" />}
       fallback={radarFallback}

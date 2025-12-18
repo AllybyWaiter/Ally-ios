@@ -83,6 +83,22 @@ function MapUpdater({ latitude, longitude }: { latitude: number; longitude: numb
   return null;
 }
 
+// Force Leaflet to recalculate tile positions after mount (fixes blank tiles)
+function MapResizer() {
+  const map = useMap();
+  
+  useEffect(() => {
+    // Force map to recalculate after mount and visibility
+    const timer = setTimeout(() => {
+      console.log('[Radar] MapResizer: invalidating size');
+      map.invalidateSize();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [map]);
+  
+  return null;
+}
+
 // Radar tile layer component
 function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity: number }) {
   const map = useMap();
@@ -192,12 +208,17 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
     }
   }, []);
 
-  // Signal ready when leaflet is configured
+  // Signal ready when leaflet is configured AND map has had time to render
   useEffect(() => {
-    if (leafletReady && onReady) {
-      onReady();
+    if (leafletReady && !isLoading && onReady) {
+      // Delay slightly to ensure DOM is painted and tiles have started loading
+      const timer = setTimeout(() => {
+        console.log('[Radar] Signaling onReady');
+        onReady();
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  }, [leafletReady, onReady]);
+  }, [leafletReady, isLoading, onReady]);
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
@@ -409,6 +430,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
             <AlertsLayer alerts={alerts} showAlerts={showAlerts} />
             <Marker position={[latitude, longitude]} />
             <MapUpdater latitude={latitude} longitude={longitude} />
+            <MapResizer />
           </MapContainer>
 
           {/* Timestamp Badge */}
