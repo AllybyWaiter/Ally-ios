@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset } from 'lucide-react';
+import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,6 +10,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import AppHeader from '@/components/AppHeader';
+import {
+  AirQualityWidget,
+  PrecipitationCard,
+  AtmosphericCard,
+  MoonPhaseWidget,
+  TemperatureChart,
+  AquaticInsights
+} from '@/components/weather';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
   clear: Sun,
@@ -43,37 +51,39 @@ function ForecastCard({ day, units }: ForecastCardProps) {
   const uvLevel = getUVLevel(day.uvIndexMax);
 
   return (
-    <Card className="glass-card">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <WeatherIcon className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">{dayName}</p>
-              <p className="text-xs text-muted-foreground">{dateStr}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1 text-muted-foreground">
-              <Wind className="h-4 w-4" />
-              {formatWindSpeed(day.windSpeed, units)}
-            </div>
-            {day.uvIndexMax != null && day.uvIndexMax > 0 && (
-              <div className="flex items-center gap-1">
-                <SunDim className="h-4 w-4 text-muted-foreground" />
-                <span className={uvLevel.colorClass}>{day.uvIndexMax}</span>
-              </div>
-            )}
-            <div className="text-right min-w-[4rem]">
-              <span className="font-semibold">{highTemp}</span>
-              <span className="text-muted-foreground"> / {lowTemp}</span>
-            </div>
-          </div>
+    <div className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+          <WeatherIcon className="h-5 w-5 text-primary" />
         </div>
-      </CardContent>
-    </Card>
+        <div>
+          <p className="font-medium">{dayName}</p>
+          <p className="text-xs text-muted-foreground">{dateStr}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-4 text-sm">
+        {(day.precipitationProbabilityMax ?? 0) > 0 && (
+          <div className="flex items-center gap-1 text-blue-500">
+            <Droplets className="h-3 w-3" />
+            <span className="text-xs">{day.precipitationProbabilityMax}%</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1 text-muted-foreground">
+          <Wind className="h-4 w-4" />
+          {formatWindSpeed(day.windSpeed, units)}
+        </div>
+        {day.uvIndexMax != null && day.uvIndexMax > 0 && (
+          <div className="flex items-center gap-1">
+            <SunDim className="h-4 w-4 text-muted-foreground" />
+            <span className={uvLevel.colorClass}>{day.uvIndexMax}</span>
+          </div>
+        )}
+        <div className="text-right min-w-[4rem]">
+          <span className="font-semibold">{highTemp}</span>
+          <span className="text-muted-foreground"> / {lowTemp}</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -84,11 +94,14 @@ function CompactForecastDay({ day, units }: ForecastCardProps) {
   const lowTemp = formatTemperature(day.tempMin, units, 'C');
 
   return (
-    <div className="flex flex-col items-center gap-1 flex-1 py-2">
+    <div className="flex flex-col items-center gap-1 min-w-[3rem] py-2">
       <span className="text-xs font-medium text-muted-foreground">{dayName}</span>
       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
         <WeatherIcon className="h-4 w-4 text-primary" />
       </div>
+      {(day.precipitationProbabilityMax ?? 0) > 20 && (
+        <span className="text-xs text-blue-500">{day.precipitationProbabilityMax}%</span>
+      )}
       <div className="flex flex-col items-center text-xs">
         <span className="font-semibold">{highTemp}</span>
         <span className="text-muted-foreground">{lowTemp}</span>
@@ -102,28 +115,33 @@ export default function Weather() {
   const { units, user } = useAuth();
   const isMobile = useIsMobile();
 
-  // Loading state - show during initialization or active loading
+  // Loading state
   if ((initializing || loading) && !weather) {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="container mx-auto px-4 pt-28 pb-8">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
+        <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
+          <div className="max-w-4xl mx-auto space-y-4">
+            <Skeleton className="h-48 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
+              <Skeleton className="h-40 w-full rounded-xl" />
+              <Skeleton className="h-40 w-full rounded-xl" />
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </div>
           </div>
         </main>
       </div>
     );
   }
 
-  // Weather not enabled - show friendly message instead of redirecting
+  // Weather not enabled
   if (!enabled && user) {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="container mx-auto px-4 pt-28 pb-8">
+        <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
           <div className="max-w-md mx-auto">
             <Card className="glass-card">
               <CardContent className="p-8 text-center">
@@ -153,7 +171,7 @@ export default function Weather() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="container mx-auto px-4 pt-28 pb-8">
+        <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
           <div className="max-w-2xl mx-auto">
             <Card className="glass-card">
               <CardContent className="p-8 text-center">
@@ -174,7 +192,7 @@ export default function Weather() {
     );
   }
 
-  const WeatherIcon = weatherIcons[weather.condition] || Cloud;
+  const WeatherIcon = weather.isDay ? (weatherIcons[weather.condition] || Cloud) : Moon;
   const conditionLabel = weatherLabels[weather.condition] || weather.condition;
   
   const displayTemp = formatTemperature(
@@ -206,8 +224,8 @@ export default function Weather() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container mx-auto px-4 pt-28 pb-8">
-        <div className="max-w-2xl mx-auto space-y-6">
+      <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
+        <div className="max-w-4xl mx-auto space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Weather</h1>
@@ -228,68 +246,75 @@ export default function Weather() {
             </div>
           </div>
 
-          {/* Current Conditions */}
+          {/* Current Conditions Hero */}
           <Card className="glass-card overflow-hidden">
             <CardContent className="p-6">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  {weather.locationName && (
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+                      <MapPin className="h-3 w-3" />
+                      {weather.locationName}
+                    </div>
+                  )}
+                  <p className="text-5xl font-bold tracking-tight">{displayTemp}</p>
+                  {weather.feelsLike != null && weather.feelsLike !== weather.temperature && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Feels like {feelsLikeTemp}
+                    </p>
+                  )}
+                  <p className="text-lg text-muted-foreground mt-1">{conditionLabel}</p>
+                </div>
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
                   <WeatherIcon className="h-10 w-10 text-primary" />
                 </div>
-                <p className="text-5xl font-bold tracking-tight mb-1">
-                  {displayTemp}
-                </p>
-                {weather.feelsLike != null && weather.feelsLike !== weather.temperature && (
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Feels like {feelsLikeTemp}
-                  </p>
-                )}
-                <p className="text-lg text-muted-foreground">
-                  {conditionLabel}
-                </p>
               </div>
 
               {/* Metrics Grid */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                  <Wind className="h-5 w-5 text-muted-foreground mb-1" />
-                  <span className="text-sm font-medium">
-                    {formatWindSpeed(weather.windSpeed, units)}
-                  </span>
+                  <Wind className="h-4 w-4 text-muted-foreground mb-1" />
+                  <span className="text-sm font-medium">{formatWindSpeed(weather.windSpeed, units)}</span>
                   <span className="text-xs text-muted-foreground">Wind</span>
                 </div>
                 <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                  <Droplets className="h-5 w-5 text-muted-foreground mb-1" />
+                  <Droplets className="h-4 w-4 text-muted-foreground mb-1" />
                   <span className="text-sm font-medium">{weather.humidity}%</span>
                   <span className="text-xs text-muted-foreground">Humidity</span>
                 </div>
                 <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                  <SunDim className="h-5 w-5 text-muted-foreground mb-1" />
+                  <SunDim className="h-4 w-4 text-muted-foreground mb-1" />
                   <span className={`text-sm font-medium ${uvLevel.colorClass}`}>
                     {weather.uvIndex} {uvLevel.label}
                   </span>
                   <span className="text-xs text-muted-foreground">UV Index</span>
                 </div>
+                <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                  <Cloud className="h-4 w-4 text-muted-foreground mb-1" />
+                  <span className="text-sm font-medium">{weather.cloudCover}%</span>
+                  <span className="text-xs text-muted-foreground">Cloud Cover</span>
+                </div>
               </div>
 
               {/* Sun Times */}
               {(weather.sunrise || weather.sunset) && (
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                    <Sunrise className="h-5 w-5 text-amber-500 mb-1" />
+                <div className="grid grid-cols-3 gap-3 mt-3">
+                  <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50">
+                    <Sunrise className="h-4 w-4 text-amber-500 mb-1" />
                     <span className="text-sm font-medium">
                       {weather.sunrise ? format(parseISO(weather.sunrise), 'h:mm a') : '--'}
                     </span>
                     <span className="text-xs text-muted-foreground">Sunrise</span>
                   </div>
-                  <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                    <Sunset className="h-5 w-5 text-orange-500 mb-1" />
+                  <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50">
+                    <Sunset className="h-4 w-4 text-orange-500 mb-1" />
                     <span className="text-sm font-medium">
                       {weather.sunset ? format(parseISO(weather.sunset), 'h:mm a') : '--'}
                     </span>
                     <span className="text-xs text-muted-foreground">Sunset</span>
                   </div>
-                  <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                    <Sun className="h-5 w-5 text-yellow-500 mb-1" />
+                  <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50">
+                    <Sun className="h-4 w-4 text-yellow-500 mb-1" />
                     <span className="text-sm font-medium">
                       {weather.sunrise && weather.sunset ? (() => {
                         const mins = differenceInMinutes(parseISO(weather.sunset), parseISO(weather.sunrise));
@@ -303,38 +328,73 @@ export default function Weather() {
                 </div>
               )}
 
-              {/* Location and Last Updated */}
-              <div className="flex flex-col items-center gap-1 mt-4 text-xs text-muted-foreground">
-                {weather.locationName && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    <span className="font-medium text-foreground">{weather.locationName}</span>
-                  </div>
-                )}
-                <span>Updated {getTimeSinceUpdate()}</span>
-              </div>
+              {/* Last Updated */}
+              <p className="text-center text-xs text-muted-foreground mt-3">
+                Updated {getTimeSinceUpdate()}
+              </p>
             </CardContent>
           </Card>
 
           {/* Hourly Forecast */}
           <HourlyForecast />
 
-          {/* 5-Day Forecast */}
+          {/* Temperature Chart */}
+          {weather.hourlyForecast && weather.hourlyForecast.length > 0 && (
+            <TemperatureChart hourlyForecast={weather.hourlyForecast} units={units} />
+          )}
+
+          {/* Two Column Grid for Widgets */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Precipitation */}
+            {weather.hourlyForecast && (
+              <PrecipitationCard
+                precipitationProbability={weather.precipitationProbability ?? 0}
+                precipitationAmount={weather.precipitationAmount ?? 0}
+                hourlyForecast={weather.hourlyForecast}
+                units={units}
+              />
+            )}
+
+            {/* Air Quality */}
+            <AirQualityWidget airQuality={weather.airQuality ?? null} />
+
+            {/* Atmospheric Conditions */}
+            <AtmosphericCard
+              pressure={weather.pressure ?? 0}
+              pressureTrend={weather.pressureTrend ?? 'steady'}
+              dewPoint={weather.dewPoint ?? 0}
+              cloudCover={weather.cloudCover ?? 0}
+              visibility={weather.visibility ?? 10}
+              units={units}
+            />
+
+            {/* Moon Phase */}
+            {weather.moonPhase && (
+              <MoonPhaseWidget moonPhase={weather.moonPhase} />
+            )}
+          </div>
+
+          {/* Aquatic Insights */}
+          <AquaticInsights weather={weather} />
+
+          {/* 10-Day Forecast */}
           <Card className="glass-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">5-Day Forecast</CardTitle>
+              <CardTitle className="text-lg">10-Day Forecast</CardTitle>
             </CardHeader>
-            <CardContent className={isMobile ? "px-4 pb-4" : "space-y-3"}>
+            <CardContent className={isMobile ? "px-2 pb-4" : "pt-0"}>
               {isMobile ? (
-                <div className="flex justify-between">
+                <div className="flex overflow-x-auto gap-1 pb-2 -mx-1 px-1">
                   {weather.forecast.map((day) => (
                     <CompactForecastDay key={day.date} day={day} units={units} />
                   ))}
                 </div>
               ) : (
-                weather.forecast.map((day) => (
-                  <ForecastCard key={day.date} day={day} units={units} />
-                ))
+                <div className="divide-y divide-border/50">
+                  {weather.forecast.map((day) => (
+                    <ForecastCard key={day.date} day={day} units={units} />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
