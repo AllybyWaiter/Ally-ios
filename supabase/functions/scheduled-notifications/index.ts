@@ -6,6 +6,46 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface NWSAlert {
+  id: string;
+  properties: {
+    severity: string;
+    certainty: string;
+    urgency: string;
+    event: string;
+    headline: string;
+    description: string;
+    instruction: string;
+    expires: string;
+    areaDesc: string;
+  };
+}
+
+async function fetchNWSAlerts(latitude: number, longitude: number): Promise<NWSAlert[]> {
+  try {
+    const response = await fetch(
+      `https://api.weather.gov/alerts/active?point=${latitude},${longitude}&status=actual`,
+      {
+        headers: {
+          'User-Agent': 'Ally by WA.I.TER (info@allybywaiter.com)',
+          'Accept': 'application/geo+json',
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      console.log(`NWS API returned ${response.status} for ${latitude},${longitude}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    return data.features || [];
+  } catch (error) {
+    console.error('Failed to fetch NWS alerts:', error);
+    return [];
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -23,6 +63,7 @@ serve(async (req) => {
     const now = new Date();
     let taskNotificationsSent = 0;
     let alertNotificationsSent = 0;
+    let weatherNotificationsSent = 0;
 
     // Get all users with push enabled and task reminders enabled
     const { data: enabledUsers, error: usersError } = await supabase
@@ -181,18 +222,104 @@ serve(async (req) => {
       }
     }
 
+    // Process severe weather alerts (NWS API - US only)
+    const { data: weatherUsers, error: weatherUsersError } = await supabase
+      .from('notification_preferences')
+      .select('user_id')
+      .eq('push_enabled', true)
+      .eq('weather_alerts_enabled', true);
+
+    if (!weatherUsersError && weatherUsers) {
+      for (const userPref of weatherUsers) {
+        // Get user's location from profile
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('latitude, longitude, weather_enabled')
+          .eq('user_id', userPref.user_id)
+          .single();
+
+        if (profileError || !profile?.weather_enabled || !profile?.latitude || !profile?.longitude) {
+          continue;
+        }
+
+        // Fetch NWS alerts for user's location
+        const nwsAlerts = await fetchNWSAlerts(profile.latitude, profile.longitude);
+        
+        // Filter for Extreme or Severe severity only
+        const severeAlerts = nwsAlerts.filter(alert => 
+          alert.properties.severity === 'Extreme' || alert.properties.severity === 'Severe'
+        );
+
+        for (const nwsAlert of severeAlerts) {
+          const alertId = nwsAlert.id;
+          
+          // Check if already notified for this alert
+          const { data: existingNotification } = await supabase
+            .from('weather_alerts_notified')
+            .select('id')
+            .eq('user_id', userPref.user_id)
+            .eq('alert_id', alertId)
+            .single();
+
+          if (existingNotification) continue;
+
+          const props = nwsAlert.properties;
+          const severityEmoji = props.severity === 'Extreme' ? '🔴' : '🟠';
+
+          try {
+            // Send push notification
+            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
+              body: {
+                userId: userPref.user_id,
+                title: `${severityEmoji} ${props.severity} Weather Alert`,
+                body: props.headline || props.event,
+                tag: `weather-${alertId}`,
+                url: '/weather',
+                notificationType: 'weather_alert',
+                requireInteraction: true,
+              },
+            });
+
+            if (!sendError) {
+              // Record that we sent this alert
+              await supabase.from('weather_alerts_notified').insert({
+                user_id: userPref.user_id,
+                alert_id: alertId,
+                severity: props.severity,
+                headline: props.headline || props.event,
+                expires_at: props.expires,
+              });
+
+              weatherNotificationsSent++;
+            }
+          } catch (error) {
+            console.error(JSON.stringify({ requestId, error: 'Failed to send weather notification', alertId }));
+          }
+        }
+      }
+    }
+
+    // Clean up expired weather alerts (older than 24 hours past expiry)
+    const cleanupCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    await supabase
+      .from('weather_alerts_notified')
+      .delete()
+      .lt('expires_at', cleanupCutoff.toISOString());
+
     console.log(JSON.stringify({ 
       requestId, 
       message: 'Scheduled notifications complete',
       taskNotificationsSent,
       alertNotificationsSent,
+      weatherNotificationsSent,
     }));
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         taskNotificationsSent, 
-        alertNotificationsSent 
+        alertNotificationsSent,
+        weatherNotificationsSent,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

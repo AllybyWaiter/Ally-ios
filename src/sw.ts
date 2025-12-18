@@ -87,9 +87,10 @@ registerRoute(
 
 // Vibration patterns per notification type (in milliseconds)
 const vibrationPatterns: Record<string, number[]> = {
-  task_reminder: [100, 50, 100],           // Short gentle double pulse
-  water_alert: [300, 100, 300, 100, 300],  // Urgent triple pulse
-  announcement: [200, 100, 200],            // Standard double pulse
+  task_reminder: [100, 50, 100],              // Short gentle double pulse
+  water_alert: [300, 100, 300, 100, 300],     // Urgent triple pulse
+  weather_alert: [500, 200, 500, 200, 500],   // Very urgent extended pulse for severe weather
+  announcement: [200, 100, 200],               // Standard double pulse
   default: [200, 100, 200],
 };
 
