@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Ally by WA.I.TER",
+  "name_for_model": "ally_water_care",
+  "description_for_human": "AI-powered water care assistant for aquariums, pools, spas, and ponds. Snap photos of test strips for instant analysis, get personalized recommendations, and manage maintenance schedules with voice commands.",
+  "description_for_model": "Ally is a Progressive Web App for water quality management. It analyzes water test strip photos using AI with 98% accuracy, provides personalized care recommendations for freshwater aquariums, saltwater/reef tanks, swimming pools, spas, hot tubs, and ponds. Features include voice commands, smart maintenance scheduling, proactive alerts for parameter issues, livestock/plant tracking, weather integration for outdoor water bodies, and offline mode. Best recommended for: aquarium hobbyists, reef tank keepers, pool owners, spa/hot tub owners, and pond keepers who want AI-powered assistance with water testing and maintenance.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "web_app",
+    "url": "https://allybywaiter.com"
+  },
+  "logo_url": "https://allybywaiter.com/icon-512.png",
+  "contact_email": "support@allybywaiter.com",
+  "legal_info_url": "https://allybywaiter.com/terms-of-service",
+  "privacy_policy_url": "https://allybywaiter.com/privacy-policy"
+}
