@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
@@ -43,10 +43,14 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
 export default function AquariumDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab');
+  const urlAddNew = searchParams.get('addNew');
   const { user, loading: authLoading, units } = useAuth();
   const { t } = useTranslation();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(urlTab || 'overview');
 
   const { data: aquarium, isLoading, error, refetch } = useQuery({
     queryKey: queryKeys.aquariums.detail(id!),
@@ -196,7 +200,7 @@ export default function AquariumDetail() {
           )}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="flex overflow-x-auto w-full max-w-3xl mx-auto gap-1 scrollbar-hide">
             <TabsTrigger value="overview" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.overview')}</TabsTrigger>
             {!isPoolType(aquarium.type) && (
@@ -216,7 +220,7 @@ export default function AquariumDetail() {
           {!isPoolType(aquarium.type) && (
             <TabsContent value="livestock">
               <SectionErrorBoundary fallbackTitle="Failed to load livestock" featureArea={FeatureArea.AQUARIUM}>
-                <AquariumLivestock aquariumId={id!} />
+                <AquariumLivestock aquariumId={id!} initialAddNew={urlAddNew} />
               </SectionErrorBoundary>
             </TabsContent>
           )}
@@ -229,7 +233,7 @@ export default function AquariumDetail() {
 
           <TabsContent value="equipment">
             <SectionErrorBoundary fallbackTitle="Failed to load equipment" featureArea={FeatureArea.EQUIPMENT}>
-              <AquariumEquipment aquariumId={id!} aquariumType={aquarium.type} />
+              <AquariumEquipment aquariumId={id!} aquariumType={aquarium.type} initialAddNew={urlAddNew === 'true'} />
             </SectionErrorBoundary>
           </TabsContent>
 
