@@ -92,6 +92,9 @@ const Contact = lazyWithRetry(() => import("./pages/Contact"));
 const Weather = lazyWithRetry(() => import("./pages/Weather"));
 const HelpCenter = lazyWithRetry(() => import("./pages/HelpCenter"));
 const Compare = lazyWithRetry(() => import("./pages/Compare"));
+const BestAquariumApp = lazyWithRetry(() => import("./pages/BestAquariumApp"));
+const BestPoolApp = lazyWithRetry(() => import("./pages/BestPoolApp"));
+const AIWaterTesting = lazyWithRetry(() => import("./pages/AIWaterTesting"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -130,6 +133,9 @@ const App = () => (
                   <Route path="/faq" element={<PageErrorBoundary pageName="FAQ" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><FAQ /></Suspense></PageErrorBoundary>} />
                   <Route path="/help" element={<PageErrorBoundary pageName="Help Center" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><HelpCenter /></Suspense></PageErrorBoundary>} />
                   <Route path="/compare" element={<PageErrorBoundary pageName="Compare" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Compare /></Suspense></PageErrorBoundary>} />
+                  <Route path="/best-aquarium-app" element={<PageErrorBoundary pageName="Best Aquarium App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestAquariumApp /></Suspense></PageErrorBoundary>} />
+                  <Route path="/best-pool-app" element={<PageErrorBoundary pageName="Best Pool App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestPoolApp /></Suspense></PageErrorBoundary>} />
+                  <Route path="/ai-water-testing" element={<PageErrorBoundary pageName="AI Water Testing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><AIWaterTesting /></Suspense></PageErrorBoundary>} />
                   <Route path="/contact" element={<PageErrorBoundary pageName="Contact" featureArea="general"><Suspense fallback={<FormSkeleton />}><Contact /></Suspense></PageErrorBoundary>} />
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
                   <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
