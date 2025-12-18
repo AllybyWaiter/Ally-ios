@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX, CloudLightning } from 'lucide-react';
+import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX, CloudLightning, HeartPulse } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -244,6 +244,53 @@ export default function NotificationSettings() {
                   disabled={!isSubscribed}
                 />
               </div>
+            )}
+          </div>
+
+          {/* Health Score Alerts */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="health-alerts" className="flex items-center gap-2">
+                  <HeartPulse className="h-4 w-4 text-rose-500" />
+                  Health Score Alerts
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when any aquarium's health score drops below 50%
+                </p>
+              </div>
+              <Switch
+                id="health-alerts"
+                checked={preferences.health_alerts_enabled}
+                onCheckedChange={(checked) => updatePreferences({ health_alerts_enabled: checked })}
+                disabled={!isSubscribed}
+              />
+            </div>
+            {preferences.health_alerts_enabled && (
+              <>
+                <div className="flex items-center justify-between pl-6 border-l-2 border-muted">
+                  <Label htmlFor="sound-health" className="text-sm flex items-center gap-2">
+                    {preferences.sound_health_alerts ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                    Sound & vibration
+                  </Label>
+                  <Switch
+                    id="sound-health"
+                    checked={preferences.sound_health_alerts}
+                    onCheckedChange={(checked) => updatePreferences({ sound_health_alerts: checked })}
+                    disabled={!isSubscribed}
+                  />
+                </div>
+                <div className="pl-6 border-l-2 border-muted">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sendTestNotification('health_alert')}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Test Health Alert
+                  </Button>
+                </div>
+              </>
             )}
           </div>
 

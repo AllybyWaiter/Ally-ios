@@ -12,6 +12,7 @@ interface NotificationPreferences {
   water_alerts_enabled: boolean;
   announcements_enabled: boolean;
   weather_alerts_enabled: boolean;
+  health_alerts_enabled: boolean;
   reminder_hours_before: number;
   quiet_hours_start: string | null;
   quiet_hours_end: string | null;
@@ -19,6 +20,7 @@ interface NotificationPreferences {
   sound_water_alerts: boolean;
   sound_announcements: boolean;
   sound_weather_alerts: boolean;
+  sound_health_alerts: boolean;
 }
 
 const defaultPreferences: NotificationPreferences = {
@@ -27,6 +29,7 @@ const defaultPreferences: NotificationPreferences = {
   water_alerts_enabled: true,
   announcements_enabled: true,
   weather_alerts_enabled: false,
+  health_alerts_enabled: true,
   reminder_hours_before: 24,
   quiet_hours_start: null,
   quiet_hours_end: null,
@@ -34,6 +37,7 @@ const defaultPreferences: NotificationPreferences = {
   sound_water_alerts: true,
   sound_announcements: true,
   sound_weather_alerts: true,
+  sound_health_alerts: true,
 };
 
 export function usePushNotifications() {
@@ -94,6 +98,7 @@ export function usePushNotifications() {
             water_alerts_enabled: prefs.water_alerts_enabled,
             announcements_enabled: prefs.announcements_enabled,
             weather_alerts_enabled: prefs.weather_alerts_enabled ?? false,
+            health_alerts_enabled: prefs.health_alerts_enabled ?? true,
             reminder_hours_before: prefs.reminder_hours_before,
             quiet_hours_start: prefs.quiet_hours_start,
             quiet_hours_end: prefs.quiet_hours_end,
@@ -101,6 +106,7 @@ export function usePushNotifications() {
             sound_water_alerts: prefs.sound_water_alerts ?? true,
             sound_announcements: prefs.sound_announcements ?? true,
             sound_weather_alerts: prefs.sound_weather_alerts ?? true,
+            sound_health_alerts: prefs.sound_health_alerts ?? true,
           });
         }
 
@@ -284,7 +290,7 @@ export function usePushNotifications() {
   }, [user, preferences]);
 
   // Send a test notification with specific type
-  const sendTestNotification = useCallback(async (notificationType: 'task_reminder' | 'water_alert' | 'announcement' | 'weather_alert' = 'task_reminder') => {
+  const sendTestNotification = useCallback(async (notificationType: 'task_reminder' | 'water_alert' | 'announcement' | 'weather_alert' | 'health_alert' = 'task_reminder') => {
     if (!user || !isSubscribed) return false;
 
     const testMessages = {
@@ -292,6 +298,7 @@ export function usePushNotifications() {
       water_alert: { title: 'Water Alert', body: 'This is how water alerts feel! 💧' },
       announcement: { title: 'Announcement', body: 'This is how announcements feel! 📢' },
       weather_alert: { title: '⛈️ Severe Weather Alert', body: 'This is how severe weather alerts feel! 🌪️' },
+      health_alert: { title: '⚠️ Health Score Alert', body: 'This is how health score alerts feel! 📊' },
     };
 
     const message = testMessages[notificationType];
