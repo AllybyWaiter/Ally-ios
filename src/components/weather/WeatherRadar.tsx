@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css'; // Critical: ensure Leaflet CSS is loaded
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -177,6 +178,8 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
 }
 
 export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps) {
+  console.log('[Radar] WeatherRadar component rendering', { latitude, longitude });
+  
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -193,6 +196,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
 
   // Fix Leaflet default marker icon inside useEffect to prevent iOS PWA module-level crashes
   useEffect(() => {
+    console.log('[Radar] Configuring Leaflet icons...');
     try {
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
@@ -200,29 +204,33 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       });
+      console.log('[Radar] Leaflet icons configured, setting leafletReady = true');
       setLeafletReady(true);
     } catch (err) {
-      console.error('Failed to configure Leaflet icons:', err);
+      console.error('[Radar] Failed to configure Leaflet icons:', err);
       // Still mark as ready - marker will just use default broken icon
       setLeafletReady(true);
     }
   }, []);
 
-  // Signal ready when leaflet is configured AND map has had time to render
+  // Signal ready when leaflet is configured - INDEPENDENT of data loading
+  // This prevents timeout if API is slow, as the map itself is ready to display
   useEffect(() => {
-    if (leafletReady && !isLoading && onReady) {
-      // Delay slightly to ensure DOM is painted and tiles have started loading
+    if (leafletReady && onReady) {
+      console.log('[Radar] leafletReady is true, scheduling onReady callback');
+      // Delay slightly to ensure DOM is painted and map container is mounted
       const timer = setTimeout(() => {
-        console.log('[Radar] Signaling onReady');
+        console.log('[Radar] Signaling onReady (map initialized)');
         onReady();
-      }, 200);
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [leafletReady, isLoading, onReady]);
+  }, [leafletReady, onReady]); // Removed isLoading dependency - signal ready once map is initialized
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
     const fetchRadarFrames = async () => {
+      console.log('[Radar] Starting RainViewer fetch...');
       try {
         setIsLoading(true);
         setError(null);
@@ -231,12 +239,14 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         
         const data: RainViewerResponse = await response.json();
         const allFrames = [...data.radar.past, ...data.radar.nowcast];
+        console.log('[Radar] RainViewer fetch complete, frames:', allFrames.length);
         setFrames(allFrames);
         setCurrentFrameIndex(data.radar.past.length - 1);
       } catch (err) {
         setError('Unable to load radar data');
-        console.error('Radar fetch error:', err);
+        console.error('[Radar] Radar fetch error:', err);
       } finally {
+        console.log('[Radar] Setting isLoading = false');
         setIsLoading(false);
       }
     };
