@@ -1,5 +1,6 @@
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
@@ -18,7 +19,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 const WaterTests = () => {
-  const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const urlAquariumId = searchParams.get('aquariumId');
+  const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(urlAquariumId);
   const { t } = useTranslation();
 
   const { data: aquariums, isLoading } = useQuery({
@@ -38,10 +41,18 @@ const WaterTests = () => {
     },
   });
 
-  // Auto-select first aquarium if none selected
-  if (!selectedAquariumId && aquariums && aquariums.length > 0) {
-    setSelectedAquariumId(aquariums[0].id);
-  }
+  // Auto-select aquarium from URL param or first available
+  useEffect(() => {
+    if (aquariums && aquariums.length > 0) {
+      // Check if URL param exists and is valid
+      if (urlAquariumId && aquariums.some(a => a.id === urlAquariumId)) {
+        setSelectedAquariumId(urlAquariumId);
+      } else if (!selectedAquariumId) {
+        // Fallback to first aquarium
+        setSelectedAquariumId(aquariums[0].id);
+      }
+    }
+  }, [aquariums, urlAquariumId]);
 
   const selectedAquarium = aquariums?.find((a) => a.id === selectedAquariumId);
 
