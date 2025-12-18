@@ -120,7 +120,7 @@ export default function Weather() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
+        <main className="container mx-auto px-4 pt-24 pb-24 md:pb-8 mt-safe">
           <div className="max-w-4xl mx-auto space-y-4">
             <Skeleton className="h-48 w-full rounded-xl" />
             <Skeleton className="h-24 w-full rounded-xl" />
@@ -141,7 +141,7 @@ export default function Weather() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
+        <main className="container mx-auto px-4 pt-24 pb-24 md:pb-8 mt-safe">
           <div className="max-w-md mx-auto">
             <Card className="glass-card">
               <CardContent className="p-8 text-center">
@@ -171,7 +171,7 @@ export default function Weather() {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
+        <main className="container mx-auto px-4 pt-24 pb-24 md:pb-8 mt-safe">
           <div className="max-w-2xl mx-auto">
             <Card className="glass-card">
               <CardContent className="p-8 text-center">
@@ -224,7 +224,7 @@ export default function Weather() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container mx-auto px-4 pt-28 pb-24 md:pb-8">
+      <main className="container mx-auto px-4 pt-24 pb-24 md:pb-8 mt-safe">
         <div className="max-w-4xl mx-auto space-y-4">
           {/* Header */}
           <div className="flex items-center justify-between">
