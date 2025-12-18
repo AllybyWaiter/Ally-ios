@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward, Radar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Play, Pause, SkipBack, SkipForward, Radar, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 
 // Fix Leaflet default marker icon
@@ -27,10 +29,53 @@ interface RainViewerResponse {
   };
 }
 
+interface WeatherAlert {
+  id: string;
+  headline: string;
+  severity: 'Extreme' | 'Severe' | 'Moderate' | 'Minor' | 'Unknown';
+  event: string;
+  areaDesc: string;
+  expires: string;
+  description: string;
+  instruction: string | null;
+  geometry: GeoJSON.Geometry | null;
+}
+
 interface WeatherRadarProps {
   latitude: number;
   longitude: number;
 }
+
+// Severity color mapping
+const getSeverityColor = (severity: string): string => {
+  switch (severity) {
+    case 'Extreme':
+      return '#dc2626'; // Red
+    case 'Severe':
+      return '#ea580c'; // Orange-red
+    case 'Moderate':
+      return '#f97316'; // Orange
+    case 'Minor':
+      return '#eab308'; // Yellow
+    default:
+      return '#6b7280'; // Gray
+  }
+};
+
+const getSeverityBgClass = (severity: string): string => {
+  switch (severity) {
+    case 'Extreme':
+      return 'bg-red-500/20 text-red-400 border-red-500/50';
+    case 'Severe':
+      return 'bg-orange-500/20 text-orange-400 border-orange-500/50';
+    case 'Moderate':
+      return 'bg-amber-500/20 text-amber-400 border-amber-500/50';
+    case 'Minor':
+      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+    default:
+      return 'bg-muted text-muted-foreground border-border';
+  }
+};
 
 // Component to update map center when coordinates change
 function MapUpdater({ latitude, longitude }: { latitude: number; longitude: number }) {
@@ -71,6 +116,40 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
   return null;
 }
 
+// Alert polygons layer
+function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlerts: boolean }) {
+  if (!showAlerts) return null;
+
+  return (
+    <>
+      {alerts.map((alert) => {
+        if (!alert.geometry) return null;
+        
+        const geoJsonData: GeoJSON.Feature = {
+          type: 'Feature',
+          properties: { severity: alert.severity, event: alert.event },
+          geometry: alert.geometry,
+        };
+
+        return (
+          <GeoJSON
+            key={alert.id}
+            data={geoJsonData}
+            style={{
+              color: getSeverityColor(alert.severity),
+              weight: 2,
+              opacity: 0.8,
+              fillColor: getSeverityColor(alert.severity),
+              fillOpacity: 0.25,
+              dashArray: '5, 5',
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
@@ -78,6 +157,12 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
+
+  // Alert state
+  const [alerts, setAlerts] = useState<WeatherAlert[]>([]);
+  const [showAlerts, setShowAlerts] = useState(true);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [alertsLoading, setAlertsLoading] = useState(false);
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
@@ -91,7 +176,7 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
         const data: RainViewerResponse = await response.json();
         const allFrames = [...data.radar.past, ...data.radar.nowcast];
         setFrames(allFrames);
-        setCurrentFrameIndex(data.radar.past.length - 1); // Start at most recent past frame
+        setCurrentFrameIndex(data.radar.past.length - 1);
       } catch (err) {
         setError('Unable to load radar data');
         console.error('Radar fetch error:', err);
@@ -101,10 +186,62 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
     };
 
     fetchRadarFrames();
-    // Refresh radar data every 10 minutes
     const refreshInterval = setInterval(fetchRadarFrames, 10 * 60 * 1000);
     return () => clearInterval(refreshInterval);
   }, []);
+
+  // Fetch weather alerts from NWS API (US only)
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        setAlertsLoading(true);
+        const response = await fetch(
+          `https://api.weather.gov/alerts/active?point=${latitude},${longitude}&status=actual`,
+          { headers: { 'User-Agent': 'AllyByWaiter/1.0' } }
+        );
+        
+        if (!response.ok) {
+          // NWS API only works in US - graceful fallback
+          if (response.status === 404) {
+            setAlerts([]);
+            return;
+          }
+          throw new Error('Failed to fetch alerts');
+        }
+        
+        const data = await response.json();
+        const parsedAlerts: WeatherAlert[] = (data.features || []).map((feature: any) => ({
+          id: feature.id,
+          headline: feature.properties.headline || feature.properties.event,
+          severity: feature.properties.severity || 'Unknown',
+          event: feature.properties.event,
+          areaDesc: feature.properties.areaDesc,
+          expires: feature.properties.expires,
+          description: feature.properties.description || '',
+          instruction: feature.properties.instruction,
+          geometry: feature.geometry,
+        }));
+        
+        // Sort by severity
+        const severityOrder = ['Extreme', 'Severe', 'Moderate', 'Minor', 'Unknown'];
+        parsedAlerts.sort((a, b) => 
+          severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity)
+        );
+        
+        setAlerts(parsedAlerts);
+      } catch (err) {
+        console.error('Alert fetch error:', err);
+        setAlerts([]);
+      } finally {
+        setAlertsLoading(false);
+      }
+    };
+
+    fetchAlerts();
+    // Refresh alerts every 5 minutes
+    const refreshInterval = setInterval(fetchAlerts, 5 * 60 * 1000);
+    return () => clearInterval(refreshInterval);
+  }, [latitude, longitude]);
 
   // Animation loop
   useEffect(() => {
@@ -165,10 +302,32 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
   return (
     <Card className="glass-card overflow-hidden">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Radar className="h-5 w-5" />
-          Weather Radar
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Radar className="h-5 w-5" />
+            Weather Radar
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {alerts.length > 0 && (
+              <Badge 
+                variant="outline" 
+                className={`${getSeverityBgClass(alerts[0]?.severity)} text-xs`}
+              >
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {alerts.length}
+              </Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAlerts(!showAlerts)}
+              className={`h-8 px-2 ${showAlerts ? 'text-primary' : 'text-muted-foreground'}`}
+              title={showAlerts ? 'Hide alerts on map' : 'Show alerts on map'}
+            >
+              <AlertTriangle className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         {/* Map Container */}
@@ -193,6 +352,7 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
               framePath={currentFrame?.path ?? null} 
               opacity={0.7} 
             />
+            <AlertsLayer alerts={alerts} showAlerts={showAlerts} />
             <Marker position={[latitude, longitude]} />
             <MapUpdater latitude={latitude} longitude={longitude} />
           </MapContainer>
@@ -264,6 +424,75 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
             <span>Heavy</span>
           </div>
         </div>
+
+        {/* Alert List Panel */}
+        {alerts.length > 0 && (
+          <Collapsible open={alertsOpen} onOpenChange={setAlertsOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between px-4 py-3 border-t border-border/50 rounded-none h-auto"
+              >
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <span className="font-medium text-sm">
+                    {alerts.length} Active Alert{alerts.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                {alertsOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="max-h-64 overflow-y-auto divide-y divide-border/50">
+                {alerts.map((alert) => (
+                  <div key={alert.id} className="p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge 
+                            variant="outline" 
+                            className={`${getSeverityBgClass(alert.severity)} text-xs`}
+                          >
+                            {alert.severity}
+                          </Badge>
+                          <span className="font-medium text-sm truncate">{alert.event}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {alert.headline}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium">Areas:</span> {alert.areaDesc}
+                    </div>
+                    {alert.expires && (
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Expires:</span>{' '}
+                        {format(new Date(alert.expires), 'MMM d, h:mm a')}
+                      </div>
+                    )}
+                    {alert.instruction && (
+                      <div className="text-xs bg-muted/50 rounded p-2 mt-2">
+                        <span className="font-medium">Instructions:</span>{' '}
+                        <span className="text-muted-foreground">{alert.instruction}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {alertsLoading && alerts.length === 0 && (
+          <div className="px-4 py-2 border-t border-border/50 text-xs text-muted-foreground text-center">
+            Checking for weather alerts...
+          </div>
+        )}
       </CardContent>
     </Card>
   );
