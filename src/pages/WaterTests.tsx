@@ -21,7 +21,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 const WaterTests = () => {
   const [searchParams] = useSearchParams();
   const urlAquariumId = searchParams.get('aquariumId');
+  const urlTab = searchParams.get('tab');
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(urlAquariumId);
+  const [activeTab, setActiveTab] = useState(urlTab || 'log');
   const { t } = useTranslation();
 
   const { data: aquariums, isLoading } = useQuery({
@@ -119,7 +121,7 @@ const WaterTests = () => {
           </select>
         </div>
 
-        <Tabs defaultValue="log" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full md:w-auto grid-cols-3 mb-6">
             <TabsTrigger value="log">{t('waterTests.logTest')}</TabsTrigger>
             <TabsTrigger value="history">{t('waterTests.history')}</TabsTrigger>
