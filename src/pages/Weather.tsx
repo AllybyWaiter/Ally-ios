@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon, Radar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,11 +20,19 @@ import {
   AquaticInsights,
 } from '@/components/weather';
 
-// Lazy load WeatherRadar to prevent iOS PWA module-level crashes with Leaflet
-const LazyWeatherRadar = React.lazy(() => 
-  import('@/components/weather/WeatherRadar').then(module => ({ 
-    default: module.WeatherRadar 
-  }))
+// Lazy load WeatherRadar to prevent iOS PWA module-level crashes with Leaflet.
+// If the chunk fails to load (common with stale SW caches), throw so our error boundary can show fallback UI.
+const LazyWeatherRadar = React.lazy(() =>
+  import('@/components/weather/WeatherRadar')
+    .then((module) => ({ default: module.WeatherRadar }))
+    .catch((err) => {
+      console.error('Failed to lazy-load WeatherRadar:', err);
+      return {
+        default: function WeatherRadarLazyLoadError() {
+          throw err;
+        },
+      };
+    })
 );
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
@@ -48,8 +56,22 @@ const weatherLabels: Record<WeatherCondition, string> = {
 // Error boundary wrapper for WeatherRadar to prevent iOS PWA crashes
 function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longitude: number }) {
   const [hasError, setHasError] = useState(false);
+  const [isTimedOut, setIsTimedOut] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
-  if (hasError) {
+  useEffect(() => {
+    setIsTimedOut(false);
+    const id = window.setTimeout(() => setIsTimedOut(true), 10000);
+    return () => window.clearTimeout(id);
+  }, [retryNonce]);
+
+  const handleRetry = () => {
+    setHasError(false);
+    setIsTimedOut(false);
+    setRetryNonce((n) => n + 1);
+  };
+
+  if (hasError || isTimedOut) {
     return (
       <Card className="glass-card">
         <CardHeader className="pb-2">
@@ -61,7 +83,7 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
         <CardContent>
           <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-3">
             <p>Unable to load radar</p>
-            <Button variant="outline" size="sm" onClick={() => setHasError(false)}>
+            <Button variant="outline" size="sm" onClick={handleRetry}>
               Try Again
             </Button>
           </div>
@@ -71,23 +93,25 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
   }
 
   return (
-    <ErrorBoundaryRadar onError={() => setHasError(true)}>
-      <Suspense fallback={
-        <Card className="glass-card overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Radar className="h-5 w-5" />
-              Weather Radar
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="h-64 md:h-80 flex items-center justify-center">
-              <div className="animate-pulse text-muted-foreground">Loading radar...</div>
-            </div>
-          </CardContent>
-        </Card>
-      }>
-        <LazyWeatherRadar latitude={latitude} longitude={longitude} />
+    <ErrorBoundaryRadar key={retryNonce} onError={() => setHasError(true)}>
+      <Suspense
+        fallback={
+          <Card className="glass-card overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Radar className="h-5 w-5" />
+                Weather Radar
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-64 md:h-80 flex items-center justify-center">
+                <div className="animate-pulse text-muted-foreground">Loading radar...</div>
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <LazyWeatherRadar key={retryNonce} latitude={latitude} longitude={longitude} />
       </Suspense>
     </ErrorBoundaryRadar>
   );
