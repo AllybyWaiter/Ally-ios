@@ -23,13 +23,25 @@ import {
 import { Loader2 } from 'lucide-react';
 
 // Lazy load WeatherRadar to prevent iOS PWA module-level crashes with Leaflet.
+// Includes import timeout to handle stale service worker cache issues.
 const LazyWeatherRadar = React.lazy(() => {
   console.log('[Radar] Starting lazy import...');
-  return import('@/components/weather/WeatherRadar')
+  
+  const importPromise = import('@/components/weather/WeatherRadar')
     .then((module) => {
       console.log('[Radar] Import successful');
       return { default: module.WeatherRadar };
-    })
+    });
+  
+  // Timeout promise - reject if import takes too long (stale cache issue)
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      console.error('[Radar] Import timeout after 10s');
+      reject(new Error('Radar module import timeout - try clearing cache'));
+    }, 10000);
+  });
+  
+  return Promise.race([importPromise, timeoutPromise])
     .catch((err) => {
       console.error('[Radar] Import failed:', err);
       return {
