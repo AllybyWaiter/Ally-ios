@@ -213,8 +213,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-2xl">
+    <div 
+      className="min-h-[100dvh] flex items-start md:items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4 pb-28 md:pb-4 overflow-y-auto"
+      data-onboarding="true"
+    >
+      <Card className="w-full max-w-2xl my-auto">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-center gap-2">
             <img src={logo} alt="Ally Logo" className="w-12 h-12 object-contain" />
