@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,9 @@ import { queryKeys } from '@/lib/queryKeys';
 import { fetchLivestock, deleteLivestock, type Livestock } from '@/infrastructure/queries/livestock';
 import { fetchPlants, deletePlant, type Plant } from '@/infrastructure/queries/plants';
 
-interface AquariumLivestockProps {
+export interface AquariumLivestockProps {
   aquariumId: string;
+  initialAddNew?: string | null; // 'livestock' | 'plant' | null
 }
 
 const categoryIcons = {
@@ -33,7 +34,7 @@ const placementIcons = {
   floating: Leaf,
 };
 
-export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
+export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivestockProps) {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -45,6 +46,15 @@ export function AquariumLivestock({ aquariumId }: AquariumLivestockProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingType, setDeletingType] = useState<'livestock' | 'plant'>('livestock');
+
+  // Auto-open dialog based on URL param
+  useEffect(() => {
+    if (initialAddNew === 'livestock') {
+      setLivestockDialogOpen(true);
+    } else if (initialAddNew === 'plant') {
+      setPlantDialogOpen(true);
+    }
+  }, [initialAddNew]);
 
   // Fetch livestock using useQuery
   const { data: livestock = [], isLoading: livestockLoading } = useQuery({
