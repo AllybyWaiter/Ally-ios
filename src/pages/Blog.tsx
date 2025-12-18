@@ -7,6 +7,7 @@ import { formatDate } from '@/lib/formatters';
 import { Eye, Clock } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { SEO, StructuredData, generateBreadcrumbData } from '@/components/SEO';
 
 interface BlogPost {
   id: string;
@@ -42,6 +43,15 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/20">
+      <SEO
+        title="Blog - Aquarium, Pool & Spa Care Tips and Guides"
+        description="Expert tips, guides, and insights for aquarium, pool, and spa enthusiasts. Learn about water chemistry, maintenance best practices, and get the most out of Ally."
+        path="/blog"
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'Blog', url: '/blog' }]) }}
+      />
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-24">
