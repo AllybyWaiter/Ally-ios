@@ -4,13 +4,20 @@ import { useAuth } from '@/hooks/useAuth';
 
 export type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'snow' | 'storm' | 'fog';
 
-export interface ForecastDay {
-  date: string;
-  condition: WeatherCondition;
-  tempMax: number;
-  tempMin: number;
-  windSpeed: number;
-  uvIndexMax: number;
+export interface AirQuality {
+  aqi: number;
+  pm25: number;
+  pm10: number;
+  category: 'Good' | 'Moderate' | 'Unhealthy for Sensitive Groups' | 'Unhealthy' | 'Very Unhealthy' | 'Hazardous';
+}
+
+export interface MoonPhase {
+  phase: string;
+  illumination: number;
+  emoji: string;
+  dayInCycle: number;
+  daysUntilFull: number;
+  daysUntilNew: number;
 }
 
 export interface HourlyForecast {
@@ -18,9 +25,23 @@ export interface HourlyForecast {
   temperature: number;
   condition: WeatherCondition;
   isDay: boolean;
+  precipitationProbability: number;
+  precipitation: number;
+}
+
+export interface ForecastDay {
+  date: string;
+  condition: WeatherCondition;
+  tempMax: number;
+  tempMin: number;
+  windSpeed: number;
+  uvIndexMax: number;
+  precipitationProbabilityMax: number;
+  precipitationSum: number;
 }
 
 export interface WeatherData {
+  // Core weather
   condition: WeatherCondition;
   weatherCode: number;
   temperature: number;
@@ -34,8 +55,27 @@ export interface WeatherData {
   sunrise: string | null;
   sunset: string | null;
   locationName: string | null;
+  
+  // Forecasts
   hourlyForecast: HourlyForecast[];
   forecast: ForecastDay[];
+  
+  // Precipitation
+  precipitationProbability: number;
+  precipitationAmount: number;
+  
+  // Air Quality
+  airQuality: AirQuality | null;
+  
+  // Atmospheric
+  pressure: number;
+  pressureTrend: 'rising' | 'falling' | 'steady';
+  dewPoint: number;
+  cloudCover: number;
+  visibility: number;
+  
+  // Moon
+  moonPhase: MoonPhase;
 }
 
 interface WeatherState {
@@ -154,7 +194,7 @@ export function useWeather() {
       {
         enableHighAccuracy: forceRefresh,
         timeout: 10000,
-        maximumAge: forceRefresh ? 0 : 300000, // Force fresh GPS on refresh, otherwise use cached
+        maximumAge: forceRefresh ? 0 : 300000,
       }
     );
   }, [user?.id, fetchWeather]);
@@ -184,7 +224,7 @@ export function useWeather() {
             return;
           }
 
-          // Fetch fresh weather using current GPS (like native weather app)
+          // Fetch fresh weather using current GPS
           await fetchWeatherForCurrentLocation();
         }
       } finally {
@@ -197,7 +237,7 @@ export function useWeather() {
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(CACHE_KEY);
-    await fetchWeatherForCurrentLocation(true); // Force fresh GPS location
+    await fetchWeatherForCurrentLocation(true);
   }, [fetchWeatherForCurrentLocation]);
 
   return {
