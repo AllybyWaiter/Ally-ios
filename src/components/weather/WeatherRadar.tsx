@@ -9,13 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Play, Pause, SkipBack, SkipForward, Radar, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 
-// Fix Leaflet default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
+// Leaflet icon fix is applied inside component useEffect to prevent iOS PWA module-level crashes
 
 interface RadarFrame {
   time: number;
@@ -116,6 +110,15 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
   return null;
 }
 
+// Validate GeoJSON geometry before rendering
+function isValidGeometry(geom: any): geom is GeoJSON.Geometry {
+  if (!geom || typeof geom !== 'object') return false;
+  if (!geom.type) return false;
+  // MultiPolygon, Polygon, Point, etc. have coordinates
+  // GeometryCollection has geometries
+  return Array.isArray(geom.coordinates) || Array.isArray(geom.geometries);
+}
+
 // Alert polygons layer
 function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlerts: boolean }) {
   if (!showAlerts) return null;
@@ -123,28 +126,34 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
   return (
     <>
       {alerts.map((alert) => {
-        if (!alert.geometry) return null;
+        // Validate geometry before rendering
+        if (!alert.geometry || !isValidGeometry(alert.geometry)) return null;
         
-        const geoJsonData: GeoJSON.Feature = {
-          type: 'Feature',
-          properties: { severity: alert.severity, event: alert.event },
-          geometry: alert.geometry,
-        };
+        try {
+          const geoJsonData: GeoJSON.Feature = {
+            type: 'Feature',
+            properties: { severity: alert.severity, event: alert.event },
+            geometry: alert.geometry,
+          };
 
-        return (
-          <GeoJSON
-            key={alert.id}
-            data={geoJsonData}
-            style={{
-              color: getSeverityColor(alert.severity),
-              weight: 2,
-              opacity: 0.8,
-              fillColor: getSeverityColor(alert.severity),
-              fillOpacity: 0.25,
-              dashArray: '5, 5',
-            }}
-          />
-        );
+          return (
+            <GeoJSON
+              key={alert.id}
+              data={geoJsonData}
+              style={{
+                color: getSeverityColor(alert.severity),
+                weight: 2,
+                opacity: 0.8,
+                fillColor: getSeverityColor(alert.severity),
+                fillOpacity: 0.25,
+                dashArray: '5, 5',
+              }}
+            />
+          );
+        } catch (err) {
+          console.error('Failed to render alert geometry:', alert.id, err);
+          return null;
+        }
       })}
     </>
   );
@@ -156,6 +165,7 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [leafletReady, setLeafletReady] = useState(false);
   const intervalRef = useRef<number | null>(null);
 
   // Alert state
@@ -163,6 +173,23 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
   const [showAlerts, setShowAlerts] = useState(true);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [alertsLoading, setAlertsLoading] = useState(false);
+
+  // Fix Leaflet default marker icon inside useEffect to prevent iOS PWA module-level crashes
+  useEffect(() => {
+    try {
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      });
+      setLeafletReady(true);
+    } catch (err) {
+      console.error('Failed to configure Leaflet icons:', err);
+      // Still mark as ready - marker will just use default broken icon
+      setLeafletReady(true);
+    }
+  }, []);
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
