@@ -67,6 +67,7 @@ export function LazyLoadWithTimeout({
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -101,6 +102,7 @@ export function LazyLoadWithTimeout({
 
   const handleRetry = useCallback(() => {
     setHasError(false);
+    setErrorMessage(null);
     setIsTimedOut(false);
     setIsLoaded(false);
     setRetryNonce((n) => n + 1);
@@ -111,10 +113,15 @@ export function LazyLoadWithTimeout({
     setIsLoaded(true);
   }, []);
 
-  const handleError = useCallback((error: Error) => {
-    setHasError(true);
-    onError?.(error);
-  }, [onError]);
+  const handleError = useCallback(
+    (error: Error) => {
+      console.error('[LazyLoadWithTimeout] Caught lazy component error:', error);
+      setErrorMessage(error?.message || String(error));
+      setHasError(true);
+      onError?.(error);
+    },
+    [onError]
+  );
 
   if (hasError || isTimedOut) {
     return (
@@ -131,6 +138,11 @@ export function LazyLoadWithTimeout({
           <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-3">
             <AlertTriangle className="h-8 w-8 text-yellow-500" />
             <p>{errorTitle}</p>
+            {hasError && errorMessage && (
+              <p className="max-w-[32rem] text-center text-xs text-muted-foreground/80">
+                {errorMessage}
+              </p>
+            )}
             <Button variant="outline" size="sm" onClick={handleRetry} className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Try Again
