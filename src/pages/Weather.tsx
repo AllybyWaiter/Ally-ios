@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon, Radar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,20 +54,57 @@ const weatherLabels: Record<WeatherCondition, string> = {
 };
 
 // Error boundary wrapper for WeatherRadar to prevent iOS PWA crashes
+function LoadedCallback({
+  children,
+  onLoad,
+}: {
+  children: React.ReactNode;
+  onLoad: () => void;
+}) {
+  useEffect(() => {
+    onLoad();
+  }, [onLoad]);
+
+  return <>{children}</>;
+}
+
 function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longitude: number }) {
   const [hasError, setHasError] = useState(false);
   const [isTimedOut, setIsTimedOut] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
+  const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     setIsTimedOut(false);
-    const id = window.setTimeout(() => setIsTimedOut(true), 10000);
-    return () => window.clearTimeout(id);
+    setIsLoaded(false);
+
+    if (timeoutRef.current != null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    timeoutRef.current = window.setTimeout(() => setIsTimedOut(true), 10000);
+
+    return () => {
+      if (timeoutRef.current != null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, [retryNonce]);
+
+  useEffect(() => {
+    if (isLoaded && timeoutRef.current != null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }, [isLoaded]);
 
   const handleRetry = () => {
     setHasError(false);
     setIsTimedOut(false);
+    setIsLoaded(false);
     setRetryNonce((n) => n + 1);
   };
 
@@ -111,7 +148,9 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
           </Card>
         }
       >
-        <LazyWeatherRadar key={retryNonce} latitude={latitude} longitude={longitude} />
+        <LoadedCallback onLoad={() => setIsLoaded(true)}>
+          <LazyWeatherRadar key={retryNonce} latitude={latitude} longitude={longitude} />
+        </LoadedCallback>
       </Suspense>
     </ErrorBoundaryRadar>
   );
