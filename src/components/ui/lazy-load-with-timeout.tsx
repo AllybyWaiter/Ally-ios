@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface LazyLoadWithTimeoutProps {
-  children: React.ReactNode;
+  /** 
+   * Children can be a ReactNode (auto-signals ready on mount) 
+   * or a render function receiving onReady callback for manual signaling
+   */
+  children: React.ReactNode | ((onReady: () => void) => React.ReactNode);
   fallback?: React.ReactNode;
   timeoutMs?: number;
   errorTitle?: string;
@@ -14,7 +18,7 @@ interface LazyLoadWithTimeoutProps {
   onTimeout?: () => void;
 }
 
-// Wrapper to signal successful load
+// Wrapper to signal successful load on mount (for simple lazy components)
 function LoadedCallback({
   children,
   onLoad,
@@ -145,10 +149,20 @@ export function LazyLoadWithTimeout({
     </Card>
   );
 
+  // Determine if children is a render function or ReactNode
+  const isRenderProp = typeof children === 'function';
+
   return (
     <LazyErrorBoundary key={retryNonce} onError={handleError}>
       <Suspense fallback={fallback || defaultFallback}>
-        <LoadedCallback onLoad={handleLoad}>{children}</LoadedCallback>
+        {isRenderProp ? (
+          // Render prop pattern: pass handleLoad as onReady callback
+          // Component must call onReady when truly ready
+          children(handleLoad)
+        ) : (
+          // ReactNode pattern: auto-signal ready on mount
+          <LoadedCallback onLoad={handleLoad}>{children}</LoadedCallback>
+        )}
       </Suspense>
     </LazyErrorBoundary>
   );
