@@ -9,6 +9,10 @@ Sitemap: https://allybywaiter.com/sitemap.xml
 # llms.txt: https://allybywaiter.com/llms.txt
 # llms-full.txt: https://allybywaiter.com/llms-full.txt
 
+# AI Plugin Manifest (ChatGPT Plugin Spec)
+# See: https://allybywaiter.com/.well-known/ai-plugin.json
+# See: https://allybywaiter.com/.well-known/ai-context.json
+
 # AI Crawlers - Explicitly Allowed
 User-agent: GPTBot
 Allow: /
@@ -99,3 +103,5 @@ Allow: /apple-touch-icon.png
 Allow: /manifest.webmanifest
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /.well-known/ai-plugin.json
+Allow: /.well-known/ai-context.json
