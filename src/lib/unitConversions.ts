@@ -158,3 +158,104 @@ export const getUVLevel = (uvIndex: number | null | undefined): UVLevel => {
   if (uvIndex <= 10) return { label: 'Very High', colorClass: 'text-red-600 dark:text-red-400' };
   return { label: 'Extreme', colorClass: 'text-purple-600 dark:text-purple-400' };
 };
+
+// Pressure conversions (hPa to inHg)
+export const hPaToInHg = (hPa: number): number => {
+  return hPa * 0.02953;
+};
+
+export const formatPressure = (hPa: number | null | undefined, units: UnitSystem | null): string => {
+  if (hPa == null || isNaN(hPa)) return '';
+  const unitSystem = units || 'imperial';
+  
+  if (unitSystem === 'imperial') {
+    return `${hPaToInHg(hPa).toFixed(2)} inHg`;
+  }
+  return `${Math.round(hPa)} hPa`;
+};
+
+// Visibility conversions (km to miles)
+export const kmToMiles = (km: number): number => {
+  return km * 0.621371;
+};
+
+export const formatVisibility = (km: number | null | undefined, units: UnitSystem | null): string => {
+  if (km == null || isNaN(km)) return '';
+  const unitSystem = units || 'imperial';
+  
+  if (unitSystem === 'imperial') {
+    return `${kmToMiles(km).toFixed(1)} mi`;
+  }
+  return `${km.toFixed(1)} km`;
+};
+
+// Precipitation formatting (mm to inches)
+export const mmToInches = (mm: number): number => {
+  return mm * 0.0393701;
+};
+
+export const formatPrecipitation = (mm: number | null | undefined, units: UnitSystem | null): string => {
+  if (mm == null || isNaN(mm)) return '';
+  const unitSystem = units || 'imperial';
+  
+  if (unitSystem === 'imperial') {
+    return `${mmToInches(mm).toFixed(2)} in`;
+  }
+  return `${mm.toFixed(1)} mm`;
+};
+
+// Air Quality Index helpers
+export interface AQILevel {
+  label: string;
+  colorClass: string;
+  bgClass: string;
+  advice: string;
+}
+
+export const getAQILevel = (aqi: number | null | undefined): AQILevel => {
+  if (aqi == null || isNaN(aqi)) {
+    return { label: 'Unknown', colorClass: 'text-muted-foreground', bgClass: 'bg-muted', advice: 'Air quality data unavailable' };
+  }
+  if (aqi <= 50) {
+    return { label: 'Good', colorClass: 'text-green-600 dark:text-green-400', bgClass: 'bg-green-500', advice: 'Air quality is satisfactory' };
+  }
+  if (aqi <= 100) {
+    return { label: 'Moderate', colorClass: 'text-yellow-600 dark:text-yellow-400', bgClass: 'bg-yellow-500', advice: 'Acceptable for most people' };
+  }
+  if (aqi <= 150) {
+    return { label: 'Unhealthy for Sensitive', colorClass: 'text-orange-600 dark:text-orange-400', bgClass: 'bg-orange-500', advice: 'Sensitive groups should limit outdoor activity' };
+  }
+  if (aqi <= 200) {
+    return { label: 'Unhealthy', colorClass: 'text-red-600 dark:text-red-400', bgClass: 'bg-red-500', advice: 'Everyone should reduce outdoor activity' };
+  }
+  if (aqi <= 300) {
+    return { label: 'Very Unhealthy', colorClass: 'text-purple-600 dark:text-purple-400', bgClass: 'bg-purple-500', advice: 'Avoid outdoor activity' };
+  }
+  return { label: 'Hazardous', colorClass: 'text-rose-800 dark:text-rose-300', bgClass: 'bg-rose-800', advice: 'Stay indoors' };
+};
+
+// Comfort level based on dew point (in Celsius)
+export interface ComfortLevel {
+  label: string;
+  colorClass: string;
+}
+
+export const getComfortLevel = (dewPointC: number | null | undefined): ComfortLevel => {
+  if (dewPointC == null || isNaN(dewPointC)) {
+    return { label: 'Unknown', colorClass: 'text-muted-foreground' };
+  }
+  if (dewPointC < 10) return { label: 'Dry', colorClass: 'text-blue-600 dark:text-blue-400' };
+  if (dewPointC < 16) return { label: 'Comfortable', colorClass: 'text-green-600 dark:text-green-400' };
+  if (dewPointC < 18) return { label: 'Slightly Humid', colorClass: 'text-yellow-600 dark:text-yellow-400' };
+  if (dewPointC < 21) return { label: 'Humid', colorClass: 'text-orange-600 dark:text-orange-400' };
+  return { label: 'Oppressive', colorClass: 'text-red-600 dark:text-red-400' };
+};
+
+// Pressure trend icon helper
+export const getPressureTrendIcon = (trend: 'rising' | 'falling' | 'steady'): { icon: string; label: string } => {
+  switch (trend) {
+    case 'rising': return { icon: '↑', label: 'Rising' };
+    case 'falling': return { icon: '↓', label: 'Falling' };
+    default: return { icon: '→', label: 'Steady' };
+  }
+};
