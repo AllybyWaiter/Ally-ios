@@ -24,6 +24,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { parseFollowUpSuggestions, FollowUpSuggestions, type FollowUpItem } from "./FollowUpSuggestions";
+import { QuickActionChips, detectQuickActions, type QuickAction } from "./QuickActionChips";
 
 // Memoized markdown components to prevent recreation on every render
 const markdownComponents = {
@@ -98,6 +99,9 @@ interface VirtualizedMessageListProps {
   isGeneratingTTS?: boolean;
   // Follow-up suggestions
   onSelectSuggestion?: (suggestion: string) => void;
+  // Quick actions
+  aquariumId?: string | null;
+  onQuickAction?: (action: QuickAction) => void;
 }
 
 const MessageContent = memo(({ 
@@ -119,7 +123,9 @@ const MessageContent = memo(({
   speakingMessageId,
   isSpeaking,
   isGeneratingTTS,
-  onSelectSuggestion
+  onSelectSuggestion,
+  aquariumId,
+  onQuickAction
 }: {
   message: Message;
   index: number;
@@ -140,6 +146,8 @@ const MessageContent = memo(({
   isSpeaking?: boolean;
   isGeneratingTTS?: boolean;
   onSelectSuggestion?: (suggestion: string) => void;
+  aquariumId?: string | null;
+  onQuickAction?: (action: QuickAction) => void;
 }) => {
   const isEditing = editingIndex === index;
   const messageId = message.id || `msg-${index}`;
@@ -153,6 +161,14 @@ const MessageContent = memo(({
     }
     return parseFollowUpSuggestions(message.content);
   }, [message.content, message.role]);
+
+  // Detect quick actions from assistant messages
+  const quickActions = useMemo(() => {
+    if (message.role !== 'assistant' || isStreaming) {
+      return [];
+    }
+    return detectQuickActions(cleanContent, aquariumId);
+  }, [cleanContent, message.role, isStreaming, aquariumId]);
   
   // Smooth typewriter effect for streaming assistant messages
   const isTypewriterActive = isStreaming && isLastMessage && message.role === "assistant";
@@ -211,6 +227,14 @@ const MessageContent = memo(({
                 <FollowUpSuggestions 
                   suggestions={suggestions} 
                   onSelectSuggestion={onSelectSuggestion} 
+                />
+              )}
+              {/* Quick action buttons for assistant messages */}
+              {!isStreaming && quickActions.length > 0 && (
+                <QuickActionChips 
+                  actions={quickActions} 
+                  aquariumId={aquariumId}
+                  onAction={onQuickAction}
                 />
               )}
             </div>
@@ -374,7 +398,9 @@ export const VirtualizedMessageList = memo(({
   speakingMessageId,
   isSpeaking,
   isGeneratingTTS,
-  onSelectSuggestion
+  onSelectSuggestion,
+  aquariumId,
+  onQuickAction
 }: VirtualizedMessageListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -473,6 +499,8 @@ export const VirtualizedMessageList = memo(({
                 isSpeaking={isSpeaking}
                 isGeneratingTTS={isGeneratingTTS}
                 onSelectSuggestion={onSelectSuggestion}
+                aquariumId={aquariumId}
+                onQuickAction={onQuickAction}
               />
             </div>
           );
