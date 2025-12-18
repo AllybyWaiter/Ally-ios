@@ -16,7 +16,8 @@ import {
   AtmosphericCard,
   MoonPhaseWidget,
   TemperatureChart,
-  AquaticInsights
+  AquaticInsights,
+  WeatherRadar
 } from '@/components/weather';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
@@ -334,6 +335,11 @@ export default function Weather() {
               </p>
             </CardContent>
           </Card>
+
+          {/* Weather Radar */}
+          {weather.latitude != null && weather.longitude != null && (
+            <WeatherRadar latitude={weather.latitude} longitude={weather.longitude} />
+          )}
 
           {/* Hourly Forecast */}
           <HourlyForecast />
