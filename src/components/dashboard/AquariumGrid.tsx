@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,9 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, AlertCircle, MoreVertical, Pencil, Trash2, Lock } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Plus, AlertCircle, MoreVertical, Pencil, Trash2, Lock, Activity } from 'lucide-react';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 import { formatDate } from '@/lib/formatters';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useLongPress } from '@/hooks/useLongPress';
+import { QuickHealthView } from '@/components/aquarium/QuickHealthView';
+import { useAquariumHealthScore } from '@/hooks/useAquariumHealthScore';
 
 interface Aquarium {
   id: string;
@@ -31,6 +38,181 @@ interface AquariumGridProps {
   onCreateAquarium: () => void;
   onEditAquarium: (aquarium: Aquarium) => void;
   onDeleteAquarium: (aquariumId: string) => void;
+}
+
+// Health indicator badge component
+function HealthIndicator({ aquariumId }: { aquariumId: string }) {
+  const health = useAquariumHealthScore(aquariumId);
+  
+  if (health.isLoading) {
+    return (
+      <div className="w-3 h-3 rounded-full bg-muted animate-pulse" />
+    );
+  }
+
+  const hasAlerts = health.alerts > 0 || health.overdueTasks > 0;
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div 
+          className={`w-3 h-3 rounded-full transition-all ${hasAlerts ? 'animate-pulse' : ''}`}
+          style={{ backgroundColor: health.color }}
+        />
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        <p>{health.label} ({health.score}%)</p>
+        {hasAlerts && <p className="text-orange-400">Tap & hold for details</p>}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+// Individual aquarium card with hover/long-press health view
+interface AquariumCardProps {
+  aquarium: Aquarium;
+  index: number;
+  units: UnitSystem;
+  onEdit: (aquarium: Aquarium) => void;
+  onDelete: (aquariumId: string) => void;
+  t: (key: string) => string;
+}
+
+function AquariumCard({ aquarium, index, units, onEdit, onDelete, t }: AquariumCardProps) {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const handleLongPress = useCallback(() => {
+    setSheetOpen(true);
+  }, []);
+
+  const handlePress = useCallback(() => {
+    navigate(`/aquarium/${aquarium.id}`);
+  }, [navigate, aquarium.id]);
+
+  const longPressHandlers = useLongPress({
+    threshold: 500,
+    onLongPress: handleLongPress,
+    onPress: isMobile ? handlePress : undefined,
+  });
+
+  const cardContent = (
+    <Card 
+      className="glass-card animate-fade-up opacity-0 relative"
+      style={{ animationDelay: `${(index + 3) * 100}ms` }}
+      onMouseEnter={() => {
+        import('@/pages/AquariumDetail').catch(() => {});
+      }}
+      {...(isMobile ? longPressHandlers : {})}
+    >
+      {/* Health indicator badge */}
+      <TooltipProvider>
+        <div className="absolute top-3 right-3 z-10">
+          <HealthIndicator aquariumId={aquarium.id} />
+        </div>
+      </TooltipProvider>
+
+      <CardHeader className="pr-8">
+        <div className="flex justify-between items-start">
+          <div 
+            className="flex-1 cursor-pointer"
+            onClick={isMobile ? undefined : () => navigate(`/aquarium/${aquarium.id}`)}
+          >
+            <CardTitle className="flex items-center gap-2">
+              {aquarium.name}
+            </CardTitle>
+            <CardDescription className="capitalize">
+              {aquarium.type} • {formatVolume(aquarium.volume_gallons, units)}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={aquarium.status === 'active' ? 'default' : 'secondary'}>
+              {aquarium.status}
+            </Badge>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(aquarium)}>
+                  <Pencil className="w-4 h-4 mr-2" />
+                  {t('common.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => onDelete(aquarium.id)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {t('common.delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent 
+        onClick={isMobile ? undefined : () => navigate(`/aquarium/${aquarium.id}`)} 
+        className="cursor-pointer"
+      >
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t('dashboard.setupDate')}</span>
+            <span className="font-medium">
+              {formatDate(aquarium.setup_date, 'PP')}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Mobile: Use Sheet for long-press
+  if (isMobile) {
+    return (
+      <>
+        {cardContent}
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetContent side="bottom" className="max-h-[80vh] rounded-t-xl">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Health Overview
+              </SheetTitle>
+            </SheetHeader>
+            <QuickHealthView 
+              aquariumId={aquarium.id} 
+              aquariumName={aquarium.name}
+              onClose={() => setSheetOpen(false)}
+            />
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
+
+  // Desktop: Use HoverCard
+  return (
+    <HoverCard openDelay={300} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        {cardContent}
+      </HoverCardTrigger>
+      <HoverCardContent 
+        side="right" 
+        align="start" 
+        className="w-72 p-0"
+        sideOffset={8}
+      >
+        <QuickHealthView 
+          aquariumId={aquarium.id} 
+          aquariumName={aquarium.name}
+          compact
+        />
+      </HoverCardContent>
+    </HoverCard>
+  );
 }
 
 export function AquariumGrid({
@@ -131,66 +313,15 @@ export function AquariumGrid({
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {aquariums.map((aquarium, index) => (
-          <Card 
-            key={aquarium.id} 
-            className="glass-card animate-fade-up opacity-0"
-            style={{ animationDelay: `${(index + 3) * 100}ms` }}
-            onMouseEnter={() => {
-              import('@/pages/AquariumDetail').catch(() => {});
-            }}
-          >
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div 
-                  className="flex-1 cursor-pointer"
-                  onClick={() => navigate(`/aquarium/${aquarium.id}`)}
-                >
-                  <CardTitle>{aquarium.name}</CardTitle>
-                  <CardDescription className="capitalize">
-                    {aquarium.type} • {formatVolume(aquarium.volume_gallons, units)}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={aquarium.status === 'active' ? 'default' : 'secondary'}>
-                    {aquarium.status}
-                  </Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEditAquarium(aquarium)}>
-                        <Pencil className="w-4 h-4 mr-2" />
-                        {t('common.edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onDeleteAquarium(aquarium.id)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        {t('common.delete')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent 
-              onClick={() => navigate(`/aquarium/${aquarium.id}`)} 
-              className="cursor-pointer"
-            >
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t('dashboard.setupDate')}</span>
-                  <span className="font-medium">
-                    {formatDate(aquarium.setup_date, 'PP')}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <AquariumCard
+            key={aquarium.id}
+            aquarium={aquarium}
+            index={index}
+            units={units}
+            onEdit={onEditAquarium}
+            onDelete={onDeleteAquarium}
+            t={t}
+          />
         ))}
       </div>
     </>
