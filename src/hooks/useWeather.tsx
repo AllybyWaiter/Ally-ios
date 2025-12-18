@@ -41,6 +41,10 @@ export interface ForecastDay {
 }
 
 export interface WeatherData {
+  // Location coordinates
+  latitude: number;
+  longitude: number;
+  
   // Core weather
   condition: WeatherCondition;
   weatherCode: number;
@@ -137,7 +141,12 @@ export function useWeather() {
 
       if (error) throw error;
 
-      const weatherData = data as WeatherData;
+      // Add coordinates to weather data for components that need them
+      const weatherData: WeatherData = {
+        ...data,
+        latitude,
+        longitude,
+      };
       setCachedWeather(weatherData);
       
       setState(prev => ({
