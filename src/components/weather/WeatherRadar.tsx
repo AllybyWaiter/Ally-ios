@@ -117,24 +117,7 @@ const getSeverityBgClass = (severity: string): string => {
   }
 };
 
-// Component to track when map has fully mounted
-function MapMountTracker({ onMounted }: { onMounted: () => void }) {
-  const map = useMap();
-  const calledRef = useRef(false);
-  
-  useEffect(() => {
-    if (map && !calledRef.current) {
-      console.log('[Radar] MapMountTracker: map is available, signaling mounted');
-      calledRef.current = true;
-      // Small delay to ensure map is fully rendered
-      setTimeout(() => {
-        onMounted();
-      }, 100);
-    }
-  }, [map, onMounted]);
-  
-  return null;
-}
+// Removed MapMountTracker - using whenReady callback instead
 
 // Component to update map center when coordinates change - only renders after map is mounted
 function MapUpdater({ latitude, longitude }: { latitude: number; longitude: number }) {
@@ -290,6 +273,8 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   const [error, setError] = useState<string | null>(null);
   const [leafletReady, setLeafletReady] = useState(false);
   const [mapMounted, setMapMounted] = useState(false); // Staged rendering: track when map is mounted
+  const [stage2Ready, setStage2Ready] = useState(false); // Staged: RadarLayer etc.
+  const [stage3Ready, setStage3Ready] = useState(false); // Staged: AlertsLayer
   const [retryKey, setRetryKey] = useState(0); // Key to force re-mount on retry
   const intervalRef = useRef<number | null>(null);
 
@@ -299,16 +284,42 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [alertsLoading, setAlertsLoading] = useState(false);
 
-  // Callback for MapMountTracker
-  const handleMapMounted = useCallback(() => {
-    console.log('[Radar] handleMapMounted called - map is fully mounted');
+  // whenReady callback - fires when MapContainer is fully initialized
+  const handleMapReady = useCallback(() => {
+    console.log('[Radar] whenReady fired - map is initialized');
     setMapMounted(true);
   }, []);
+
+  // Staged rendering: delay stage2 components after map mounts
+  useEffect(() => {
+    if (mapMounted) {
+      console.log('[Radar] Map mounted, scheduling stage2 in 300ms');
+      const timer = setTimeout(() => {
+        console.log('[Radar] Stage2 ready (RadarLayer, MapUpdater, MapResizer)');
+        setStage2Ready(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [mapMounted]);
+
+  // Staged rendering: delay stage3 (alerts) after stage2
+  useEffect(() => {
+    if (stage2Ready && !alertsLoading) {
+      console.log('[Radar] Stage2 ready + alerts loaded, scheduling stage3 in 200ms');
+      const timer = setTimeout(() => {
+        console.log('[Radar] Stage3 ready (AlertsLayer)');
+        setStage3Ready(true);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [stage2Ready, alertsLoading]);
 
   // Handle retry from error boundary
   const handleRetry = useCallback(() => {
     console.log('[Radar] handleRetry called - resetting state');
     setMapMounted(false);
+    setStage2Ready(false);
+    setStage3Ready(false);
     setRetryKey(prev => prev + 1);
   }, []);
 
@@ -543,31 +554,22 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
               scrollWheelZoom={false}
               className="h-full w-full z-0"
               attributionControl={false}
+              whenReady={handleMapReady}
             >
-              {/* Phase 1: Essential components - always render */}
+              {/* Stage 1: Essential components - always render */}
               <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
               />
               <Marker position={[latitude, longitude]} />
-              <MapMountTracker onMounted={handleMapMounted} />
               
-              {/* Phase 2: Non-essential components - only render after map is mounted */}
-              {mapMounted && (
-                <>
-                  <RadarLayer 
-                    framePath={currentFrame?.path ?? null} 
-                    opacity={0.7} 
-                  />
-                  <MapUpdater latitude={latitude} longitude={longitude} />
-                  <MapResizer />
-                </>
-              )}
+              {/* Stage 2: Components using useMap() - render with delay after map mounts */}
+              {stage2Ready && <RadarLayer framePath={currentFrame?.path ?? null} opacity={0.7} />}
+              {stage2Ready && <MapUpdater latitude={latitude} longitude={longitude} />}
+              {stage2Ready && <MapResizer />}
               
-              {/* Phase 3: Alert layer - only render after map mounted AND alerts loaded */}
-              {mapMounted && !alertsLoading && (
-                <AlertsLayer alerts={alerts} showAlerts={showAlerts} />
-              )}
+              {/* Stage 3: Alert layer - render after stage2 AND alerts loaded */}
+              {stage3Ready && <AlertsLayer alerts={alerts} showAlerts={showAlerts} />}
             </MapContainer>
           </MapErrorBoundary>
 
