@@ -1,9 +1,10 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon, Radar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LazyLoadWithTimeout } from '@/components/ui/lazy-load-with-timeout';
 import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,9 +20,9 @@ import {
   TemperatureChart,
   AquaticInsights,
 } from '@/components/weather';
+import { Loader2 } from 'lucide-react';
 
 // Lazy load WeatherRadar to prevent iOS PWA module-level crashes with Leaflet.
-// If the chunk fails to load (common with stale SW caches), throw so our error boundary can show fallback UI.
 const LazyWeatherRadar = React.lazy(() =>
   import('@/components/weather/WeatherRadar')
     .then((module) => ({ default: module.WeatherRadar }))
@@ -53,134 +54,37 @@ const weatherLabels: Record<WeatherCondition, string> = {
   fog: 'Foggy',
 };
 
-// Error boundary wrapper for WeatherRadar to prevent iOS PWA crashes
-function LoadedCallback({
-  children,
-  onLoad,
-}: {
-  children: React.ReactNode;
-  onLoad: () => void;
-}) {
-  useEffect(() => {
-    onLoad();
-  }, [onLoad]);
-
-  return <>{children}</>;
-}
-
+// Simplified WeatherRadarWrapper using reusable LazyLoadWithTimeout
 function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longitude: number }) {
-  const [hasError, setHasError] = useState(false);
-  const [isTimedOut, setIsTimedOut] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [retryNonce, setRetryNonce] = useState(0);
-  const timeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setIsTimedOut(false);
-    setIsLoaded(false);
-
-    if (timeoutRef.current != null) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-
-    timeoutRef.current = window.setTimeout(() => setIsTimedOut(true), 10000);
-
-    return () => {
-      if (timeoutRef.current != null) {
-        window.clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [retryNonce]);
-
-  useEffect(() => {
-    if (isLoaded && timeoutRef.current != null) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, [isLoaded]);
-
-  const handleRetry = () => {
-    setHasError(false);
-    setIsTimedOut(false);
-    setIsLoaded(false);
-    setRetryNonce((n) => n + 1);
-  };
-
-  if (hasError || isTimedOut) {
-    return (
-      <Card className="glass-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Cloud className="h-5 w-5" />
-            Weather Radar
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-3">
-            <p>Unable to load radar</p>
-            <Button variant="outline" size="sm" onClick={handleRetry}>
-              Try Again
-            </Button>
+  const radarFallback = (
+    <Card className="glass-card overflow-hidden">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Radar className="h-5 w-5" />
+          Weather Radar
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="h-64 md:h-80 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground animate-pulse">Loading radar...</p>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
-    <ErrorBoundaryRadar key={retryNonce} onError={() => setHasError(true)}>
-      <Suspense
-        fallback={
-          <Card className="glass-card overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Radar className="h-5 w-5" />
-                Weather Radar
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-64 md:h-80 flex items-center justify-center">
-                <div className="animate-pulse text-muted-foreground">Loading radar...</div>
-              </div>
-            </CardContent>
-          </Card>
-        }
-      >
-        <LoadedCallback onLoad={() => setIsLoaded(true)}>
-          <LazyWeatherRadar key={retryNonce} latitude={latitude} longitude={longitude} />
-        </LoadedCallback>
-      </Suspense>
-    </ErrorBoundaryRadar>
+    <LazyLoadWithTimeout
+      timeoutMs={10000}
+      errorTitle="Unable to load radar"
+      icon={<Cloud className="h-5 w-5" />}
+      fallback={radarFallback}
+    >
+      <LazyWeatherRadar latitude={latitude} longitude={longitude} />
+    </LazyLoadWithTimeout>
   );
-}
-
-// Simple error boundary for radar component
-class ErrorBoundaryRadar extends React.Component<
-  { children: React.ReactNode; onError: () => void },
-  { hasError: boolean }
-> {
-  constructor(props: { children: React.ReactNode; onError: () => void }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('WeatherRadar error:', error, errorInfo);
-    this.props.onError();
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return null;
-    }
-    return this.props.children;
-  }
 }
 
 interface ForecastCardProps {
