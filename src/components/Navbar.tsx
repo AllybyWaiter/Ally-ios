@@ -4,12 +4,25 @@ import logo from "@/assets/logo.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Menu } from "lucide-react";
+import { Menu, ChevronDown } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const solutionsLinks = [
+  { label: "Compare Apps", path: "/compare" },
+  { label: "Best Aquarium App", path: "/best-aquarium-app" },
+  { label: "Best Pool App", path: "/best-pool-app" },
+  { label: "AI Water Testing", path: "/ai-water-testing" },
+];
 
 const Navbar = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -61,6 +74,21 @@ const Navbar = () => {
           >
             How It Works
           </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors flex items-center gap-1">
+              Solutions
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-48">
+              {solutionsLinks.map((link) => (
+                <DropdownMenuItem key={link.path} asChild>
+                  <Link to={link.path} className="w-full cursor-pointer">
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Link 
             to="/pricing" 
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -129,6 +157,24 @@ const Navbar = () => {
                 >
                   How It Works
                 </Link>
+                
+                {/* Solutions Section */}
+                <div className="py-2">
+                  <div className="text-lg font-medium text-muted-foreground mb-2">Solutions</div>
+                  <div className="pl-4 flex flex-col gap-2">
+                    {solutionsLinks.map((link) => (
+                      <Link
+                        key={link.path}
+                        to={link.path}
+                        className="text-base hover:text-primary transition-colors py-1"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+                
                 <Link 
                   to="/pricing" 
                   className="text-lg font-medium hover:text-primary transition-colors py-2"
