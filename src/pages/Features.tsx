@@ -10,6 +10,7 @@ import DemoVideoModal from "@/components/DemoVideoModal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import appMockup from "@/assets/app-mockup.png";
 import AllySupportChat from "@/components/AllySupportChat";
+import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
 import {
   Camera,
   Calendar,
@@ -260,6 +261,15 @@ const Features = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Features - AI Water Testing, Voice Commands & Smart Scheduling"
+        description="Discover Ally's AI-powered features: instant photo water test analysis, voice commands, proactive alerts, photo galleries, push notifications, and smart maintenance scheduling for aquariums, pools, and spas."
+        path="/features"
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'Features', url: '/features' }]) }}
+      />
       <Navbar />
 
       {/* Hero Section */}

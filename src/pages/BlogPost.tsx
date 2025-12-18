@@ -8,22 +8,25 @@ import { formatDate } from '@/lib/formatters';
 import { ArrowLeft, Clock, Eye } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { SEO, StructuredData, generateBreadcrumbData } from '@/components/SEO';
 
-interface BlogPost {
+interface BlogPostData {
   id: string;
   title: string;
   content: string;
   featured_image_url: string | null;
   published_at: string;
+  updated_at: string;
   view_count: number;
   tags: string[] | null;
   seo_title: string | null;
   seo_description: string | null;
+  author_name: string | null;
 }
 
 export default function BlogPost() {
   const { slug } = useParams();
-  const [post, setPost] = useState<BlogPost | null>(null);
+  const [post, setPost] = useState<BlogPostData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,20 +51,6 @@ export default function BlogPost() {
         .from('blog_posts')
         .update({ view_count: data.view_count + 1 })
         .eq('id', data.id);
-        
-      // Update SEO meta tags
-      if (data.seo_title) {
-        document.title = data.seo_title;
-      } else {
-        document.title = data.title;
-      }
-      
-      if (data.seo_description) {
-        const metaDescription = document.querySelector('meta[name="description"]');
-        if (metaDescription) {
-          metaDescription.setAttribute('content', data.seo_description);
-        }
-      }
     }
     setLoading(false);
   };
@@ -103,6 +92,43 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/20">
+      <SEO
+        title={post.seo_title || post.title}
+        description={post.seo_description || `Read ${post.title} on the Ally blog. Tips and insights for aquarium, pool, and spa care.`}
+        path={`/blog/${slug}`}
+        type="article"
+        image={post.featured_image_url || undefined}
+        publishedTime={post.published_at}
+        modifiedTime={post.updated_at}
+        author={post.author_name || 'WA.I.TER Team'}
+        tags={post.tags || undefined}
+      />
+      <StructuredData
+        type="Article"
+        data={{
+          headline: post.title,
+          description: post.seo_description || post.title,
+          image: post.featured_image_url || 'https://allybywaiter.com/og-image.png',
+          datePublished: post.published_at,
+          dateModified: post.updated_at,
+          author: {
+            '@type': 'Person',
+            name: post.author_name || 'WA.I.TER Team',
+          },
+          mainEntityOfPage: {
+            '@type': 'WebPage',
+            '@id': `https://allybywaiter.com/blog/${slug}`,
+          },
+        }}
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([
+          { name: 'Home', url: '/' },
+          { name: 'Blog', url: '/blog' },
+          { name: post.title, url: `/blog/${slug}` }
+        ]) }}
+      />
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-24">

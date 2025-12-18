@@ -3,10 +3,20 @@ import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import AllySupportChat from "@/components/AllySupportChat";
+import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="About Ally - Your AI Water Care Companion"
+        description="Learn about Ally by WA.I.TER and our mission to make aquarium, pool, and spa care effortless. Founded on the belief that AI can make water care simple, accurate, and empowering."
+        path="/about"
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'About', url: '/about' }]) }}
+      />
       <Navbar />
       
       <main className="pt-24 pb-20">

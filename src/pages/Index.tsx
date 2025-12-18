@@ -13,6 +13,7 @@ import { ContactForm } from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
+import { SEO, StructuredData } from "@/components/SEO";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -34,6 +35,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Ally by WA.I.TER - AI-Powered Aquarium, Pool & Spa Water Care"
+        description="Transform your aquarium, pool, or spa care with Ally, the AI-powered water care assistant. Get instant water test analysis, personalized care plans, and crystal-clear water effortlessly."
+        path="/"
+      />
+      <StructuredData type="WebApplication" />
+      <StructuredData type="Organization" />
       <Navbar />
       <main>
         <Hero />

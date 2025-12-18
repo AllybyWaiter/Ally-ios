@@ -29,6 +29,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import AllySupportChat from "@/components/AllySupportChat";
+import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
 
 const steps = [
   {
@@ -160,6 +161,15 @@ const HowItWorksPage = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <SEO
+        title="How Ally Works - AI Water Care in 3 Simple Steps"
+        description="Discover how Ally makes aquarium, pool, and spa maintenance effortless. Test your water, let AI analyze it, and follow personalized care plans. Voice-enabled, works offline, with push notifications."
+        path="/how-it-works"
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'How It Works', url: '/how-it-works' }]) }}
+      />
       <Navbar />
       
       {/* Hero Section */}
