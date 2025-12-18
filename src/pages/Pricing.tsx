@@ -9,6 +9,7 @@ import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import AllySupportChat from "@/components/AllySupportChat";
+import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
 
 const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -117,6 +118,15 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Pricing Plans - Ally Water Care Assistant"
+        description="Choose the perfect Ally plan for your needs. From free tier to business plans. Start with a 7-day free trial. AI-powered water care for aquariums, pools, and spas."
+        path="/pricing"
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'Pricing', url: '/pricing' }]) }}
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}

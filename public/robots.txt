@@ -1,3 +1,10 @@
+# Ally by WA.I.TER - Robots.txt
+# https://allybywaiter.com
+
+# Sitemap location
+Sitemap: https://allybywaiter.com/sitemap.xml
+
+# Allow all major crawlers
 User-agent: Googlebot
 Allow: /
 
@@ -10,5 +17,41 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
+# Default rules for all other bots
 User-agent: *
 Allow: /
+
+# Disallow private/authenticated routes
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /water-tests
+Disallow: /water-tests/*
+Disallow: /calendar
+Disallow: /calendar/*
+Disallow: /chat
+Disallow: /chat/*
+Disallow: /aquarium/
+Disallow: /aquarium/*
+Disallow: /weather
+Disallow: /weather/*
+Disallow: /auth
+Disallow: /auth/*
+Disallow: /reset-password
+Disallow: /reset-password/*
+
+# Disallow API and function endpoints
+Disallow: /api/
+Disallow: /functions/
+
+# Allow important static assets
+Allow: /favicon.png
+Allow: /og-image.png
+Allow: /apple-touch-icon.png
+Allow: /manifest.webmanifest

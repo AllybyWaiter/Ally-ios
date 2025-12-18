@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, Sparkles, TestTube, Database, Shield, DollarSign, Settings, Calendar, Users, Rocket, HelpCircle, Zap, Droplets, Camera, Bell } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SEO, StructuredData, generateFAQStructuredData, generateBreadcrumbData } from "@/components/SEO";
 
 const FAQ = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -361,8 +362,29 @@ const FAQ = () => {
     )
   })).filter(category => category.questions.length > 0);
 
+  // Generate FAQ structured data for top questions
+  const faqStructuredData = useMemo(() => {
+    const topQuestions = faqCategories.flatMap(cat => 
+      cat.questions.slice(0, 2).map(q => ({ question: q.q, answer: q.a }))
+    ).slice(0, 10);
+    return generateFAQStructuredData(topQuestions);
+  }, []);
+
   return (
     <div className="min-h-screen">
+      <SEO
+        title="FAQ - Common Questions About Ally Water Care"
+        description="Find answers to frequently asked questions about Ally. Learn about AI features, water testing, pricing, pool and spa care, aquarium management, and more."
+        path="/faq"
+      />
+      <StructuredData
+        type="FAQPage"
+        data={{ questions: faqStructuredData }}
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'FAQ', url: '/faq' }]) }}
+      />
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
