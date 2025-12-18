@@ -15,6 +15,7 @@ import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
 import { useRateLimit } from "@/hooks/useRateLimit";
 import { motion } from "framer-motion";
+import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -158,6 +159,15 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO
+        title="Contact Us - Get Help with Ally"
+        description="Have a question about Ally? Contact our team for general inquiries, partnership opportunities, business solutions, or press inquiries. We typically respond within 24-48 hours."
+        path="/contact"
+      />
+      <StructuredData
+        type="BreadcrumbList"
+        data={{ items: generateBreadcrumbData([{ name: 'Home', url: '/' }, { name: 'Contact', url: '/contact' }]) }}
+      />
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8 pt-28">
