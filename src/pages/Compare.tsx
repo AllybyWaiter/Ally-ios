@@ -1,4 +1,5 @@
 import { SEO, StructuredData } from "@/components/SEO";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
@@ -59,21 +60,21 @@ const useCases = [
     title: "Best for Aquarium Beginners",
     description: "New to fishkeeping? Ally's AI guides you through the nitrogen cycle, explains parameters in plain English, and alerts you before problems happen.",
     icon: Star,
-    link: "/features",
+    link: "/best-aquarium-app",
     tags: ["Freshwater", "Beginner-Friendly", "AI Guidance"],
   },
   {
     title: "Best for Reef Tank Keepers",
     description: "Track calcium, alkalinity, magnesium, and 20+ parameters. Get coral-specific care recommendations and stability trend analysis.",
     icon: Trophy,
-    link: "/features",
+    link: "/best-aquarium-app",
     tags: ["Saltwater", "Reef", "Advanced"],
   },
   {
     title: "Best for Pool Owners",
     description: "Stop guessing with test strips. Snap a photo, get instant readings, and receive exact dosing instructions for your pool size.",
     icon: Zap,
-    link: "/features",
+    link: "/best-pool-app",
     tags: ["Pool", "Chlorine", "Saltwater Pool"],
   },
 ];
@@ -257,26 +258,28 @@ export default function Compare() {
           <h2 className="text-3xl font-bold text-center mb-8">Best For Your Needs</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {useCases.map((useCase) => (
-              <Card key={useCase.title} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <useCase.icon className="h-6 w-6 text-primary" />
+              <Link key={useCase.title} to={useCase.link}>
+                <Card className="hover:shadow-lg transition-shadow h-full">
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <useCase.icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <CardTitle className="text-lg">{useCase.title}</CardTitle>
                     </div>
-                    <CardTitle className="text-lg">{useCase.title}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">{useCase.description}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {useCase.tags.map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground mb-4">{useCase.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {useCase.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </section>
