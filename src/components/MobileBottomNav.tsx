@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, MessageSquare, Droplets, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,12 +23,32 @@ export function MobileBottomNav() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { isKeyboardVisible } = useKeyboardVisibility();
+  const [isOnboarding, setIsOnboarding] = useState(false);
+
+  // Detect onboarding state by checking for data-onboarding attribute
+  useEffect(() => {
+    const checkOnboarding = () => {
+      const onboardingElement = document.querySelector('[data-onboarding="true"]');
+      setIsOnboarding(!!onboardingElement);
+    };
+    
+    checkOnboarding();
+    
+    // Observe DOM changes to detect onboarding mounting/unmounting
+    const observer = new MutationObserver(checkOnboarding);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    return () => observer.disconnect();
+  }, []);
 
   // Only show on mobile
   if (!isMobile) return null;
 
   // Hide when keyboard is visible
   if (isKeyboardVisible) return null;
+
+  // Hide during onboarding
+  if (isOnboarding) return null;
 
   // Hide on certain pages where it doesn't make sense
   const hiddenPaths = ["/auth", "/", "/privacy", "/terms", "/contact", "/about", "/pricing", "/features", "/how-it-works", "/blog", "/faq", "/help", "/chat"];
