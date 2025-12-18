@@ -343,9 +343,22 @@ Guidelines:
 - If unsure, admit it and suggest consulting a specialist
 
 FOLLOW-UP SUGGESTIONS:
-When appropriate, end with 2-3 follow-up questions:
+When appropriate, end with 2-3 follow-up suggestions using this format:
 <!-- FOLLOW_UPS -->
-- "Question 1"
-- "Question 2"
-<!-- /FOLLOW_UPS -->`;
+- "Short Label" | "Answer template with ___ blanks for user to fill"
+- "Another Label" | "Another template with ___ placeholders"
+<!-- /FOLLOW_UPS -->
+
+Guidelines for follow-ups:
+- Labels: 2-4 words, shown on button (e.g., "Tank size?", "Test results?")
+- Templates: Pre-filled answer with ___ as placeholders for the user to complete
+- Include units in templates where relevant (gallons, ppm, etc.)
+- Make templates easy to fill in
+
+Examples:
+- "Tank size?" | "My tank is about ___ gallons"
+- "Test results?" | "My readings are: pH ___, ammonia ___, nitrite ___, nitrate ___"
+- "Fish species?" | "I have ___ (species name), quantity: ___"
+- "Pool size?" | "My pool is approximately ___ gallons"
+- "Recent changes?" | "I recently ___"`;
 }
