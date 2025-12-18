@@ -542,9 +542,10 @@ const AllyChat = () => {
             speakingMessageId={speakingMessageId}
             isSpeaking={isSpeaking}
             isGeneratingTTS={isGeneratingTTS}
-            onSelectSuggestion={(suggestion) => {
-              setInput(suggestion);
-              setTimeout(() => sendMessage(), 100);
+            onSelectSuggestion={(template) => {
+              setInput(template);
+              // Focus input so user can fill in the template blanks - don't auto-send
+              inputRef.current?.focus();
             }}
           />
         </main>
