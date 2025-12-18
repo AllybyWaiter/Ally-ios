@@ -38,6 +38,7 @@ interface WeatherAlert {
 interface WeatherRadarProps {
   latitude: number;
   longitude: number;
+  onReady?: () => void;
 }
 
 // Severity color mapping
@@ -159,7 +160,7 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
   );
 }
 
-export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
+export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps) {
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -190,6 +191,13 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
       setLeafletReady(true);
     }
   }, []);
+
+  // Signal ready when leaflet is configured
+  useEffect(() => {
+    if (leafletReady && onReady) {
+      onReady();
+    }
+  }, [leafletReady, onReady]);
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
