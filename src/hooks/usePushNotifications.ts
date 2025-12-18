@@ -11,12 +11,14 @@ interface NotificationPreferences {
   task_reminders_enabled: boolean;
   water_alerts_enabled: boolean;
   announcements_enabled: boolean;
+  weather_alerts_enabled: boolean;
   reminder_hours_before: number;
   quiet_hours_start: string | null;
   quiet_hours_end: string | null;
   sound_task_reminders: boolean;
   sound_water_alerts: boolean;
   sound_announcements: boolean;
+  sound_weather_alerts: boolean;
 }
 
 const defaultPreferences: NotificationPreferences = {
@@ -24,12 +26,14 @@ const defaultPreferences: NotificationPreferences = {
   task_reminders_enabled: true,
   water_alerts_enabled: true,
   announcements_enabled: true,
+  weather_alerts_enabled: false,
   reminder_hours_before: 24,
   quiet_hours_start: null,
   quiet_hours_end: null,
   sound_task_reminders: true,
   sound_water_alerts: true,
   sound_announcements: true,
+  sound_weather_alerts: true,
 };
 
 export function usePushNotifications() {
@@ -89,12 +93,14 @@ export function usePushNotifications() {
             task_reminders_enabled: prefs.task_reminders_enabled,
             water_alerts_enabled: prefs.water_alerts_enabled,
             announcements_enabled: prefs.announcements_enabled,
+            weather_alerts_enabled: prefs.weather_alerts_enabled ?? false,
             reminder_hours_before: prefs.reminder_hours_before,
             quiet_hours_start: prefs.quiet_hours_start,
             quiet_hours_end: prefs.quiet_hours_end,
             sound_task_reminders: prefs.sound_task_reminders ?? true,
             sound_water_alerts: prefs.sound_water_alerts ?? true,
             sound_announcements: prefs.sound_announcements ?? true,
+            sound_weather_alerts: prefs.sound_weather_alerts ?? true,
           });
         }
 
@@ -278,13 +284,14 @@ export function usePushNotifications() {
   }, [user, preferences]);
 
   // Send a test notification with specific type
-  const sendTestNotification = useCallback(async (notificationType: 'task_reminder' | 'water_alert' | 'announcement' = 'task_reminder') => {
+  const sendTestNotification = useCallback(async (notificationType: 'task_reminder' | 'water_alert' | 'announcement' | 'weather_alert' = 'task_reminder') => {
     if (!user || !isSubscribed) return false;
 
     const testMessages = {
       task_reminder: { title: 'Task Reminder', body: 'This is how task reminders feel! 📋' },
       water_alert: { title: 'Water Alert', body: 'This is how water alerts feel! 💧' },
       announcement: { title: 'Announcement', body: 'This is how announcements feel! 📢' },
+      weather_alert: { title: '⛈️ Severe Weather Alert', body: 'This is how severe weather alerts feel! 🌪️' },
     };
 
     const message = testMessages[notificationType];

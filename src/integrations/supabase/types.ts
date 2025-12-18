@@ -801,10 +801,12 @@ export type Database = {
           sound_announcements: boolean
           sound_task_reminders: boolean
           sound_water_alerts: boolean
+          sound_weather_alerts: boolean
           task_reminders_enabled: boolean
           updated_at: string
           user_id: string
           water_alerts_enabled: boolean
+          weather_alerts_enabled: boolean
         }
         Insert: {
           announcements_enabled?: boolean
@@ -817,10 +819,12 @@ export type Database = {
           sound_announcements?: boolean
           sound_task_reminders?: boolean
           sound_water_alerts?: boolean
+          sound_weather_alerts?: boolean
           task_reminders_enabled?: boolean
           updated_at?: string
           user_id: string
           water_alerts_enabled?: boolean
+          weather_alerts_enabled?: boolean
         }
         Update: {
           announcements_enabled?: boolean
@@ -833,10 +837,12 @@ export type Database = {
           sound_announcements?: boolean
           sound_task_reminders?: boolean
           sound_water_alerts?: boolean
+          sound_weather_alerts?: boolean
           task_reminders_enabled?: boolean
           updated_at?: string
           user_id?: string
           water_alerts_enabled?: boolean
+          weather_alerts_enabled?: boolean
         }
         Relationships: []
       }
@@ -1484,6 +1490,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weather_alerts_notified: {
+        Row: {
+          alert_id: string
+          expires_at: string | null
+          headline: string
+          id: string
+          notified_at: string
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          alert_id: string
+          expires_at?: string | null
+          headline: string
+          id?: string
+          notified_at?: string
+          severity: string
+          user_id: string
+        }
+        Update: {
+          alert_id?: string
+          expires_at?: string | null
+          headline?: string
+          id?: string
+          notified_at?: string
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
