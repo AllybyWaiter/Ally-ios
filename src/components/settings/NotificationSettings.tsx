@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX } from 'lucide-react';
+import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX, CloudLightning } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -244,6 +244,53 @@ export default function NotificationSettings() {
                   disabled={!isSubscribed}
                 />
               </div>
+            )}
+          </div>
+
+          {/* Severe Weather Alerts */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="weather-alerts" className="flex items-center gap-2">
+                  <CloudLightning className="h-4 w-4 text-red-500" />
+                  Severe Weather Alerts
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified of extreme or severe weather in your area (US only)
+                </p>
+              </div>
+              <Switch
+                id="weather-alerts"
+                checked={preferences.weather_alerts_enabled}
+                onCheckedChange={(checked) => updatePreferences({ weather_alerts_enabled: checked })}
+                disabled={!isSubscribed}
+              />
+            </div>
+            {preferences.weather_alerts_enabled && (
+              <>
+                <div className="flex items-center justify-between pl-6 border-l-2 border-muted">
+                  <Label htmlFor="sound-weather" className="text-sm flex items-center gap-2">
+                    {preferences.sound_weather_alerts ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                    Sound & vibration
+                  </Label>
+                  <Switch
+                    id="sound-weather"
+                    checked={preferences.sound_weather_alerts}
+                    onCheckedChange={(checked) => updatePreferences({ sound_weather_alerts: checked })}
+                    disabled={!isSubscribed}
+                  />
+                </div>
+                <div className="pl-6 border-l-2 border-muted">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sendTestNotification('weather_alert')}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Test Weather Alert
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </CardContent>
