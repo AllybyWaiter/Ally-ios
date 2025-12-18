@@ -247,6 +247,42 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "calculate_pool_volume",
+      description: "Calculate the volume of a pool or spa based on shape and dimensions. Use this when user wants to figure out how many gallons their pool holds. Walk them through: shape (round/oval/rectangle/kidney), dimensions (diameter or length+width), depth (flat or sloped with shallow+deep), and optional refinements (water level, steps, bench). Always confirm before saving to their profile.",
+      parameters: {
+        type: "object",
+        properties: {
+          aquarium_id: { type: "string", description: "ID of the pool/spa to update with calculated volume" },
+          shape: { 
+            type: "string", 
+            enum: ["round", "oval", "rectangle", "kidney"],
+            description: "Shape of the pool"
+          },
+          diameter_ft: { type: "number", description: "Diameter in feet (for round pools only)" },
+          length_ft: { type: "number", description: "Length in feet (for rectangle/oval/kidney)" },
+          width_ft: { type: "number", description: "Width in feet (for rectangle/oval/kidney)" },
+          depth_type: { 
+            type: "string", 
+            enum: ["flat", "sloped"],
+            description: "Whether pool has flat bottom or slopes from shallow to deep"
+          },
+          single_depth_ft: { type: "number", description: "Depth in feet (for flat-bottom pools)" },
+          shallow_depth_ft: { type: "number", description: "Shallow end depth in feet (for sloped pools)" },
+          deep_depth_ft: { type: "number", description: "Deep end depth in feet (for sloped pools)" },
+          water_inches_below_top: { type: "number", description: "How many inches below the top is the water level (optional)" },
+          has_steps: { type: "boolean", description: "Does the pool have built-in steps? (reduces volume slightly)" },
+          has_bench: { type: "boolean", description: "Does the pool have a built-in bench or ledge? (reduces volume)" },
+          has_sun_shelf: { type: "boolean", description: "Does the pool have a sun shelf/tanning ledge? (reduces volume)" },
+          save_to_profile: { type: "boolean", description: "Whether to save the calculated volume to the pool profile. Only set true after user confirms." }
+        },
+        required: ["aquarium_id", "shape", "depth_type"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 

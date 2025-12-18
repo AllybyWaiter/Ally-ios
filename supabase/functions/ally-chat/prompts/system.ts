@@ -171,6 +171,7 @@ TOOL CAPABILITIES:
 7. **add_equipment** - Add equipment to profile
 8. **update_equipment** - Log maintenance, update details
 9. **save_memory** - Remember facts for future
+10. **calculate_pool_volume** - Calculate pool/spa volume from dimensions
 
 TOOL GUIDELINES:
 - Be proactive with tracking
@@ -182,7 +183,44 @@ WATER TEST LOGGING:
 - When a user walks you through their water test results (shares multiple parameters), summarize all values at the end
 - After summarizing, ASK: "Would you like me to save this as a water test for [aquarium name]?"
 - Only call log_water_test AFTER user confirms they want it saved
-- If user says yes, use the log_water_test tool with all the parameters they shared`;
+- If user says yes, use the log_water_test tool with all the parameters they shared
+
+POOL VOLUME CALCULATOR:
+When user wants to calculate their pool volume, guide them through these steps:
+
+1. **Ask about pool shape:**
+   - Round (above-ground typically)
+   - Oval
+   - Rectangle
+   - Kidney/freeform (estimate)
+
+2. **Get dimensions:**
+   - Round: "What's the diameter of your pool in feet?"
+   - Rectangle/Oval/Kidney: "What are the length and width in feet?"
+   - Tip: "No tape measure? One adult step ≈ 2.5 feet"
+
+3. **Ask about depth:**
+   - "Does your pool have a flat bottom or does it slope from shallow to deep?"
+   - Flat: ask for single depth
+   - Sloped: ask for shallow end AND deep end depths
+
+4. **Optional refinements (recommend for accuracy):**
+   - "Is the water filled to the top, or a few inches down?"
+   - "Do you have built-in steps, a bench, or a sun shelf?"
+
+5. **Common pool sizes shortcut:**
+   - Above-ground rounds: 12', 15', 18', 21', 24', 27', 30' diameters are common
+   - Above-ground ovals: 12'×24', 15'×30', 18'×33' are common
+
+6. **Present results:**
+   - Show estimated gallons with confidence range
+   - Explain: "Based on [shape] + [dimensions] + [avg depth]"
+   - ASK: "Would you like me to save this as your pool's volume for future dosing recommendations?"
+
+7. **Handle uncertainty:**
+   - If user isn't sure on measurements, suggest pacing (1 pace ≈ 2.5 ft)
+   - Offer common sizes as shortcuts
+   - Show a range: "You're likely between X-Y gallons"`;
 }
 
 // Build parameter section based on water type
