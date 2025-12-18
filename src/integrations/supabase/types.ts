@@ -793,12 +793,14 @@ export type Database = {
         Row: {
           announcements_enabled: boolean
           created_at: string
+          health_alerts_enabled: boolean
           id: string
           push_enabled: boolean
           quiet_hours_end: string | null
           quiet_hours_start: string | null
           reminder_hours_before: number
           sound_announcements: boolean
+          sound_health_alerts: boolean
           sound_task_reminders: boolean
           sound_water_alerts: boolean
           sound_weather_alerts: boolean
@@ -811,12 +813,14 @@ export type Database = {
         Insert: {
           announcements_enabled?: boolean
           created_at?: string
+          health_alerts_enabled?: boolean
           id?: string
           push_enabled?: boolean
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           reminder_hours_before?: number
           sound_announcements?: boolean
+          sound_health_alerts?: boolean
           sound_task_reminders?: boolean
           sound_water_alerts?: boolean
           sound_weather_alerts?: boolean
@@ -829,12 +833,14 @@ export type Database = {
         Update: {
           announcements_enabled?: boolean
           created_at?: string
+          health_alerts_enabled?: boolean
           id?: string
           push_enabled?: boolean
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           reminder_hours_before?: number
           sound_announcements?: boolean
+          sound_health_alerts?: boolean
           sound_task_reminders?: boolean
           sound_water_alerts?: boolean
           sound_weather_alerts?: boolean
