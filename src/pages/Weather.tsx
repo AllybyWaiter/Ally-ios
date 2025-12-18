@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, Wind, Droplets, SunDim, Settings, MapPin, Sunrise, Sunset, Moon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +38,65 @@ const weatherLabels: Record<WeatherCondition, string> = {
   storm: 'Stormy',
   fog: 'Foggy',
 };
+
+// Error boundary wrapper for WeatherRadar to prevent iOS PWA crashes
+function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longitude: number }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <Card className="glass-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Cloud className="h-5 w-5" />
+            Weather Radar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex flex-col items-center justify-center text-muted-foreground gap-3">
+            <p>Unable to load radar</p>
+            <Button variant="outline" size="sm" onClick={() => setHasError(false)}>
+              Try Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <ErrorBoundaryRadar onError={() => setHasError(true)}>
+      <WeatherRadar latitude={latitude} longitude={longitude} />
+    </ErrorBoundaryRadar>
+  );
+}
+
+// Simple error boundary for radar component
+class ErrorBoundaryRadar extends React.Component<
+  { children: React.ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; onError: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('WeatherRadar error:', error, errorInfo);
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 interface ForecastCardProps {
   day: ForecastDay;
@@ -336,9 +396,9 @@ export default function Weather() {
             </CardContent>
           </Card>
 
-          {/* Weather Radar */}
+          {/* Weather Radar - with error boundary fallback */}
           {weather.latitude != null && weather.longitude != null && (
-            <WeatherRadar latitude={weather.latitude} longitude={weather.longitude} />
+            <WeatherRadarWrapper latitude={weather.latitude} longitude={weather.longitude} />
           )}
 
           {/* Hourly Forecast */}
