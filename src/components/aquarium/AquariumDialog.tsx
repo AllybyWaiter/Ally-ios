@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2, MapPin, Check, X } from "lucide-react";
+import { CalendarIcon, Loader2, MapPin, Check, X, Calculator } from "lucide-react";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -232,22 +233,37 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
             <FormField
               control={form.control}
               name="volume_gallons"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('aquarium.volume')} ({getVolumeUnit(units)})</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.1"
-                      placeholder={units === 'metric' ? 'e.g. 208' : 'e.g. 55'} 
-                      {...field} 
-                      value={field.value || ""}
-                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selectedType = form.watch("type");
+                const isPoolOrSpa = selectedType === "pool" || selectedType === "spa";
+                
+                return (
+                  <FormItem>
+                    <FormLabel>{t('aquarium.volume')} ({getVolumeUnit(units)})</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        placeholder={units === 'metric' ? 'e.g. 208' : 'e.g. 55'} 
+                        {...field} 
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    {isPoolOrSpa && (
+                      <Link 
+                        to="/chat?message=Help me calculate how many gallons my pool holds"
+                        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                        onClick={() => onOpenChange(false)}
+                      >
+                        <Calculator className="h-3.5 w-3.5" />
+                        Not sure? Let Ally help you calculate →
+                      </Link>
+                    )}
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
