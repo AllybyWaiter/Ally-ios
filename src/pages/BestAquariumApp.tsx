@@ -256,6 +256,26 @@ export default function BestAquariumApp() {
           </div>
         </section>
 
+        {/* Related Pages */}
+        <section className="py-12 border-t border-border">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-semibold text-muted-foreground">Explore More</h3>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Button variant="outline" asChild>
+                <Link to="/compare">Compare Apps</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/best-pool-app">Best Pool App</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/ai-water-testing">AI Water Testing</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-20">
           <div className="container mx-auto px-4">
