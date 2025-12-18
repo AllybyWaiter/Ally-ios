@@ -54,7 +54,7 @@ const weatherLabels: Record<WeatherCondition, string> = {
   fog: 'Foggy',
 };
 
-// Simplified WeatherRadarWrapper using reusable LazyLoadWithTimeout
+// Simplified WeatherRadarWrapper using reusable LazyLoadWithTimeout with render prop
 function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longitude: number }) {
   const radarFallback = (
     <Card className="glass-card overflow-hidden">
@@ -79,10 +79,16 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
     <LazyLoadWithTimeout
       timeoutMs={10000}
       errorTitle="Unable to load radar"
-      icon={<Cloud className="h-5 w-5" />}
+      icon={<Radar className="h-5 w-5" />}
       fallback={radarFallback}
     >
-      <LazyWeatherRadar latitude={latitude} longitude={longitude} />
+      {(onReady) => (
+        <LazyWeatherRadar 
+          latitude={latitude} 
+          longitude={longitude}
+          onReady={onReady}
+        />
+      )}
     </LazyLoadWithTimeout>
   );
 }
