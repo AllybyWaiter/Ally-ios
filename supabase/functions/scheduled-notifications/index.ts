@@ -46,6 +46,122 @@ async function fetchNWSAlerts(latitude: number, longitude: number): Promise<NWSA
   }
 }
 
+// Health score calculation functions (mirrors client-side logic)
+function calculateWaterTestScore(tests: any[]): number {
+  if (!tests || tests.length === 0) return 50; // Neutral if no tests
+  
+  const now = new Date();
+  const latestTest = tests[0];
+  const testDate = new Date(latestTest.test_date);
+  const daysSinceTest = Math.floor((now.getTime() - testDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Freshness penalty
+  let freshnessScore = 100;
+  if (daysSinceTest > 14) freshnessScore = 40;
+  else if (daysSinceTest > 7) freshnessScore = 70;
+  else if (daysSinceTest > 3) freshnessScore = 90;
+  
+  return freshnessScore;
+}
+
+function calculateLivestockScore(livestock: any[]): number {
+  if (!livestock || livestock.length === 0) return 80; // Neutral if no livestock
+  
+  let totalScore = 0;
+  let totalQuantity = 0;
+  
+  for (const animal of livestock) {
+    const quantity = animal.quantity || 1;
+    let healthValue = 100;
+    
+    switch (animal.health_status) {
+      case 'healthy': healthValue = 100; break;
+      case 'stressed': healthValue = 60; break;
+      case 'sick': healthValue = 30; break;
+      case 'deceased': healthValue = 0; break;
+      case 'quarantine': healthValue = 50; break;
+      default: healthValue = 80;
+    }
+    
+    totalScore += healthValue * quantity;
+    totalQuantity += quantity;
+  }
+  
+  return totalQuantity > 0 ? Math.round(totalScore / totalQuantity) : 80;
+}
+
+function calculateMaintenanceScore(tasks: any[]): number {
+  if (!tasks || tasks.length === 0) return 80; // Neutral if no tasks
+  
+  const now = new Date();
+  let overdueCount = 0;
+  let pendingCount = 0;
+  let completedCount = 0;
+  
+  for (const task of tasks) {
+    if (task.status === 'completed') {
+      completedCount++;
+    } else if (task.status === 'pending') {
+      const dueDate = new Date(task.due_date);
+      if (dueDate < now) {
+        overdueCount++;
+      } else {
+        pendingCount++;
+      }
+    }
+  }
+  
+  const totalTasks = overdueCount + pendingCount + completedCount;
+  if (totalTasks === 0) return 80;
+  
+  // Heavy penalty for overdue tasks
+  const overdueImpact = overdueCount * 20;
+  const score = Math.max(0, 100 - overdueImpact);
+  
+  return Math.round(score);
+}
+
+function calculateConsistencyScore(tests: any[], tasks: any[]): number {
+  // Check testing regularity over last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentTests = (tests || []).filter(t => new Date(t.test_date) >= thirtyDaysAgo);
+  const recentCompletedTasks = (tasks || []).filter(t => 
+    t.status === 'completed' && 
+    t.completed_date && 
+    new Date(t.completed_date) >= thirtyDaysAgo
+  );
+  
+  // Ideal: at least 1 test per week (4 tests in 30 days)
+  const testingScore = Math.min(100, (recentTests.length / 4) * 100);
+  
+  // Task completion rate
+  const taskScore = recentCompletedTasks.length > 0 ? 100 : 50;
+  
+  return Math.round((testingScore + taskScore) / 2);
+}
+
+function calculateHealthScore(tests: any[], livestock: any[], tasks: any[]): number {
+  const waterScore = calculateWaterTestScore(tests);
+  const livestockScore = calculateLivestockScore(livestock);
+  const maintenanceScore = calculateMaintenanceScore(tasks);
+  const consistencyScore = calculateConsistencyScore(tests, tasks);
+  
+  // Weighted average matching client-side logic
+  return Math.round(
+    waterScore * 0.40 +
+    livestockScore * 0.25 +
+    maintenanceScore * 0.20 +
+    consistencyScore * 0.15
+  );
+}
+
+function getHealthLabel(score: number): { label: string; severity: 'critical' | 'warning' } {
+  if (score < 25) return { label: 'Critical', severity: 'critical' };
+  return { label: 'Needs Attention', severity: 'warning' };
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -64,6 +180,7 @@ serve(async (req) => {
     let taskNotificationsSent = 0;
     let alertNotificationsSent = 0;
     let weatherNotificationsSent = 0;
+    let healthNotificationsSent = 0;
 
     // Get all users with push enabled and task reminders enabled
     const { data: enabledUsers, error: usersError } = await supabase
@@ -222,6 +339,138 @@ serve(async (req) => {
       }
     }
 
+    // Process health score alerts
+    const { data: healthUsers, error: healthUsersError } = await supabase
+      .from('notification_preferences')
+      .select('user_id')
+      .eq('push_enabled', true)
+      .eq('health_alerts_enabled', true);
+
+    if (!healthUsersError && healthUsers) {
+      console.log(JSON.stringify({ requestId, message: `Processing health alerts for ${healthUsers.length} users` }));
+
+      for (const userPref of healthUsers) {
+        // Get all aquariums for this user
+        const { data: aquariums, error: aquariumsError } = await supabase
+          .from('aquariums')
+          .select('id, name')
+          .eq('user_id', userPref.user_id)
+          .eq('status', 'active');
+
+        if (aquariumsError || !aquariums) {
+          console.error(JSON.stringify({ requestId, error: 'Failed to fetch aquariums', userId: userPref.user_id }));
+          continue;
+        }
+
+        for (const aquarium of aquariums) {
+          // Fetch data needed for health calculation
+          const [testsResult, livestockResult, tasksResult] = await Promise.all([
+            supabase
+              .from('water_tests')
+              .select('id, test_date')
+              .eq('aquarium_id', aquarium.id)
+              .order('test_date', { ascending: false })
+              .limit(10),
+            supabase
+              .from('livestock')
+              .select('id, quantity, health_status')
+              .eq('aquarium_id', aquarium.id),
+            supabase
+              .from('maintenance_tasks')
+              .select('id, due_date, status, completed_date')
+              .eq('aquarium_id', aquarium.id)
+              .gte('due_date', new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+          ]);
+
+          const tests = testsResult.data || [];
+          const livestock = livestockResult.data || [];
+          const tasks = tasksResult.data || [];
+
+          // Calculate health score
+          const healthScore = calculateHealthScore(tests, livestock, tasks);
+
+          // Only alert if below 50%
+          if (healthScore >= 50) {
+            // Health is OK - check if we need to clear old notifications for recovery
+            // Delete old health alert log entries for this aquarium so future drops can be notified
+            await supabase
+              .from('notification_log')
+              .delete()
+              .eq('user_id', userPref.user_id)
+              .eq('notification_type', 'health_alert')
+              .like('reference_id', `${aquarium.id}-%`);
+            continue;
+          }
+
+          // Determine severity bucket for deduplication
+          const { label, severity } = getHealthLabel(healthScore);
+          const notificationRefId = `${aquarium.id}-${severity}`;
+
+          // Check if already notified for this severity level in last 24 hours
+          const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          const { data: existingLog } = await supabase
+            .from('notification_log')
+            .select('id, sent_at')
+            .eq('user_id', userPref.user_id)
+            .eq('notification_type', 'health_alert')
+            .eq('reference_id', notificationRefId)
+            .gte('sent_at', oneDayAgo.toISOString())
+            .single();
+
+          if (existingLog) {
+            console.log(JSON.stringify({ 
+              requestId, 
+              message: 'Health alert already sent', 
+              aquariumId: aquarium.id, 
+              score: healthScore 
+            }));
+            continue;
+          }
+
+          // Send health alert notification
+          const severityEmoji = severity === 'critical' ? '🔴' : '🟡';
+          const title = severity === 'critical' 
+            ? `${severityEmoji} Critical: ${aquarium.name} Needs Attention`
+            : `${severityEmoji} Health Declining: ${aquarium.name}`;
+          const body = severity === 'critical'
+            ? `Health score is ${healthScore}%. Immediate action recommended!`
+            : `Health score dropped to ${healthScore}%. Check water parameters and maintenance.`;
+
+          try {
+            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
+              body: {
+                userId: userPref.user_id,
+                title,
+                body,
+                tag: `health-${aquarium.id}`,
+                url: `/aquarium/${aquarium.id}`,
+                notificationType: 'health_alert',
+                referenceId: notificationRefId,
+                requireInteraction: severity === 'critical',
+              },
+            });
+
+            if (!sendError) {
+              healthNotificationsSent++;
+              console.log(JSON.stringify({ 
+                requestId, 
+                message: 'Health alert sent', 
+                aquariumId: aquarium.id, 
+                score: healthScore,
+                severity
+              }));
+            }
+          } catch (error) {
+            console.error(JSON.stringify({ 
+              requestId, 
+              error: 'Failed to send health notification', 
+              aquariumId: aquarium.id 
+            }));
+          }
+        }
+      }
+    }
+
     // Process severe weather alerts (NWS API - US only)
     const { data: weatherUsers, error: weatherUsersError } = await supabase
       .from('notification_preferences')
@@ -312,6 +561,7 @@ serve(async (req) => {
       taskNotificationsSent,
       alertNotificationsSent,
       weatherNotificationsSent,
+      healthNotificationsSent,
     }));
 
     return new Response(
@@ -320,6 +570,7 @@ serve(async (req) => {
         taskNotificationsSent, 
         alertNotificationsSent,
         weatherNotificationsSent,
+        healthNotificationsSent,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
