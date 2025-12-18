@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import AppHeader from '@/components/AppHeader';
@@ -76,9 +77,30 @@ function ForecastCard({ day, units }: ForecastCardProps) {
   );
 }
 
+function CompactForecastDay({ day, units }: ForecastCardProps) {
+  const WeatherIcon = weatherIcons[day.condition] || Cloud;
+  const dayName = format(parseISO(day.date), 'EEE');
+  const highTemp = formatTemperature(day.tempMax, units, 'C');
+  const lowTemp = formatTemperature(day.tempMin, units, 'C');
+
+  return (
+    <div className="flex flex-col items-center gap-1 flex-1 py-2">
+      <span className="text-xs font-medium text-muted-foreground">{dayName}</span>
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+        <WeatherIcon className="h-4 w-4 text-primary" />
+      </div>
+      <div className="flex flex-col items-center text-xs">
+        <span className="font-semibold">{highTemp}</span>
+        <span className="text-muted-foreground">{lowTemp}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Weather() {
   const { weather, loading, error, enabled, refreshWeather, initializing } = useWeather();
   const { units, user } = useAuth();
+  const isMobile = useIsMobile();
 
   // Loading state - show during initialization or active loading
   if ((initializing || loading) && !weather) {
@@ -302,10 +324,18 @@ export default function Weather() {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">5-Day Forecast</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {weather.forecast.map((day) => (
-                <ForecastCard key={day.date} day={day} units={units} />
-              ))}
+            <CardContent className={isMobile ? "px-4 pb-4" : "space-y-3"}>
+              {isMobile ? (
+                <div className="flex justify-between">
+                  {weather.forecast.map((day) => (
+                    <CompactForecastDay key={day.date} day={day} units={units} />
+                  ))}
+                </div>
+              ) : (
+                weather.forecast.map((day) => (
+                  <ForecastCard key={day.date} day={day} units={units} />
+                ))
+              )}
             </CardContent>
           </Card>
         </div>
