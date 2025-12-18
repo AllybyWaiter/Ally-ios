@@ -326,6 +326,25 @@ export function WeatherRadar({ latitude, longitude }: WeatherRadarProps) {
     );
   }
 
+  // Don't render map until Leaflet is fully configured (critical for iOS PWA)
+  if (!leafletReady) {
+    return (
+      <Card className="glass-card overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Radar className="h-5 w-5" />
+            Weather Radar
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="h-64 md:h-80 flex items-center justify-center">
+            <div className="animate-pulse text-muted-foreground">Initializing map...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="glass-card overflow-hidden">
       <CardHeader className="pb-2">
