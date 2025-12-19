@@ -136,11 +136,11 @@ const Press = () => {
                 <Mail className="h-6 w-6 text-primary" />
                 <div>
                   <p className="font-semibold">Press Inquiries</p>
-                  <p className="text-muted-foreground">press@waiter.is</p>
+                  <p className="text-muted-foreground">press@allybywaiterapp.com</p>
                 </div>
               </div>
               <Button asChild>
-                <a href="mailto:press@waiter.is">
+                <a href="mailto:press@allybywaiterapp.com">
                   Contact Press Team
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </a>
@@ -329,7 +329,7 @@ const Press = () => {
                 <p>• WA.I.TER stands for "Water AI Technology for Ecosystem Regulation"</p>
                 <p>• Do not alter, rotate, or modify the logos in any way</p>
                 <p>• Maintain adequate spacing around logos when used in layouts</p>
-                <p>• For questions about brand usage, contact press@waiter.is</p>
+                <p>• For questions about brand usage, contact press@allybywaiterapp.com</p>
               </CardContent>
             </Card>
           </section>
