@@ -31,11 +31,32 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
-    // Detect the specific iOS PWA cold-start destructuring error
-    // Auto-recover by clearing caches and reloading
-    if (error.message?.includes('Right side of assignment cannot be destructured') ||
-        error.message?.includes('Cannot destructure property')) {
-      console.warn('🔄 Detected iOS PWA cold-start error, auto-recovering...');
+    // Detect iOS PWA cold-start/stale cache errors and auto-recover
+    // React #310 = "Minified React error #310" (invalid hook call due to stale modules)
+    // Also catch destructuring errors from stale cached code
+    const errorMessage = error.message || '';
+    const errorString = error.toString() || '';
+    
+    const isReact310Error = 
+      errorMessage.includes('#310') || 
+      errorString.includes('#310') ||
+      errorMessage.includes('Minified React error #310');
+    
+    const isDestructuringError = 
+      errorMessage.includes('Right side of assignment cannot be destructured') ||
+      errorMessage.includes('Cannot destructure property');
+    
+    const isModuleError = 
+      errorMessage.includes('Failed to fetch dynamically imported module') ||
+      errorMessage.includes('error loading dynamically imported module') ||
+      errorMessage.includes('Importing a module script failed');
+    
+    if (isReact310Error || isDestructuringError || isModuleError) {
+      console.warn('🔄 Detected iOS PWA stale cache error, auto-recovering...', {
+        isReact310Error,
+        isDestructuringError,
+        isModuleError
+      });
       this.handleClearCacheAndReload();
       return;
     }
