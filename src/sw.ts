@@ -8,12 +8,61 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare let self: ServiceWorkerGlobalScope;
 
+// Cache version - increment to force cache invalidation on iOS PWA
+const CACHE_VERSION = 'v2';
+
 // Take control immediately
 self.skipWaiting();
 clientsClaim();
 
-// Clean up old caches
+// Clean up old caches aggressively
 cleanupOutdatedCaches();
+
+// ==================== iOS PWA CACHE RECOVERY ====================
+
+// Listen for messages from the main thread to clear caches
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_ALL_CACHES') {
+    console.log('[SW] Received CLEAR_ALL_CACHES message');
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[SW] Deleting cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        console.log('[SW] All caches cleared');
+        // Notify all clients that caches are cleared
+        self.clients.matchAll().then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({ type: 'CACHES_CLEARED' });
+          });
+        });
+      })
+    );
+  }
+});
+
+// On activation, clear all old caches to prevent iOS PWA stale module issues
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating new service worker version:', CACHE_VERSION);
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          // Clear any cache that doesn't match our current version prefix
+          if (!cacheName.includes(CACHE_VERSION)) {
+            console.log('[SW] Deleting outdated cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+          return Promise.resolve();
+        })
+      );
+    })
+  );
+});
 
 // Precache static assets (VitePWA injects the manifest here)
 precacheAndRoute(self.__WB_MANIFEST);
@@ -68,18 +117,33 @@ registerRoute(
   })
 );
 
-// JavaScript - NetworkFirst to prevent iOS PWA stale module errors
+// JavaScript - NetworkFirst with very short cache to prevent iOS PWA stale module errors
 registerRoute(
   /\.(?:js|mjs)$/i,
   new NetworkFirst({
-    cacheName: 'js-cache',
+    cacheName: `js-cache-${CACHE_VERSION}`,
     plugins: [
       new ExpirationPlugin({
         maxEntries: 100,
-        maxAgeSeconds: 60 * 60 * 24, // 1 day
+        maxAgeSeconds: 60 * 60 * 4, // 4 hours (reduced from 1 day)
       }),
     ],
-    networkTimeoutSeconds: 2,
+    networkTimeoutSeconds: 3,
+  })
+);
+
+// HTML pages - Always fetch fresh to ensure latest code references
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: `pages-cache-${CACHE_VERSION}`,
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 25,
+        maxAgeSeconds: 60 * 60, // 1 hour
+      }),
+    ],
+    networkTimeoutSeconds: 3,
   })
 );
 
