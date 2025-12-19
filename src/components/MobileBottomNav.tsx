@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardVisibility } from "@/hooks/useKeyboardVisibility";
 import { triggerHaptic } from "@/hooks/useHaptics";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NavItem {
   icon: typeof Home;
@@ -23,7 +24,11 @@ export function MobileBottomNav() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { isKeyboardVisible } = useKeyboardVisibility();
+  const { user } = useAuth();
   const [isOnboarding, setIsOnboarding] = useState(false);
+
+  // Only show for authenticated users
+  if (!user) return null;
 
   // Detect onboarding state by checking for data-onboarding attribute
   useEffect(() => {
