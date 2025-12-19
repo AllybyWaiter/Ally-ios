@@ -40,7 +40,7 @@ const Index = () => {
         description="Transform your aquarium, pool, or spa care with Ally, the AI-powered water care assistant. Get instant water test analysis, personalized care plans, and crystal-clear water effortlessly."
         path="/"
       />
-      <StructuredData type="WebApplication" />
+      <StructuredData type="SoftwareApplication" />
       <StructuredData type="Organization" />
       <Navbar />
       <main>
