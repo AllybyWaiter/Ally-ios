@@ -147,6 +147,7 @@ export default function BlogPost() {
               src={post.featured_image_url}
               alt={post.title}
               className="w-full h-96 object-cover rounded-lg mb-8"
+              loading="lazy"
             />
           )}
 

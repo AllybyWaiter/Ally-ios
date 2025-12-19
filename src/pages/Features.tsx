@@ -335,6 +335,7 @@ const Features = () => {
                 src={appMockup}
                 alt="Ally mobile app interface"
                 className="relative z-10 w-full max-w-sm mx-auto drop-shadow-2xl"
+                loading="lazy"
               />
             </div>
           </div>
