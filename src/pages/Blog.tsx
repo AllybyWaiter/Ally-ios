@@ -85,6 +85,7 @@ export default function Blog() {
                             src={post.featured_image_url}
                             alt={post.title}
                             className="w-full h-48 md:h-full object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
+                            loading="lazy"
                           />
                         </div>
                       )}
