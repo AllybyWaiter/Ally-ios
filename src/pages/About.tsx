@@ -1,9 +1,27 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import AllySupportChat from "@/components/AllySupportChat";
 import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
+import { Card, CardContent } from "@/components/ui/card";
+
+const leadershipTeam = [
+  {
+    name: "Jacob Stephens",
+    title: "Founder and CEO",
+    shortBio: "Jacob leads product vision, brand, and go-to-market strategy. Auburn University graduate building Ally to be the Tesla of water care.",
+    email: "jacob@waiter.is",
+    initials: "JS"
+  },
+  {
+    name: "Harrison Dial",
+    title: "Chief Operating Officer",
+    shortBio: "Harrison leads operations and execution, translating strategy into repeatable processes. University of Alabama graduate with a systems-focused approach.",
+    email: "harrison@waiter.is",
+    initials: "HD"
+  }
+];
 
 const About = () => {
   return (
@@ -136,6 +154,44 @@ const About = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Leadership Section */}
+        <section className="container mx-auto px-4 py-12">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold text-center mb-12">Leadership Team</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {leadershipTeam.map((member) => (
+                <Card key={member.name} className="hover:border-primary/30 transition-colors">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-lg font-bold flex-shrink-0">
+                          {member.initials}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold">{member.name}</h3>
+                          <p className="text-primary text-sm font-medium">{member.title}</p>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground text-sm">{member.shortBio}</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <a href={`mailto:${member.email}`} className="text-primary hover:underline">
+                          {member.email}
+                        </a>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="text-center mt-6">
+              <Link to="/press" className="text-primary hover:underline text-sm">
+                View full media kit →
+              </Link>
             </div>
           </div>
         </section>

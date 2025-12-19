@@ -80,15 +80,25 @@ const Press = () => {
     },
   ];
 
-  const founderInfo = {
-    name: "Cody Hawkins",
-    title: "Founder & CEO",
-    bio: "Cody Hawkins is the founder of WA.I.TER (Water AI Technology for Ecosystem Regulation), the company behind Ally. With a passion for combining artificial intelligence with practical everyday applications, Cody created Ally to simplify water care for aquarium enthusiasts, pool owners, and spa maintainers worldwide. His vision is to make crystal-clear, healthy water accessible to everyone through the power of AI.",
-    email: "cody@waiter.is",
-  };
+  const teamMembers = [
+    {
+      name: "Jacob Stephens",
+      title: "Founder and CEO",
+      bio: "Jacob Stephens is the Founder and CEO of Ally by WA.I.TER AI Inc., the company building Ally, an AI powered water care platform designed to remove guesswork from aquatic spaces. Ally helps users track water data, understand what it means, and take the right next steps with clear, actionable guidance. Jacob leads product vision, brand, and go to market strategy with a focus on trust, simplicity, and a premium user experience. He graduated from Auburn University and is building Ally to feel like the Tesla of water care, sleek, smart, and reliable for everyday users.",
+      email: "jacob@waiter.is",
+      initials: "JS"
+    },
+    {
+      name: "Harrison Dial",
+      title: "Chief Operating Officer",
+      bio: "Harrison Dial is the Chief Operating Officer at Ally by WA.I.TER AI Inc., where he leads operations and execution to ensure the company scales with strong systems and consistent delivery. As COO, Harrison owns internal workflows, vendor and partner coordination, and customer facing operational performance, translating strategy into repeatable processes that drive reliability. He works closely with leadership to maintain a premium standard across how Ally is built, supported, and delivered. Harrison graduated from the University of Alabama with a biology degree and brings a practical, systems focused approach to building a product users can trust long term.",
+      email: "harrison@waiter.is",
+      initials: "HD"
+    }
+  ];
 
   const companyInfo = {
-    name: "WA.I.TER",
+    name: "Ally by WA.I.TER AI Inc.",
     fullName: "Water AI Technology for Ecosystem Regulation",
     founded: "2024",
     headquarters: "United States",
@@ -219,41 +229,45 @@ const Press = () => {
             </div>
           </section>
 
-          {/* Founder Info */}
+          {/* Leadership Team */}
           <section className="mb-16">
             <div className="flex items-center gap-3 mb-6">
               <User className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Founder</h2>
+              <h2 className="text-2xl font-bold">Leadership Team</h2>
             </div>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-2xl font-bold">
-                      {founderInfo.name.split(' ').map(n => n[0]).join('')}
+            <div className="grid md:grid-cols-2 gap-6">
+              {teamMembers.map((member) => (
+                <Card key={member.name}>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xl font-bold flex-shrink-0">
+                          {member.initials}
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold">{member.name}</h3>
+                          <p className="text-primary font-medium">{member.title}</p>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground text-sm">{member.bio}</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <a href={`mailto:${member.email}`} className="text-primary hover:underline">
+                          {member.email}
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-1">{founderInfo.name}</h3>
-                    <p className="text-primary font-medium mb-4">{founderInfo.title}</p>
-                    <p className="text-muted-foreground mb-4">{founderInfo.bio}</p>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a href={`mailto:${founderInfo.email}`} className="text-primary hover:underline">
-                        {founderInfo.email}
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </section>
 
           {/* Company Info */}
           <section className="mb-16">
             <div className="flex items-center gap-3 mb-6">
               <Building2 className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">About WA.I.TER</h2>
+              <h2 className="text-2xl font-bold">About Ally by WA.I.TER AI Inc.</h2>
             </div>
             <Card>
               <CardContent className="pt-6 space-y-4">
