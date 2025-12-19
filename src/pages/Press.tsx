@@ -85,14 +85,14 @@ const Press = () => {
       name: "Jacob Stephens",
       title: "Founder and CEO",
       bio: "Jacob Stephens is the Founder and CEO of Ally by WA.I.TER AI Inc., the company building Ally, an AI powered water care platform designed to remove guesswork from aquatic spaces. Ally helps users track water data, understand what it means, and take the right next steps with clear, actionable guidance. Jacob leads product vision, brand, and go to market strategy with a focus on trust, simplicity, and a premium user experience. He graduated from Auburn University and is building Ally to feel like the Tesla of water care, sleek, smart, and reliable for everyday users.",
-      email: "jacob@waiter.is",
+      email: "Jacob@allybywaiterapp.com",
       initials: "JS"
     },
     {
       name: "Harrison Dial",
       title: "Chief Operating Officer",
       bio: "Harrison Dial is the Chief Operating Officer at Ally by WA.I.TER AI Inc., where he leads operations and execution to ensure the company scales with strong systems and consistent delivery. As COO, Harrison owns internal workflows, vendor and partner coordination, and customer facing operational performance, translating strategy into repeatable processes that drive reliability. He works closely with leadership to maintain a premium standard across how Ally is built, supported, and delivered. Harrison graduated from the University of Alabama with a biology degree and brings a practical, systems focused approach to building a product users can trust long term.",
-      email: "harrison@waiter.is",
+      email: "Harrison@allybywaiterapp.com",
       initials: "HD"
     }
   ];

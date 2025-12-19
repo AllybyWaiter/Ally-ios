@@ -11,14 +11,14 @@ const leadershipTeam = [
     name: "Jacob Stephens",
     title: "Founder and CEO",
     shortBio: "Jacob leads product vision, brand, and go-to-market strategy. Auburn University graduate building Ally to be the Tesla of water care.",
-    email: "jacob@waiter.is",
+    email: "Jacob@allybywaiterapp.com",
     initials: "JS"
   },
   {
     name: "Harrison Dial",
     title: "Chief Operating Officer",
     shortBio: "Harrison leads operations and execution, translating strategy into repeatable processes. University of Alabama graduate with a systems-focused approach.",
-    email: "harrison@waiter.is",
+    email: "Harrison@allybywaiterapp.com",
     initials: "HD"
   }
 ];
