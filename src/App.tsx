@@ -97,6 +97,7 @@ const BestPoolApp = lazyWithRetry(() => import("./pages/BestPoolApp"));
 const BestSpaApp = lazyWithRetry(() => import("./pages/BestSpaApp"));
 const BestAquaticApp = lazyWithRetry(() => import("./pages/BestAquaticApp"));
 const AIWaterTesting = lazyWithRetry(() => import("./pages/AIWaterTesting"));
+const Press = lazyWithRetry(() => import("./pages/Press"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -140,6 +141,7 @@ const App = () => (
                   <Route path="/best-spa-app" element={<PageErrorBoundary pageName="Best Spa App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestSpaApp /></Suspense></PageErrorBoundary>} />
                   <Route path="/best-aquatic-app" element={<PageErrorBoundary pageName="Best Aquatic App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestAquaticApp /></Suspense></PageErrorBoundary>} />
                   <Route path="/ai-water-testing" element={<PageErrorBoundary pageName="AI Water Testing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><AIWaterTesting /></Suspense></PageErrorBoundary>} />
+                  <Route path="/press" element={<PageErrorBoundary pageName="Press" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Press /></Suspense></PageErrorBoundary>} />
                   <Route path="/contact" element={<PageErrorBoundary pageName="Contact" featureArea="general"><Suspense fallback={<FormSkeleton />}><Contact /></Suspense></PageErrorBoundary>} />
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
                   <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
