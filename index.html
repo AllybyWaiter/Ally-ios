@@ -12,6 +12,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ally" />
 
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), geolocation=(self)" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.gpteng.co https://*.sentry.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://api.openweathermap.org https://*.lovableproject.com https://*.lovable.app; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" />
+
     <!-- Cache-control hints (best-effort; SW still applies) -->
     <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
     <meta http-equiv="Pragma" content="no-cache" />
@@ -168,6 +175,36 @@
   </head>
 
   <body>
+    <!-- Skip Navigation Link for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <style>
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        z-index: 9999;
+      }
+      .skip-link:focus {
+        position: fixed !important;
+        left: 50% !important;
+        top: 8px !important;
+        transform: translateX(-50%);
+        width: auto !important;
+        height: auto !important;
+        padding: 12px 24px;
+        background: #3b82f6;
+        color: #ffffff;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+    </style>
+    
     <div id="splash-screen">
       <div id="splash-logo">
         <img src="/apple-touch-icon.png" alt="Ally" />

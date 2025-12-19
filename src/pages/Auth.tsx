@@ -14,15 +14,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/lib/utils';
 import { useRateLimit } from '@/hooks/useRateLimit';
 
+const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number');
+
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 const signupSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
   email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: passwordSchema,
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -331,6 +337,7 @@ export default function Auth() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       disabled={isLoading}
+                      autoComplete="name"
                     />
                     {errors.name && (
                       <p className="text-sm text-destructive">{errors.name}</p>
@@ -345,6 +352,7 @@ export default function Auth() {
                     placeholder="your@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     disabled={isLoading}
                   />
                   {errors.email && (
@@ -373,6 +381,7 @@ export default function Auth() {
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
                       className="pr-10"
+                      autoComplete={view === 'login' ? 'current-password' : 'new-password'}
                     />
                     <button
                       type="button"
@@ -385,6 +394,11 @@ export default function Auth() {
                   </div>
                   {errors.password && (
                     <p className="text-sm text-destructive">{errors.password}</p>
+                  )}
+                  {view === 'signup' && (
+                    <p className="text-xs text-muted-foreground">
+                      Must be 8+ characters with uppercase, lowercase, and number
+                    </p>
                   )}
                 </div>
                 {view === 'signup' && (
@@ -399,6 +413,7 @@ export default function Auth() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         disabled={isLoading}
                         className="pr-10"
+                        autoComplete="new-password"
                       />
                       <button
                         type="button"
