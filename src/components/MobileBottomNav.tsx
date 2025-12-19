@@ -21,16 +21,14 @@ const navItems: NavItem[] = [
 ];
 
 export function MobileBottomNav() {
+  // ALL HOOKS MUST BE CALLED FIRST - before any conditional returns
   const location = useLocation();
   const isMobile = useIsMobile();
   const { isKeyboardVisible } = useKeyboardVisibility();
   const { user } = useAuth();
   const [isOnboarding, setIsOnboarding] = useState(false);
 
-  // Only show for authenticated users
-  if (!user) return null;
-
-  // Detect onboarding state by checking for data-onboarding attribute
+  // Detect onboarding state - useEffect MUST be before any returns
   useEffect(() => {
     const checkOnboarding = () => {
       const onboardingElement = document.querySelector('[data-onboarding="true"]');
@@ -46,13 +44,10 @@ export function MobileBottomNav() {
     return () => observer.disconnect();
   }, []);
 
-  // Only show on mobile
+  // NOW safe to do early returns - all hooks have been called
+  if (!user) return null;
   if (!isMobile) return null;
-
-  // Hide when keyboard is visible
   if (isKeyboardVisible) return null;
-
-  // Hide during onboarding
   if (isOnboarding) return null;
 
   // Hide on certain pages where it doesn't make sense
