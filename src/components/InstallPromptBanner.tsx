@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Share, PlusSquare, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -8,9 +9,13 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const InstallPromptBanner = () => {
+  const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  // Only show for authenticated users
+  if (!user) return null;
 
   useEffect(() => {
     // Check if already installed (standalone mode)
