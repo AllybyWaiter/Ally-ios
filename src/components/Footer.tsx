@@ -35,10 +35,12 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Solutions</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/compare" className="hover:text-primary transition-colors">Compare Apps</Link></li>
+              <li><Link to="/best-aquatic-app" className="hover:text-primary transition-colors">Why Ally</Link></li>
               <li><Link to="/best-aquarium-app" className="hover:text-primary transition-colors">Best Aquarium App</Link></li>
               <li><Link to="/best-pool-app" className="hover:text-primary transition-colors">Best Pool App</Link></li>
+              <li><Link to="/best-spa-app" className="hover:text-primary transition-colors">Best Spa App</Link></li>
               <li><Link to="/ai-water-testing" className="hover:text-primary transition-colors">AI Water Testing</Link></li>
+              <li><Link to="/compare" className="hover:text-primary transition-colors">Compare Apps</Link></li>
             </ul>
           </div>
 

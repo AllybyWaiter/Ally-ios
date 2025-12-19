@@ -94,6 +94,8 @@ const HelpCenter = lazyWithRetry(() => import("./pages/HelpCenter"));
 const Compare = lazyWithRetry(() => import("./pages/Compare"));
 const BestAquariumApp = lazyWithRetry(() => import("./pages/BestAquariumApp"));
 const BestPoolApp = lazyWithRetry(() => import("./pages/BestPoolApp"));
+const BestSpaApp = lazyWithRetry(() => import("./pages/BestSpaApp"));
+const BestAquaticApp = lazyWithRetry(() => import("./pages/BestAquaticApp"));
 const AIWaterTesting = lazyWithRetry(() => import("./pages/AIWaterTesting"));
 
 // Configure React Query with optimized caching
@@ -135,6 +137,8 @@ const App = () => (
                   <Route path="/compare" element={<PageErrorBoundary pageName="Compare" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Compare /></Suspense></PageErrorBoundary>} />
                   <Route path="/best-aquarium-app" element={<PageErrorBoundary pageName="Best Aquarium App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestAquariumApp /></Suspense></PageErrorBoundary>} />
                   <Route path="/best-pool-app" element={<PageErrorBoundary pageName="Best Pool App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestPoolApp /></Suspense></PageErrorBoundary>} />
+                  <Route path="/best-spa-app" element={<PageErrorBoundary pageName="Best Spa App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestSpaApp /></Suspense></PageErrorBoundary>} />
+                  <Route path="/best-aquatic-app" element={<PageErrorBoundary pageName="Best Aquatic App" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><BestAquaticApp /></Suspense></PageErrorBoundary>} />
                   <Route path="/ai-water-testing" element={<PageErrorBoundary pageName="AI Water Testing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><AIWaterTesting /></Suspense></PageErrorBoundary>} />
                   <Route path="/contact" element={<PageErrorBoundary pageName="Contact" featureArea="general"><Suspense fallback={<FormSkeleton />}><Contact /></Suspense></PageErrorBoundary>} />
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />

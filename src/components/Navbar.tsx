@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const solutionsLinks = [
-  { label: "Compare Apps", path: "/compare" },
+  { label: "Why Ally", path: "/best-aquatic-app" },
   { label: "Best Aquarium App", path: "/best-aquarium-app" },
   { label: "Best Pool App", path: "/best-pool-app" },
+  { label: "Best Spa App", path: "/best-spa-app" },
   { label: "AI Water Testing", path: "/ai-water-testing" },
+  { label: "Compare Apps", path: "/compare" },
 ];
 
 const Navbar = () => {

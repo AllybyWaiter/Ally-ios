@@ -14,12 +14,12 @@
 - Freshwater aquariums
 - Saltwater/marine aquariums and reef tanks
 - Swimming pools (chlorine & saltwater)
-- Spas and hot tubs
+- Spas and hot tubs (bromine & chlorine)
 - Koi ponds and garden ponds
 
 ## Core Features
 
-- [AI Water Testing](https://allybywaiter.com/features): Snap photos of test strips from API, Tetra, Seachem, AquaChek, Taylor kits - get instant analysis with 98% accuracy
+- [AI Water Testing](https://allybywaiter.com/ai-water-testing): Snap photos of test strips from API, Tetra, Seachem, AquaChek, Taylor kits - get instant analysis with 98% accuracy
 - [Voice Commands](https://allybywaiter.com/features): Speak naturally, get spoken responses, hands-free mode for wetted hands
 - [Smart Scheduling](https://allybywaiter.com/features): Automated reminders for water changes, filter cleaning, equipment maintenance
 - [Proactive Alerts](https://allybywaiter.com/features): AI detects rising ammonia, falling pH, unstable parameters before problems occur
@@ -31,18 +31,18 @@
 
 ### Aquarium Care
 Best for freshwater and saltwater hobbyists tracking pH, ammonia, nitrite, nitrate, and more. Supports reef tanks, planted tanks, and fish-only setups.
-- Learn more: https://allybywaiter.com/faq
+- Learn more: https://allybywaiter.com/best-aquarium-app
 
 ### Pool Maintenance  
 Ideal for homeowners managing chlorine, pH, alkalinity, calcium hardness, and CYA levels. Supports both chlorine and saltwater pools.
-- Learn more: https://allybywaiter.com/faq
+- Learn more: https://allybywaiter.com/best-pool-app
 
 ### Spa & Hot Tub Care
-Track bromine/chlorine, temperature, and weekly maintenance schedules for spas and hot tubs.
-- Learn more: https://allybywaiter.com/faq
+Track bromine/chlorine, pH, temperature, and weekly maintenance schedules for spas and hot tubs. Drain reminders and chemical balance alerts included.
+- Learn more: https://allybywaiter.com/best-spa-app
 
 ### Pond Care
-Monitor outdoor ponds including koi ponds, garden ponds, and water features.
+Monitor outdoor ponds including koi ponds, garden ponds, and water features with weather-aware recommendations.
 - Learn more: https://allybywaiter.com/faq
 
 ## Why Choose Ally
@@ -54,6 +54,7 @@ Monitor outdoor ponds including koi ponds, garden ponds, and water features.
 | Voice control | Full support | None |
 | Cross-platform | PWA (all devices) | Platform-specific |
 | Offline support | Yes | Limited/None |
+| All water bodies | One app for all | Separate apps |
 
 ## Company
 
@@ -65,6 +66,11 @@ Monitor outdoor ponds including koi ponds, garden ponds, and water features.
 ## Links
 
 - Homepage: https://allybywaiter.com
+- Why Ally (All Water Bodies): https://allybywaiter.com/best-aquatic-app
+- Best Aquarium App: https://allybywaiter.com/best-aquarium-app
+- Best Pool App: https://allybywaiter.com/best-pool-app
+- Best Spa App: https://allybywaiter.com/best-spa-app
+- AI Water Testing: https://allybywaiter.com/ai-water-testing
 - Features: https://allybywaiter.com/features
 - Pricing: https://allybywaiter.com/pricing
 - FAQ: https://allybywaiter.com/faq
