@@ -85,6 +85,15 @@ export default function BestPoolApp() {
       <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
 
       <main className="pt-20">
+        {/* Breadcrumb */}
+        <div className="container mx-auto px-4 pt-4">
+          <nav className="text-sm text-muted-foreground">
+            <Link to="/best-aquatic-app" className="hover:text-primary transition-colors">
+              ← All Water Bodies
+            </Link>
+          </nav>
+        </div>
+
         {/* Hero Section */}
         <section className="relative py-20 md:py-32 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/10" />
@@ -290,10 +299,13 @@ export default function BestPoolApp() {
             </div>
             <div className="flex flex-wrap justify-center gap-4">
               <Button variant="outline" asChild>
-                <Link to="/compare">Compare Apps</Link>
+                <Link to="/best-aquatic-app">Why Ally</Link>
               </Button>
               <Button variant="outline" asChild>
                 <Link to="/best-aquarium-app">Best Aquarium App</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/best-spa-app">Best Spa App</Link>
               </Button>
               <Button variant="outline" asChild>
                 <Link to="/ai-water-testing">AI Water Testing</Link>
