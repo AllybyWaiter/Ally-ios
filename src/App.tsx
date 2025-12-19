@@ -127,6 +127,7 @@ const App = () => (
                   <ScrollToTop />
                   <CookieConsent />
                   <MobileBottomNav />
+                  <main id="main-content">
                   <Routes>
                   <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
                   <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><About /></Suspense></PageErrorBoundary>} />
@@ -274,6 +275,7 @@ const App = () => (
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<PageErrorBoundary featureArea="general"><NotFound /></PageErrorBoundary>} />
                   </Routes>
+                  </main>
                 </BrowserRouter>
               </LanguageWrapper>
             </ThemeWrapper>
