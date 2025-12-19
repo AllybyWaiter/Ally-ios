@@ -11,10 +11,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Ally" />
-    
+
+    <!-- Cache-control hints (best-effort; SW still applies) -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
     <!-- iOS Splash Screen Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
-    
     <!-- iOS Splash Screens - All devices use the same high-res image, iOS will scale -->
     <!-- iPhone 15 Pro Max, 15 Plus, 14 Pro Max (1290x2796) -->
     <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/splash-ios.jpg" />
@@ -173,7 +177,102 @@
       <div id="splash-loader"></div>
     </div>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Pre-module recovery (runs before React bundle loads) -->
+    <script>
+      (function () {
+        var ua = navigator.userAgent || '';
+        var isIOS = /iP(hone|od|ad)/.test(ua);
+        var isStandalone = (window.navigator && window.navigator.standalone) || window.matchMedia('(display-mode: standalone)').matches;
+
+        function looksLikeStaleBundleError(err) {
+          var msg = '';
+          try {
+            msg = String((err && (err.message || err.reason || err)) || '');
+          } catch (_) {}
+          return (
+            /Minified React error #310/i.test(msg) ||
+            /Rendered more hooks than during the previous render/i.test(msg) ||
+            /Cannot destructure property/i.test(msg) ||
+            /Failed to fetch dynamically imported module/i.test(msg) ||
+            /Importing a module script failed/i.test(msg) ||
+            /Unexpected token/i.test(msg)
+          );
+        }
+
+        function shouldAttemptRecovery() {
+          // Avoid reload loops: max 2 recoveries per 10 minutes.
+          try {
+            var key = 'pwa_recoveries_v1';
+            var now = Date.now();
+            var windowMs = 10 * 60 * 1000;
+            var max = 2;
+            var raw = sessionStorage.getItem(key);
+            var arr = raw ? JSON.parse(raw) : [];
+            arr = Array.isArray(arr) ? arr.filter(function (t) { return now - t < windowMs; }) : [];
+            if (arr.length >= max) return false;
+            arr.push(now);
+            sessionStorage.setItem(key, JSON.stringify(arr));
+            return true;
+          } catch (_) {
+            // If sessionStorage is unavailable, still allow one attempt.
+            return true;
+          }
+        }
+
+        function clearAndReload() {
+          if (!shouldAttemptRecovery()) return;
+
+          var bust = '_cb=' + Date.now();
+          var nextUrl = window.location.href;
+          nextUrl += (nextUrl.indexOf('?') === -1 ? '?' : '&') + bust;
+
+          try {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function (regs) {
+                regs.forEach(function (r) {
+                  try { r.unregister(); } catch (_) {}
+                });
+              });
+            }
+          } catch (_) {}
+
+          try {
+            if (window.caches && caches.keys) {
+              caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+              });
+            }
+          } catch (_) {}
+
+          // Give deletions a moment, then hard navigate
+          setTimeout(function () {
+            window.location.replace(nextUrl);
+          }, 250);
+        }
+
+        function onGlobalError(e) {
+          var err = (e && (e.error || e.reason)) || e;
+          if (!looksLikeStaleBundleError(err)) return;
+          // Primarily targeted at iOS PWA where stale SW caches are common
+          if (isIOS && isStandalone) clearAndReload();
+        }
+
+        window.addEventListener('error', onGlobalError);
+        window.addEventListener('unhandledrejection', onGlobalError);
+
+        // Load the React entry as a module only after handlers are attached.
+        var s = document.createElement('script');
+        s.type = 'module';
+        s.src = '/src/main.tsx';
+        s.addEventListener('error', function () {
+          // Module failed to load (often stale cache / partial update)
+          if (isIOS && isStandalone) clearAndReload();
+        });
+        document.body.appendChild(s);
+      })();
+    </script>
+
     <script>
       // Hide splash screen when React app signals it's ready
       function hideSplash() {
