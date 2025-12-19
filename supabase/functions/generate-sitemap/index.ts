@@ -19,6 +19,13 @@ const staticPages = [
   { path: '/faq', priority: 0.8, changefreq: 'monthly' },
   { path: '/contact', priority: 0.6, changefreq: 'monthly' },
   { path: '/blog', priority: 0.8, changefreq: 'daily' },
+  { path: '/compare', priority: 0.8, changefreq: 'monthly' },
+  { path: '/best-aquatic-app', priority: 0.9, changefreq: 'monthly' },
+  { path: '/best-aquarium-app', priority: 0.9, changefreq: 'monthly' },
+  { path: '/best-pool-app', priority: 0.9, changefreq: 'monthly' },
+  { path: '/best-spa-app', priority: 0.9, changefreq: 'monthly' },
+  { path: '/ai-water-testing', priority: 0.9, changefreq: 'monthly' },
+  { path: '/help', priority: 0.7, changefreq: 'monthly' },
   { path: '/privacy', priority: 0.3, changefreq: 'yearly' },
   { path: '/terms', priority: 0.3, changefreq: 'yearly' },
 ];

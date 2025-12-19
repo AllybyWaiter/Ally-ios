@@ -1,6 +1,5 @@
-
 import { Link } from 'react-router-dom';
-import { Camera, Mic, Bell, Fish, Droplet, Smartphone, Star, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
+import { Camera, Mic, Bell, Thermometer, Droplet, Smartphone, Star, CheckCircle2, ArrowRight, Sparkles, Timer, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '@/components/Navbar';
@@ -13,71 +12,74 @@ import AllySupportChat from '@/components/AllySupportChat';
 const features = [
   {
     icon: Camera,
-    title: 'AI Photo Water Testing',
-    description: 'Snap a photo of any test strip - get instant, accurate readings with 98% accuracy. Supports API, Tetra, Seachem, and more.',
+    title: 'AI Photo Testing',
+    description: 'Snap photos of AquaChek, Taylor, or other spa test strips. Get instant readings for bromine, chlorine, pH, and more.',
   },
   {
     icon: Mic,
     title: 'Voice Commands',
-    description: 'Ask questions and log tests with your voice. Hands-free mode perfect for when your hands are wet.',
+    description: '"What should my bromine be?" - Hands-free for wet environments. Ask questions and log tests with your voice.',
+  },
+  {
+    icon: Thermometer,
+    title: 'Temperature Monitoring',
+    description: 'Track water temperature alongside chemical levels. Get alerts when conditions are outside optimal range.',
+  },
+  {
+    icon: Timer,
+    title: 'Drain & Fill Reminders',
+    description: 'Automatic reminders for weekly or monthly spa draining. Never forget essential maintenance again.',
   },
   {
     icon: Bell,
-    title: 'Smart Alerts',
-    description: 'AI detects rising ammonia, falling pH, and other concerning trends before they become problems.',
-  },
-  {
-    icon: Fish,
-    title: 'Livestock Tracking',
-    description: 'Track all your fish, corals, and invertebrates with photo galleries and health monitoring.',
-  },
-  {
-    icon: Droplet,
-    title: 'All Tank Types',
-    description: 'Freshwater, saltwater, reef tanks, planted tanks - Ally knows the ideal parameters for each.',
+    title: 'Chemical Balance Alerts',
+    description: 'AI monitors your spa chemistry and alerts you before problems occur. Keep water safe and sanitized.',
   },
   {
     icon: Smartphone,
     title: 'Works Everywhere',
-    description: 'PWA app works on iPhone, Android, tablets, and desktop. Install once, use anywhere.',
+    description: 'PWA app works on iPhone, Android, tablets, and desktop. Access your spa data from anywhere.',
   },
 ];
 
 const faqs = [
   {
-    question: 'What is the best aquarium app for beginners?',
-    answer: 'Ally by WA.I.TER is the best aquarium app for beginners because it uses AI to analyze water test photos and provides plain-language explanations and recommendations. You don\'t need to understand complex water chemistry - Ally tells you exactly what to do.',
+    question: 'What is the best hot tub maintenance app?',
+    answer: 'Ally by WA.I.TER is the best hot tub maintenance app because it uses AI to analyze photos of your test strips. Just snap a photo of your AquaChek or Taylor spa strip and get instant readings with dosage recommendations for bromine, chlorine, pH, and more.',
   },
   {
-    question: 'Is there an app that can read aquarium test strips?',
-    answer: 'Yes! Ally uses AI to read aquarium test strips from popular brands like API, Tetra, Seachem, and more. Just take a photo and get instant, accurate readings with 98% accuracy.',
+    question: 'Is there an app to track spa water chemistry?',
+    answer: 'Yes! Ally tracks all spa water parameters including bromine/chlorine, pH, alkalinity, calcium hardness, and TDS. It stores your history, detects trends, and provides personalized recommendations for your specific hot tub.',
   },
   {
-    question: 'What\'s the best app for tracking aquarium water parameters?',
-    answer: 'Ally is the best app for tracking aquarium water parameters because it combines photo analysis, manual entry, and voice commands. It tracks your history, detects trends, and alerts you to problems before they harm your fish.',
+    question: 'How often should I test hot tub water?',
+    answer: 'For regular use, test your hot tub water 2-3 times per week. Ally can remind you when to test and tracks your testing habits to ensure you never miss a check. After heavy use or adding chemicals, test again to verify levels.',
   },
   {
-    question: 'Is there a free aquarium app?',
-    answer: 'Yes, Ally offers a free tier that includes one aquarium with manual water test entry and basic maintenance reminders. Upgrade to Pro for unlimited aquariums and AI photo analysis.',
+    question: 'Can Ally remind me to drain my spa?',
+    answer: 'Absolutely! Ally creates automated drain and fill reminders based on your usage. Most spas should be drained every 3-4 months. Ally also reminds you about filter cleaning, cover care, and other essential maintenance.',
+  },
+  {
+    question: 'Does Ally work with both bromine and chlorine spas?',
+    answer: 'Yes! Ally fully supports both bromine and chlorine sanitizing systems. It knows the different target ranges for each and provides specific recommendations based on your spa setup.',
   },
 ];
 
-export default function BestAquariumApp() {
+export default function BestSpaApp() {
   const [showWaitlist, setShowWaitlist] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Best Aquarium App 2025 - AI Water Testing & Fish Tank Tracker"
-        description="Ally is the #1 aquarium app for water testing, fish tracking, and tank maintenance. AI-powered photo analysis, voice commands, and smart alerts. Free to try."
-        path="/best-aquarium-app"
+        title="Best Spa App 2025 - AI Hot Tub Water Testing & Maintenance"
+        description="Ally is the #1 spa and hot tub app with AI water test photo analysis, chemical dosage calculator, and smart maintenance reminders. Works with bromine and chlorine spas."
+        path="/best-spa-app"
       />
       <StructuredData type="SoftwareApplication" />
       <StructuredData
         type="FAQPage"
         data={{ questions: generateFAQStructuredData(faqs) }}
       />
-
 
       <Navbar />
       <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
@@ -94,22 +96,22 @@ export default function BestAquariumApp() {
 
         {/* Hero Section */}
         <section className="relative py-20 md:py-32 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10" />
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-500/10" />
           <div className="container mx-auto px-4 relative">
             <div className="max-w-4xl mx-auto text-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
                 <Star className="w-4 h-4 fill-current" />
-                <span className="text-sm font-medium">#1 Rated Aquarium App</span>
+                <span className="text-sm font-medium">Best Spa & Hot Tub App</span>
               </div>
               
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-                The Best Aquarium App for{' '}
-                <span className="text-primary">Water Testing</span>
+                The Best Spa App for{' '}
+                <span className="text-primary">Hot Tub Care</span>
               </h1>
               
               <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                Ally is an AI-powered aquarium app that reads water test strips from photos, 
-                tracks your fish and corals, and alerts you to problems before they happen.
+                Ally is an AI-powered spa care app that reads test strips from photos, 
+                calculates exact chemical dosages, and reminds you when to drain, test, and maintain your hot tub.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -141,8 +143,8 @@ export default function BestAquariumApp() {
                   <div className="text-sm text-muted-foreground">Test Accuracy</div>
                 </div>
                 <div>
-                  <div className="text-3xl md:text-4xl font-bold text-primary">50+</div>
-                  <div className="text-sm text-muted-foreground">Test Kits Supported</div>
+                  <div className="text-3xl md:text-4xl font-bold text-primary">8+</div>
+                  <div className="text-sm text-muted-foreground">Parameters Tracked</div>
                 </div>
                 <div>
                   <div className="text-3xl md:text-4xl font-bold text-primary">Free</div>
@@ -158,11 +160,10 @@ export default function BestAquariumApp() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Why Ally is the Best Aquarium App
+                Why Ally is the Best Spa App
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Unlike other aquarium apps that require manual data entry, 
-                Ally uses AI to make water testing effortless.
+                Stop guessing with spa chemicals. Ally's AI tells you exactly what your hot tub needs.
               </p>
             </div>
 
@@ -182,59 +183,76 @@ export default function BestAquariumApp() {
           </div>
         </section>
 
-        {/* Best For Different Users */}
+        {/* Spa Parameters */}
         <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Best Aquarium App For Every Hobbyist
+                Complete Spa Water Testing
               </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Ally tracks all the parameters you need for safe, crystal-clear spa water.
+              </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+              <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20">
                 <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold mb-4">Best for Beginners</h3>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Droplet className="w-8 h-8 text-orange-500" />
+                    <h3 className="text-2xl font-bold">Bromine Spas</h3>
+                  </div>
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Plain-language explanations of water chemistry</span>
+                      <span>Bromine (3-5 ppm target)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Step-by-step guidance for fixing problems</span>
+                      <span>pH (7.2-7.8 ideal range)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Automatic reminders so you never forget maintenance</span>
+                      <span>Total Alkalinity (80-120 ppm)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Learn as you go with AI-powered tips</span>
+                      <span>Calcium Hardness (150-250 ppm)</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>TDS / Total Dissolved Solids</span>
                     </li>
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
+              <Card className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-cyan-500/20">
                 <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold mb-4">Best for Reef Keepers</h3>
+                  <div className="flex items-center gap-3 mb-6">
+                    <Waves className="w-8 h-8 text-cyan-500" />
+                    <h3 className="text-2xl font-bold">Chlorine Spas</h3>
+                  </div>
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Track alkalinity, calcium, magnesium for corals</span>
+                      <span>Free Chlorine (3-5 ppm target)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Photo galleries for coral growth documentation</span>
+                      <span>Combined Chlorine (shock indicator)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Trend analysis catches parameter swings early</span>
+                      <span>pH Balance (critical for comfort)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Supports Salifert, Red Sea, and reef test kits</span>
+                      <span>Alkalinity Monitoring</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span>Temperature Tracking</span>
                     </li>
                   </ul>
                 </CardContent>
@@ -279,7 +297,7 @@ export default function BestAquariumApp() {
                 <Link to="/best-pool-app">Best Pool App</Link>
               </Button>
               <Button variant="outline" asChild>
-                <Link to="/best-spa-app">Best Spa App</Link>
+                <Link to="/best-aquarium-app">Best Aquarium App</Link>
               </Button>
               <Button variant="outline" asChild>
                 <Link to="/ai-water-testing">AI Water Testing</Link>
@@ -293,10 +311,10 @@ export default function BestAquariumApp() {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Ready to Try the Best Aquarium App?
+                Ready to Try the Best Spa App?
               </h2>
               <p className="text-xl text-muted-foreground mb-8">
-                Join thousands of aquarium hobbyists who use Ally to keep their tanks healthy.
+                Join spa owners who use Ally to keep their hot tubs crystal clear with less effort.
               </p>
               <Button 
                 size="lg" 

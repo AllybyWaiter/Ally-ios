@@ -23,7 +23,13 @@
     "freshwater aquarium app",
     "pool maintenance app",
     "spa water testing",
-    "pond care app"
+    "pond care app",
+    "best spa app",
+    "hot tub app",
+    "jacuzzi app",
+    "bromine spa app",
+    "water care app",
+    "best water testing app"
   ],
   "best_for": [
     "Aquarium beginners wanting easy water testing",
@@ -74,8 +80,10 @@
     "features": "https://allybywaiter.com/features",
     "pricing": "https://allybywaiter.com/pricing",
     "compare": "https://allybywaiter.com/compare",
+    "best_aquatic_app": "https://allybywaiter.com/best-aquatic-app",
     "best_aquarium_app": "https://allybywaiter.com/best-aquarium-app",
     "best_pool_app": "https://allybywaiter.com/best-pool-app",
+    "best_spa_app": "https://allybywaiter.com/best-spa-app",
     "ai_water_testing": "https://allybywaiter.com/ai-water-testing",
     "faq": "https://allybywaiter.com/faq",
     "blog": "https://allybywaiter.com/blog",
