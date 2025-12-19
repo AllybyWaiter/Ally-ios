@@ -201,7 +201,6 @@
         }
 
         function shouldAttemptRecovery() {
-          // Avoid reload loops: max 2 recoveries per 10 minutes.
           try {
             var key = 'pwa_recoveries_v1';
             var now = Date.now();
@@ -215,7 +214,6 @@
             sessionStorage.setItem(key, JSON.stringify(arr));
             return true;
           } catch (_) {
-            // If sessionStorage is unavailable, still allow one attempt.
             return true;
           }
         }
@@ -230,9 +228,7 @@
           try {
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.getRegistrations().then(function (regs) {
-                regs.forEach(function (r) {
-                  try { r.unregister(); } catch (_) {}
-                });
+                regs.forEach(function (r) { try { r.unregister(); } catch (_) {} });
               });
             }
           } catch (_) {}
@@ -245,33 +241,20 @@
             }
           } catch (_) {}
 
-          // Give deletions a moment, then hard navigate
-          setTimeout(function () {
-            window.location.replace(nextUrl);
-          }, 250);
+          setTimeout(function () { window.location.replace(nextUrl); }, 250);
         }
 
         function onGlobalError(e) {
           var err = (e && (e.error || e.reason)) || e;
           if (!looksLikeStaleBundleError(err)) return;
-          // Primarily targeted at iOS PWA where stale SW caches are common
           if (isIOS && isStandalone) clearAndReload();
         }
 
         window.addEventListener('error', onGlobalError);
         window.addEventListener('unhandledrejection', onGlobalError);
-
-        // Load the React entry as a module only after handlers are attached.
-        var s = document.createElement('script');
-        s.type = 'module';
-        s.src = '/src/main.tsx';
-        s.addEventListener('error', function () {
-          // Module failed to load (often stale cache / partial update)
-          if (isIOS && isStandalone) clearAndReload();
-        });
-        document.body.appendChild(s);
       })();
     </script>
+    <script type="module" src="/src/main.tsx"></script>
 
     <script>
       // Hide splash screen when React app signals it's ready
