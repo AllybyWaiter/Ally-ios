@@ -1529,7 +1529,60 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_admin_view: {
+        Row: {
+          created_at: string | null
+          hemisphere: string | null
+          id: string | null
+          language_preference: string | null
+          masked_email: string | null
+          name: string | null
+          onboarding_completed: boolean | null
+          skill_level: string | null
+          status: string | null
+          subscription_tier: string | null
+          theme_preference: string | null
+          unit_preference: string | null
+          updated_at: string | null
+          user_id: string | null
+          weather_enabled: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          hemisphere?: string | null
+          id?: string | null
+          language_preference?: string | null
+          masked_email?: never
+          name?: string | null
+          onboarding_completed?: boolean | null
+          skill_level?: string | null
+          status?: string | null
+          subscription_tier?: string | null
+          theme_preference?: string | null
+          unit_preference?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          weather_enabled?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          hemisphere?: string | null
+          id?: string | null
+          language_preference?: string | null
+          masked_email?: never
+          name?: string | null
+          onboarding_completed?: boolean | null
+          skill_level?: string | null
+          status?: string | null
+          subscription_tier?: string | null
+          theme_preference?: string | null
+          unit_preference?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          weather_enabled?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_permissions: {
