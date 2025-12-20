@@ -189,7 +189,7 @@ describe('waterTests DAL', () => {
       });
       const mockParamInsert = vi.fn().mockResolvedValue({ error: null });
       
-      vi.mocked(supabase.from).mockImplementation((table) => {
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
         if (table === 'water_tests') {
           return { insert: mockInsert } as any;
         }
@@ -247,7 +247,7 @@ describe('waterTests DAL', () => {
       });
       const mockParamInsert = vi.fn().mockResolvedValue({ error: { message: 'Param insert failed' } });
 
-      vi.mocked(supabase.from).mockImplementation((table) => {
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
         if (table === 'water_tests') {
           return { insert: mockTestInsert } as any;
         }
