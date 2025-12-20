@@ -108,7 +108,7 @@ export default function BestAquariumApp() {
               </h1>
               
               <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                Ally is an AI-powered aquarium app that reads water test strips from photos, 
+                Ally is an AI powered aquarium app that reads water test strips from photos, 
                 tracks your fish and corals, and alerts you to problems before they happen.
               </p>
 
