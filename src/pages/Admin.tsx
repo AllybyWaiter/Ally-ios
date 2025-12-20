@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity, Brain, Flag } from 'lucide-react';
+import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity, Brain, Flag, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
@@ -18,6 +18,7 @@ import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import UserActivityLogs from '@/components/admin/UserActivityLogs';
 import AIAnalytics from '@/components/admin/AIAnalytics';
 import FeatureFlagManager from '@/components/admin/FeatureFlagManager';
+import { AdminDashboardHome } from '@/components/admin/AdminDashboardHome';
 import { formatDate } from '@/lib/formatters';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
@@ -47,6 +48,7 @@ export default function Admin() {
   const [waitlistSearch, setWaitlistSearch] = useState('');
   const [contactsSearch, setContactsSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchData();
@@ -167,42 +169,12 @@ export default function Admin() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Waitlist</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{waitlist.length}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{contacts.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">New Contacts</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {contacts.filter(c => c.status === 'new').length}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue={hasPermission('manage_users') ? 'users' : hasAnyRole(['admin']) ? 'beta' : hasPermission('manage_roles') ? 'roles' : hasPermission('manage_blog') ? 'blog' : 'tickets'} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
+            <TabsTrigger value="overview">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Overview
+            </TabsTrigger>
             {hasPermission('manage_users') && (
               <TabsTrigger value="users">
                 <UserCog className="mr-2 h-4 w-4" />
@@ -261,6 +233,12 @@ export default function Admin() {
               </TabsTrigger>
             )}
           </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <SectionErrorBoundary fallbackTitle="Failed to load dashboard" featureArea={FeatureArea.ADMIN}>
+              <AdminDashboardHome onTabChange={setActiveTab} />
+            </SectionErrorBoundary>
+          </TabsContent>
 
           {hasAnyRole(['admin']) && (
             <TabsContent value="beta" className="space-y-4">
