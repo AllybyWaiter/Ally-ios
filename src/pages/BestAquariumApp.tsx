@@ -14,12 +14,12 @@ const features = [
   {
     icon: Camera,
     title: 'AI Photo Water Testing',
-    description: 'Snap a photo of any test strip - get instant, accurate readings with 98% accuracy. Supports API, Tetra, Seachem, and more.',
+    description: 'Snap a photo of any test strip and get instant, accurate readings with 98% accuracy. Supports API, Tetra, Seachem, and more.',
   },
   {
     icon: Mic,
     title: 'Voice Commands',
-    description: 'Ask questions and log tests with your voice. Hands-free mode perfect for when your hands are wet.',
+    description: 'Ask questions and log tests with your voice. Hands free mode perfect for when your hands are wet.',
   },
   {
     icon: Bell,
@@ -34,7 +34,7 @@ const features = [
   {
     icon: Droplet,
     title: 'All Tank Types',
-    description: 'Freshwater, saltwater, reef tanks, planted tanks - Ally knows the ideal parameters for each.',
+    description: 'Freshwater, saltwater, reef tanks, planted tanks. Ally knows the ideal parameters for each.',
   },
   {
     icon: Smartphone,
