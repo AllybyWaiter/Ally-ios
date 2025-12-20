@@ -44,6 +44,93 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          details: Json | null
+          id: string
+          is_resolved: boolean
+          message: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          is_resolved?: boolean
+          message: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          is_resolved?: boolean
+          message?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
+      ai_annotations: {
+        Row: {
+          admin_user_id: string
+          annotation_type: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          message_id: string | null
+          notes: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          admin_user_id: string
+          annotation_type: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          notes?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          admin_user_id?: string
+          annotation_type?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          notes?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_annotations_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_annotations_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_feedback: {
         Row: {
           context: Json | null
@@ -1024,6 +1111,7 @@ export type Database = {
           hemisphere: string | null
           id: string
           language_preference: string | null
+          last_ai_interaction: string | null
           latitude: number | null
           longitude: number | null
           name: string | null
@@ -1045,6 +1133,7 @@ export type Database = {
           hemisphere?: string | null
           id?: string
           language_preference?: string | null
+          last_ai_interaction?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string | null
@@ -1066,6 +1155,7 @@ export type Database = {
           hemisphere?: string | null
           id?: string
           language_preference?: string | null
+          last_ai_interaction?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string | null
