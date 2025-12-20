@@ -22,6 +22,10 @@ import { formatDate } from '@/lib/formatters';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { CommandPalette } from '@/components/admin/CommandPalette';
+import { ContactsManager } from '@/components/admin/ContactsManager';
+import { SystemHealth } from '@/components/admin/SystemHealth';
+import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
 
 interface WaitlistEntry {
   id: string;
@@ -48,6 +52,8 @@ export default function Admin() {
   const [contactsSearch, setContactsSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -193,61 +199,9 @@ export default function Admin() {
       case 'contacts':
         if (!hasAnyRole(['admin'])) return <AccessDenied />;
         return (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <CardTitle>Contact Submissions</CardTitle>
-                  <CardDescription>View and manage contact form messages</CardDescription>
-                </div>
-                <Button onClick={() => exportToCSV(contacts, 'contacts')} variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 mt-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search contacts..."
-                  value={contactsSearch}
-                  onChange={(e) => setContactsSearch(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredContacts.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{entry.name}</TableCell>
-                      <TableCell>{entry.email}</TableCell>
-                      <TableCell className="max-w-md truncate">{entry.message}</TableCell>
-                      <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteContact(entry.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <SectionErrorBoundary fallbackTitle="Failed to load contacts" featureArea={FeatureArea.ADMIN}>
+            <ContactsManager />
+          </SectionErrorBoundary>
         );
 
       case 'waitlist':
@@ -338,6 +292,14 @@ export default function Admin() {
           </SectionErrorBoundary>
         );
 
+      case 'system-health':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load system health" featureArea={FeatureArea.ADMIN}>
+            <SystemHealth />
+          </SectionErrorBoundary>
+        );
+
       default:
         return <div>Section not found</div>;
     }
@@ -361,6 +323,19 @@ export default function Admin() {
           </main>
         </SidebarInset>
       </div>
+      
+      {/* Global components */}
+      <CommandPalette 
+        open={commandPaletteOpen} 
+        onOpenChange={setCommandPaletteOpen}
+        onSectionChange={setActiveSection}
+      />
+      <KeyboardShortcuts 
+        open={shortcutsOpen} 
+        onOpenChange={setShortcutsOpen}
+        onCommandPaletteOpen={() => setCommandPaletteOpen(true)}
+        onSectionChange={setActiveSection}
+      />
     </SidebarProvider>
   );
 }
