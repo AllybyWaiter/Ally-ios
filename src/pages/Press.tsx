@@ -29,7 +29,7 @@ const Press = () => {
     { label: "Supported Water Bodies", value: "Aquariums, Pools, Spas, Hot Tubs, Ponds, Koi Ponds" },
     { label: "Pricing", value: "Free tier available, Premium from $4.99/month" },
     { label: "Founded", value: "2024" },
-    { label: "Website", value: "https://ally.waiter.is" },
+    { label: "Website", value: "Allybywaiterapp.com" },
   ];
 
   const keyFeatures = [
