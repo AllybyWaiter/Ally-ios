@@ -62,17 +62,17 @@ const About = () => {
         <section className="container mx-auto px-4 py-12">
           <div className="max-w-3xl mx-auto">
             <div className="prose prose-lg max-w-none">
-              <h2 className="text-3xl font-bold mb-6">Ally by WA.I.TER — Our Story</h2>
+              <h2 className="text-3xl font-bold mb-6">Ally by WA.I.TER: Our Story</h2>
               <p className="text-muted-foreground mb-4">
                 Ally started with a simple but frustrating truth: water care shouldn't be this complicated.
-                Whether it's a home aquarium or a backyard pool, people were guessing, Googling, or paying someone else to handle what should be simple — keeping water healthy, balanced, and beautiful.
+                Whether it's a home aquarium or a backyard pool, people were guessing, Googling, or paying someone else to handle what should be simple: keeping water healthy, balanced, and beautiful.
               </p>
               <p className="text-muted-foreground mb-4">
-                Founded by Jacob Stephens, Ally was born from the belief that AI could make water care effortless, accurate, and empowering. Instead of replacing people, Ally was designed to act like a real partner — a digital water expert that always knows what's happening and what to do next.
+                Founded by Jacob Stephens, Ally was born from the belief that AI could make water care effortless, accurate, and empowering. Instead of replacing people, Ally was designed to act like a real partner, a digital water expert that always knows what's happening and what to do next.
               </p>
               <p className="text-muted-foreground mb-4">
-                What began as a smart aquarium app is evolving into a full ecosystem — from auto-testers and dosers to intelligent insights that help homeowners, hobbyists, and businesses alike.
-                Ally is pioneering "hands-free water care" — where clarity, chemistry, and confidence all flow together.
+                What began as a smart aquarium app is evolving into a full ecosystem, from auto testers and dosers to intelligent insights that help homeowners, hobbyists, and businesses alike.
+                Ally is pioneering "hands free water care" where clarity, chemistry, and confidence all flow together.
               </p>
             </div>
           </div>
