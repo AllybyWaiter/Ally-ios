@@ -15,7 +15,7 @@ const features = [{
 }, {
   icon: Mic,
   title: 'Voice Commands',
-  description: '"What should my bromine be?" - Hands-free for wet environments. Ask questions and log tests with your voice.'
+  description: '"What should my bromine be?" Hands-free for wet environments. Ask questions and log tests with your voice.'
 }, {
   icon: Thermometer,
   title: 'Temperature Monitoring',
