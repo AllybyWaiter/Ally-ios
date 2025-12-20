@@ -70,7 +70,6 @@ export function SystemHealth() {
         { name: 'support_tickets', rowCount: ticketsCount.count || 0, icon: AlertTriangle },
         { name: 'chat_messages', rowCount: messagesCount.count || 0, icon: Zap },
       ];
-      }
 
       setTableStats(stats);
 
