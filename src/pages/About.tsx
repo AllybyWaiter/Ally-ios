@@ -91,7 +91,7 @@ const About = () => {
                   <div>
                     <h3 className="font-semibold text-xl mb-2">Intelligence You Can Trust</h3>
                     <p className="text-muted-foreground">
-                      Every insight Ally gives is grounded in data, accuracy, and transparency — not gimmicks or marketing fluff. Our AI is designed to earn trust, not just automate tasks.
+                      Every insight Ally gives is grounded in data, accuracy, and transparency, not gimmicks or marketing fluff. Our AI is designed to earn trust, not just automate tasks.
                     </p>
                   </div>
                 </div>
@@ -105,7 +105,7 @@ const About = () => {
                   <div>
                     <h3 className="font-semibold text-xl mb-2">Effortless Clarity</h3>
                     <p className="text-muted-foreground">
-                      Water care should feel simple, sleek, and intuitive. Every feature, from test logging to care plans, is built to remove friction — so users focus on enjoying their tanks or pools, not managing them.
+                      Water care should feel simple, sleek, and intuitive. Every feature, from test logging to care plans, is built to remove friction so users focus on enjoying their tanks or pools, not managing them.
                     </p>
                   </div>
                 </div>
@@ -119,7 +119,7 @@ const About = () => {
                   <div>
                     <h3 className="font-semibold text-xl mb-2">Precision Meets Design</h3>
                     <p className="text-muted-foreground">
-                      Ally merges scientific precision with Tesla-level design — smart, minimal, and modern. We believe technology should look as good as it performs.
+                      Ally merges scientific precision with Tesla level design: smart, minimal, and modern. We believe technology should look as good as it performs.
                     </p>
                   </div>
                 </div>
@@ -134,7 +134,7 @@ const About = () => {
                     <div>
                       <h3 className="font-semibold text-xl mb-2">Partnership Over Product</h3>
                       <p className="text-muted-foreground">
-                        Ally isn't just software — it's a water-care companion. We design every feature around how real people think, test, and maintain their water spaces.
+                        Ally isn't just software. It's a water care companion. We design every feature around how real people think, test, and maintain their water spaces.
                       </p>
                     </div>
                   </div>
@@ -148,7 +148,7 @@ const About = () => {
                     <div>
                       <h3 className="font-semibold text-xl mb-2">Sustainable by Default</h3>
                       <p className="text-muted-foreground">
-                        Good water care protects more than tanks and pools — it protects the environment. Ally's dosing and guidance are optimized to reduce chemical waste and promote responsible stewardship.
+                        Good water care protects more than tanks and pools. It protects the environment. Ally's dosing and guidance are optimized to reduce chemical waste and promote responsible stewardship.
                       </p>
                     </div>
                   </div>
