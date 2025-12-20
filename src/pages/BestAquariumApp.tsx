@@ -198,11 +198,11 @@ export default function BestAquariumApp() {
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Plain-language explanations of water chemistry</span>
+                      <span>Plain language explanations of water chemistry</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Step-by-step guidance for fixing problems</span>
+                      <span>Step by step guidance for fixing problems</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -210,7 +210,7 @@ export default function BestAquariumApp() {
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Learn as you go with AI-powered tips</span>
+                      <span>Learn as you go with AI powered tips</span>
                     </li>
                   </ul>
                 </CardContent>
