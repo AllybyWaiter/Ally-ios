@@ -63,7 +63,7 @@ const Press = () => {
     { 
       name: "App Screenshot - Mobile", 
       description: "Mobile screenshot",
-      url: "/screenshot-narrow.png",
+      url: "/screenshot-narrow-v2.png",
       type: "Screenshot"
     },
     { 
