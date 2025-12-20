@@ -312,7 +312,7 @@ const Press = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground italic">
-                  "Ally by WA.I.TER is an AI-powered water care assistant that transforms how people maintain their aquariums, pools, spas, and ponds. Using advanced artificial intelligence, Ally provides instant water test analysis from photos, personalized care recommendations, and proactive alerts to ensure crystal-clear, healthy water. Available as a progressive web app, Ally works across all devices with full offline functionality. Founded in 2024, WA.I.TER (Water AI Technology for Ecosystem Regulation) is committed to making professional-grade water care accessible to everyone."
+                  "Ally by WA.I.TER is an AI powered water care assistant that transforms how people maintain their aquariums, pools, spas, and ponds. Using advanced artificial intelligence, Ally provides instant water test analysis from photos, personalized care recommendations, and proactive alerts to ensure crystal clear, healthy water. Available as a progressive web app, Ally works across all devices with full offline functionality. Founded in 2024, WA.I.TER (Water AI Technology for Ecosystem Regulation) is committed to making professional grade water care accessible to everyone."
                 </p>
               </CardContent>
             </Card>
