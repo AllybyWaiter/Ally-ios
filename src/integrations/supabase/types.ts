@@ -1116,6 +1116,45 @@ export type Database = {
         }
         Relationships: []
       }
+      role_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_roles: string[]
+          old_roles: string[]
+          reason: string | null
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_roles?: string[]
+          old_roles?: string[]
+          reason?: string | null
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_roles?: string[]
+          old_roles?: string[]
+          reason?: string | null
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string
