@@ -135,7 +135,7 @@ export default function BestAquaticApp() {
               </h1>
               
               <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                Whether you have an aquarium, pool, spa, or pond — Ally's AI makes water testing 
+                Whether you have an aquarium, pool, spa, or pond, Ally's AI makes water testing 
                 effortless with photo analysis, voice commands, and smart alerts.
               </p>
 
