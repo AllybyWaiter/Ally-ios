@@ -46,7 +46,7 @@ const features = [
 const faqs = [
   {
     question: 'What is the best aquarium app for beginners?',
-    answer: 'Ally by WA.I.TER is the best aquarium app for beginners because it uses AI to analyze water test photos and provides plain-language explanations and recommendations. You don\'t need to understand complex water chemistry - Ally tells you exactly what to do.',
+    answer: 'Ally by WA.I.TER is the best aquarium app for beginners because it uses AI to analyze water test photos and provides plain language explanations and recommendations. You don\'t need to understand complex water chemistry. Ally tells you exactly what to do.',
   },
   {
     question: 'Is there an app that can read aquarium test strips?',
