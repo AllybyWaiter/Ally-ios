@@ -33,7 +33,7 @@ const features = [
   {
     icon: CloudSun,
     title: 'Weather Integration',
-    description: 'Get maintenance recommendations based on weather. High UV? More chlorine needed. Rain coming? Adjust your schedule.',
+    description: 'Get maintenance recommendations based on weather. High UV means more chlorine needed. Rain coming? Adjust your schedule.',
   },
   {
     icon: Smartphone,
@@ -209,7 +209,7 @@ export default function BestPoolApp() {
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Combined Chlorine / Chloramines</span>
+                      <span>Combined Chlorine and Chloramines</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
