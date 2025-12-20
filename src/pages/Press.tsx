@@ -57,7 +57,7 @@ const Press = () => {
     { 
       name: "App Screenshot - Wide", 
       description: "Desktop/tablet screenshot",
-      url: "/screenshot-wide.png",
+      url: "/screenshot-wide.webp",
       type: "Screenshot"
     },
     { 
