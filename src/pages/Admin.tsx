@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Download, Search, Trash2, Users, Mail, MessageSquare, Home, Ticket, UserCog, Megaphone, FileText, Shield, UserPlus, Activity, Brain, Flag, LayoutDashboard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Download, Search, Trash2, Menu } from 'lucide-react';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
 import AnnouncementManager from '@/components/admin/AnnouncementManager';
@@ -19,9 +17,11 @@ import UserActivityLogs from '@/components/admin/UserActivityLogs';
 import AIAnalytics from '@/components/admin/AIAnalytics';
 import FeatureFlagManager from '@/components/admin/FeatureFlagManager';
 import { AdminDashboardHome } from '@/components/admin/AdminDashboardHome';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { formatDate } from '@/lib/formatters';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 
 interface WaitlistEntry {
   id: string;
@@ -39,16 +39,15 @@ interface ContactEntry {
 }
 
 export default function Admin() {
-  const { signOut, user, hasPermission, hasAnyRole } = useAuth();
+  const { hasPermission, hasAnyRole } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [contacts, setContacts] = useState<ContactEntry[]>([]);
   const [waitlistSearch, setWaitlistSearch] = useState('');
   const [contactsSearch, setContactsSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeSection, setActiveSection] = useState('overview');
 
   useEffect(() => {
     fetchData();
@@ -71,11 +70,6 @@ export default function Admin() {
     if (contactsData) setContacts(contactsData);
     
     setLoading(false);
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
   };
 
   const deleteWaitlistEntry = async (id: string) => {
@@ -139,296 +133,244 @@ export default function Admin() {
     entry.message.toLowerCase().includes(contactsSearch.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+
+    switch (activeSection) {
+      case 'overview':
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load dashboard" featureArea={FeatureArea.ADMIN}>
+            <AdminDashboardHome onTabChange={setActiveSection} />
+          </SectionErrorBoundary>
+        );
+
+      case 'users':
+        if (!hasPermission('manage_users')) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load user management" featureArea={FeatureArea.ADMIN}>
+            <UserManagement />
+          </SectionErrorBoundary>
+        );
+
+      case 'roles':
+        if (!hasPermission('manage_roles')) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load role manager" featureArea={FeatureArea.ADMIN}>
+            <RoleManager />
+          </SectionErrorBoundary>
+        );
+
+      case 'beta':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load beta access manager" featureArea={FeatureArea.ADMIN}>
+            <BetaAccessManager />
+          </SectionErrorBoundary>
+        );
+
+      case 'blog':
+        if (!hasPermission('manage_blog') && !hasPermission('publish_blog')) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load blog manager" featureArea={FeatureArea.ADMIN}>
+            <BlogManager />
+          </SectionErrorBoundary>
+        );
+
+      case 'announcements':
+        if (!hasPermission('manage_announcements')) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load announcements" featureArea={FeatureArea.ADMIN}>
+            <AnnouncementManager />
+          </SectionErrorBoundary>
+        );
+
+      case 'contacts':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <CardTitle>Contact Submissions</CardTitle>
+                  <CardDescription>View and manage contact form messages</CardDescription>
+                </div>
+                <Button onClick={() => exportToCSV(contacts, 'contacts')} variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search contacts..."
+                  value={contactsSearch}
+                  onChange={(e) => setContactsSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredContacts.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">{entry.name}</TableCell>
+                      <TableCell>{entry.email}</TableCell>
+                      <TableCell className="max-w-md truncate">{entry.message}</TableCell>
+                      <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteContact(entry.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+
+      case 'waitlist':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <CardTitle>Waitlist Signups</CardTitle>
+                  <CardDescription>Manage and export waitlist entries</CardDescription>
+                </div>
+                <Button onClick={() => exportToCSV(waitlist, 'waitlist')} variant="outline">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 mt-4">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by email..."
+                  value={waitlistSearch}
+                  onChange={(e) => setWaitlistSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredWaitlist.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="font-medium">{entry.email}</TableCell>
+                      <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteWaitlistEntry(entry.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        );
+
+      case 'tickets':
+        if (!hasPermission('moderate_support') && !hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load support tickets" featureArea={FeatureArea.ADMIN}>
+            <SupportTickets />
+          </SectionErrorBoundary>
+        );
+
+      case 'activity':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load activity logs" featureArea={FeatureArea.ADMIN}>
+            <UserActivityLogs />
+          </SectionErrorBoundary>
+        );
+
+      case 'ai-analytics':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load AI analytics" featureArea={FeatureArea.ADMIN}>
+            <AIAnalytics />
+          </SectionErrorBoundary>
+        );
+
+      case 'feature-flags':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load feature flags" featureArea={FeatureArea.ADMIN}>
+            <FeatureFlagManager />
+          </SectionErrorBoundary>
+        );
+
+      default:
+        return <div>Section not found</div>;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-safe">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => navigate('/')} variant="outline">
-              <Home className="mr-2 h-4 w-4" />
-              Home
-            </Button>
-            <Button onClick={handleSignOut} variant="outline">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <SidebarProvider defaultOpen={true}>
+      <div className="min-h-screen flex w-full bg-gradient-to-br from-background via-background to-primary/5">
+        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <SidebarInset className="flex-1">
+          <header className="flex items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6 py-4 pt-safe">
+            <SidebarTrigger className="md:hidden">
+              <Menu className="h-5 w-5" />
+            </SidebarTrigger>
+            <h1 className="text-xl font-semibold capitalize">
+              {activeSection === 'overview' ? 'Admin Dashboard' : activeSection.replace(/-/g, ' ')}
+            </h1>
+          </header>
+          <main className="flex-1 p-6">
+            {renderContent()}
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
+  );
+}
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
-            <TabsTrigger value="overview">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            {hasPermission('manage_users') && (
-              <TabsTrigger value="users">
-                <UserCog className="mr-2 h-4 w-4" />
-                Users
-              </TabsTrigger>
-            )}
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="beta">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Beta Access
-              </TabsTrigger>
-            )}
-            {hasPermission('manage_roles') && (
-              <TabsTrigger value="roles">
-                <Shield className="mr-2 h-4 w-4" />
-                Roles
-              </TabsTrigger>
-            )}
-            {(hasPermission('manage_blog') || hasPermission('publish_blog')) && (
-              <TabsTrigger value="blog">
-                <FileText className="mr-2 h-4 w-4" />
-                Blog
-              </TabsTrigger>
-            )}
-            {hasPermission('manage_announcements') && (
-              <TabsTrigger value="announcements">
-                <Megaphone className="mr-2 h-4 w-4" />
-                Announcements
-              </TabsTrigger>
-            )}
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
-            )}
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            )}
-            {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
-              <TabsTrigger value="tickets">Support Tickets</TabsTrigger>
-            )}
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="activity">
-                <Activity className="mr-2 h-4 w-4" />
-                Activity Logs
-              </TabsTrigger>
-            )}
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="ai-analytics">
-                <Brain className="mr-2 h-4 w-4" />
-                AI Analytics
-              </TabsTrigger>
-            )}
-            {hasAnyRole(['admin']) && (
-              <TabsTrigger value="feature-flags">
-                <Flag className="mr-2 h-4 w-4" />
-                Feature Flags
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <SectionErrorBoundary fallbackTitle="Failed to load dashboard" featureArea={FeatureArea.ADMIN}>
-              <AdminDashboardHome onTabChange={setActiveTab} />
-            </SectionErrorBoundary>
-          </TabsContent>
-
-          {hasAnyRole(['admin']) && (
-            <TabsContent value="beta" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load beta access manager" featureArea={FeatureArea.ADMIN}>
-                <BetaAccessManager />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasPermission('manage_users') && (
-            <TabsContent value="users" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load user management" featureArea={FeatureArea.ADMIN}>
-                <UserManagement />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasPermission('manage_roles') && (
-            <TabsContent value="roles" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load role manager" featureArea={FeatureArea.ADMIN}>
-                <RoleManager />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {(hasPermission('manage_blog') || hasPermission('publish_blog')) && (
-            <TabsContent value="blog" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load blog manager" featureArea={FeatureArea.ADMIN}>
-                <BlogManager />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasPermission('manage_announcements') && (
-            <TabsContent value="announcements" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load announcements" featureArea={FeatureArea.ADMIN}>
-                <AnnouncementManager />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasAnyRole(['admin']) && (
-            <TabsContent value="waitlist" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Waitlist Signups</CardTitle>
-                      <CardDescription>Manage and export waitlist entries</CardDescription>
-                    </div>
-                    <Button onClick={() => exportToCSV(waitlist, 'waitlist')} variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      Export CSV
-                    </Button>
-                  </div>
-                <div className="flex items-center gap-2 mt-4">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by email..."
-                    value={waitlistSearch}
-                    onChange={(e) => setWaitlistSearch(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredWaitlist.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.email}</TableCell>
-                        <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteWaitlistEntry(entry.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          )}
-
-          {hasAnyRole(['admin']) && (
-            <TabsContent value="contacts" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Contact Submissions</CardTitle>
-                      <CardDescription>View and manage contact form messages</CardDescription>
-                    </div>
-                    <Button onClick={() => exportToCSV(contacts, 'contacts')} variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      Export CSV
-                    </Button>
-                  </div>
-                <div className="flex items-center gap-2 mt-4">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search contacts..."
-                    value={contactsSearch}
-                    onChange={(e) => setContactsSearch(e.target.value)}
-                    className="max-w-sm"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredContacts.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="font-medium">{entry.name}</TableCell>
-                        <TableCell>{entry.email}</TableCell>
-                        <TableCell className="max-w-md truncate">{entry.message}</TableCell>
-                        <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteContact(entry.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          )}
-
-          {(hasPermission('moderate_support') || hasAnyRole(['admin'])) && (
-            <TabsContent value="tickets" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load support tickets" featureArea={FeatureArea.ADMIN}>
-                <SupportTickets />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasAnyRole(['admin']) && (
-            <TabsContent value="activity" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load activity logs" featureArea={FeatureArea.ADMIN}>
-                <UserActivityLogs />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasAnyRole(['admin']) && (
-            <TabsContent value="ai-analytics" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load AI analytics" featureArea={FeatureArea.ADMIN}>
-                <AIAnalytics />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-
-          {hasAnyRole(['admin']) && (
-            <TabsContent value="feature-flags" className="space-y-4">
-              <SectionErrorBoundary fallbackTitle="Failed to load feature flags" featureArea={FeatureArea.ADMIN}>
-                <FeatureFlagManager />
-              </SectionErrorBoundary>
-            </TabsContent>
-          )}
-        </Tabs>
-      </main>
-    </div>
+function AccessDenied() {
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center justify-center py-12">
+        <p className="text-muted-foreground">You don't have permission to access this section.</p>
+      </CardContent>
+    </Card>
   );
 }
