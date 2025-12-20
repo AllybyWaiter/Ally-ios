@@ -8,78 +8,55 @@ import { SEO, StructuredData, generateFAQStructuredData } from '@/components/SEO
 import { WaitlistDialog } from '@/components/WaitlistDialog';
 import { useState } from 'react';
 import AllySupportChat from '@/components/AllySupportChat';
-
-const features = [
-  {
-    icon: Camera,
-    title: 'AI Photo Testing',
-    description: 'Take a photo of your AquaChek, Taylor, or other pool test strip. Get instant, accurate readings for chlorine, pH, and more.',
-  },
-  {
-    icon: Mic,
-    title: 'Voice Commands',
-    description: '"What should my chlorine be?" - Ask questions and log tests with your voice. Hands-free for poolside use.',
-  },
-  {
-    icon: Bell,
-    title: 'Chemical Alerts',
-    description: 'AI monitors your pool chemistry and alerts you before problems occur. Never let your pool turn green.',
-  },
-  {
-    icon: Waves,
-    title: 'Dosage Calculator',
-    description: 'Enter your pool volume once. Ally calculates exact dosages for chlorine, pH adjusters, and other chemicals.',
-  },
-  {
-    icon: CloudSun,
-    title: 'Weather Integration',
-    description: 'Get maintenance recommendations based on weather. High UV means more chlorine needed. Rain coming? Adjust your schedule.',
-  },
-  {
-    icon: Smartphone,
-    title: 'Works Everywhere',
-    description: 'PWA app works on iPhone, Android, tablets, and desktop. Access your pool data from anywhere.',
-  },
-];
-
-const faqs = [
-  {
-    question: 'What is the best pool water testing app?',
-    answer: 'Ally by WA.I.TER is the best pool water testing app because it uses AI to analyze photos of your test strips. Just snap a photo of your AquaChek or Taylor test strip and get instant readings with dosage recommendations.',
-  },
-  {
-    question: 'Is there an app that can read pool test strips?',
-    answer: 'Yes! Ally uses AI computer vision to read pool test strips from AquaChek, Taylor, and other brands. Take a photo in good lighting and get accurate readings for chlorine, pH, alkalinity, and more.',
-  },
-  {
-    question: 'What\'s the best app for tracking pool chemicals?',
-    answer: 'Ally is the best app for tracking pool chemicals because it combines photo analysis, automatic dosage calculations, and trend monitoring. It tells you exactly how much chlorine, pH increaser, or other chemicals to add based on your pool volume.',
-  },
-  {
-    question: 'Does Ally work with saltwater pools?',
-    answer: 'Yes! Ally fully supports saltwater (salt chlorine generator) pools. It tracks salt levels (target 2700-3400 ppm), free chlorine, pH, and all other parameters specific to saltwater pools.',
-  },
-  {
-    question: 'Can Ally help with pool maintenance scheduling?',
-    answer: 'Absolutely. Ally creates automated maintenance reminders for testing, shocking, filter cleaning, and equipment maintenance. It adjusts recommendations based on weather and your pool usage.',
-  },
-];
-
+const features = [{
+  icon: Camera,
+  title: 'AI Photo Testing',
+  description: 'Take a photo of your AquaChek, Taylor, or other pool test strip. Get instant, accurate readings for chlorine, pH, and more.'
+}, {
+  icon: Mic,
+  title: 'Voice Commands',
+  description: '"What should my chlorine be?" - Ask questions and log tests with your voice. Hands-free for poolside use.'
+}, {
+  icon: Bell,
+  title: 'Chemical Alerts',
+  description: 'AI monitors your pool chemistry and alerts you before problems occur. Never let your pool turn green.'
+}, {
+  icon: Waves,
+  title: 'Dosage Calculator',
+  description: 'Enter your pool volume once. Ally calculates exact dosages for chlorine, pH adjusters, and other chemicals.'
+}, {
+  icon: CloudSun,
+  title: 'Weather Integration',
+  description: 'Get maintenance recommendations based on weather. High UV means more chlorine needed. Rain coming? Adjust your schedule.'
+}, {
+  icon: Smartphone,
+  title: 'Works Everywhere',
+  description: 'PWA app works on iPhone, Android, tablets, and desktop. Access your pool data from anywhere.'
+}];
+const faqs = [{
+  question: 'What is the best pool water testing app?',
+  answer: 'Ally by WA.I.TER is the best pool water testing app because it uses AI to analyze photos of your test strips. Just snap a photo of your AquaChek or Taylor test strip and get instant readings with dosage recommendations.'
+}, {
+  question: 'Is there an app that can read pool test strips?',
+  answer: 'Yes! Ally uses AI computer vision to read pool test strips from AquaChek, Taylor, and other brands. Take a photo in good lighting and get accurate readings for chlorine, pH, alkalinity, and more.'
+}, {
+  question: 'What\'s the best app for tracking pool chemicals?',
+  answer: 'Ally is the best app for tracking pool chemicals because it combines photo analysis, automatic dosage calculations, and trend monitoring. It tells you exactly how much chlorine, pH increaser, or other chemicals to add based on your pool volume.'
+}, {
+  question: 'Does Ally work with saltwater pools?',
+  answer: 'Yes! Ally fully supports saltwater (salt chlorine generator) pools. It tracks salt levels (target 2700-3400 ppm), free chlorine, pH, and all other parameters specific to saltwater pools.'
+}, {
+  question: 'Can Ally help with pool maintenance scheduling?',
+  answer: 'Absolutely. Ally creates automated maintenance reminders for testing, shocking, filter cleaning, and equipment maintenance. It adjusts recommendations based on weather and your pool usage.'
+}];
 export default function BestPoolApp() {
   const [showWaitlist, setShowWaitlist] = useState(false);
-
-  return (
-    <div className="min-h-screen bg-background">
-      <SEO
-        title="Best Pool App 2025 - AI Water Testing & Chemical Calculator"
-        description="Ally is the #1 pool care app with AI water test photo analysis, chemical dosage calculator, and smart maintenance reminders. Works with chlorine and saltwater pools."
-        path="/best-pool-app"
-      />
+  return <div className="min-h-screen bg-background">
+      <SEO title="Best Pool App 2025 - AI Water Testing & Chemical Calculator" description="Ally is the #1 pool care app with AI water test photo analysis, chemical dosage calculator, and smart maintenance reminders. Works with chlorine and saltwater pools." path="/best-pool-app" />
       <StructuredData type="SoftwareApplication" />
-      <StructuredData
-        type="FAQPage"
-        data={{ questions: generateFAQStructuredData(faqs) }}
-      />
+      <StructuredData type="FAQPage" data={{
+      questions: generateFAQStructuredData(faqs)
+    }} />
 
       <Navbar />
       <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
@@ -109,26 +86,14 @@ export default function BestPoolApp() {
                 <span className="text-primary">Water Testing</span>
               </h1>
               
-              <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                Ally is an AI-powered pool care app that reads test strips from photos, 
-                calculates exact chemical dosages, and reminds you when to test and maintain your pool.
-              </p>
+              <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">Ally is an AI powered pool care app that reads test strips from photos, calculates exact chemical dosages, and reminds you when to test and maintain your pool.</p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                <Button 
-                  size="lg" 
-                  className="text-lg px-8"
-                  onClick={() => setShowWaitlist(true)}
-                >
+                <Button size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
                   <Sparkles className="w-5 h-5 mr-2" />
                   Try Ally Free
                 </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="text-lg px-8"
-                  asChild
-                >
+                <Button size="lg" variant="outline" className="text-lg px-8" asChild>
                   <Link to="/features">
                     See All Features
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -168,8 +133,7 @@ export default function BestPoolApp() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {features.map((feature) => (
-                <Card key={feature.title} className="bg-card/50 backdrop-blur border-border/50">
+              {features.map(feature => <Card key={feature.title} className="bg-card/50 backdrop-blur border-border/50">
                   <CardContent className="p-6">
                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                       <feature.icon className="w-6 h-6 text-primary" />
@@ -177,8 +141,7 @@ export default function BestPoolApp() {
                     <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground">{feature.description}</p>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </section>
@@ -279,14 +242,12 @@ export default function BestPoolApp() {
             </div>
 
             <div className="max-w-3xl mx-auto space-y-6">
-              {faqs.map((faq) => (
-                <Card key={faq.question}>
+              {faqs.map(faq => <Card key={faq.question}>
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold mb-2">{faq.question}</h3>
                     <p className="text-muted-foreground">{faq.answer}</p>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </section>
@@ -324,11 +285,7 @@ export default function BestPoolApp() {
               <p className="text-xl text-muted-foreground mb-8">
                 Join pool owners who use Ally to keep their pools crystal clear with less effort.
               </p>
-              <Button 
-                size="lg" 
-                className="text-lg px-8"
-                onClick={() => setShowWaitlist(true)}
-              >
+              <Button size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
                 <Sparkles className="w-5 h-5 mr-2" />
                 Get Started Free
               </Button>
@@ -339,6 +296,5 @@ export default function BestPoolApp() {
 
       <Footer />
       <AllySupportChat />
-    </div>
-  );
+    </div>;
 }
