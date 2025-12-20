@@ -53,11 +53,11 @@ const faqs = [
   },
   {
     question: 'How often should I test hot tub water?',
-    answer: 'For regular use, test your hot tub water 2-3 times per week. Ally can remind you when to test and tracks your testing habits to ensure you never miss a check. After heavy use or adding chemicals, test again to verify levels.',
+    answer: 'For regular use, test your hot tub water 2 to 3 times per week. Ally can remind you when to test and tracks your testing habits to ensure you never miss a check. After heavy use or adding chemicals, test again to verify levels.',
   },
   {
     question: 'Can Ally remind me to drain my spa?',
-    answer: 'Absolutely! Ally creates automated drain and fill reminders based on your usage. Most spas should be drained every 3-4 months. Ally also reminds you about filter cleaning, cover care, and other essential maintenance.',
+    answer: 'Absolutely! Ally creates automated drain and fill reminders based on your usage. Most spas should be drained every 3 to 4 months. Ally also reminds you about filter cleaning, cover care, and other essential maintenance.',
   },
   {
     question: 'Does Ally work with both bromine and chlorine spas?',
@@ -205,19 +205,19 @@ export default function BestSpaApp() {
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Bromine (3-5 ppm target)</span>
+                      <span>Bromine (3 to 5 ppm target)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>pH (7.2-7.8 ideal range)</span>
+                      <span>pH (7.2 to 7.8 ideal range)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Total Alkalinity (80-120 ppm)</span>
+                      <span>Total Alkalinity (80 to 120 ppm)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Calcium Hardness (150-250 ppm)</span>
+                      <span>Calcium Hardness (150 to 250 ppm)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -236,7 +236,7 @@ export default function BestSpaApp() {
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>Free Chlorine (3-5 ppm target)</span>
+                      <span>Free Chlorine (3 to 5 ppm target)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
