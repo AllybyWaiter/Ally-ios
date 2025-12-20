@@ -15,6 +15,11 @@ import { RoleManager } from '@/components/admin/RoleManager';
 import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import UserActivityLogs from '@/components/admin/UserActivityLogs';
 import AIAnalytics from '@/components/admin/AIAnalytics';
+import AIUserInsights from '@/components/admin/AIUserInsights';
+import AdminMemoryManager from '@/components/admin/AdminMemoryManager';
+import ConversationAnalytics from '@/components/admin/ConversationAnalytics';
+import AIModelSettings from '@/components/admin/AIModelSettings';
+import AIMonitoring from '@/components/admin/AIMonitoring';
 import FeatureFlagManager from '@/components/admin/FeatureFlagManager';
 import { AdminDashboardHome } from '@/components/admin/AdminDashboardHome';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
@@ -297,6 +302,46 @@ export default function Admin() {
         return (
           <SectionErrorBoundary fallbackTitle="Failed to load system health" featureArea={FeatureArea.ADMIN}>
             <SystemHealth />
+          </SectionErrorBoundary>
+        );
+
+      case 'ai-users':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load AI user insights" featureArea={FeatureArea.ADMIN}>
+            <AIUserInsights />
+          </SectionErrorBoundary>
+        );
+
+      case 'ai-memory':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load memory manager" featureArea={FeatureArea.ADMIN}>
+            <AdminMemoryManager />
+          </SectionErrorBoundary>
+        );
+
+      case 'ai-conversations':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load conversation analytics" featureArea={FeatureArea.ADMIN}>
+            <ConversationAnalytics />
+          </SectionErrorBoundary>
+        );
+
+      case 'ai-settings':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load AI model settings" featureArea={FeatureArea.ADMIN}>
+            <AIModelSettings />
+          </SectionErrorBoundary>
+        );
+
+      case 'ai-monitoring':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load AI monitoring" featureArea={FeatureArea.ADMIN}>
+            <AIMonitoring />
           </SectionErrorBoundary>
         );
 
