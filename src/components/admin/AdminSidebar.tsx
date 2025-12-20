@@ -87,11 +87,22 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
+    id: 'ai',
+    label: 'AI & Machine Learning',
+    items: [
+      { id: 'ai-analytics', label: 'AI Analytics', icon: Brain, roles: ['admin'] },
+      { id: 'ai-users', label: 'User Insights', icon: Users, roles: ['admin'] },
+      { id: 'ai-memory', label: 'Memory Manager', icon: Brain, roles: ['admin'] },
+      { id: 'ai-conversations', label: 'Conversations', icon: Activity, roles: ['admin'] },
+      { id: 'ai-settings', label: 'Model Settings', icon: Server, roles: ['admin'] },
+      { id: 'ai-monitoring', label: 'Live Monitor', icon: Activity, roles: ['admin'] },
+    ],
+  },
+  {
     id: 'system',
-    label: 'Analytics & System',
+    label: 'System',
     items: [
       { id: 'activity', label: 'Activity Logs', icon: Activity, roles: ['admin'] },
-      { id: 'ai-analytics', label: 'AI Analytics', icon: Brain, roles: ['admin'] },
       { id: 'feature-flags', label: 'Feature Flags', icon: Flag, roles: ['admin'] },
       { id: 'system-health', label: 'System Health', icon: Server, roles: ['admin'] },
     ],
