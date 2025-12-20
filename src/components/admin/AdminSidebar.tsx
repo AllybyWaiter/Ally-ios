@@ -13,7 +13,8 @@ import {
   Flag,
   Home,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Server
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminBadgeCounts } from '@/hooks/useAdminBadgeCounts';
@@ -92,6 +93,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'activity', label: 'Activity Logs', icon: Activity, roles: ['admin'] },
       { id: 'ai-analytics', label: 'AI Analytics', icon: Brain, roles: ['admin'] },
       { id: 'feature-flags', label: 'Feature Flags', icon: Flag, roles: ['admin'] },
+      { id: 'system-health', label: 'System Health', icon: Server, roles: ['admin'] },
     ],
   },
 ];
