@@ -99,6 +99,9 @@ const BestSpaApp = lazyWithRetry(() => import("./pages/BestSpaApp"));
 const BestAquaticApp = lazyWithRetry(() => import("./pages/BestAquaticApp"));
 const AIWaterTesting = lazyWithRetry(() => import("./pages/AIWaterTesting"));
 const Press = lazyWithRetry(() => import("./pages/Press"));
+const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy"));
+const Testimonials = lazyWithRetry(() => import("./pages/Testimonials"));
+const Changelog = lazyWithRetry(() => import("./pages/Changelog"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -148,6 +151,9 @@ const App = () => (
                   <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
                   <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
                   <Route path="/accessibility" element={<PageErrorBoundary pageName="Accessibility" featureArea="general"><Accessibility /></PageErrorBoundary>} />
+                  <Route path="/cookies" element={<PageErrorBoundary pageName="Cookie Policy" featureArea="general"><Suspense fallback={<FormSkeleton />}><CookiePolicy /></Suspense></PageErrorBoundary>} />
+                  <Route path="/testimonials" element={<PageErrorBoundary pageName="Testimonials" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Testimonials /></Suspense></PageErrorBoundary>} />
+                  <Route path="/changelog" element={<PageErrorBoundary pageName="Changelog" featureArea="general"><Suspense fallback={<FormSkeleton />}><Changelog /></Suspense></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
                   <Route path="/auth/reset-password" element={<PageErrorBoundary pageName="Reset Password" featureArea="auth"><ResetPassword /></PageErrorBoundary>} />
                   <Route 
