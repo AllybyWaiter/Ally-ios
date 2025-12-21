@@ -89,15 +89,17 @@ export function TrendCharts({ data, isLoading }: TrendChartsProps) {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="date" 
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }}
                 tickLine={false}
                 axisLine={false}
+                stroke="hsl(var(--chart-foreground))"
                 interval="preserveStartEnd"
               />
               <YAxis 
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }}
                 tickLine={false}
                 axisLine={false}
+                stroke="hsl(var(--chart-foreground))"
                 width={40}
               />
               <Tooltip
@@ -105,8 +107,10 @@ export function TrendCharts({ data, isLoading }: TrendChartsProps) {
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
+                  color: 'hsl(var(--foreground))',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
               <Area
                 type="monotone"
@@ -133,15 +137,17 @@ export function TrendCharts({ data, isLoading }: TrendChartsProps) {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="date" 
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }}
                 tickLine={false}
                 axisLine={false}
+                stroke="hsl(var(--chart-foreground))"
                 interval="preserveStartEnd"
               />
               <YAxis 
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }}
                 tickLine={false}
                 axisLine={false}
+                stroke="hsl(var(--chart-foreground))"
                 width={40}
               />
               <Tooltip
@@ -149,10 +155,14 @@ export function TrendCharts({ data, isLoading }: TrendChartsProps) {
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
+                  color: 'hsl(var(--foreground))',
                 }}
                 labelStyle={{ color: 'hsl(var(--foreground))' }}
+                itemStyle={{ color: 'hsl(var(--foreground))' }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: 'hsl(var(--foreground))' }}
+              />
               <Bar 
                 dataKey="waterTests" 
                 fill="hsl(var(--chart-1))" 
