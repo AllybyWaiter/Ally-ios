@@ -613,6 +613,12 @@ const HelpCenter = () => {
                   </Link>
                 </Button>
                 <Button variant="outline" asChild>
+                  <Link to="/glossary">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Water Chemistry Glossary
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
                   <Link to="/faq">
                     <HelpCircle className="h-4 w-4 mr-2" />
                     Browse FAQ
