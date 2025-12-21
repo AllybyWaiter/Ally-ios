@@ -102,6 +102,10 @@ const Press = lazyWithRetry(() => import("./pages/Press"));
 const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy"));
 const Testimonials = lazyWithRetry(() => import("./pages/Testimonials"));
 const Changelog = lazyWithRetry(() => import("./pages/Changelog"));
+const Security = lazyWithRetry(() => import("./pages/Security"));
+const Integrations = lazyWithRetry(() => import("./pages/Integrations"));
+const Status = lazyWithRetry(() => import("./pages/Status"));
+const CaseStudies = lazyWithRetry(() => import("./pages/CaseStudies"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -154,6 +158,10 @@ const App = () => (
                   <Route path="/cookies" element={<PageErrorBoundary pageName="Cookie Policy" featureArea="general"><Suspense fallback={<FormSkeleton />}><CookiePolicy /></Suspense></PageErrorBoundary>} />
                   <Route path="/testimonials" element={<PageErrorBoundary pageName="Testimonials" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Testimonials /></Suspense></PageErrorBoundary>} />
                   <Route path="/changelog" element={<PageErrorBoundary pageName="Changelog" featureArea="general"><Suspense fallback={<FormSkeleton />}><Changelog /></Suspense></PageErrorBoundary>} />
+                  <Route path="/security" element={<PageErrorBoundary pageName="Security" featureArea="general"><Suspense fallback={<FormSkeleton />}><Security /></Suspense></PageErrorBoundary>} />
+                  <Route path="/integrations" element={<PageErrorBoundary pageName="Integrations" featureArea="general"><Suspense fallback={<FormSkeleton />}><Integrations /></Suspense></PageErrorBoundary>} />
+                  <Route path="/status" element={<PageErrorBoundary pageName="Status" featureArea="general"><Suspense fallback={<FormSkeleton />}><Status /></Suspense></PageErrorBoundary>} />
+                  <Route path="/case-studies" element={<PageErrorBoundary pageName="Case Studies" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><CaseStudies /></Suspense></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
                   <Route path="/auth/reset-password" element={<PageErrorBoundary pageName="Reset Password" featureArea="auth"><ResetPassword /></PageErrorBoundary>} />
                   <Route 
