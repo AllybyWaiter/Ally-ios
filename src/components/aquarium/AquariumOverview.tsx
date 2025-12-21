@@ -13,6 +13,7 @@ import { formatRelativeTime } from "@/lib/formatters";
 import { EquipmentDialog } from "./EquipmentDialog";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { queryKeys } from "@/lib/queryKeys";
+import { queryPresets } from "@/lib/queryConfig";
 import { fetchLatestWaterTest, fetchEquipmentCount, fetchUpcomingTasks } from "@/infrastructure/queries";
 
 // Safe date formatter to prevent crashes
@@ -44,21 +45,21 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
     queryKey: queryKeys.waterTests.latest(aquariumId),
     queryFn: () => fetchLatestWaterTest(aquariumId),
     enabled: !authLoading && !!user && !!aquariumId,
-    retry: 2,
+    ...queryPresets.waterTests,
   });
 
   const { data: equipmentCount, isLoading: equipmentLoading } = useQuery({
     queryKey: queryKeys.equipment.count(aquariumId),
     queryFn: () => fetchEquipmentCount(aquariumId),
     enabled: !authLoading && !!user && !!aquariumId,
-    retry: 2,
+    ...queryPresets.aquariumData,
   });
 
   const { data: upcomingTasks, isLoading: tasksLoading } = useQuery({
     queryKey: queryKeys.tasks.upcomingForAquarium(aquariumId),
     queryFn: () => fetchUpcomingTasks([aquariumId], 30),
     enabled: !authLoading && !!user && !!aquariumId,
-    retry: 2,
+    ...queryPresets.tasks,
   });
 
   const getTaskDueDateStatus = (dueDate: string) => {
