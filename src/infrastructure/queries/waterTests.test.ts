@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   fetchWaterTests,
+  fetchAllWaterTests,
   fetchLatestWaterTest,
   fetchWaterTestsForChart,
   fetchWaterTest,
@@ -23,10 +24,64 @@ describe('waterTests DAL', () => {
   });
 
   describe('fetchWaterTests', () => {
-    it('should fetch water tests without limit', async () => {
+    it('should fetch water tests with pagination', async () => {
       const mockData = [
         { id: 'wt-1', test_date: '2025-01-01', test_parameters: [] },
         { id: 'wt-2', test_date: '2025-01-02', test_parameters: [] },
+      ];
+
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        range: vi.fn().mockResolvedValue({ data: mockData, error: null, count: 10 }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+
+      const result = await fetchWaterTests('aq-1');
+
+      expect(supabase.from).toHaveBeenCalledWith('water_tests');
+      expect(mockChain.eq).toHaveBeenCalledWith('aquarium_id', 'aq-1');
+      expect(result.data).toEqual(mockData);
+      expect(result.total).toBe(10);
+      expect(result.hasMore).toBe(false);
+    });
+
+    it('should fetch water tests with custom limit and offset', async () => {
+      const mockData = [{ id: 'wt-1', test_parameters: [] }];
+
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        range: vi.fn().mockResolvedValue({ data: mockData, error: null, count: 50 }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+
+      const result = await fetchWaterTests('aq-1', { limit: 10, offset: 20 });
+
+      expect(mockChain.range).toHaveBeenCalledWith(20, 29);
+      expect(result.data).toEqual(mockData);
+      expect(result.hasMore).toBe(true);
+    });
+
+    it('should throw error on failure', async () => {
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        range: vi.fn().mockResolvedValue({ data: null, error: { message: 'Fetch failed' } }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+
+      await expect(fetchWaterTests('aq-1')).rejects.toEqual({ message: 'Fetch failed' });
+    });
+  });
+
+  describe('fetchAllWaterTests', () => {
+    it('should fetch all water tests without limit', async () => {
+      const mockData = [
+        { id: 'wt-1', test_date: '2025-01-01', test_parameters: [] },
       ];
 
       const mockChain = {
@@ -37,10 +92,8 @@ describe('waterTests DAL', () => {
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      const result = await fetchWaterTests('aq-1');
+      const result = await fetchAllWaterTests('aq-1');
 
-      expect(supabase.from).toHaveBeenCalledWith('water_tests');
-      expect(mockChain.eq).toHaveBeenCalledWith('aquarium_id', 'aq-1');
       expect(result).toEqual(mockData);
     });
 
@@ -55,21 +108,10 @@ describe('waterTests DAL', () => {
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      const result = await fetchWaterTests('aq-1', 5);
+      const result = await fetchAllWaterTests('aq-1', 5);
 
       expect(mockChain.limit).toHaveBeenCalledWith(5);
       expect(result).toEqual(mockData);
-    });
-
-    it('should throw error on failure', async () => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: null, error: { message: 'Fetch failed' } }),
-      };
-      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
-
-      await expect(fetchWaterTests('aq-1')).rejects.toEqual({ message: 'Fetch failed' });
     });
   });
 

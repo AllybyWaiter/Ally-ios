@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,7 +78,14 @@ interface AquariumCardProps {
   t: (key: string) => string;
 }
 
-function AquariumCard({ aquarium, index, units, onEdit, onDelete, t }: AquariumCardProps) {
+const AquariumCard = memo(function AquariumCard({ 
+  aquarium, 
+  index, 
+  units, 
+  onEdit, 
+  onDelete, 
+  t 
+}: AquariumCardProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -213,7 +220,7 @@ function AquariumCard({ aquarium, index, units, onEdit, onDelete, t }: AquariumC
       </HoverCardContent>
     </HoverCard>
   );
-}
+});
 
 export function AquariumGrid({
   aquariums,

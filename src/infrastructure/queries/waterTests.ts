@@ -43,8 +43,33 @@ async function ensureFreshSession() {
   }
 }
 
-// Fetch water tests for an aquarium
-export async function fetchWaterTests(aquariumId: string, limit?: number) {
+// Fetch water tests for an aquarium with optional pagination
+export async function fetchWaterTests(
+  aquariumId: string, 
+  options?: { limit?: number; offset?: number }
+) {
+  await ensureFreshSession();
+  
+  const limit = options?.limit ?? 20;
+  const offset = options?.offset ?? 0;
+  
+  const { data, error, count } = await supabase
+    .from('water_tests')
+    .select('*, test_parameters(*)', { count: 'exact' })
+    .eq('aquarium_id', aquariumId)
+    .order('test_date', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+  return { 
+    data: data as WaterTestWithParameters[], 
+    total: count ?? 0,
+    hasMore: (count ?? 0) > offset + limit 
+  };
+}
+
+// Fetch all water tests for an aquarium (legacy support)
+export async function fetchAllWaterTests(aquariumId: string, limit?: number) {
   await ensureFreshSession();
   
   let query = supabase
