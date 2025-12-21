@@ -14,8 +14,8 @@ export function AllyCTA() {
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-float">
-              <img src={logo} alt="Ally" className="h-8 w-8 object-contain" />
+            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-float overflow-hidden">
+              <img src={logo} alt="Ally" className="h-full w-full object-cover" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-primary-foreground mb-1">
