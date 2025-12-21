@@ -29,6 +29,7 @@ const Footer = () => {
               <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
               <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
               <li><Link to="/help" className="hover:text-primary transition-colors">Help Center</Link></li>
+              <li><Link to="/glossary" className="hover:text-primary transition-colors">Glossary</Link></li>
             </ul>
           </div>
 
@@ -49,6 +50,8 @@ const Footer = () => {
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="/about" className="hover:text-primary transition-colors">About</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+              <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
+              <li><Link to="/partners" className="hover:text-primary transition-colors">Partners</Link></li>
               <li><Link to="/case-studies" className="hover:text-primary transition-colors">Case Studies</Link></li>
               <li><Link to="/security" className="hover:text-primary transition-colors">Security</Link></li>
               <li><Link to="/status" className="hover:text-primary transition-colors">Status</Link></li>
