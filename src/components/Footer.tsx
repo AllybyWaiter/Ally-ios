@@ -58,9 +58,10 @@ const Footer = () => {
           <p className="text-sm text-muted-foreground">
             © 2025 WA.I.TER. All rights reserved.
           </p>
-          <div className="flex gap-6 text-sm text-muted-foreground">
+          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
             <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/accessibility" className="hover:text-primary transition-colors">Accessibility</Link>
           </div>
         </div>
       </div>
