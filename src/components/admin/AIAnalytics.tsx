@@ -586,11 +586,18 @@ export default function AIAnalytics() {
                 {feedbackChartData.length > 0 ? (
                   <ChartContainer config={chartConfig} className="h-[300px]">
                     <BarChart data={feedbackChartData}>
-                      <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                      <YAxis />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }} 
+                        stroke="hsl(var(--chart-foreground))"
+                      />
+                      <YAxis 
+                        tick={{ fill: 'hsl(var(--chart-foreground))' }}
+                        stroke="hsl(var(--chart-foreground))"
+                      />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="positive" fill="var(--color-positive)" radius={4} />
-                      <Bar dataKey="negative" fill="var(--color-negative)" radius={4} />
+                      <Bar dataKey="positive" fill="hsl(var(--chart-1))" radius={4} />
+                      <Bar dataKey="negative" fill="hsl(var(--chart-2))" radius={4} />
                     </BarChart>
                   </ChartContainer>
                 ) : (
@@ -618,7 +625,25 @@ export default function AIAnalytics() {
                         cx="50%"
                         cy="50%"
                         outerRadius={100}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent, cx, cy, midAngle, outerRadius }) => {
+                          const RADIAN = Math.PI / 180;
+                          const radius = outerRadius * 1.35;
+                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill="hsl(var(--chart-foreground))"
+                              textAnchor={x > cx ? 'start' : 'end'}
+                              dominantBaseline="central"
+                              className="text-sm font-medium"
+                            >
+                              {`${name}: ${(percent * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
+                        labelLine={{ stroke: 'hsl(var(--chart-foreground))' }}
                       >
                         {pieData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -902,15 +927,15 @@ export default function AIAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis 
                       dataKey="date" 
-                      tick={{ fontSize: 10 }} 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }} 
                       interval={4}
-                      className="text-muted-foreground"
+                      stroke="hsl(var(--chart-foreground))"
                     />
                     <YAxis 
                       domain={[0, 100]} 
-                      tick={{ fontSize: 10 }}
+                      tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }}
                       tickFormatter={(value) => `${value}%`}
-                      className="text-muted-foreground"
+                      stroke="hsl(var(--chart-foreground))"
                     />
                     <Tooltip 
                       content={({ active, payload }) => {
@@ -985,15 +1010,15 @@ export default function AIAnalytics() {
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis 
                       dataKey="date" 
-                      tick={{ fontSize: 10 }} 
+                      tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }} 
                       interval={4}
-                      className="text-muted-foreground"
+                      stroke="hsl(var(--chart-foreground))"
                     />
                     <YAxis 
                       domain={[0, 100]} 
-                      tick={{ fontSize: 10 }}
+                      tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }}
                       tickFormatter={(value) => `${value}%`}
-                      className="text-muted-foreground"
+                      stroke="hsl(var(--chart-foreground))"
                     />
                     <Tooltip 
                       content={({ active, payload }) => {
@@ -1066,11 +1091,14 @@ export default function AIAnalytics() {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 10 }} 
+                    tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }} 
                     interval={4}
-                    className="text-muted-foreground"
+                    stroke="hsl(var(--chart-foreground))"
                   />
-                  <YAxis tick={{ fontSize: 10 }} className="text-muted-foreground" />
+                  <YAxis 
+                    tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }} 
+                    stroke="hsl(var(--chart-foreground))" 
+                  />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="totalFeedback" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="photoTests" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
