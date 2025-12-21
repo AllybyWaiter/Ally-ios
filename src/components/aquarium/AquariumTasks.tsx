@@ -22,6 +22,7 @@ import { isToday, isBefore, isAfter, startOfDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { queryKeys } from "@/lib/queryKeys";
+import { queryPresets } from "@/lib/queryConfig";
 import { fetchTasks, deleteTask, completeTask, type MaintenanceTask } from "@/infrastructure/queries";
 import { PendingTaskCard, CompletedTaskCard } from "./TaskCard";
 
@@ -71,8 +72,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
       return fetchTasks(aquariumId);
     },
     enabled: !effectiveAuthLoading && !!user && !!aquariumId,
-    staleTime: 10000,
-    retry: 2,
+    ...queryPresets.tasks,
   });
 
   const handleCreateTask = () => {

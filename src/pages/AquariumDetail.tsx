@@ -22,6 +22,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatVolume, UnitSystem } from "@/lib/unitConversions";
 import { queryKeys } from "@/lib/queryKeys";
+import { queryPresets } from "@/lib/queryConfig";
 import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastructure/queries";
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
@@ -56,7 +57,7 @@ export default function AquariumDetail() {
     queryKey: queryKeys.aquariums.detail(id!),
     queryFn: () => fetchAquarium(id!),
     enabled: !authLoading && !!user && !!id,
-    retry: 2,
+    ...queryPresets.aquariumData,
   });
 
   const handleDeleteConfirm = async () => {
