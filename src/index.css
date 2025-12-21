@@ -94,6 +94,14 @@ All colors MUST be HSL.
     --shadow-glow: 0 0 40px hsl(224 34% 31% / 0.3);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
+    /* Chart colors */
+    --chart-1: 142 76% 36%;
+    --chart-2: 0 84% 60%;
+    --chart-3: 221 83% 53%;
+    --chart-4: 38 92% 50%;
+    --chart-5: 262 83% 58%;
+    --chart-foreground: 224 34% 15%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -143,6 +151,14 @@ All colors MUST be HSL.
     --gradient-water: linear-gradient(135deg, hsl(224 34% 25%) 0%, hsl(222 12% 45%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(224 40% 8%) 0%, hsl(222 12% 12%) 100%);
     --gradient-primary: linear-gradient(135deg, hsl(224 34% 25%) 0%, hsl(222 12% 45%) 100%);
+
+    /* Chart colors - brighter for dark mode */
+    --chart-1: 142 70% 50%;
+    --chart-2: 0 84% 65%;
+    --chart-3: 221 83% 60%;
+    --chart-4: 38 92% 55%;
+    --chart-5: 262 83% 65%;
+    --chart-foreground: 224 20% 90%;
   }
 }
 
