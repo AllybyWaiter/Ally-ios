@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 export function AllyCTA() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export function AllyCTA() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-float">
-              <Sparkles className="h-6 w-6 text-primary-foreground" />
+              <img src={logo} alt="Ally" className="h-8 w-8 object-contain" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-primary-foreground mb-1">
