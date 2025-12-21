@@ -72,21 +72,31 @@ export default function TaskCalendar() {
   const { data: tasks, isLoading } = useQuery({
     queryKey: queryKeys.tasks.calendar(format(currentMonth, "yyyy-MM")),
     queryFn: async () => {
+      // Get current user to filter tasks to only their aquariums
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
 
+      // Explicitly filter aquariums by user_id (not relying on RLS alone)
       const { data: aquariums } = await supabase
         .from("aquariums")
-        .select("id");
+        .select("id")
+        .eq("user_id", user.id);
 
       if (!aquariums || aquariums.length === 0) return [];
 
+      const aquariumIds = aquariums.map(a => a.id);
+
+      // Filter tasks to only those belonging to user's aquariums
       const { data, error } = await supabase
         .from("maintenance_tasks")
         .select(`
           *,
           aquarium:aquariums(name)
         `)
+        .in("aquarium_id", aquariumIds)
         .gte("due_date", monthStart.toISOString().split("T")[0])
         .lte("due_date", monthEnd.toISOString().split("T")[0])
         .eq("status", "pending")
