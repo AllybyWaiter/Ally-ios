@@ -262,11 +262,16 @@ export default function ConversationAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }}
                   tickLine={false}
+                  stroke="hsl(var(--chart-foreground))"
                   interval="preserveStartEnd"
                 />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} />
+                <YAxis 
+                  tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }} 
+                  tickLine={false}
+                  stroke="hsl(var(--chart-foreground))"
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area 
                   type="monotone" 
@@ -305,11 +310,16 @@ export default function ConversationAnalytics() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="hour" 
-                  tick={{ fontSize: 10 }}
+                  tick={{ fontSize: 10, fill: 'hsl(var(--chart-foreground))' }}
                   tickLine={false}
+                  stroke="hsl(var(--chart-foreground))"
                   interval={2}
                 />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} />
+                <YAxis 
+                  tick={{ fontSize: 12, fill: 'hsl(var(--chart-foreground))' }} 
+                  tickLine={false}
+                  stroke="hsl(var(--chart-foreground))"
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar 
                   dataKey="messages" 

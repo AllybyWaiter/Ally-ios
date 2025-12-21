@@ -94,13 +94,24 @@ All colors MUST be HSL.
     --shadow-glow: 0 0 40px hsl(224 34% 31% / 0.3);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Chart colors */
+    /* Chart colors - 10 distinct colors for multi-series charts */
     --chart-1: 142 76% 36%;
     --chart-2: 0 84% 60%;
     --chart-3: 221 83% 53%;
     --chart-4: 38 92% 50%;
     --chart-5: 262 83% 58%;
+    --chart-6: 190 95% 39%;
+    --chart-7: 339 90% 51%;
+    --chart-8: 45 93% 47%;
+    --chart-9: 173 80% 40%;
+    --chart-10: 280 68% 46%;
     --chart-foreground: 224 34% 15%;
+    
+    /* Semantic chart colors */
+    --chart-success: 142 76% 36%;
+    --chart-error: 0 84% 60%;
+    --chart-warning: 38 92% 50%;
+    --chart-info: 221 83% 53%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -158,7 +169,18 @@ All colors MUST be HSL.
     --chart-3: 221 83% 60%;
     --chart-4: 38 92% 55%;
     --chart-5: 262 83% 65%;
+    --chart-6: 190 95% 50%;
+    --chart-7: 339 90% 60%;
+    --chart-8: 45 93% 55%;
+    --chart-9: 173 80% 50%;
+    --chart-10: 280 68% 58%;
     --chart-foreground: 224 20% 90%;
+    
+    /* Semantic chart colors - brighter for dark mode */
+    --chart-success: 142 70% 50%;
+    --chart-error: 0 84% 65%;
+    --chart-warning: 38 92% 55%;
+    --chart-info: 221 83% 60%;
   }
 }
 
