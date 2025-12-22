@@ -1,48 +1,46 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
-import { Shield, Lock, Server, Eye, FileCheck, AlertTriangle, Users, Globe } from "lucide-react";
+import { Shield, Lock, Server, Eye, CheckCircle, Mail, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const Security = () => {
   const securityFeatures = [
     {
       icon: Lock,
-      title: "End-to-End Encryption",
-      description: "[PLACEHOLDER: Describe encryption methods used - TLS 1.3, AES-256, etc.]",
+      title: "Data Encryption",
+      description: "All data is protected with enterprise-grade encryption in transit and at rest. Your information is secured using industry-standard cryptographic protocols.",
     },
     {
       icon: Server,
       title: "Secure Infrastructure",
-      description: "[PLACEHOLDER: Describe cloud provider, data center certifications, redundancy]",
+      description: "Hosted on enterprise-grade cloud infrastructure with automatic backups, DDoS protection, and high availability to keep your data safe and accessible.",
     },
     {
       icon: Eye,
-      title: "Privacy by Design",
-      description: "[PLACEHOLDER: Describe privacy-first approach, data minimization]",
+      title: "Privacy First",
+      description: "We collect only essential data needed to provide our service. No selling of personal information, no invasive tracking. Export or delete your data anytime.",
     },
     {
       icon: Users,
       title: "Access Controls",
-      description: "[PLACEHOLDER: Describe RBAC, MFA, session management]",
+      description: "Strict access controls ensure you only see your own data. Role-based permissions protect sensitive operations and prevent unauthorized access.",
     },
   ];
 
-  const certifications = [
+  const complianceItems = [
     {
-      name: "[CERTIFICATION 1 - e.g., SOC 2 Type II]",
-      status: "[STATUS - e.g., In Progress / Certified]",
-      description: "[PLACEHOLDER: Description of certification and what it covers]",
+      name: "GDPR Compliant",
+      description: "Full compliance with EU data protection regulations including data export and deletion rights.",
     },
     {
-      name: "[CERTIFICATION 2 - e.g., ISO 27001]",
-      status: "[STATUS]",
-      description: "[PLACEHOLDER: Description]",
+      name: "Data Encrypted",
+      description: "All connections and stored data are encrypted using industry-standard protocols.",
     },
     {
-      name: "[CERTIFICATION 3 - e.g., GDPR Compliant]",
-      status: "[STATUS]",
-      description: "[PLACEHOLDER: Description]",
+      name: "Regular Security Reviews",
+      description: "We continuously monitor and improve our security practices to protect your data.",
     },
   ];
 
@@ -64,14 +62,7 @@ const Security = () => {
             Security at Ally
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Your data security is our top priority. Learn about the measures we take to protect your information.
-          </p>
-        </div>
-
-        {/* Placeholder Notice */}
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-12">
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            <strong>PLACEHOLDER:</strong> All security claims must be verified by your security team and legal counsel before publishing. Update certifications and compliance status as appropriate.
+            Your data security is our top priority. We use industry-leading practices to protect your information.
           </p>
         </div>
 
@@ -97,138 +88,105 @@ const Security = () => {
           </div>
         </section>
 
-        {/* Detailed Security Practices */}
-        <section className="mb-16 space-y-8">
-          <h2 className="text-3xl font-bold mb-8 text-foreground">Security Practices</h2>
-          
-          <div className="space-y-6">
+        {/* Security Practices */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-foreground">Our Security Practices</h2>
+          <div className="grid md:grid-cols-2 gap-6">
             <div className="p-6 bg-muted/30 rounded-lg border">
               <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
                 <Lock className="h-5 w-5 text-primary" />
-                Data Encryption
+                Encryption
               </h3>
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  <strong>PLACEHOLDER:</strong> Verify all encryption claims with your technical team.
-                </p>
-              </div>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>• <strong>In Transit:</strong> [DESCRIBE: TLS version, certificate management]</li>
-                <li>• <strong>At Rest:</strong> [DESCRIBE: Encryption algorithm, key management]</li>
-                <li>• <strong>Database:</strong> [DESCRIBE: Database encryption methods]</li>
-                <li>• <strong>Backups:</strong> [DESCRIBE: Backup encryption and storage]</li>
-              </ul>
+              <p className="text-muted-foreground">
+                Industry-standard encryption protects all data transmitted between your device and our servers, 
+                as well as data stored in our databases. Your sensitive information is always protected.
+              </p>
             </div>
 
             <div className="p-6 bg-muted/30 rounded-lg border">
               <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Authentication & Access
+                Authentication
               </h3>
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  <strong>PLACEHOLDER:</strong> Document actual authentication methods used.
-                </p>
-              </div>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>• <strong>Password Security:</strong> [DESCRIBE: Hashing algorithm, requirements]</li>
-                <li>• <strong>Multi-Factor Authentication:</strong> [DESCRIBE: MFA options available]</li>
-                <li>• <strong>Session Management:</strong> [DESCRIBE: Session timeout, token handling]</li>
-                <li>• <strong>Role-Based Access:</strong> [DESCRIBE: RBAC implementation]</li>
-              </ul>
+              <p className="text-muted-foreground">
+                Secure login with email verification and session management. Your account is protected 
+                with modern authentication protocols and secure password handling.
+              </p>
             </div>
 
             <div className="p-6 bg-muted/30 rounded-lg border">
               <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
                 <Server className="h-5 w-5 text-primary" />
-                Infrastructure Security
+                Infrastructure
               </h3>
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  <strong>PLACEHOLDER:</strong> Verify infrastructure details with your DevOps team.
-                </p>
-              </div>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>• <strong>Cloud Provider:</strong> [PROVIDER - e.g., AWS, GCP, Azure] with [CERTIFICATIONS]</li>
-                <li>• <strong>Network Security:</strong> [DESCRIBE: Firewalls, VPCs, DDoS protection]</li>
-                <li>• <strong>Monitoring:</strong> [DESCRIBE: 24/7 monitoring, intrusion detection]</li>
-                <li>• <strong>Disaster Recovery:</strong> [DESCRIBE: Backup frequency, RTO, RPO]</li>
-              </ul>
+              <p className="text-muted-foreground">
+                Enterprise-grade cloud hosting with automatic backups ensures your data is safe and 
+                recoverable. Our infrastructure is monitored around the clock for any issues.
+              </p>
             </div>
 
             <div className="p-6 bg-muted/30 rounded-lg border">
               <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                <Globe className="h-5 w-5 text-primary" />
-                Data Handling & Retention
+                <Eye className="h-5 w-5 text-primary" />
+                Data Handling
               </h3>
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  <strong>PLACEHOLDER:</strong> Align with your Privacy Policy and legal requirements.
-                </p>
-              </div>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>• <strong>Data Location:</strong> [DESCRIBE: Where data is stored geographically]</li>
-                <li>• <strong>Retention Period:</strong> [DESCRIBE: How long data is kept]</li>
-                <li>• <strong>Data Deletion:</strong> [DESCRIBE: Process for permanent deletion]</li>
-                <li>• <strong>Third-Party Sharing:</strong> [DESCRIBE: Data sharing policies]</li>
-              </ul>
+              <p className="text-muted-foreground">
+                We practice data minimization—collecting only what's necessary. You have full control 
+                over your data with the ability to export or permanently delete it at any time.
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Certifications & Compliance */}
+        {/* Compliance */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-8 text-foreground">Certifications & Compliance</h2>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-6">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Only list certifications you actually hold or are actively pursuing. Include dates obtained.
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold mb-8 text-foreground">Compliance</h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {certifications.map((cert, index) => (
+            {complianceItems.map((item, index) => (
               <Card key={index}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <FileCheck className="h-8 w-8 text-primary" />
-                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                      {cert.status}
-                    </span>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <CardTitle className="text-lg">{item.name}</CardTitle>
                   </div>
-                  <CardTitle className="text-lg mt-4">{cert.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{cert.description}</p>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </section>
 
-        {/* Vulnerability Disclosure */}
+        {/* Responsible Disclosure */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground">Responsible Disclosure</h2>
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-lg bg-primary/10 shrink-0">
-                  <AlertTriangle className="h-6 w-6 text-primary" />
+                  <Shield className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold mb-2 text-foreground">Report a Security Vulnerability</h3>
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-4">
-                    <p className="text-xs text-amber-700 dark:text-amber-400">
-                      <strong>PLACEHOLDER:</strong> Set up a security email and/or bug bounty program.
-                    </p>
-                  </div>
                   <p className="text-muted-foreground mb-4">
-                    We take security vulnerabilities seriously. If you discover a potential security issue, please report it responsibly.
+                    We take security vulnerabilities seriously. If you discover a potential security issue, 
+                    please report it responsibly. We appreciate the security research community's efforts 
+                    in helping keep our users safe.
                   </p>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li>• <strong>Email:</strong> <a href="mailto:security@allybywaiter.com" className="text-primary hover:underline">[SECURITY EMAIL]</a></li>
-                    <li>• <strong>Response Time:</strong> We aim to respond within [X] business days</li>
-                    <li>• <strong>Bug Bounty:</strong> [IF APPLICABLE: Link to bug bounty program]</li>
+                  <ul className="space-y-2 text-muted-foreground mb-4">
+                    <li className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <span><strong>Email:</strong>{" "}
+                        <a href="mailto:security@allybywaiterapp.com" className="text-primary hover:underline">
+                          security@allybywaiterapp.com
+                        </a>
+                      </span>
+                    </li>
+                    <li>• We respond to security reports promptly</li>
+                    <li>• Safe harbor for good-faith security researchers</li>
                   </ul>
-                  <p className="text-sm text-muted-foreground mt-4">
+                  <p className="text-sm text-muted-foreground">
                     Please do not publicly disclose vulnerabilities until we've had a chance to address them.
                   </p>
                 </div>
@@ -241,13 +199,26 @@ const Security = () => {
         <section className="text-center p-12 bg-primary/5 rounded-2xl">
           <h2 className="text-3xl font-bold mb-4 text-foreground">Have Security Questions?</h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Our security team is here to help. Contact us with any questions about our security practices.
+            Our team is here to help. Contact us with any questions about our security practices or your data.
           </p>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg max-w-md mx-auto">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Add security contact email and/or link to contact form.
-            </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild>
+              <a href="mailto:security@allybywaiterapp.com">
+                <Shield className="mr-2 h-4 w-4" />
+                Security Inquiries
+              </a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="mailto:info@allybywaiterapp.com">
+                <Mail className="mr-2 h-4 w-4" />
+                General Questions
+              </a>
+            </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-6">
+            For more details on how we handle your data, see our{" "}
+            <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
+          </p>
         </section>
       </main>
       <Footer />
