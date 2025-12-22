@@ -71,13 +71,13 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
             >
-              <span className="bg-gradient-water bg-clip-text text-transparent">Crystal Clear Water,</span>
+              <span className="text-foreground drop-shadow-lg">Crystal Clear Water,</span>
               <br />
-              <span className="text-foreground">Effortlessly Maintained</span>
+              <span className="text-foreground drop-shadow-lg">Effortlessly Maintained</span>
             </motion.h1>
             
             <motion.p 
-              className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-8"
+              className="text-lg sm:text-xl text-foreground/90 drop-shadow-md max-w-xl mx-auto lg:mx-0 mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
@@ -128,16 +128,16 @@ const Hero = () => {
           transition={{ delay: 0.6, duration: 0.6 }}
         >
           <div className="text-center lg:text-left">
-            <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">500+</div>
-            <div className="text-sm text-muted-foreground">Beta Testers</div>
+            <div className="text-2xl sm:text-3xl font-bold text-primary drop-shadow-md mb-1">500+</div>
+            <div className="text-sm text-foreground/80 drop-shadow-sm">Beta Testers</div>
           </div>
           <div className="text-center lg:text-left">
-            <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">98%</div>
-            <div className="text-sm text-muted-foreground">Analysis Accuracy</div>
+            <div className="text-2xl sm:text-3xl font-bold text-primary drop-shadow-md mb-1">98%</div>
+            <div className="text-sm text-foreground/80 drop-shadow-sm">Analysis Accuracy</div>
           </div>
           <div className="text-center lg:text-left">
-            <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">24/7</div>
-            <div className="text-sm text-muted-foreground">AI Support</div>
+            <div className="text-2xl sm:text-3xl font-bold text-primary drop-shadow-md mb-1">24/7</div>
+            <div className="text-sm text-foreground/80 drop-shadow-sm">AI Support</div>
           </div>
         </motion.div>
       </div>
