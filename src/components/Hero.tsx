@@ -77,7 +77,7 @@ const Hero = () => {
             </motion.h1>
             
             <motion.p 
-              className="text-lg sm:text-xl text-foreground/90 drop-shadow-md max-w-xl mx-auto lg:mx-0 mb-8"
+              className="text-lg sm:text-xl text-foreground drop-shadow-md max-w-xl mx-auto lg:mx-0 mb-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.6 }}
