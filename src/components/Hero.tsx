@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Mic, Download, Bell } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-aquarium.jpg";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const Hero = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
@@ -15,69 +16,107 @@ const Hero = () => {
       <div className="absolute inset-0 bg-cover bg-center z-0" style={{
         backgroundImage: `url(${heroImage})`
       }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/80 to-background/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 py-20 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6 border border-primary/20">
-          <Sparkles className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-primary">Closed Beta • Limited Spots Available</span>
+      <div className="relative z-10 container mx-auto px-4 py-32">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Text Content */}
+          <motion.div 
+            className="text-center lg:text-left"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div 
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8 border border-primary/20"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+            >
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Closed Beta • Launching Q1 2025</span>
+            </motion.div>
+            
+            <motion.h1 
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+            >
+              <span className="bg-gradient-water bg-clip-text text-transparent">Crystal Clear Water,</span>
+              <br />
+              <span className="text-foreground">Effortlessly Maintained</span>
+            </motion.h1>
+            
+            <motion.p 
+              className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+            >
+              Meet <span className="font-semibold text-foreground">Ally</span>, your AI-powered water care assistant. 
+              Smart, personalized care for aquariums, pools, and spas.
+            </motion.p>
+
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
+            >
+              <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
+                Join Beta Waitlist
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <Button variant="heroOutline" size="lg" className="text-lg px-8" onClick={() => navigate("/how-it-works")}>
+                See How It Works
+              </Button>
+            </motion.div>
+          </motion.div>
+
+          {/* Right: App Preview */}
+          <motion.div 
+            className="relative hidden lg:block"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.7 }}
+          >
+            <div className="absolute inset-0 bg-gradient-water blur-3xl opacity-20 rounded-full scale-75" />
+            <motion.img 
+              alt="Ally AI Water Care Assistant" 
+              className="relative w-full max-w-md mx-auto drop-shadow-2xl rounded-2xl"
+              src="/images/ally-thinking-promo.png"
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            />
+          </motion.div>
         </div>
-        
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-water bg-clip-text text-transparent leading-tight">
-          Crystal Clear Water, Effortlessly Maintained
-        </h1>
-        
-        <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-          Meet <span className="font-semibold text-foreground">Ally by WA.I.TER</span>, your AI powered water care assistant. 
-          No expertise needed. Just smart, personalized care for your aquarium, pool, or spa.
-        </p>
 
-        {/* Feature Badges */}
-        <div className="flex flex-wrap gap-3 justify-center mb-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/50 backdrop-blur-sm rounded-full border border-border/50">
-            <Mic className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Voice Enabled</span>
+        {/* Stats - Authentic Beta Stats */}
+        <motion.div 
+          className="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto lg:mx-0"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+        >
+          <div className="text-center lg:text-left">
+            <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">500+</div>
+            <div className="text-sm text-muted-foreground">Beta Testers</div>
           </div>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/50 backdrop-blur-sm rounded-full border border-border/50">
-            <Download className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Works Offline</span>
+          <div className="text-center lg:text-left">
+            <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">98%</div>
+            <div className="text-sm text-muted-foreground">Analysis Accuracy</div>
           </div>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-card/50 backdrop-blur-sm rounded-full border border-border/50">
-            <Bell className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium">Push Notifications</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
-            Join Beta Waitlist
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
-          <Button variant="heroOutline" size="lg" className="text-lg px-8" onClick={() => navigate("/how-it-works")}>
-            See How It Works
-          </Button>
-        </div>
-
-        <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
-
-        {/* Stats */}
-        <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-primary mb-2">98%</div>
-            <div className="text-sm text-muted-foreground">Accuracy Rate</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-primary mb-2">10k+</div>
-            <div className="text-sm text-muted-foreground">Happy Users</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-primary mb-2">24/7</div>
+          <div className="text-center lg:text-left">
+            <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">24/7</div>
             <div className="text-sm text-muted-foreground">AI Support</div>
           </div>
-        </div>
+        </motion.div>
       </div>
+
+      <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
     </section>
   );
 };
