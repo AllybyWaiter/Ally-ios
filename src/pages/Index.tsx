@@ -6,10 +6,9 @@ import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
 import HowItWorks from "@/components/HowItWorks";
-import AppShowcase from "@/components/AppShowcase";
+import SocialProof from "@/components/SocialProof";
 import CTA from "@/components/CTA";
 import FAQ from "@/components/FAQ";
-import { ContactForm } from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import AllySupportChat from "@/components/AllySupportChat";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
@@ -47,10 +46,9 @@ const Index = () => {
         <Hero />
         <Features />
         <HowItWorks />
-        <AppShowcase />
+        <SocialProof />
         <CTA />
         <FAQ />
-        <ContactForm />
       </main>
       <Footer />
       <AllySupportChat />
