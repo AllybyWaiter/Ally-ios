@@ -39,8 +39,10 @@ const Hero = () => {
           style={{ backgroundImage: `url(${currentImage})` }}
         />
         
-        {/* Gradient overlay - darker for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/75 to-background" />
+        {/* Gradient overlay - balanced for image visibility + text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80" />
+        {/* Subtle vignette for focus */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,hsl(var(--background)/0.3)_100%)]" />
       </div>
 
       {/* Content */}
