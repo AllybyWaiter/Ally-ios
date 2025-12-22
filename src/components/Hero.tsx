@@ -1,22 +1,46 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
-import heroImage from "@/assets/hero-aquarium.jpg";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useHeroBackground } from "@/hooks/useHeroBackground";
 
 const Hero = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const navigate = useNavigate();
+  const { currentImage, previousImage, isTransitioning } = useHeroBackground();
   
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background with overlay */}
-      <div className="absolute inset-0 bg-cover bg-center z-0" style={{
-        backgroundImage: `url(${heroImage})`
-      }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
+      {/* Dynamic Background with Crossfade */}
+      <div className="absolute inset-0 z-0">
+        {/* Previous image (fading out) */}
+        <AnimatePresence>
+          {isTransitioning && previousImage && (
+            <motion.div
+              key={previousImage}
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1, ease: "easeInOut" }}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${previousImage})` }}
+            />
+          )}
+        </AnimatePresence>
+        
+        {/* Current image */}
+        <motion.div
+          key={currentImage}
+          initial={{ opacity: isTransitioning ? 0 : 1 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${currentImage})` }}
+        />
+        
+        {/* Gradient overlay - darker for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/75 to-background" />
       </div>
 
       {/* Content */}
