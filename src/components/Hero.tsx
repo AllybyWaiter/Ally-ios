@@ -62,7 +62,7 @@ const Hero = () => {
               transition={{ delay: 0.1, duration: 0.5 }}
             >
               <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">🎉 Beta Now Live!</span>
+              <span className="text-sm font-medium text-primary">Beta Now Live!</span>
             </motion.div>
             
             <motion.h1 
