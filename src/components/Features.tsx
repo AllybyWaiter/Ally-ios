@@ -1,97 +1,119 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Camera, LineChart, Shield, Smartphone, CloudSun, ArrowRight, Mic, Bell, Image } from "lucide-react";
+import { Brain, Camera, LineChart, Bell, Mic, Smartphone, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 const features = [
   {
     icon: Brain,
     title: "Smart AI Assistant",
-    description: "Ask anything about water care. Ally understands your setup and gives personalized advice.",
+    description: "Ask anything about water care. Ally understands your setup and gives personalized advice instantly.",
+  },
+  {
+    icon: Camera,
+    title: "Photo Intelligence",
+    description: "Snap a photo of your test strip or livestock. Ally reads results and tracks changes over time.",
   },
   {
     icon: Mic,
     title: "Voice Enabled",
-    description: "Talk to Ally hands-free. Ask questions, log results, and get spoken responses.",
-  },
-  {
-    icon: Camera,
-    title: "Photo Testing",
-    description: "Snap a photo of your test strip. Ally reads it and tells you what to do next.",
-  },
-  {
-    icon: Image,
-    title: "Visual Journals",
-    description: "Track your fish, corals, and plants with photo galleries. See changes over time.",
+    description: "Talk to Ally hands-free. Ask questions, log results, and get spoken responses while your hands are busy.",
   },
   {
     icon: LineChart,
-    title: "Trend Alerts",
-    description: "Ally watches your water data and warns you before small issues become big problems.",
+    title: "Proactive Alerts",
+    description: "AI watches your water data and warns you before small issues become big problems.",
   },
   {
     icon: Bell,
     title: "Smart Reminders",
-    description: "Never miss a water change again. Get push notifications for tasks and alerts.",
-  },
-  {
-    icon: CloudSun,
-    title: "Weather Aware",
-    description: "Pool and spa owners get maintenance tips based on real-time weather conditions.",
-  },
-  {
-    icon: Shield,
-    title: "Preventive Care",
-    description: "Recurring tasks and smart suggestions keep your water perfect effortlessly.",
+    description: "Never miss a water change. Get push notifications for tasks, alerts, and personalized tips.",
   },
   {
     icon: Smartphone,
     title: "Works Everywhere",
-    description: "Install on any device. Works offline and feels like a native app.",
+    description: "Install on any device. Works offline, syncs automatically, and feels like a native app.",
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5 },
+  },
+};
+
 const Features = () => {
   return (
-    <section className="py-20 px-4 bg-gradient-hero">
-      <div className="container mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            Everything You Need,<br />Nothing You Don't
+    <section className="py-24 px-4 bg-muted/30">
+      <div className="container mx-auto max-w-6xl">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+            Everything You Need, Nothing You Don't
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Sophisticated technology, simple experience. For aquariums, pools, and spas.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div 
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <Card 
-                key={index} 
-                className="border-2 hover:border-primary transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm"
-              >
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
+              <motion.div key={index} variants={itemVariants}>
+                <Card className="h-full border border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                  <CardContent className="p-8">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
+                      <Icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
-        <div className="text-center mt-12">
+        <motion.div 
+          className="text-center mt-12"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+        >
           <Button variant="outline" size="lg" asChild className="group">
             <Link to="/features">
               View All Features
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
