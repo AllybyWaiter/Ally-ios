@@ -31,6 +31,7 @@ import { CommandPalette } from '@/components/admin/CommandPalette';
 import { ContactsManager } from '@/components/admin/ContactsManager';
 import { SystemHealth } from '@/components/admin/SystemHealth';
 import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
+import { PartnerApplicationsManager } from '@/components/admin/PartnerApplicationsManager';
 
 interface WaitlistEntry {
   id: string;
@@ -206,6 +207,14 @@ export default function Admin() {
         return (
           <SectionErrorBoundary fallbackTitle="Failed to load contacts" featureArea={FeatureArea.ADMIN}>
             <ContactsManager />
+          </SectionErrorBoundary>
+        );
+
+      case 'partners':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load partner applications" featureArea={FeatureArea.ADMIN}>
+            <PartnerApplicationsManager />
           </SectionErrorBoundary>
         );
 
