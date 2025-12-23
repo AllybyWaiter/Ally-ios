@@ -52,10 +52,9 @@ const Footer = () => {
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
               <li><Link to="/partners" className="hover:text-primary transition-colors">Partners</Link></li>
-              <li><Link to="/case-studies" className="hover:text-primary transition-colors">Case Studies</Link></li>
+              <li><Link to="/trust" className="hover:text-primary transition-colors">Trust Center</Link></li>
               <li><Link to="/security" className="hover:text-primary transition-colors">Security</Link></li>
               <li><Link to="/status" className="hover:text-primary transition-colors">Status</Link></li>
-              <li><Link to="/integrations" className="hover:text-primary transition-colors">Integrations</Link></li>
               {isAdmin && <li><Link to="/admin" className="hover:text-primary transition-colors">Admin</Link></li>}
             </ul>
           </div>
@@ -70,6 +69,7 @@ const Footer = () => {
             <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
             <Link to="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
             <Link to="/accessibility" className="hover:text-primary transition-colors">Accessibility</Link>
+            <Link to="/legal/sla" className="hover:text-primary transition-colors">SLA</Link>
           </div>
           <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mt-4 md:mt-0">
             <Link to="/testimonials" className="hover:text-primary transition-colors">Testimonials</Link>
