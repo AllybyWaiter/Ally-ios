@@ -237,8 +237,29 @@ export default function PartnerApply() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      partnership_type: undefined,
+      business_type: "",
+      full_name: "",
+      email: "",
+      country: "",
+      company_name: "",
+      phone: "",
+      role_title: "",
+      website_url: "",
+      timezone: "",
       channels: [],
+      primary_channel_link: "",
+      additional_links: "",
       audience_focus: [],
+      total_followers: null,
+      avg_views: null,
+      monthly_visitors: null,
+      newsletter_subscribers: null,
+      promotion_plan: "",
+      payout_method: undefined,
+      paypal_email: "",
+      referral_source: "",
+      referral_code: "",
       agreed_to_terms: false,
       agreed_to_ftc: false,
       confirmed_accuracy: false,
@@ -400,7 +421,7 @@ export default function PartnerApply() {
               </h1>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto">
                 Tell us about yourself and how you'd like to partner with Ally. We
-                review applications within 5 to 7 business days.
+                review applications within 2 to 3 business days.
               </p>
             </motion.div>
 
@@ -826,14 +847,15 @@ export default function PartnerApply() {
                               <FormControl>
                                 <Input
                                   type="number"
+                                  min="0"
                                   placeholder="e.g., 50000"
                                   {...field}
                                   value={field.value ?? ""}
-                                  onChange={(e) =>
-                                    field.onChange(
-                                      e.target.value ? parseInt(e.target.value) : null
-                                    )
-                                  }
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const parsed = parseInt(val, 10);
+                                    field.onChange(val === "" || isNaN(parsed) ? null : parsed);
+                                  }}
                                 />
                               </FormControl>
                               <FormDescription>All platforms combined</FormDescription>
@@ -852,14 +874,15 @@ export default function PartnerApply() {
                                 <FormControl>
                                   <Input
                                     type="number"
+                                    min="0"
                                     placeholder="e.g., 10000"
                                     {...field}
                                     value={field.value ?? ""}
-                                    onChange={(e) =>
-                                      field.onChange(
-                                        e.target.value ? parseInt(e.target.value) : null
-                                      )
-                                    }
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const parsed = parseInt(val, 10);
+                                      field.onChange(val === "" || isNaN(parsed) ? null : parsed);
+                                    }}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -878,14 +901,15 @@ export default function PartnerApply() {
                                 <FormControl>
                                   <Input
                                     type="number"
+                                    min="0"
                                     placeholder="e.g., 25000"
                                     {...field}
                                     value={field.value ?? ""}
-                                    onChange={(e) =>
-                                      field.onChange(
-                                        e.target.value ? parseInt(e.target.value) : null
-                                      )
-                                    }
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const parsed = parseInt(val, 10);
+                                      field.onChange(val === "" || isNaN(parsed) ? null : parsed);
+                                    }}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -904,14 +928,15 @@ export default function PartnerApply() {
                                 <FormControl>
                                   <Input
                                     type="number"
+                                    min="0"
                                     placeholder="e.g., 5000"
                                     {...field}
                                     value={field.value ?? ""}
-                                    onChange={(e) =>
-                                      field.onChange(
-                                        e.target.value ? parseInt(e.target.value) : null
-                                      )
-                                    }
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      const parsed = parseInt(val, 10);
+                                      field.onChange(val === "" || isNaN(parsed) ? null : parsed);
+                                    }}
                                   />
                                 </FormControl>
                                 <FormMessage />
