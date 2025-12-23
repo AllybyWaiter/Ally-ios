@@ -5,13 +5,14 @@ interface BadgeCounts {
   openTickets: number;
   pendingContacts: number;
   pendingWaitlist: number;
+  pendingPartners: number;
 }
 
 export const useAdminBadgeCounts = () => {
   return useQuery({
     queryKey: ['admin-badge-counts'],
     queryFn: async (): Promise<BadgeCounts> => {
-      const [ticketsResult, contactsResult, waitlistResult] = await Promise.all([
+      const [ticketsResult, contactsResult, waitlistResult, partnersResult] = await Promise.all([
         // Open support tickets (not resolved/closed)
         supabase
           .from('support_tickets')
@@ -29,12 +30,19 @@ export const useAdminBadgeCounts = () => {
           .from('waitlist')
           .select('id', { count: 'exact', head: true })
           .or('beta_access_granted.is.null,beta_access_granted.eq.false'),
+        
+        // Pending partner applications
+        supabase
+          .from('partner_applications')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending'),
       ]);
 
       return {
         openTickets: ticketsResult.count || 0,
         pendingContacts: contactsResult.count || 0,
         pendingWaitlist: waitlistResult.count || 0,
+        pendingPartners: partnersResult.count || 0,
       };
     },
     staleTime: 30 * 1000, // 30 seconds
