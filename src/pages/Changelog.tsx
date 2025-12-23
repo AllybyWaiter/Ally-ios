@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Wrench, Bug, AlertTriangle, Rocket } from "lucide-react";
+import { Sparkles, Rocket, Bug, AlertTriangle, Wrench } from "lucide-react";
 
 type ChangeType = "feature" | "improvement" | "fix" | "security" | "breaking";
 
@@ -20,49 +20,19 @@ interface ReleaseEntry {
 }
 
 const Changelog = () => {
-  // Placeholder releases - update with real version history
+  // [INTERNAL NOTE: Update with actual release notes as versions ship]
   const releases: ReleaseEntry[] = [
     {
-      version: "[X.X.X]",
-      date: "[YYYY-MM-DD]",
-      title: "[RELEASE TITLE - e.g., AI Enhancements & Performance]",
-      changes: [
-        { type: "feature", description: "[PLACEHOLDER: New feature description]" },
-        { type: "feature", description: "[PLACEHOLDER: Another new feature]" },
-        { type: "improvement", description: "[PLACEHOLDER: Improvement description]" },
-        { type: "fix", description: "[PLACEHOLDER: Bug fix description]" },
-      ],
-    },
-    {
-      version: "[X.X.X]",
-      date: "[YYYY-MM-DD]",
-      title: "[RELEASE TITLE]",
-      changes: [
-        { type: "feature", description: "[PLACEHOLDER: Feature description]" },
-        { type: "improvement", description: "[PLACEHOLDER: Improvement description]" },
-        { type: "security", description: "[PLACEHOLDER: Security update description]" },
-        { type: "fix", description: "[PLACEHOLDER: Bug fix description]" },
-      ],
-    },
-    {
-      version: "[X.X.X]",
-      date: "[YYYY-MM-DD]",
-      title: "[RELEASE TITLE]",
-      changes: [
-        { type: "breaking", description: "[PLACEHOLDER: Breaking change description]" },
-        { type: "feature", description: "[PLACEHOLDER: Feature description]" },
-        { type: "improvement", description: "[PLACEHOLDER: Improvement description]" },
-      ],
-    },
-    {
       version: "1.0.0",
-      date: "[YYYY-MM-DD]",
+      date: "2025-01-15",
       title: "Initial Release",
       changes: [
-        { type: "feature", description: "[PLACEHOLDER: Core feature 1]" },
-        { type: "feature", description: "[PLACEHOLDER: Core feature 2]" },
-        { type: "feature", description: "[PLACEHOLDER: Core feature 3]" },
-        { type: "feature", description: "[PLACEHOLDER: Core feature 4]" },
+        { type: "feature", description: "Ally AI chat assistant for water care guidance" },
+        { type: "feature", description: "AI-powered water test photo analysis" },
+        { type: "feature", description: "Aquarium, pool, and spa tracking" },
+        { type: "feature", description: "Maintenance task scheduling and reminders" },
+        { type: "feature", description: "Water parameter trend charts and history" },
+        { type: "feature", description: "Weather integration for outdoor water bodies" },
       ],
     },
   ];
@@ -132,13 +102,6 @@ const Changelog = () => {
           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">Changelog</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Stay up to date with the latest features, improvements, and fixes in Ally.
-          </p>
-        </div>
-
-        {/* Placeholder Notice */}
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-8">
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            <strong>PLACEHOLDER:</strong> Replace all entries below with actual release notes. Follow semantic versioning (MAJOR.MINOR.PATCH) and include dates in YYYY-MM-DD format.
           </p>
         </div>
 
@@ -231,27 +194,18 @@ const Changelog = () => {
           ))}
         </div>
 
-        {/* Subscribe Section */}
+        {/* Future Updates Section */}
         <section className="mt-16 text-center p-8 bg-muted/30 rounded-2xl border">
-          <h2 className="text-2xl font-bold mb-4 text-foreground">Stay Updated</h2>
-          <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-            Get notified about new features and updates. Follow our changelog or subscribe to release notes.
+          <h2 className="text-2xl font-bold mb-4 text-foreground">More Updates Coming Soon</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            We're constantly improving Ally with new features, performance enhancements, and bug fixes. 
+            Check back regularly to see what's new.
           </p>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg max-w-md mx-auto">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Add newsletter signup form or RSS feed link for changelog updates.
-            </p>
-          </div>
         </section>
 
         {/* Versioning Note */}
         <section className="mt-8 p-6 bg-muted/30 rounded-lg border">
           <h3 className="text-lg font-semibold mb-2 text-foreground">About Our Versioning</h3>
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-3">
-            <p className="text-xs text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Customize versioning explanation as needed.
-            </p>
-          </div>
           <p className="text-sm text-muted-foreground">
             We follow <a href="https://semver.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Semantic Versioning</a> (SemVer). 
             Version numbers are formatted as MAJOR.MINOR.PATCH where:
