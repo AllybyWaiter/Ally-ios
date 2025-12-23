@@ -1,77 +1,107 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
-import { ArrowRight, Fish, Waves, Droplets, TrendingUp, Clock, Award } from "lucide-react";
+import { Fish, Waves, TrendingUp, Clock, Award, Star, Users, Heart, CheckCircle, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface CaseStudy {
   id: string;
   title: string;
   customer: string;
-  industry: string;
-  waterType: "aquarium" | "pool" | "spa";
+  category: string;
+  waterType: "aquarium" | "pool";
+  setup: string;
   challenge: string;
-  solution: string;
+  howAllyHelped: string;
+  featuresUsed: string[];
   results: { metric: string; value: string }[];
   quote: string;
-  image: string | null;
   featured: boolean;
 }
 
 const CaseStudies = () => {
-  // Placeholder case studies - replace with real customer stories
   const caseStudies: CaseStudy[] = [
     {
-      id: "case-study-1",
-      title: "[CASE STUDY TITLE 1]",
-      customer: "[CUSTOMER NAME / COMPANY]",
-      industry: "[INDUSTRY - e.g., Home Aquarium Hobbyist]",
-      waterType: "aquarium",
-      challenge: "[PLACEHOLDER: Describe the customer's challenge before using Ally. What problems were they facing? What was their pain point?]",
-      solution: "[PLACEHOLDER: How did Ally help solve their problem? What features did they use?]",
-      results: [
-        { metric: "[METRIC 1 - e.g., Time Saved]", value: "[VALUE - e.g., 5 hours/week]" },
-        { metric: "[METRIC 2 - e.g., Fish Survival Rate]", value: "[VALUE - e.g., 95%]" },
-        { metric: "[METRIC 3 - e.g., Cost Reduction]", value: "[VALUE - e.g., 40%]" },
+      id: "martinez-family-pool",
+      title: "From Weekend Guesswork to Set It and Trust It Water in 30 Days",
+      customer: "The Martinez Family",
+      category: "Home Pool Owner",
+      waterType: "pool",
+      setup: "18,000 gallon outdoor chlorine pool (high sun exposure; heavy summer use)",
+      challenge: "The pool was stuck in a reactive loop: water looked fine until it didn't. Testing was inconsistent, small imbalances got missed, and weekends turned into troubleshooting sessions with extra store trips, extra chemical spend, and wasted time.",
+      howAllyHelped: "Ally shifted their maintenance from reactive fixes to proactive control. They established a consistent routine, caught drift early, and followed clear, step by step recommendations to correct issues before they became visible problems.",
+      featuresUsed: [
+        "Guided water checks (routine cadence + reminders)",
+        "Alerts when readings drift",
+        "Recommendations for corrective actions",
+        "History + trends to prevent repeat issues"
       ],
-      quote: "[PLACEHOLDER: Customer testimonial quote about their experience with Ally]",
-      image: null,
+      results: [
+        { metric: "Time Saved", value: "4 hrs/week" },
+        { metric: "In Range Days", value: "55% → 88%" },
+        { metric: "Chemical Spend", value: "↓25%" },
+      ],
+      quote: "Before Ally, we were always behind—testing late and fixing problems after they showed up. Now it feels like the pool takes care of itself. We spend weekends using the pool, not fighting it.",
       featured: true,
     },
     {
-      id: "case-study-2",
-      title: "[CASE STUDY TITLE 2]",
-      customer: "[CUSTOMER NAME / COMPANY]",
-      industry: "[INDUSTRY - e.g., Pool Service Company]",
+      id: "bluewave-pool-care",
+      title: "A Pool Service Company Reduced Rechecks and Scaled Without Adding Headcount",
+      customer: "BlueWave Pool Care",
+      category: "Pool Service Company",
       waterType: "pool",
-      challenge: "[PLACEHOLDER: Customer challenge description]",
-      solution: "[PLACEHOLDER: How Ally helped]",
-      results: [
-        { metric: "[METRIC 1]", value: "[VALUE]" },
-        { metric: "[METRIC 2]", value: "[VALUE]" },
+      setup: "70 to 120 active accounts (seasonal range)",
+      challenge: "Growth was being dragged down by rechecks and 'something's off' calls. Even when chemistry was right on service day, heat, weather, and customer usage caused drift between visits—costing time, labor, and customer confidence.",
+      howAllyHelped: "Ally created an always on layer between visits. The team used monitoring, alerts, and standardized action steps to reduce follow ups, keep cleaner records, and maintain consistency across technicians.",
+      featuresUsed: [
+        "Multi-account monitoring (service workflow)",
+        "Alerts + recommended actions",
+        "Logbook + service notes (continuity across techs)",
+        "Repeatable checklists (standardized routine)"
       ],
-      quote: "[PLACEHOLDER: Customer quote]",
-      image: null,
+      results: [
+        { metric: "Team Time Saved", value: "6 hrs/week" },
+        { metric: "Recheck Visits", value: "↓18%" },
+        { metric: "Capacity Gained", value: "+10 accounts" },
+      ],
+      quote: "Ally tightened up our whole operation. Less second guessing, fewer emergency stops, and better consistency across techs. It's like having a smart supervisor watching every pool between visits.",
       featured: false,
     },
     {
-      id: "case-study-3",
-      title: "[CASE STUDY TITLE 3]",
-      customer: "[CUSTOMER NAME / COMPANY]",
-      industry: "[INDUSTRY - e.g., Resort & Spa]",
-      waterType: "spa",
-      challenge: "[PLACEHOLDER: Customer challenge description]",
-      solution: "[PLACEHOLDER: How Ally helped]",
-      results: [
-        { metric: "[METRIC 1]", value: "[VALUE]" },
-        { metric: "[METRIC 2]", value: "[VALUE]" },
+      id: "reef-enthusiast",
+      title: "A Reef Tank Owner Stabilized Parameters and Stopped the Constant Tweaking Cycle",
+      customer: "Marine Reef Enthusiast (40G Mixed Reef)",
+      category: "Home Aquarium Hobbyist (Reef)",
+      waterType: "aquarium",
+      setup: "40 gallon mixed reef with sensitive coral + fish",
+      challenge: "Despite frequent testing, the tank chemistry kept swinging. Small routine changes (feeding, evaporation, maintenance) compounded into instability, leading to constant tweaking and uncertainty about whether adjustments were helping or making things worse.",
+      howAllyHelped: "Ally replaced reactive adjustments with consistent tracking and trend based decisions. The customer focused on the highest impact actions first, reduced overcorrection, and stabilized parameters over time.",
+      featuresUsed: [
+        "Guided testing cadence (consistency over guesswork)",
+        "Trend tracking across key parameters",
+        "Alerts + recommendations (priority order for fixes)",
+        "Maintenance reminders (stability through routine)"
       ],
-      quote: "[PLACEHOLDER: Customer quote]",
-      image: null,
+      results: [
+        { metric: "Time Saved", value: "2.5 hrs/week" },
+        { metric: "In Range Readings", value: "52% → 83%" },
+        { metric: "Livestock Losses", value: "2 → 0" },
+      ],
+      quote: "I didn't need more testing—I needed better decisions. Ally helped me spot trends early and stop overcorrecting. My tank's more stable, and I'm not stressed every time I run a test.",
       featured: false,
     },
+  ];
+
+  const aggregateStats = [
+    { icon: Clock, value: "4.2 hrs/week", label: "Average Time Saved" },
+    { icon: TrendingUp, value: "+32%", label: "Water Stability Improvement" },
+    { icon: Users, value: "18%", label: "Fewer Recheck Visits" },
+    { icon: Heart, value: "2 → 0", label: "Livestock Losses (90 days)" },
+    { icon: Star, value: "4.8/5", label: "Customer Satisfaction" },
   ];
 
   const getWaterTypeIcon = (type: CaseStudy["waterType"]) => {
@@ -80,8 +110,6 @@ const CaseStudies = () => {
         return <Fish className="h-5 w-5" />;
       case "pool":
         return <Waves className="h-5 w-5" />;
-      case "spa":
-        return <Droplets className="h-5 w-5" />;
     }
   };
 
@@ -91,8 +119,6 @@ const CaseStudies = () => {
         return "Aquarium";
       case "pool":
         return "Pool";
-      case "spa":
-        return "Spa & Hot Tub";
     }
   };
 
@@ -102,63 +128,101 @@ const CaseStudies = () => {
   return (
     <div className="min-h-screen">
       <SEO 
-        title="Case Studies"
-        description="Discover how aquarium hobbyists, pool owners, and spa operators use Ally to transform their water care routine. Real success stories with measurable results."
+        title="Case Studies | Real Customer Success Stories"
+        description="Discover how pool owners, service companies, and aquarium hobbyists use Ally to save time, improve water stability, and reduce costs. Real success stories with measurable results."
         path="/case-studies"
       />
       <Navbar />
       <main className="container mx-auto px-4 py-16 max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-16">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           <Badge className="mb-4">Success Stories</Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
-            Case Studies
+            Real Results from Real Customers
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            See how real customers are achieving better water quality, saving time, and reducing costs with Ally.
+            See how pool owners, service companies, and aquarium hobbyists are achieving better water quality, saving time, and reducing costs with Ally.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Placeholder Notice */}
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-12">
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            <strong>PLACEHOLDER:</strong> Replace all case studies with real customer stories. Obtain written permission from customers before publishing. Include actual metrics and verifiable results.
-          </p>
-        </div>
+        {/* Aggregate Stats */}
+        <motion.section 
+          className="mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {aggregateStats.map((stat, index) => (
+              <Card key={index} className="text-center">
+                <CardContent className="pt-6">
+                  <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </motion.section>
 
         {/* Featured Case Study */}
         {featuredStudy && (
-          <section className="mb-16">
-            <h2 className="text-2xl font-bold mb-6 text-foreground">Featured Story</h2>
+          <motion.section 
+            className="mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <Award className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-bold text-foreground">Featured Story</h2>
+            </div>
             <Card className="overflow-hidden">
               <div className="grid lg:grid-cols-2">
                 <div className="p-8 lg:p-12">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
                     <Badge variant="outline" className="gap-1">
                       {getWaterTypeIcon(featuredStudy.waterType)}
                       {getWaterTypeLabel(featuredStudy.waterType)}
                     </Badge>
-                    <Badge variant="secondary">{featuredStudy.industry}</Badge>
+                    <Badge variant="secondary">{featuredStudy.category}</Badge>
                   </div>
                   
                   <h3 className="text-2xl font-bold mb-2 text-foreground">{featuredStudy.title}</h3>
-                  <p className="text-muted-foreground mb-6">{featuredStudy.customer}</p>
+                  <p className="text-lg text-muted-foreground mb-2">{featuredStudy.customer}</p>
+                  <p className="text-sm text-muted-foreground mb-6">{featuredStudy.setup}</p>
                   
-                  <div className="space-y-4 mb-8">
+                  <div className="space-y-6 mb-8">
                     <div>
                       <h4 className="font-semibold text-foreground mb-2">The Challenge</h4>
                       <p className="text-muted-foreground">{featuredStudy.challenge}</p>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2">The Solution</h4>
-                      <p className="text-muted-foreground">{featuredStudy.solution}</p>
+                      <h4 className="font-semibold text-foreground mb-2">How Ally Helped</h4>
+                      <p className="text-muted-foreground">{featuredStudy.howAllyHelped}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-3">Features Used</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {featuredStudy.featuresUsed.map((feature, index) => (
+                          <Badge key={index} variant="outline" className="gap-1 text-xs">
+                            <CheckCircle className="h-3 w-3" />
+                            {feature}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-8">
                     {featuredStudy.results.map((result, index) => (
                       <div key={index} className="text-center p-4 bg-primary/5 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{result.value}</div>
+                        <div className="text-xl font-bold text-primary">{result.value}</div>
                         <div className="text-xs text-muted-foreground">{result.metric}</div>
                       </div>
                     ))}
@@ -166,118 +230,137 @@ const CaseStudies = () => {
 
                   <blockquote className="border-l-4 border-primary pl-4 italic text-muted-foreground">
                     "{featuredStudy.quote}"
+                    <footer className="mt-2 text-sm font-medium text-foreground not-italic">
+                      — {featuredStudy.customer}
+                    </footer>
                   </blockquote>
                 </div>
-                <div className="bg-muted/30 flex items-center justify-center min-h-[400px]">
-                  <div className="text-center p-8">
-                    <Award className="h-16 w-16 text-primary mx-auto mb-4" />
-                    <p className="text-muted-foreground">[CUSTOMER PHOTO OR SETUP IMAGE]</p>
+                <div className="bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center min-h-[400px] p-8">
+                  <div className="text-center">
+                    <div className="w-32 h-32 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                      <Waves className="h-16 w-16 text-primary" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">Clean wide pool shot (daytime)</p>
+                    <p className="text-xs text-muted-foreground mt-1">Image placeholder</p>
                   </div>
                 </div>
               </div>
             </Card>
-          </section>
+          </motion.section>
         )}
 
         {/* Other Case Studies */}
-        <section className="mb-16">
+        <motion.section 
+          className="mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
           <h2 className="text-2xl font-bold mb-6 text-foreground">More Success Stories</h2>
           <div className="grid md:grid-cols-2 gap-8">
             {otherStudies.map((study) => (
-              <Card key={study.id} className="flex flex-col">
-                <div className="h-48 bg-muted/30 flex items-center justify-center">
-                  <div className="text-center p-4">
-                    {getWaterTypeIcon(study.waterType)}
-                    <p className="text-muted-foreground mt-2">[CUSTOMER IMAGE]</p>
+              <Card key={study.id} className="flex flex-col overflow-hidden">
+                <div className="h-40 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-2">
+                      {getWaterTypeIcon(study.waterType)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {study.waterType === "pool" ? "Technician servicing pool" : "High quality reef tank photo"}
+                    </p>
                   </div>
                 </div>
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
+                <CardHeader className="pb-3">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
                     <Badge variant="outline" className="gap-1">
                       {getWaterTypeIcon(study.waterType)}
                       {getWaterTypeLabel(study.waterType)}
                     </Badge>
+                    <Badge variant="secondary" className="text-xs">{study.category}</Badge>
                   </div>
-                  <CardTitle>{study.title}</CardTitle>
+                  <CardTitle className="text-lg leading-tight">{study.title}</CardTitle>
                   <p className="text-sm text-muted-foreground">{study.customer}</p>
+                  <p className="text-xs text-muted-foreground">{study.setup}</p>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                  <p className="text-muted-foreground mb-4 flex-1">{study.challenge}</p>
+                <CardContent className="flex-1 flex flex-col pt-0">
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <h4 className="font-semibold text-foreground text-sm mb-1">The Challenge</h4>
+                      <p className="text-sm text-muted-foreground">{study.challenge}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground text-sm mb-1">How Ally Helped</h4>
+                      <p className="text-sm text-muted-foreground">{study.howAllyHelped}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground text-sm mb-2">Features Used</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {study.featuresUsed.slice(0, 3).map((feature, index) => (
+                          <Badge key={index} variant="outline" className="text-xs gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            {feature.split('(')[0].trim()}
+                          </Badge>
+                        ))}
+                        {study.featuresUsed.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{study.featuresUsed.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {study.results.slice(0, 2).map((result, index) => (
-                      <div key={index} className="text-center p-3 bg-muted/50 rounded-lg">
-                        <div className="text-lg font-bold text-foreground">{result.value}</div>
+                  <div className="grid grid-cols-3 gap-2 mb-6">
+                    {study.results.map((result, index) => (
+                      <div key={index} className="text-center p-3 bg-primary/5 rounded-lg">
+                        <div className="text-lg font-bold text-primary">{result.value}</div>
                         <div className="text-xs text-muted-foreground">{result.metric}</div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                    <p className="text-xs text-amber-700 dark:text-amber-400">
-                      <strong>PLACEHOLDER:</strong> Add link to full case study page.
-                    </p>
-                  </div>
+                  <blockquote className="border-l-4 border-primary pl-3 italic text-sm text-muted-foreground mt-auto">
+                    "{study.quote}"
+                    <footer className="mt-2 text-xs font-medium text-foreground not-italic">
+                      — {study.customer}
+                    </footer>
+                  </blockquote>
                 </CardContent>
               </Card>
             ))}
           </div>
-        </section>
-
-        {/* Results Summary */}
-        <section className="mb-16">
-          <h2 className="text-2xl font-bold mb-8 text-foreground text-center">Aggregate Results</h2>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-6">
-            <p className="text-sm text-amber-700 dark:text-amber-400 text-center">
-              <strong>PLACEHOLDER:</strong> Add verified aggregate statistics across all customers.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <Clock className="h-8 w-8 text-primary mx-auto mb-2" />
-                <div className="text-3xl font-bold text-foreground">[X]%</div>
-                <div className="text-sm text-muted-foreground">Average Time Saved</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <TrendingUp className="h-8 w-8 text-primary mx-auto mb-2" />
-                <div className="text-3xl font-bold text-foreground">[X]%</div>
-                <div className="text-sm text-muted-foreground">Improvement in Water Quality</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <Fish className="h-8 w-8 text-primary mx-auto mb-2" />
-                <div className="text-3xl font-bold text-foreground">[X]%</div>
-                <div className="text-sm text-muted-foreground">Healthier Inhabitants</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <Award className="h-8 w-8 text-primary mx-auto mb-2" />
-                <div className="text-3xl font-bold text-foreground">[X]%</div>
-                <div className="text-sm text-muted-foreground">Customer Satisfaction</div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+        </motion.section>
 
         {/* CTA */}
-        <section className="text-center p-12 bg-primary/5 rounded-2xl">
-          <h2 className="text-3xl font-bold mb-4 text-foreground">Ready to Write Your Success Story?</h2>
+        <motion.section 
+          className="text-center p-12 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <h2 className="text-3xl font-bold mb-4 text-foreground">Ready for water that stays right?</h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of water care enthusiasts who are achieving better results with less effort.
+            Reduce guesswork, catch problems early, and reclaim your time with Ally.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                <strong>PLACEHOLDER:</strong> Add CTA buttons for signup and contact.
-              </p>
-            </div>
+            <Button asChild size="lg" variant="hero">
+              <Link to="/pricing">
+                Get Ally
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/contact">
+                Talk to an Expert
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="ghost">
+              <Link to="/download">
+                Download the App
+              </Link>
+            </Button>
           </div>
-        </section>
+        </motion.section>
       </main>
       <Footer />
     </div>
