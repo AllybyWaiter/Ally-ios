@@ -1,16 +1,17 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
-import { Shield, Lock, Server, Eye, CheckCircle, Mail, Users } from "lucide-react";
+import { Shield, Lock, Server, Eye, CheckCircle, Mail, Users, Bot, Globe, Award, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Security = () => {
   const securityFeatures = [
     {
       icon: Lock,
       title: "Data Encryption",
-      description: "All data is protected with enterprise-grade encryption in transit and at rest. Your information is secured using industry-standard cryptographic protocols.",
+      description: "All data is encrypted using TLS 1.3 in transit and AES-256 at rest. Your information is secured using the highest industry-standard cryptographic protocols.",
     },
     {
       icon: Server,
@@ -35,12 +36,13 @@ const Security = () => {
       description: "Full compliance with EU data protection regulations including data export and deletion rights.",
     },
     {
-      name: "Data Encrypted",
-      description: "All connections and stored data are encrypted using industry-standard protocols.",
+      name: "CCPA Ready",
+      description: "California Consumer Privacy Act compliance with full data access and deletion capabilities.",
     },
     {
-      name: "Regular Security Reviews",
-      description: "We continuously monitor and improve our security practices to protect your data.",
+      name: "SOC 2 Type II",
+      description: "Enterprise-grade security controls with planned SOC 2 Type II certification.",
+      status: "In Progress",
     },
   ];
 
@@ -88,6 +90,65 @@ const Security = () => {
           </div>
         </section>
 
+        {/* Ally AI Security Section */}
+        <section className="mb-16">
+          <h2 className="text-3xl font-bold mb-8 text-foreground">Ally AI Security</h2>
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Bot className="h-5 w-5 text-primary" />
+                </div>
+                How We Protect Your AI Interactions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-2 text-foreground">Data Processing</h4>
+                  <ul className="space-y-2 text-muted-foreground text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>AI processes only data you explicitly share</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>Conversations encrypted in transit and at rest</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>Your data is never used to train AI models</span>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2 text-foreground">Your Controls</h4>
+                  <ul className="space-y-2 text-muted-foreground text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>Delete conversation history anytime</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>Manage AI memory preferences in settings</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <span>Full data export available on request</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground pt-4 border-t">
+                For complete details on AI data handling, see our{" "}
+                <Link to="/legal/ai-transparency" className="text-primary hover:underline">
+                  AI Transparency page
+                </Link>.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Security Practices */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground">Our Security Practices</h2>
@@ -95,12 +156,22 @@ const Security = () => {
             <div className="p-6 bg-muted/30 rounded-lg border">
               <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
                 <Lock className="h-5 w-5 text-primary" />
-                Encryption
+                Encryption Standards
               </h3>
-              <p className="text-muted-foreground">
-                Industry-standard encryption protects all data transmitted between your device and our servers, 
-                as well as data stored in our databases. Your sensitive information is always protected.
-              </p>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span><strong>In Transit:</strong> TLS 1.3 for all connections</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span><strong>At Rest:</strong> AES-256 encryption for stored data</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span><strong>Keys:</strong> Secure key management with regular rotation</span>
+                </li>
+              </ul>
             </div>
 
             <div className="p-6 bg-muted/30 rounded-lg border">
@@ -110,7 +181,19 @@ const Security = () => {
               </h3>
               <p className="text-muted-foreground">
                 Secure login with email verification and session management. Your account is protected 
-                with modern authentication protocols and secure password handling.
+                with modern authentication protocols and secure password handling using industry-standard hashing.
+              </p>
+            </div>
+
+            <div className="p-6 bg-muted/30 rounded-lg border">
+              <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Data Residency
+              </h3>
+              <p className="text-muted-foreground">
+                Your data is stored in secure cloud infrastructure located in the United States with 
+                automatic geo-redundant backups. For enterprise customers requiring specific data 
+                residency, please <Link to="/contact" className="text-primary hover:underline">contact us</Link>.
               </p>
             </div>
 
@@ -120,35 +203,33 @@ const Security = () => {
                 Infrastructure
               </h3>
               <p className="text-muted-foreground">
-                Enterprise-grade cloud hosting with automatic backups ensures your data is safe and 
-                recoverable. Our infrastructure is monitored around the clock for any issues.
-              </p>
-            </div>
-
-            <div className="p-6 bg-muted/30 rounded-lg border">
-              <h3 className="text-xl font-semibold mb-4 text-foreground flex items-center gap-2">
-                <Eye className="h-5 w-5 text-primary" />
-                Data Handling
-              </h3>
-              <p className="text-muted-foreground">
-                We practice data minimization—collecting only what's necessary. You have full control 
-                over your data with the ability to export or permanently delete it at any time.
+                Enterprise-grade cloud hosting with automatic backups, DDoS protection, and 24/7 
+                monitoring. Our infrastructure is designed for high availability with 99.9% uptime target.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Compliance */}
+        {/* Compliance & Certifications */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-8 text-foreground">Compliance</h2>
+          <h2 className="text-3xl font-bold mb-8 text-foreground">Compliance & Certifications</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {complianceItems.map((item, index) => (
               <Card key={index}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    {item.status ? (
+                      <Clock className="h-5 w-5 text-amber-500" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    )}
                     <CardTitle className="text-lg">{item.name}</CardTitle>
                   </div>
+                  {item.status && (
+                    <span className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full w-fit">
+                      {item.status}
+                    </span>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">{item.description}</p>
@@ -156,39 +237,70 @@ const Security = () => {
               </Card>
             ))}
           </div>
+          <p className="text-sm text-muted-foreground mt-6 text-center">
+            For detailed compliance documentation, visit our{" "}
+            <Link to="/trust" className="text-primary hover:underline">Trust Center</Link>.
+          </p>
         </section>
 
-        {/* Responsible Disclosure */}
+        {/* Bug Bounty / Responsible Disclosure */}
         <section className="mb-16">
-          <h2 className="text-3xl font-bold mb-8 text-foreground">Responsible Disclosure</h2>
+          <h2 className="text-3xl font-bold mb-8 text-foreground">Security Research Program</h2>
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-lg bg-primary/10 shrink-0">
-                  <Shield className="h-6 w-6 text-primary" />
+                  <Award className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-2 text-foreground">Report a Security Vulnerability</h3>
-                  <p className="text-muted-foreground mb-4">
-                    We take security vulnerabilities seriously. If you discover a potential security issue, 
-                    please report it responsibly. We appreciate the security research community's efforts 
-                    in helping keep our users safe.
-                  </p>
-                  <ul className="space-y-2 text-muted-foreground mb-4">
-                    <li className="flex items-center gap-2">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">Responsible Disclosure</h3>
+                    <p className="text-muted-foreground">
+                      We take security vulnerabilities seriously and appreciate the security research 
+                      community's efforts in helping keep our users safe.
+                    </p>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold mb-2 text-foreground">In Scope</h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• Authentication and authorization flaws</li>
+                        <li>• Data exposure vulnerabilities</li>
+                        <li>• Cross-site scripting (XSS)</li>
+                        <li>• SQL injection</li>
+                        <li>• API security issues</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2 text-foreground">Out of Scope</h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• Social engineering attacks</li>
+                        <li>• Denial of service (DoS) attacks</li>
+                        <li>• Physical security issues</li>
+                        <li>• Issues in third-party services</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Mail className="h-4 w-4 text-primary" />
-                      <span><strong>Email:</strong>{" "}
+                      <span><strong>Report to:</strong>{" "}
                         <a href="mailto:security@allybywaiterapp.com" className="text-primary hover:underline">
                           security@allybywaiterapp.com
                         </a>
                       </span>
-                    </li>
-                    <li>• We respond to security reports promptly</li>
-                    <li>• Safe harbor for good-faith security researchers</li>
-                  </ul>
-                  <p className="text-sm text-muted-foreground">
-                    Please do not publicly disclose vulnerabilities until we've had a chance to address them.
-                  </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4 text-primary" />
+                      <span><strong>Response time:</strong> Initial response within 48 hours</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Safe Harbor:</strong> We provide safe harbor for good-faith security researchers. 
+                      We will not pursue legal action against researchers who follow responsible disclosure guidelines.
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -217,7 +329,7 @@ const Security = () => {
           </div>
           <p className="text-sm text-muted-foreground mt-6">
             For more details on how we handle your data, see our{" "}
-            <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
+            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
           </p>
         </section>
       </main>
