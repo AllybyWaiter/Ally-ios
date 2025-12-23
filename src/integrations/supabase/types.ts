@@ -974,6 +974,102 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_applications: {
+        Row: {
+          additional_links: string | null
+          agreed_to_ftc: boolean
+          agreed_to_terms: boolean
+          audience_focus: string[]
+          avg_views: number | null
+          business_type: string | null
+          channels: string[]
+          company_name: string | null
+          confirmed_accuracy: boolean
+          country: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          monthly_visitors: number | null
+          newsletter_subscribers: number | null
+          partnership_type: string
+          payout_method: string
+          paypal_email: string | null
+          phone: string | null
+          primary_channel_link: string
+          promotion_plan: string | null
+          referral_code: string | null
+          referral_source: string | null
+          role_title: string | null
+          status: string
+          timezone: string | null
+          total_followers: number | null
+          website_url: string | null
+        }
+        Insert: {
+          additional_links?: string | null
+          agreed_to_ftc?: boolean
+          agreed_to_terms?: boolean
+          audience_focus: string[]
+          avg_views?: number | null
+          business_type?: string | null
+          channels: string[]
+          company_name?: string | null
+          confirmed_accuracy?: boolean
+          country: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          monthly_visitors?: number | null
+          newsletter_subscribers?: number | null
+          partnership_type: string
+          payout_method: string
+          paypal_email?: string | null
+          phone?: string | null
+          primary_channel_link: string
+          promotion_plan?: string | null
+          referral_code?: string | null
+          referral_source?: string | null
+          role_title?: string | null
+          status?: string
+          timezone?: string | null
+          total_followers?: number | null
+          website_url?: string | null
+        }
+        Update: {
+          additional_links?: string | null
+          agreed_to_ftc?: boolean
+          agreed_to_terms?: boolean
+          audience_focus?: string[]
+          avg_views?: number | null
+          business_type?: string | null
+          channels?: string[]
+          company_name?: string | null
+          confirmed_accuracy?: boolean
+          country?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          monthly_visitors?: number | null
+          newsletter_subscribers?: number | null
+          partnership_type?: string
+          payout_method?: string
+          paypal_email?: string | null
+          phone?: string | null
+          primary_channel_link?: string
+          promotion_plan?: string | null
+          referral_code?: string | null
+          referral_source?: string | null
+          role_title?: string | null
+          status?: string
+          timezone?: string | null
+          total_followers?: number | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string | null
