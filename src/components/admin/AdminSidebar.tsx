@@ -14,7 +14,8 @@ import {
   Home,
   LogOut,
   ChevronDown,
-  Server
+  Server,
+  Handshake
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminBadgeCounts } from '@/hooks/useAdminBadgeCounts';
@@ -49,7 +50,7 @@ interface MenuItem {
   icon: React.ElementType;
   permission?: string;
   roles?: string[];
-  badgeKey?: 'openTickets' | 'pendingContacts' | 'pendingWaitlist';
+  badgeKey?: 'openTickets' | 'pendingContacts' | 'pendingWaitlist' | 'pendingPartners';
 }
 
 interface MenuGroup {
@@ -82,6 +83,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'blog', label: 'Blog', icon: FileText, permission: 'manage_blog' },
       { id: 'announcements', label: 'Announcements', icon: Megaphone, permission: 'manage_announcements' },
       { id: 'contacts', label: 'Contacts', icon: Mail, roles: ['admin'], badgeKey: 'pendingContacts' },
+      { id: 'partners', label: 'Partner Applications', icon: Handshake, roles: ['admin'], badgeKey: 'pendingPartners' },
       { id: 'waitlist', label: 'Waitlist', icon: ClipboardList, roles: ['admin'], badgeKey: 'pendingWaitlist' },
       { id: 'tickets', label: 'Support Tickets', icon: Ticket, permission: 'moderate_support', badgeKey: 'openTickets' },
     ],
@@ -136,7 +138,7 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
     return group.items.some(item => item.id === activeSection && canAccessItem(item));
   };
 
-  const getBadgeCount = (badgeKey?: 'openTickets' | 'pendingContacts' | 'pendingWaitlist'): number => {
+  const getBadgeCount = (badgeKey?: 'openTickets' | 'pendingContacts' | 'pendingWaitlist' | 'pendingPartners'): number => {
     if (!badgeKey || !badgeCounts) return 0;
     return badgeCounts[badgeKey] || 0;
   };
