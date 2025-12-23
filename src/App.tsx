@@ -110,6 +110,11 @@ const Careers = lazyWithRetry(() => import("./pages/Careers"));
 const Glossary = lazyWithRetry(() => import("./pages/Glossary"));
 const Partners = lazyWithRetry(() => import("./pages/Partners"));
 const PartnerApply = lazyWithRetry(() => import("./pages/PartnerApply"));
+const TrustCenter = lazyWithRetry(() => import("./pages/TrustCenter"));
+const Subprocessors = lazyWithRetry(() => import("./pages/Subprocessors"));
+const AITransparency = lazyWithRetry(() => import("./pages/AITransparency"));
+const DPA = lazyWithRetry(() => import("./pages/DPA"));
+const SLA = lazyWithRetry(() => import("./pages/SLA"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -170,6 +175,11 @@ const App = () => (
                   <Route path="/glossary" element={<PageErrorBoundary pageName="Glossary" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Glossary /></Suspense></PageErrorBoundary>} />
                   <Route path="/partners" element={<PageErrorBoundary pageName="Partners" featureArea="general"><Suspense fallback={<FormSkeleton />}><Partners /></Suspense></PageErrorBoundary>} />
                   <Route path="/partners/apply" element={<PageErrorBoundary pageName="Partner Application" featureArea="general"><Suspense fallback={<FormSkeleton />}><PartnerApply /></Suspense></PageErrorBoundary>} />
+                  <Route path="/trust" element={<PageErrorBoundary pageName="Trust Center" featureArea="general"><Suspense fallback={<FormSkeleton />}><TrustCenter /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/subprocessors" element={<PageErrorBoundary pageName="Subprocessors" featureArea="general"><Suspense fallback={<FormSkeleton />}><Subprocessors /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/ai-transparency" element={<PageErrorBoundary pageName="AI Transparency" featureArea="general"><Suspense fallback={<FormSkeleton />}><AITransparency /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/dpa" element={<PageErrorBoundary pageName="DPA" featureArea="general"><Suspense fallback={<FormSkeleton />}><DPA /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/sla" element={<PageErrorBoundary pageName="SLA" featureArea="general"><Suspense fallback={<FormSkeleton />}><SLA /></Suspense></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
                   <Route path="/auth/reset-password" element={<PageErrorBoundary pageName="Reset Password" featureArea="auth"><ResetPassword /></PageErrorBoundary>} />
                   <Route 
