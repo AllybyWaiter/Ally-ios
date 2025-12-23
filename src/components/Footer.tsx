@@ -1,11 +1,12 @@
 import logo from "@/assets/logo.png";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+
 const Footer = () => {
-  const {
-    isAdmin
-  } = useAuth();
-  return <footer className="bg-muted py-12 px-4">
+  const { isAdmin } = useAuth();
+  
+  return (
+    <footer className="bg-muted py-12 px-4">
       <div className="container mx-auto">
         <div className="grid md:grid-cols-5 gap-8 mb-8">
           <div className="col-span-2">
@@ -18,7 +19,9 @@ const Footer = () => {
                 <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
               </div>
             </Link>
-            <p className="text-muted-foreground max-w-sm">Making aquarium water care effortless with AI powered insights and personalized care plans.</p>
+            <p className="text-muted-foreground max-w-sm">
+              Making aquarium water care effortless with AI powered insights and personalized care plans.
+            </p>
           </div>
 
           <div>
@@ -60,23 +63,36 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            © 2025 WA.I.TER. All rights reserved.
-          </p>
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-            <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
-            <Link to="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
-            <Link to="/accessibility" className="hover:text-primary transition-colors">Accessibility</Link>
-            <Link to="/legal/sla" className="hover:text-primary transition-colors">SLA</Link>
+        {/* Legal Links Row */}
+        <div className="pt-8 border-t border-border">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <p className="text-sm text-muted-foreground">
+              © 2025 WA.I.TER. All rights reserved.
+            </p>
+            
+            {/* Primary Legal Links */}
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+              <Link to="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
+              <Link to="/accessibility" className="hover:text-primary transition-colors">Accessibility</Link>
+              <Link to="/privacy#ccpa" className="hover:text-primary transition-colors">Do Not Sell My Info</Link>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-6 text-sm text-muted-foreground mt-4 md:mt-0">
-            <Link to="/testimonials" className="hover:text-primary transition-colors">Testimonials</Link>
+          
+          {/* Secondary Links Row */}
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground mt-4">
+            <Link to="/legal/ai-transparency" className="hover:text-primary transition-colors">AI Transparency</Link>
+            <Link to="/legal/subprocessors" className="hover:text-primary transition-colors">Subprocessors</Link>
+            <Link to="/legal/dpa" className="hover:text-primary transition-colors">DPA</Link>
+            <Link to="/legal/sla" className="hover:text-primary transition-colors">SLA</Link>
             <Link to="/changelog" className="hover:text-primary transition-colors">Changelog</Link>
+            <Link to="/testimonials" className="hover:text-primary transition-colors">Testimonials</Link>
           </div>
         </div>
       </div>
-    </footer>;
+    </footer>
+  );
 };
+
 export default Footer;
