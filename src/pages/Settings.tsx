@@ -884,7 +884,7 @@ const Settings = () => {
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </Link>
                 
-                <Link to="/cookie-preferences" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                <Link to="/legal/cookie-preferences" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-muted-foreground" />
                     <div>
