@@ -25,6 +25,7 @@ const PrivacyPolicy = () => {
             <li><a href="#your-rights" className="hover:text-primary transition-colors">Your Rights</a></li>
             <li><a href="#children" className="hover:text-primary transition-colors">Children's Privacy</a></li>
             <li><a href="#cookies" className="hover:text-primary transition-colors">Cookies and Tracking</a></li>
+            <li><a href="#ccpa" className="hover:text-primary transition-colors">California Privacy Rights (CCPA/CPRA)</a></li>
             <li><a href="#changes" className="hover:text-primary transition-colors">Changes to This Policy</a></li>
             <li><a href="#contact" className="hover:text-primary transition-colors">Contact Us</a></li>
           </ol>
@@ -185,15 +186,49 @@ const PrivacyPolicy = () => {
             </p>
           </section>
 
+          <section id="ccpa">
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">13. California Privacy Rights (CCPA/CPRA)</h2>
+            <p className="leading-relaxed mb-4">
+              If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA):
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li><strong>Right to Know:</strong> You can request information about the categories and specific pieces of personal information we have collected about you, the sources of that information, the business purposes for collecting it, and the categories of third parties with whom we share it.</li>
+              <li><strong>Right to Delete:</strong> You can request that we delete personal information we have collected from you, subject to certain exceptions.</li>
+              <li><strong>Right to Correct:</strong> You can request that we correct inaccurate personal information we maintain about you.</li>
+              <li><strong>Right to Opt Out of Sale/Sharing:</strong> You have the right to opt out of the "sale" or "sharing" of your personal information. <strong>We do not sell your personal information.</strong> We do not share your personal information for cross context behavioral advertising purposes.</li>
+              <li><strong>Right to Limit Use of Sensitive Personal Information:</strong> You can limit the use and disclosure of sensitive personal information to purposes necessary for providing the services.</li>
+              <li><strong>Right to Non Discrimination:</strong> We will not discriminate against you for exercising any of your CCPA/CPRA rights.</li>
+            </ul>
+            <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Categories of Personal Information Collected</h3>
+            <p className="leading-relaxed mb-4">
+              In the past 12 months, we have collected the following categories of personal information:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>Identifiers (name, email address, IP address)</li>
+              <li>Internet or network activity (browsing history, interactions with our service)</li>
+              <li>Geolocation data (for weather features, with your consent)</li>
+              <li>Professional or employment related information (if provided in support inquiries)</li>
+              <li>Inferences drawn from the above to create a profile about preferences</li>
+            </ul>
+            <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Do Not Sell or Share My Personal Information</h3>
+            <p className="leading-relaxed mb-4">
+              <strong>We do not sell your personal information.</strong> We do not share your personal information with third parties for cross context behavioral advertising. If you wish to make a verifiable consumer request or have questions about your California privacy rights, please contact us at <a href="mailto:privacy@allybywaiter.com" className="text-primary hover:underline">privacy@allybywaiter.com</a>.
+            </p>
+            <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Authorized Agents</h3>
+            <p className="leading-relaxed">
+              You may designate an authorized agent to make a request on your behalf. We may require verification that you authorized the agent to act on your behalf before fulfilling their request.
+            </p>
+          </section>
+
           <section id="changes">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">13. Changes to This Privacy Policy</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">14. Changes to This Privacy Policy</h2>
             <p className="leading-relaxed">
               We may update our Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page, updating the "Last updated" date, and sending you an email notification if the changes are significant. You are advised to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page.
             </p>
           </section>
 
           <section id="contact">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">14. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-foreground">15. Contact Us</h2>
             <p className="leading-relaxed">
               If you have any questions about this Privacy Policy or our data practices, please contact us:
             </p>
