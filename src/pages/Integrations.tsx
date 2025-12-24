@@ -1,9 +1,11 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
-import { Plug, Zap, Clock, Code, Smartphone, Cloud, Wifi, Bell } from "lucide-react";
+import { Plug, Zap, Clock, Code, Smartphone, Cloud, Wifi, Bell, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 type IntegrationStatus = "available" | "coming-soon" | "beta";
 
@@ -18,43 +20,43 @@ interface Integration {
 const Integrations = () => {
   const integrations: Integration[] = [
     {
-      name: "[INTEGRATION 1 - e.g., Google Calendar]",
-      description: "[PLACEHOLDER: Sync maintenance tasks with your calendar]",
-      icon: Clock,
-      status: "available",
-      category: "Productivity",
-    },
-    {
-      name: "[INTEGRATION 2 - e.g., Apple Health]",
-      description: "[PLACEHOLDER: Track your aquarium care habits]",
-      icon: Smartphone,
-      status: "coming-soon",
-      category: "Mobile",
-    },
-    {
-      name: "[INTEGRATION 3 - e.g., Smart Home Hub]",
-      description: "[PLACEHOLDER: Connect with Alexa, Google Home, HomeKit]",
-      icon: Cloud,
-      status: "coming-soon",
-      category: "Smart Home",
-    },
-    {
-      name: "[INTEGRATION 4 - e.g., IoT Sensors]",
-      description: "[PLACEHOLDER: Connect Neptune, GHL, Seneye sensors]",
-      icon: Wifi,
-      status: "coming-soon",
-      category: "Hardware",
-    },
-    {
-      name: "[INTEGRATION 5 - e.g., Push Notifications]",
-      description: "[PLACEHOLDER: Real-time alerts via Slack, Discord, SMS]",
+      name: "Push Notifications",
+      description: "Get real time alerts for water quality issues, maintenance reminders, and important updates.",
       icon: Bell,
       status: "available",
       category: "Notifications",
     },
     {
-      name: "[INTEGRATION 6 - e.g., REST API]",
-      description: "[PLACEHOLDER: Build custom integrations with our API]",
+      name: "Calendar Sync",
+      description: "Sync maintenance tasks with your preferred calendar app.",
+      icon: Clock,
+      status: "coming-soon",
+      category: "Productivity",
+    },
+    {
+      name: "Mobile App",
+      description: "Full featured progressive web app for iOS and Android devices.",
+      icon: Smartphone,
+      status: "available",
+      category: "Mobile",
+    },
+    {
+      name: "Smart Home Integration",
+      description: "Connect with popular smart home platforms like Alexa and Google Home.",
+      icon: Cloud,
+      status: "coming-soon",
+      category: "Smart Home",
+    },
+    {
+      name: "IoT Sensor Support",
+      description: "Connect compatible aquarium sensors for automatic parameter monitoring.",
+      icon: Wifi,
+      status: "coming-soon",
+      category: "Hardware",
+    },
+    {
+      name: "Developer API",
+      description: "Build custom integrations with our RESTful API.",
       icon: Code,
       status: "coming-soon",
       category: "Developer",
@@ -96,33 +98,28 @@ const Integrations = () => {
           </p>
         </div>
 
-        {/* Placeholder Notice */}
-        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-12">
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            <strong>PLACEHOLDER:</strong> Replace with actual integrations. Only list integrations that are available or have a confirmed roadmap. Include partner logos when available.
-          </p>
-        </div>
-
         {/* Featured Integration */}
         <section className="mb-16">
           <Card className="overflow-hidden">
             <div className="grid md:grid-cols-2">
               <div className="p-8 flex flex-col justify-center">
                 <Badge className="w-fit mb-4">Featured</Badge>
-                <h2 className="text-2xl font-bold mb-4 text-foreground">[FEATURED INTEGRATION NAME]</h2>
+                <h2 className="text-2xl font-bold mb-4 text-foreground">Push Notifications</h2>
                 <p className="text-muted-foreground mb-6">
-                  [PLACEHOLDER: Describe your most important or popular integration in detail. Explain the benefits and use cases.]
+                  Stay informed with real time push notifications. Get alerts for critical water quality changes, 
+                  maintenance reminders, and personalized recommendations directly on your device.
                 </p>
-                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
-                    <strong>PLACEHOLDER:</strong> Add CTA button to set up integration or learn more.
-                  </p>
-                </div>
+                <Button asChild className="w-fit">
+                  <Link to="/settings">
+                    Configure Notifications
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
               </div>
               <div className="bg-muted/30 flex items-center justify-center min-h-[250px]">
                 <div className="text-center p-8">
-                  <Zap className="h-16 w-16 text-primary mx-auto mb-4" />
-                  <p className="text-muted-foreground">[INTEGRATION SCREENSHOT OR DIAGRAM]</p>
+                  <Bell className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <p className="text-muted-foreground">Real time alerts for your water care</p>
                 </div>
               </div>
             </div>
@@ -159,15 +156,17 @@ const Integrations = () => {
         {/* Hardware Partners */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Hardware Partners</h2>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-6">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Add logos and descriptions of hardware partners. Get permission before using partner logos.
-            </p>
-          </div>
+          <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+            We're working with leading aquarium hardware manufacturers to bring you seamless integration 
+            with popular sensors and controllers. Stay tuned for announcements.
+          </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[1, 2, 3, 4].map((i) => (
+            {["Neptune Systems", "GHL", "Seneye", "CoralVue"].map((partner, i) => (
               <Card key={i} className="aspect-video flex items-center justify-center bg-muted/30">
-                <p className="text-muted-foreground text-sm text-center p-4">[PARTNER {i} LOGO]</p>
+                <div className="text-center p-4">
+                  <p className="text-muted-foreground text-sm font-medium">{partner}</p>
+                  <Badge variant="secondary" className="mt-2 text-xs">Coming Soon</Badge>
+                </div>
               </Card>
             ))}
           </div>
@@ -182,22 +181,26 @@ const Integrations = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-4 text-foreground">Build Custom Integrations</h2>
-                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-4">
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
-                    <strong>PLACEHOLDER:</strong> Update with actual API availability and documentation links.
-                  </p>
-                </div>
                 <p className="text-muted-foreground mb-4">
-                  [PLACEHOLDER: Describe your API offering for developers and businesses who want to build custom integrations.]
+                  Our developer API allows you to build custom integrations for your specific needs. 
+                  Connect Ally with your existing systems and automate your water care workflow.
                 </p>
                 <ul className="space-y-2 text-muted-foreground mb-6">
-                  <li>• <strong>REST API:</strong> [STATUS - Available / Coming Soon]</li>
-                  <li>• <strong>Webhooks:</strong> [STATUS - Available / Coming Soon]</li>
-                  <li>• <strong>SDKs:</strong> [STATUS - Available / Coming Soon]</li>
-                  <li>• <strong>Documentation:</strong> [LINK TO API DOCS]</li>
+                  <li className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                    <span><strong>REST API</strong></span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                    <span><strong>Webhooks</strong></span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                    <span><strong>SDKs</strong></span>
+                  </li>
                 </ul>
                 <p className="text-sm text-muted-foreground">
-                  API access is available on [TIER] plans and above.
+                  API access will be available on Pro plans and above.
                 </p>
               </div>
             </div>
@@ -210,11 +213,11 @@ const Integrations = () => {
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
             We're always expanding our integration ecosystem. Let us know what tools you'd like us to integrate with.
           </p>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg max-w-md mx-auto">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Add button linking to contact form or feature request page.
-            </p>
-          </div>
+          <Button asChild>
+            <Link to="/contact?type=feature">
+              Request an Integration
+            </Link>
+          </Button>
         </section>
       </main>
       <Footer />
