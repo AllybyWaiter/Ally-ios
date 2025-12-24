@@ -828,7 +828,7 @@ const Settings = () => {
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </Link>
                 
-                <Link to="/cookie-policy" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                <Link to="/cookies" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <FileText className="h-5 w-5 text-muted-foreground" />
                     <div>
@@ -862,7 +862,7 @@ const Settings = () => {
                 <CardDescription>Manage your privacy preferences</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Link to="/ai-transparency" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                <Link to="/legal/ai-transparency" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <Brain className="h-5 w-5 text-muted-foreground" />
                     <div>
@@ -873,7 +873,7 @@ const Settings = () => {
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </Link>
                 
-                <Link to="/privacy-rights" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                <Link to="/legal/privacy-rights" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <Shield className="h-5 w-5 text-muted-foreground" />
                     <div>
