@@ -227,15 +227,15 @@ export const RoleManager = () => {
 
       if (insertError) throw insertError;
 
-      // Audit logging disabled until table is created
-      // await (supabase as any).from('role_audit_log').insert({
-      //   admin_user_id: currentUser.id,
-      //   target_user_id: selectedUser.user_id,
-      //   action: 'assign_role',
-      //   old_roles: selectedUser.roles,
-      //   new_roles: [...selectedUser.roles, selectedRole],
-      //   reason: reason || 'No reason provided'
-      // });
+      // Log the role change for audit
+      await supabase.from('role_audit_log').insert({
+        admin_user_id: currentUser.id,
+        target_user_id: selectedUser.user_id,
+        action: 'assign_role',
+        old_roles: selectedUser.roles,
+        new_roles: [...selectedUser.roles, selectedRole],
+        reason: reason || 'No reason provided'
+      });
 
       toast.success(`${selectedRole} role assigned successfully`);
       setShowAssignDialog(false);
@@ -292,15 +292,15 @@ export const RoleManager = () => {
 
       if (deleteError) throw deleteError;
 
-      // Audit logging disabled until table is created
-      // await (supabase as any).from('role_audit_log').insert({
-      //   admin_user_id: currentUser.id,
-      //   target_user_id: selectedUser.user_id,
-      //   action: 'remove_role',
-      //   old_roles: selectedUser.roles,
-      //   new_roles: selectedUser.roles.filter(r => r !== selectedRole),
-      //   reason: reason || 'No reason provided'
-      // });
+      // Log the role change for audit
+      await supabase.from('role_audit_log').insert({
+        admin_user_id: currentUser.id,
+        target_user_id: selectedUser.user_id,
+        action: 'remove_role',
+        old_roles: selectedUser.roles,
+        new_roles: selectedUser.roles.filter(r => r !== selectedRole),
+        reason: reason || 'No reason provided'
+      });
 
       toast.success(`${selectedRole} role removed successfully`);
       setShowRemoveDialog(false);
