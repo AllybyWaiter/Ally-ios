@@ -194,7 +194,6 @@ const TrustCenter = () => {
             ))}
           </div>
           <p className="text-sm text-muted-foreground text-center mt-6">
-            {/* [Legal review recommended] */}
             Certifications in progress are actively being pursued. Contact us for current status.
           </p>
         </section>

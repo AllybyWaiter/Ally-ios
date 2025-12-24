@@ -4,7 +4,8 @@ import { X, Cookie } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const COOKIE_CONSENT_KEY = "ally_cookie_consent";
+const COOKIE_CONSENT_KEY = "cookie-consent";
+const COOKIE_PREFERENCES_KEY = "cookie-preferences";
 
 type ConsentStatus = "accepted" | "declined" | null;
 
@@ -13,7 +14,9 @@ const CookieConsent = () => {
 
   useEffect(() => {
     const consent = localStorage.getItem(COOKIE_CONSENT_KEY) as ConsentStatus;
-    if (!consent) {
+    // Also check legacy key for backwards compatibility
+    const legacyConsent = localStorage.getItem("ally_cookie_consent") as ConsentStatus;
+    if (!consent && !legacyConsent) {
       // Delay showing banner slightly for better UX
       const timer = setTimeout(() => setShowBanner(true), 1500);
       return () => clearTimeout(timer);
@@ -22,11 +25,13 @@ const CookieConsent = () => {
 
   const handleAccept = () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
+    localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: true, analytics: true }));
     setShowBanner(false);
   };
 
   const handleDecline = () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
+    localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: false, analytics: false }));
     setShowBanner(false);
   };
 
