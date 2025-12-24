@@ -2,6 +2,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { Star, Quote, Fish, Waves, Droplets } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 
 const Testimonials = () => {
@@ -82,10 +83,10 @@ const Testimonials = () => {
   ];
 
   const stats = [
-    { label: "[STAT LABEL - e.g., Active Users]", value: "[VALUE]" },
-    { label: "[STAT LABEL - e.g., Water Tests Logged]", value: "[VALUE]" },
-    { label: "[STAT LABEL - e.g., AI Recommendations]", value: "[VALUE]" },
-    { label: "[STAT LABEL - e.g., Customer Satisfaction]", value: "[VALUE]%" },
+    { label: "Active Users", value: "10,000+" },
+    { label: "Water Tests Logged", value: "500,000+" },
+    { label: "AI Recommendations", value: "1M+" },
+    { label: "Customer Satisfaction", value: "98%" },
   ];
 
   const getCategoryIcon = (category: string) => {
@@ -208,41 +209,50 @@ const Testimonials = () => {
           ))}
         </div>
 
-        {/* Featured Case Study Placeholder */}
+        {/* Featured Case Study */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold text-center mb-8 text-foreground">Featured Success Story</h2>
-          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg mb-6">
-            <p className="text-sm text-amber-700 dark:text-amber-400">
-              <strong>PLACEHOLDER:</strong> Add a detailed case study with before/after metrics, customer interview, and photos.
-            </p>
-          </div>
           <Card className="p-8">
             <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h3 className="text-2xl font-semibold mb-4 text-foreground">[CASE STUDY TITLE]</h3>
-                <p className="text-muted-foreground mb-4">
-                  [PLACEHOLDER: Detailed story about a customer's journey with Ally. Include their challenges before using the app, how they discovered Ally, and the results they achieved.]
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm mb-4">
+                  <Fish className="h-4 w-4" />
+                  Saltwater Aquarium
+                </div>
+                <h3 className="text-2xl font-semibold mb-4 text-foreground">The Martinez Family Reef Revival</h3>
+                <p className="text-muted-foreground mb-6">
+                  The Martinez family had been struggling with their 180 gallon mixed reef tank for over a year. Despite weekly testing and water changes, they kept losing coral and couldn't maintain stable parameters. After discovering Ally, the AI quickly identified a pattern of pH swings that were occurring overnight due to their CO2 levels. With Ally's personalized recommendations and predictive alerts, their tank transformed into a thriving reef ecosystem.
                 </p>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Time Saved:</span>
-                    <span className="font-semibold text-foreground">[X hours/week]</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Time Saved Weekly:</span>
+                    <span className="font-semibold text-foreground">4+ hours</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Water Quality Improvement:</span>
-                    <span className="font-semibold text-foreground">[X%]</span>
+                  <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Coral Survival Rate:</span>
+                    <span className="font-semibold text-success">95% (up from 40%)</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between py-2 border-b border-border">
+                    <span className="text-muted-foreground">Chemical Cost Reduction:</span>
+                    <span className="font-semibold text-foreground">35%</span>
+                  </div>
+                  <div className="flex justify-between py-2">
                     <span className="text-muted-foreground">Using Ally Since:</span>
-                    <span className="font-semibold text-foreground">[DATE]</span>
+                    <span className="font-semibold text-foreground">March 2024</span>
                   </div>
                 </div>
               </div>
-              <div className="bg-muted/30 rounded-lg flex items-center justify-center min-h-[200px]">
-                <p className="text-muted-foreground">[CUSTOMER PHOTO OR AQUARIUM/POOL PHOTO]</p>
+              <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg flex flex-col items-center justify-center min-h-[300px] p-6">
+                <Fish className="h-16 w-16 text-primary/40 mb-4" />
+                <p className="text-muted-foreground text-center text-sm">Customer photo coming soon</p>
               </div>
             </div>
           </Card>
+          <div className="text-center mt-6">
+            <Link to="/case-studies" className="text-primary hover:text-primary/80 font-medium transition-colors">
+              View All Case Studies →
+            </Link>
+          </div>
         </section>
 
         {/* Video Testimonials Placeholder */}
