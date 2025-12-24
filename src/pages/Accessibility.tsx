@@ -14,7 +14,6 @@ const Accessibility = () => {
       <Navbar />
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8 text-foreground">Accessibility Statement</h1>
-        {/* [LEGAL REVIEW: Confirm last updated date before publishing] */}
         <p className="text-muted-foreground mb-8">Last updated: December 24, 2025</p>
         
         {/* Table of Contents */}
@@ -33,7 +32,6 @@ const Accessibility = () => {
         <div className="space-y-8 text-foreground/90">
           <section id="commitment">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Our Commitment to Accessibility</h2>
-            {/* [LEGAL REVIEW: Confirm commitment language] */}
             <p className="leading-relaxed">
               Ally by WA.I.TER is committed to ensuring digital accessibility for people with disabilities. 
               We are continually improving the user experience for everyone and applying the relevant 
@@ -47,7 +45,6 @@ const Accessibility = () => {
 
           <section id="conformance">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Conformance Status</h2>
-            {/* [LEGAL REVIEW: Verify conformance level after full accessibility audit] */}
             <p className="leading-relaxed mb-4">
               The Web Content Accessibility Guidelines (WCAG) defines requirements for designers and 
               developers to improve accessibility for people with disabilities. It defines three levels 
@@ -125,7 +122,6 @@ const Accessibility = () => {
 
           <section id="limitations">
             <h2 className="text-2xl font-semibold mb-4 text-foreground">5. Known Limitations</h2>
-            {/* [INTERNAL: Update this section as accessibility issues are identified and resolved] */}
             <p className="leading-relaxed mb-4">
               Despite our best efforts to ensure accessibility of Ally, there may be some limitations. 
               We are actively working to identify and address accessibility barriers:

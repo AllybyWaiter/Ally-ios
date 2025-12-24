@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/table";
 
 const SLA = () => {
-  // [Legal review recommended] - Verify uptime commitments and credit policies
   const uptimeCommitments = [
     { service: "Web Application", target: "99.9%", description: "Core application availability" },
     { service: "API Services", target: "99.9%", description: "Backend API endpoints" },
