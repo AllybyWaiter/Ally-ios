@@ -89,6 +89,7 @@ const Footer = () => {
             <Link to="/legal/sla" className="hover:text-primary transition-colors">SLA</Link>
             <Link to="/changelog" className="hover:text-primary transition-colors">Changelog</Link>
             <Link to="/testimonials" className="hover:text-primary transition-colors">Testimonials</Link>
+            <Link to="/case-studies" className="hover:text-primary transition-colors">Case Studies</Link>
           </div>
         </div>
       </div>
