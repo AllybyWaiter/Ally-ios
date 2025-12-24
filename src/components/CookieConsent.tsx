@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { X, Cookie } from "lucide-react";
+import { Cookie } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { updateSentryConsent } from "@/lib/sentry";
 
 const COOKIE_CONSENT_KEY = "cookie-consent";
 const COOKIE_PREFERENCES_KEY = "cookie-preferences";
@@ -27,17 +28,16 @@ const CookieConsent = () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
     localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: true, analytics: true }));
     setShowBanner(false);
+    // Re-initialize Sentry now that user has consented
+    updateSentryConsent();
   };
 
   const handleDecline = () => {
     localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
     localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: false, analytics: false }));
     setShowBanner(false);
-  };
-
-  const handleClose = () => {
-    // Just close without saving preference - will show again next visit
-    setShowBanner(false);
+    // Update Sentry consent status
+    updateSentryConsent();
   };
 
   return (
@@ -52,20 +52,12 @@ const CookieConsent = () => {
         >
           <div className="container mx-auto max-w-4xl">
             <div className="relative bg-card border border-border rounded-xl shadow-xl p-6">
-              <button
-                onClick={handleClose}
-                className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
-                aria-label="Close cookie banner"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="flex-shrink-0 p-3 bg-primary/10 rounded-full">
                   <Cookie className="h-6 w-6 text-primary" />
                 </div>
 
-                <div className="flex-1 pr-6 sm:pr-0">
+                <div className="flex-1">
                   <h3 className="font-semibold text-foreground mb-1">Cookie Preferences</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     We use cookies to enhance your experience, analyze site traffic, and personalize content. 
