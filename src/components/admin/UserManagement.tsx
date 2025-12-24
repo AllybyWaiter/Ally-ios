@@ -183,11 +183,41 @@ export default function UserManagement() {
       .filter(u => selectedUsers.has(u.id))
       .map(u => u.email);
 
-    // TODO: Implement edge function to send emails
-    toast({
-      title: 'Bulk email queued',
-      description: `Email will be sent to ${selectedUserEmails.length} users`,
-    });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to send emails',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('send-bulk-email', {
+        body: {
+          emails: selectedUserEmails,
+          subject: bulkEmailSubject,
+          message: bulkEmailMessage,
+          fromName: 'Ally Team',
+        },
+      });
+
+      if (response.error) {
+        throw response.error;
+      }
+
+      toast({
+        title: 'Emails sent',
+        description: `Successfully sent to ${response.data?.successCount || selectedUserEmails.length} users`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error sending emails',
+        description: error.message || 'Failed to send bulk email',
+        variant: 'destructive',
+      });
+    }
 
     setBulkEmailDialogOpen(false);
     setBulkEmailSubject('');
