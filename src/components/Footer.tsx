@@ -1,98 +1,202 @@
 import logo from "@/assets/logo.png";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+const footerSections = [
+  {
+    title: "Product",
+    links: [
+      { label: "Features", href: "/features" },
+      { label: "How It Works", href: "/how-it-works" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Changelog", href: "/changelog" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { label: "Help Center", href: "/help" },
+      { label: "Status", href: "/status" },
+      { label: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    title: "Learn",
+    links: [
+      { label: "Glossary", href: "/glossary" },
+      { label: "Guides", href: "/blog" },
+      { label: "Case Studies", href: "/case-studies" },
+      { label: "Compare Apps", href: "/compare" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Partners", href: "/partners" },
+      { label: "Careers", href: "/careers" },
+    ],
+  },
+  {
+    title: "Trust",
+    links: [
+      { label: "Trust Center", href: "/trust" },
+      { label: "Bug Bounty", href: "/security/bug-bounty" },
+    ],
+  },
+];
+
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Cookie Preferences", href: "/legal/cookie-preferences" },
+  { label: "Accessibility", href: "/accessibility" },
+  { label: "Your Privacy Choices", href: "/legal/privacy-rights" },
+];
 
 const Footer = () => {
   const { isAdmin } = useAuth();
-  
+  const isMobile = useIsMobile();
+
   return (
     <footer className="bg-muted py-12 px-4">
       <div className="container mx-auto">
-        <div className="grid md:grid-cols-5 gap-8 mb-8">
-          <div className="col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 flex items-center justify-center">
-                <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
+        {/* Logo Section */}
+        <div className="mb-8">
+          <Link
+            to="/"
+            className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img
+                src={logo}
+                alt="Ally Logo"
+                className="w-10 h-10 object-contain"
+              />
+            </div>
+            <div>
+              <div className="font-bold text-lg leading-none">Ally</div>
+              <div className="text-xs text-muted-foreground leading-none">
+                by WA.I.TER
               </div>
-              <div>
-                <div className="font-bold text-lg leading-none">Ally</div>
-                <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
-              </div>
-            </Link>
-            <p className="text-muted-foreground max-w-sm">
-              Making aquarium water care effortless with AI powered insights and personalized care plans.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Product</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/features" className="hover:text-primary transition-colors">Features</Link></li>
-              <li><Link to="/how-it-works" className="hover:text-primary transition-colors">How It Works</Link></li>
-              <li><Link to="/pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
-              <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
-              <li><Link to="/help" className="hover:text-primary transition-colors">Help Center</Link></li>
-              <li><Link to="/glossary" className="hover:text-primary transition-colors">Glossary</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Solutions</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/best-aquatic-app" className="hover:text-primary transition-colors">Why Ally</Link></li>
-              <li><Link to="/best-aquarium-app" className="hover:text-primary transition-colors">Best Aquarium App</Link></li>
-              <li><Link to="/best-pool-app" className="hover:text-primary transition-colors">Best Pool App</Link></li>
-              <li><Link to="/best-spa-app" className="hover:text-primary transition-colors">Best Spa App</Link></li>
-              <li><Link to="/ai-water-testing" className="hover:text-primary transition-colors">AI Water Testing</Link></li>
-              <li><Link to="/compare" className="hover:text-primary transition-colors">Compare Apps</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Company</h4>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/about" className="hover:text-primary transition-colors">About</Link></li>
-              <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-              <li><Link to="/careers" className="hover:text-primary transition-colors">Careers</Link></li>
-              <li><Link to="/partners" className="hover:text-primary transition-colors">Partners</Link></li>
-              <li><Link to="/case-studies" className="hover:text-primary transition-colors">Case Studies</Link></li>
-              <li><Link to="/testimonials" className="hover:text-primary transition-colors">Testimonials</Link></li>
-              <li><Link to="/trust" className="hover:text-primary transition-colors">Trust Center</Link></li>
-              <li><Link to="/security" className="hover:text-primary transition-colors">Security</Link></li>
-              <li><Link to="/security/bug-bounty" className="hover:text-primary transition-colors">Bug Bounty</Link></li>
-              <li><Link to="/status" className="hover:text-primary transition-colors">Status</Link></li>
-              {isAdmin && <li><Link to="/admin" className="hover:text-primary transition-colors">Admin</Link></li>}
-            </ul>
-          </div>
+            </div>
+          </Link>
+          <p className="text-muted-foreground max-w-sm">
+            Making aquarium water care effortless with AI powered insights and
+            personalized care plans.
+          </p>
         </div>
 
-        {/* Legal Links Row */}
+        {/* Mobile: Status Quick Access + Accordions */}
+        {isMobile ? (
+          <div className="mb-8">
+            {/* Status Quick Access */}
+            <Link
+              to="/status"
+              className="flex items-center justify-between py-3 px-4 mb-4 bg-background/50 rounded-lg text-sm font-medium hover:bg-background/80 transition-colors"
+            >
+              <span>System Status</span>
+              <span className="text-xs text-green-500">● Operational</span>
+            </Link>
+
+            {/* Accordion Sections */}
+            <Accordion type="multiple" className="w-full">
+              {footerSections.map((section) => (
+                <AccordionItem
+                  key={section.title}
+                  value={section.title}
+                  className="border-border/50"
+                >
+                  <AccordionTrigger className="text-sm font-semibold py-3 hover:no-underline">
+                    {section.title}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2 pb-2">
+                      {section.links.map((link) => (
+                        <li key={link.href}>
+                          <Link
+                            to={link.href}
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+
+            {/* Admin Link (Mobile) */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="block mt-4 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+          </div>
+        ) : (
+          /* Desktop: 5-Column Grid */
+          <div className="grid grid-cols-5 gap-8 mb-8">
+            {footerSections.map((section) => (
+              <div key={section.title}>
+                <h4 className="font-semibold mb-4">{section.title}</h4>
+                <ul className="space-y-2 text-muted-foreground">
+                  {section.links.map((link) => (
+                    <li key={link.href}>
+                      <Link
+                        to={link.href}
+                        className="hover:text-primary transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                  {/* Admin Link in Company column */}
+                  {section.title === "Company" && isAdmin && (
+                    <li>
+                      <Link
+                        to="/admin"
+                        className="hover:text-primary transition-colors"
+                      >
+                        Admin
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Legal Strip */}
         <div className="pt-8 border-t border-border">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <p className="text-sm text-muted-foreground">
               © 2025 WA.I.TER. All rights reserved.
             </p>
-            
-            {/* Primary Legal Links */}
+
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-              <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
-              <Link to="/cookies" className="hover:text-primary transition-colors">Cookie Policy</Link>
-              <Link to="/accessibility" className="hover:text-primary transition-colors">Accessibility</Link>
-              <Link to="/privacy#ccpa" className="hover:text-primary transition-colors">Do Not Sell My Info</Link>
+              {legalLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="hover:text-primary transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
-          </div>
-          
-          {/* Secondary Links Row */}
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground mt-4">
-            <Link to="/legal/privacy-rights" className="hover:text-primary transition-colors">Your Privacy Rights</Link>
-            <Link to="/legal/cookie-preferences" className="hover:text-primary transition-colors">Cookie Preferences</Link>
-            <Link to="/legal/ai-transparency" className="hover:text-primary transition-colors">AI Transparency</Link>
-            <Link to="/legal/subprocessors" className="hover:text-primary transition-colors">Subprocessors</Link>
-            <Link to="/legal/data-breach-policy" className="hover:text-primary transition-colors">Data Breach Policy</Link>
-            <Link to="/legal/dpa" className="hover:text-primary transition-colors">DPA</Link>
-            <Link to="/legal/sla" className="hover:text-primary transition-colors">SLA</Link>
-            <Link to="/changelog" className="hover:text-primary transition-colors">Changelog</Link>
           </div>
         </div>
       </div>
