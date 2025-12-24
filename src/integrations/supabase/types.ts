@@ -1950,6 +1950,18 @@ export type Database = {
       }
     }
     Functions: {
+      get_masked_user_profiles: {
+        Args: never
+        Returns: {
+          created_at: string
+          masked_email: string
+          name: string
+          onboarding_completed: boolean
+          status: string
+          subscription_tier: string
+          user_id: string
+        }[]
+      }
       get_user_permissions: {
         Args: { _user_id: string }
         Returns: {

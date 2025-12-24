@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,8 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  const logger = createLogger('delete-user-account');
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,6 +19,7 @@ serve(async (req) => {
     // Get auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      logger.warn('Missing authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -42,7 +46,7 @@ serve(async (req) => {
     // Verify user
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
-      console.error('Auth error:', userError);
+      logger.error('Auth error', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -50,74 +54,111 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-    console.log(`Starting account deletion for user: ${userId}`);
+    logger.setUserId(userId);
+    logger.info('Starting account deletion');
 
-    // Delete user data in order (respecting foreign keys)
-    const deletionOrder = [
-      // Chat data
-      { table: 'chat_messages', condition: `conversation_id IN (SELECT id FROM chat_conversations WHERE user_id = '${userId}')` },
-      { table: 'chat_conversations', column: 'user_id' },
+    // Delete user data using parameterized queries via Supabase client
+    // Order matters due to foreign key constraints
+    
+    // 1. Delete chat messages (must delete before conversations)
+    const { data: conversations } = await supabaseAdmin
+      .from('chat_conversations')
+      .select('id')
+      .eq('user_id', userId);
+    
+    if (conversations && conversations.length > 0) {
+      const conversationIds = conversations.map(c => c.id);
+      const { error: messagesError } = await supabaseAdmin
+        .from('chat_messages')
+        .delete()
+        .in('conversation_id', conversationIds);
+      if (messagesError) logger.warn('chat_messages deletion', { error: messagesError.message });
+      else logger.info('Deleted chat_messages');
+    }
+
+    // 2. Delete chat conversations
+    const { error: convError } = await supabaseAdmin
+      .from('chat_conversations')
+      .delete()
+      .eq('user_id', userId);
+    if (convError) logger.warn('chat_conversations deletion', { error: convError.message });
+    else logger.info('Deleted chat_conversations');
+
+    // 3. Delete test parameters (must delete before water_tests)
+    const { data: waterTests } = await supabaseAdmin
+      .from('water_tests')
+      .select('id')
+      .eq('user_id', userId);
+    
+    if (waterTests && waterTests.length > 0) {
+      const testIds = waterTests.map(t => t.id);
+      const { error: paramsError } = await supabaseAdmin
+        .from('test_parameters')
+        .delete()
+        .in('test_id', testIds);
+      if (paramsError) logger.warn('test_parameters deletion', { error: paramsError.message });
+      else logger.info('Deleted test_parameters');
+    }
+
+    // 4. Delete maintenance_tasks and equipment (must delete before aquariums)
+    const { data: aquariums } = await supabaseAdmin
+      .from('aquariums')
+      .select('id')
+      .eq('user_id', userId);
+    
+    if (aquariums && aquariums.length > 0) {
+      const aquariumIds = aquariums.map(a => a.id);
       
-      // AI and feedback data
-      { table: 'ai_feedback', column: 'user_id' },
-      { table: 'photo_analysis_corrections', column: 'user_id' },
-      { table: 'user_memories', column: 'user_id' },
+      const { error: tasksError } = await supabaseAdmin
+        .from('maintenance_tasks')
+        .delete()
+        .in('aquarium_id', aquariumIds);
+      if (tasksError) logger.warn('maintenance_tasks deletion', { error: tasksError.message });
+      else logger.info('Deleted maintenance_tasks');
       
-      // Water test related
-      { table: 'test_parameters', condition: `test_id IN (SELECT id FROM water_tests WHERE user_id = '${userId}')` },
-      { table: 'water_tests', column: 'user_id' },
-      { table: 'water_test_alerts', column: 'user_id' },
-      
-      // Aquarium related
-      { table: 'maintenance_tasks', condition: `aquarium_id IN (SELECT id FROM aquariums WHERE user_id = '${userId}')` },
-      { table: 'equipment', condition: `aquarium_id IN (SELECT id FROM aquariums WHERE user_id = '${userId}')` },
-      { table: 'livestock', column: 'user_id' },
-      { table: 'plants', column: 'user_id' },
-      { table: 'aquariums', column: 'user_id' },
-      
-      // Templates
-      { table: 'custom_parameter_templates', column: 'user_id' },
-      
-      // Notifications
-      { table: 'user_notifications', column: 'user_id' },
-      { table: 'notification_preferences', column: 'user_id' },
-      { table: 'notification_log', column: 'user_id' },
-      { table: 'push_subscriptions', column: 'user_id' },
-      
-      // Activity and roles
-      { table: 'activity_logs', column: 'user_id' },
-      { table: 'login_history', column: 'user_id' },
-      { table: 'feature_flag_overrides', column: 'user_id' },
-      { table: 'user_roles', column: 'user_id' },
-      
-      // Profile (last before auth user)
-      { table: 'profiles', column: 'user_id' },
+      const { error: equipError } = await supabaseAdmin
+        .from('equipment')
+        .delete()
+        .in('aquarium_id', aquariumIds);
+      if (equipError) logger.warn('equipment deletion', { error: equipError.message });
+      else logger.info('Deleted equipment');
+    }
+
+    // 5. Delete tables with direct user_id reference (no dependencies)
+    const tablesToDelete = [
+      'ai_feedback',
+      'photo_analysis_corrections',
+      'user_memories',
+      'water_tests',
+      'water_test_alerts',
+      'livestock',
+      'plants',
+      'aquariums',
+      'custom_parameter_templates',
+      'user_notifications',
+      'notification_preferences',
+      'notification_log',
+      'push_subscriptions',
+      'activity_logs',
+      'login_history',
+      'feature_flag_overrides',
+      'user_roles',
+      'profiles',
     ];
 
-    // Execute deletions
-    for (const item of deletionOrder) {
+    for (const table of tablesToDelete) {
       try {
-        if (item.condition) {
-          // Use raw SQL for complex conditions
-          const { error } = await supabaseAdmin.rpc('exec_sql', { 
-            sql: `DELETE FROM ${item.table} WHERE ${item.condition}` 
-          }).maybeSingle();
-          // Ignore errors for tables that might not have data
-          if (error) {
-            console.log(`Note: ${item.table} deletion skipped or empty`);
-          }
-        } else if (item.column) {
-          const { error } = await supabaseAdmin
-            .from(item.table)
-            .delete()
-            .eq(item.column, userId);
-          if (error) {
-            console.log(`Note: ${item.table} deletion: ${error.message}`);
-          }
+        const { error } = await supabaseAdmin
+          .from(table)
+          .delete()
+          .eq('user_id', userId);
+        if (error) {
+          logger.warn(`${table} deletion`, { error: error.message });
+        } else {
+          logger.info(`Deleted from ${table}`);
         }
-        console.log(`Deleted from ${item.table}`);
       } catch (err) {
-        console.log(`Skipping ${item.table}: ${err}`);
+        logger.warn(`Skipping ${table}`, { error: String(err) });
       }
     }
 
