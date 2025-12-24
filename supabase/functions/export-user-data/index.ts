@@ -5,6 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper to mask IP addresses for privacy (show only first two octets)
+const maskIpAddress = (ip: string | null): string | null => {
+  if (!ip) return null;
+  const parts = ip.split('.');
+  if (parts.length === 4) {
+    return `${parts[0]}.${parts[1]}.***.***`;
+  }
+  // Handle IPv6 or other formats
+  return ip.substring(0, Math.min(ip.length, 10)) + '***';
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,7 +46,7 @@ Deno.serve(async (req) => {
 
     console.log(`Exporting data for user: ${user.id}`);
 
-    // Fetch all user data in parallel
+    // Fetch all user data in parallel - including activity logs and login history for GDPR compliance
     const [
       profileResult,
       aquariumsResult,
@@ -46,7 +57,9 @@ Deno.serve(async (req) => {
       tasksResult,
       memoriesResult,
       conversationsResult,
-      notificationPrefsResult
+      notificationPrefsResult,
+      activityLogsResult,
+      loginHistoryResult
     ] = await Promise.all([
       supabase.from('profiles').select('*').eq('user_id', user.id).single(),
       supabase.from('aquariums').select('*').eq('user_id', user.id),
@@ -57,8 +70,21 @@ Deno.serve(async (req) => {
       supabase.from('maintenance_tasks').select('*, aquariums!inner(user_id)').eq('aquariums.user_id', user.id),
       supabase.from('user_memories').select('*').eq('user_id', user.id),
       supabase.from('chat_conversations').select('*, chat_messages(*)').eq('user_id', user.id),
-      supabase.from('notification_preferences').select('*').eq('user_id', user.id).single()
+      supabase.from('notification_preferences').select('*').eq('user_id', user.id).single(),
+      supabase.from('activity_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1000),
+      supabase.from('login_history').select('*').eq('user_id', user.id).order('login_at', { ascending: false }).limit(1000)
     ]);
+
+    // Mask IP addresses in activity logs and login history for privacy
+    const maskedActivityLogs = (activityLogsResult.data || []).map(log => ({
+      ...log,
+      ip_address: maskIpAddress(log.ip_address)
+    }));
+
+    const maskedLoginHistory = (loginHistoryResult.data || []).map(log => ({
+      ...log,
+      ip_address: maskIpAddress(log.ip_address)
+    }));
 
     const exportData = {
       exportDate: new Date().toISOString(),
@@ -73,10 +99,19 @@ Deno.serve(async (req) => {
       maintenanceTasks: tasksResult.data || [],
       memories: memoriesResult.data || [],
       conversations: conversationsResult.data || [],
-      notificationPreferences: notificationPrefsResult.data
+      notificationPreferences: notificationPrefsResult.data,
+      // GDPR compliance: include user's activity and login data with masked IPs
+      activityLogs: maskedActivityLogs,
+      loginHistory: maskedLoginHistory,
+      // Include data retention notice
+      _dataRetentionNotice: {
+        ipAddresses: "IP addresses are partially masked for privacy. Full IP addresses are retained for 90 days for security purposes.",
+        activityLogs: "Activity logs are retained for 1 year.",
+        loginHistory: "Login history is retained for 1 year."
+      }
     };
 
-    console.log(`Export complete for user: ${user.id}`);
+    console.log(`Export complete for user: ${user.id} - included ${maskedActivityLogs.length} activity logs and ${maskedLoginHistory.length} login records`);
 
     return new Response(
       JSON.stringify(exportData, null, 2),
