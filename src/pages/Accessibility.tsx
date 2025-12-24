@@ -15,7 +15,7 @@ const Accessibility = () => {
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8 text-foreground">Accessibility Statement</h1>
         {/* [LEGAL REVIEW: Confirm last updated date before publishing] */}
-        <p className="text-muted-foreground mb-8">Last updated: January 15, 2025</p>
+        <p className="text-muted-foreground mb-8">Last updated: December 24, 2025</p>
         
         {/* Table of Contents */}
         <nav className="mb-12 p-6 bg-muted/30 rounded-lg border">

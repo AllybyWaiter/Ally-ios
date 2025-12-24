@@ -14,52 +14,64 @@ import {
 } from "@/components/ui/table";
 
 const Subprocessors = () => {
-  // [Legal review recommended] - Update with actual subprocessors
   const subprocessors = [
     {
       category: "Cloud Infrastructure",
-      name: "Primary Cloud Provider",
-      purpose: "Application hosting, database, and file storage",
-      dataProcessed: "All user data, application data",
-      location: "United States, European Union",
-    },
-    {
-      category: "Authentication",
-      name: "Identity Services",
-      purpose: "User authentication and session management",
-      dataProcessed: "Email addresses, authentication tokens",
-      location: "United States",
+      name: "Supabase",
+      purpose: "Application hosting, PostgreSQL database, authentication, and file storage",
+      dataProcessed: "All user data, application data, authentication credentials",
+      location: "United States (AWS)",
+      privacyUrl: "https://supabase.com/privacy",
     },
     {
       category: "AI Processing",
-      name: "Cloud AI Infrastructure",
-      purpose: "AI powered water analysis and chat assistance",
+      name: "Google Cloud (Gemini)",
+      purpose: "AI powered water analysis, chat assistance, and image recognition",
+      dataProcessed: "User messages, water test data, aquarium context, uploaded images",
+      location: "United States",
+      privacyUrl: "https://policies.google.com/privacy",
+    },
+    {
+      category: "AI Processing",
+      name: "OpenAI",
+      purpose: "Alternative AI provider for chat and analysis features",
       dataProcessed: "User messages, water test data, aquarium context",
       location: "United States",
+      privacyUrl: "https://openai.com/privacy",
     },
     {
-      category: "Analytics",
-      name: "Error Monitoring Service",
-      purpose: "Application error tracking and performance monitoring",
-      dataProcessed: "Error logs, performance metrics (anonymized)",
+      category: "Error Monitoring",
+      name: "Sentry",
+      purpose: "Application error tracking, performance monitoring, and debugging",
+      dataProcessed: "Error logs, performance metrics, anonymized user context",
       location: "United States",
+      privacyUrl: "https://sentry.io/privacy",
     },
     {
-      category: "Communications",
-      name: "Email Service Provider",
-      purpose: "Transactional and notification emails",
-      dataProcessed: "Email addresses, notification content",
+      category: "Email Services",
+      name: "Resend",
+      purpose: "Transactional emails, notifications, and password reset emails",
+      dataProcessed: "Email addresses, notification content, email metadata",
       location: "United States",
+      privacyUrl: "https://resend.com/legal/privacy-policy",
+    },
+    {
+      category: "Weather Data",
+      name: "Open-Meteo",
+      purpose: "Weather forecasts and environmental data for aquarium recommendations",
+      dataProcessed: "Location coordinates (latitude/longitude)",
+      location: "European Union",
+      privacyUrl: "https://open-meteo.com/en/terms",
     },
   ];
 
-  const lastUpdated = "December 2024";
+  const lastUpdated = "December 24, 2025";
 
   return (
     <div className="min-h-screen">
       <SEO 
         title="Subprocessors"
-        description="List of third-party subprocessors that Ally uses to provide our services. Learn about the categories of data each processor handles."
+        description="List of third party subprocessors that Ally uses to provide our services. Learn about the categories of data each processor handles."
         path="/legal/subprocessors"
       />
       <Navbar />
@@ -99,7 +111,7 @@ const Subprocessors = () => {
               <p>
                 All subprocessors are subject to our vendor security assessment process and are required 
                 to meet our data protection standards. We maintain data processing agreements with each 
-                subprocessor to ensure compliance with applicable data protection laws.
+                subprocessor to ensure compliance with applicable data protection laws including GDPR and CCPA.
               </p>
             </CardContent>
           </Card>
@@ -114,18 +126,27 @@ const Subprocessors = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[150px]">Category</TableHead>
-                      <TableHead>Service Provider</TableHead>
+                      <TableHead className="w-[130px]">Category</TableHead>
+                      <TableHead className="w-[120px]">Provider</TableHead>
                       <TableHead>Purpose</TableHead>
                       <TableHead>Data Processed</TableHead>
-                      <TableHead>Location</TableHead>
+                      <TableHead className="w-[120px]">Location</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {subprocessors.map((processor, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">{processor.category}</TableCell>
-                        <TableCell>{processor.name}</TableCell>
+                        <TableCell>
+                          <a 
+                            href={processor.privacyUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            {processor.name}
+                          </a>
+                        </TableCell>
                         <TableCell>{processor.purpose}</TableCell>
                         <TableCell className="text-muted-foreground">{processor.dataProcessed}</TableCell>
                         <TableCell className="text-muted-foreground">{processor.location}</TableCell>
@@ -134,6 +155,28 @@ const Subprocessors = () => {
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Data Transfer */}
+        <section className="mb-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>International Data Transfers</CardTitle>
+            </CardHeader>
+            <CardContent className="text-muted-foreground space-y-4">
+              <p>
+                Some of our subprocessors are located outside the European Economic Area (EEA). 
+                When we transfer personal data to these subprocessors, we ensure appropriate safeguards 
+                are in place, including:
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>Standard Contractual Clauses (SCCs) approved by the European Commission</li>
+                <li>Binding Corporate Rules where applicable</li>
+                <li>Adequacy decisions by the European Commission</li>
+                <li>EU-US Data Privacy Framework certification where applicable</li>
+              </ul>
             </CardContent>
           </Card>
         </section>
@@ -147,8 +190,8 @@ const Subprocessors = () => {
             <CardContent className="text-muted-foreground space-y-4">
               <p>
                 We will update this page when we add or remove subprocessors. For customers with 
-                Data Processing Agreements (DPAs), we will provide advance notice of any changes 
-                as required by the agreement.
+                Data Processing Agreements (DPAs), we will provide at least 30 days advance notice 
+                of any new subprocessors before they begin processing personal data.
               </p>
               <p>
                 If you would like to receive email notifications when this list is updated, 
@@ -162,8 +205,8 @@ const Subprocessors = () => {
         <section className="text-center p-12 bg-primary/5 rounded-2xl">
           <h2 className="text-2xl font-bold mb-4 text-foreground">Questions About Our Subprocessors?</h2>
           <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-            Contact our privacy team for more information about our subprocessors or to subscribe 
-            to update notifications.
+            Contact our privacy team for more information about our subprocessors, to request a copy of our 
+            Data Processing Agreement, or to subscribe to update notifications.
           </p>
           <Button asChild>
             <a href="mailto:privacy@allybywaiterapp.com">
