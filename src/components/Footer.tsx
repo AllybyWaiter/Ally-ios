@@ -83,13 +83,14 @@ const Footer = () => {
           
           {/* Secondary Links Row */}
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground mt-4">
+            <Link to="/legal/privacy-rights" className="hover:text-primary transition-colors">Your Privacy Rights</Link>
+            <Link to="/legal/cookie-preferences" className="hover:text-primary transition-colors">Cookie Preferences</Link>
             <Link to="/legal/ai-transparency" className="hover:text-primary transition-colors">AI Transparency</Link>
             <Link to="/legal/subprocessors" className="hover:text-primary transition-colors">Subprocessors</Link>
+            <Link to="/legal/data-breach-policy" className="hover:text-primary transition-colors">Data Breach Policy</Link>
             <Link to="/legal/dpa" className="hover:text-primary transition-colors">DPA</Link>
             <Link to="/legal/sla" className="hover:text-primary transition-colors">SLA</Link>
             <Link to="/changelog" className="hover:text-primary transition-colors">Changelog</Link>
-            <Link to="/testimonials" className="hover:text-primary transition-colors">Testimonials</Link>
-            <Link to="/case-studies" className="hover:text-primary transition-colors">Case Studies</Link>
           </div>
         </div>
       </div>
