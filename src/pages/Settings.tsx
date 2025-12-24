@@ -796,13 +796,14 @@ const Settings = () => {
 
           {/* LEGAL TAB */}
           <TabsContent value="legal" className="space-y-4">
+            {/* Legal Documents */}
             <Card className="border shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Legal
+                  Legal Documents
                 </CardTitle>
-                <CardDescription>Terms, privacy, and app info</CardDescription>
+                <CardDescription>Terms, policies, and agreements</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Link to="/privacy" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
@@ -827,8 +828,78 @@ const Settings = () => {
                   <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </Link>
                 
-                <Separator className="my-4" />
+                <Link to="/cookie-policy" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Cookie Policy</p>
+                      <p className="text-sm text-muted-foreground">How we use cookies</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
                 
+                <Link to="/subprocessors" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Subprocessors</p>
+                      <p className="text-sm text-muted-foreground">Third party service providers</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Privacy Controls */}
+            <Card className="border shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Privacy Controls
+                </CardTitle>
+                <CardDescription>Manage your privacy preferences</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Link to="/ai-transparency" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Brain className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">AI Transparency</p>
+                      <p className="text-sm text-muted-foreground">How we use AI in Ally</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+                
+                <Link to="/privacy-rights" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Privacy Rights</p>
+                      <p className="text-sm text-muted-foreground">Your data rights and requests</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+                
+                <Link to="/cookie-preferences" className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">Cookie Preferences</p>
+                      <p className="text-sm text-muted-foreground">Manage cookie settings</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+              </CardContent>
+            </Card>
+            
+            {/* App Info */}
+            <Card className="border shadow-sm">
+              <CardContent className="pt-6">
                 <div className="p-4 rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
                     <div>
