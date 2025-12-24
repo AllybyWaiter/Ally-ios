@@ -62,3 +62,6 @@ verify_jwt = true
 
 [functions.send-bulk-email]
 verify_jwt = true
+
+[functions.purge-old-pii]
+verify_jwt = false

@@ -439,7 +439,7 @@ export default function Auth() {
                     <Link to="/privacy" className="text-primary hover:underline">
                       Privacy Policy
                     </Link>, and acknowledge our{' '}
-                    <Link to="/cookie-policy" className="text-primary hover:underline">
+                    <Link to="/cookies" className="text-primary hover:underline">
                       Cookie Policy
                     </Link>.
                   </p>
