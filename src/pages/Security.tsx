@@ -254,52 +254,34 @@ const Security = () => {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">Responsible Disclosure</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">Bug Bounty Program</h3>
                     <p className="text-muted-foreground">
-                      We take security vulnerabilities seriously and appreciate the security research 
-                      community's efforts in helping keep our users safe.
+                      We take security vulnerabilities seriously and reward researchers who help keep 
+                      our users safe. Join our security research program to earn rewards for responsible disclosures.
                     </p>
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold mb-2 text-foreground">In Scope</h4>
-                      <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• Authentication and authorization flaws</li>
-                        <li>• Data exposure vulnerabilities</li>
-                        <li>• Cross-site scripting (XSS)</li>
-                        <li>• SQL injection</li>
-                        <li>• API security issues</li>
-                      </ul>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="h-4 w-4 text-primary" />
+                      <span><strong>48 hour</strong> response</span>
                     </div>
-                    <div>
-                      <h4 className="font-semibold mb-2 text-foreground">Out of Scope</h4>
-                      <ul className="space-y-1 text-sm text-muted-foreground">
-                        <li>• Social engineering attacks</li>
-                        <li>• Denial of service (DoS) attacks</li>
-                        <li>• Physical security issues</li>
-                        <li>• Issues in third-party services</li>
-                      </ul>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Shield className="h-4 w-4 text-primary" />
+                      <span><strong>Safe harbor</strong> guarantee</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Award className="h-4 w-4 text-primary" />
+                      <span><strong>Up to $2,000</strong> rewards</span>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t space-y-3">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4 text-primary" />
-                      <span><strong>Report to:</strong>{" "}
-                        <a href="mailto:security@allybywaiterapp.com" className="text-primary hover:underline">
-                          security@allybywaiterapp.com
-                        </a>
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span><strong>Response time:</strong> Initial response within 48 hours</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Safe Harbor:</strong> We provide safe harbor for good-faith security researchers. 
-                      We will not pursue legal action against researchers who follow responsible disclosure guidelines.
-                    </p>
+                  <div className="pt-4 border-t">
+                    <Button asChild>
+                      <Link to="/security/bug-bounty">
+                        View Full Program Details
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </div>

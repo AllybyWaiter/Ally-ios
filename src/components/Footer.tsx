@@ -57,6 +57,7 @@ const Footer = () => {
               <li><Link to="/partners" className="hover:text-primary transition-colors">Partners</Link></li>
               <li><Link to="/trust" className="hover:text-primary transition-colors">Trust Center</Link></li>
               <li><Link to="/security" className="hover:text-primary transition-colors">Security</Link></li>
+              <li><Link to="/security/bug-bounty" className="hover:text-primary transition-colors">Bug Bounty</Link></li>
               <li><Link to="/status" className="hover:text-primary transition-colors">Status</Link></li>
               {isAdmin && <li><Link to="/admin" className="hover:text-primary transition-colors">Admin</Link></li>}
             </ul>
