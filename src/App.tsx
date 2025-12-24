@@ -103,6 +103,7 @@ const CookiePolicy = lazyWithRetry(() => import("./pages/CookiePolicy"));
 const Testimonials = lazyWithRetry(() => import("./pages/Testimonials"));
 const Changelog = lazyWithRetry(() => import("./pages/Changelog"));
 const Security = lazyWithRetry(() => import("./pages/Security"));
+const BugBounty = lazyWithRetry(() => import("./pages/BugBounty"));
 const Integrations = lazyWithRetry(() => import("./pages/Integrations"));
 const Status = lazyWithRetry(() => import("./pages/Status"));
 const CaseStudies = lazyWithRetry(() => import("./pages/CaseStudies"));
@@ -168,6 +169,7 @@ const App = () => (
                   <Route path="/testimonials" element={<PageErrorBoundary pageName="Testimonials" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Testimonials /></Suspense></PageErrorBoundary>} />
                   <Route path="/changelog" element={<PageErrorBoundary pageName="Changelog" featureArea="general"><Suspense fallback={<FormSkeleton />}><Changelog /></Suspense></PageErrorBoundary>} />
                   <Route path="/security" element={<PageErrorBoundary pageName="Security" featureArea="general"><Suspense fallback={<FormSkeleton />}><Security /></Suspense></PageErrorBoundary>} />
+                  <Route path="/security/bug-bounty" element={<PageErrorBoundary pageName="Bug Bounty" featureArea="general"><Suspense fallback={<FormSkeleton />}><BugBounty /></Suspense></PageErrorBoundary>} />
                   <Route path="/integrations" element={<PageErrorBoundary pageName="Integrations" featureArea="general"><Suspense fallback={<FormSkeleton />}><Integrations /></Suspense></PageErrorBoundary>} />
                   <Route path="/status" element={<PageErrorBoundary pageName="Status" featureArea="general"><Suspense fallback={<FormSkeleton />}><Status /></Suspense></PageErrorBoundary>} />
                   <Route path="/case-studies" element={<PageErrorBoundary pageName="Case Studies" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><CaseStudies /></Suspense></PageErrorBoundary>} />
