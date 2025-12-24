@@ -116,6 +116,9 @@ const Subprocessors = lazyWithRetry(() => import("./pages/Subprocessors"));
 const AITransparency = lazyWithRetry(() => import("./pages/AITransparency"));
 const DPA = lazyWithRetry(() => import("./pages/DPA"));
 const SLA = lazyWithRetry(() => import("./pages/SLA"));
+const PrivacyRights = lazyWithRetry(() => import("./pages/PrivacyRights"));
+const DataBreachPolicy = lazyWithRetry(() => import("./pages/DataBreachPolicy"));
+const CookiePreferences = lazyWithRetry(() => import("./pages/CookiePreferences"));
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
@@ -182,6 +185,9 @@ const App = () => (
                   <Route path="/legal/ai-transparency" element={<PageErrorBoundary pageName="AI Transparency" featureArea="general"><Suspense fallback={<FormSkeleton />}><AITransparency /></Suspense></PageErrorBoundary>} />
                   <Route path="/legal/dpa" element={<PageErrorBoundary pageName="DPA" featureArea="general"><Suspense fallback={<FormSkeleton />}><DPA /></Suspense></PageErrorBoundary>} />
                   <Route path="/legal/sla" element={<PageErrorBoundary pageName="SLA" featureArea="general"><Suspense fallback={<FormSkeleton />}><SLA /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/privacy-rights" element={<PageErrorBoundary pageName="Privacy Rights" featureArea="general"><Suspense fallback={<FormSkeleton />}><PrivacyRights /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/data-breach-policy" element={<PageErrorBoundary pageName="Data Breach Policy" featureArea="general"><Suspense fallback={<FormSkeleton />}><DataBreachPolicy /></Suspense></PageErrorBoundary>} />
+                  <Route path="/legal/cookie-preferences" element={<PageErrorBoundary pageName="Cookie Preferences" featureArea="general"><Suspense fallback={<FormSkeleton />}><CookiePreferences /></Suspense></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
                   <Route path="/auth/reset-password" element={<PageErrorBoundary pageName="Reset Password" featureArea="auth"><ResetPassword /></PageErrorBoundary>} />
                   <Route 
