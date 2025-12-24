@@ -4,8 +4,8 @@
 # Sitemap location
 Sitemap: https://allybywaiter.com/sitemap.xml
 
-# LLM-friendly content files
-# See https://llmstxt.org for specification
+# LLM-friendly content files (llmstxt.org specification)
+# These files provide AI-readable documentation about this application
 # llms.txt: https://allybywaiter.com/llms.txt
 # llms-full.txt: https://allybywaiter.com/llms-full.txt
 
@@ -13,49 +13,82 @@ Sitemap: https://allybywaiter.com/sitemap.xml
 # See: https://allybywaiter.com/.well-known/ai-plugin.json
 # See: https://allybywaiter.com/.well-known/ai-context.json
 
-# AI Crawlers - Explicitly Allowed
+# ===========================================
+# AI CRAWLERS - EXPLICITLY ALLOWED
+# ===========================================
+
 User-agent: GPTBot
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /.well-known/
 
 User-agent: ChatGPT-User
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /.well-known/
 
 User-agent: Claude-Web
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /.well-known/
 
 User-agent: anthropic-ai
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /.well-known/
 
 User-agent: PerplexityBot
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /.well-known/
 
 User-agent: Amazonbot
 Allow: /
+Allow: /sitemap.xml
 
 User-agent: Applebot
 Allow: /
+Allow: /sitemap.xml
 
 User-agent: cohere-ai
 Allow: /
 Allow: /llms.txt
 Allow: /llms-full.txt
+Allow: /sitemap.xml
+Allow: /.well-known/
 
-# Standard Search Engine Crawlers
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /sitemap.xml
+
+User-agent: CCBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# ===========================================
+# STANDARD SEARCH ENGINE CRAWLERS
+# ===========================================
+
 User-agent: Googlebot
 Allow: /
+Allow: /sitemap.xml
 
 User-agent: Bingbot
 Allow: /
+Allow: /sitemap.xml
 
 User-agent: Twitterbot
 Allow: /
@@ -66,9 +99,17 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
-# Default rules for all other bots
+# ===========================================
+# DEFAULT RULES FOR ALL OTHER BOTS
+# ===========================================
+
 User-agent: *
 Allow: /
+Allow: /sitemap.xml
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /.well-known/ai-plugin.json
+Allow: /.well-known/ai-context.json
 
 # Disallow private/authenticated routes
 Disallow: /dashboard
@@ -101,7 +142,3 @@ Allow: /favicon.png
 Allow: /og-image.png
 Allow: /apple-touch-icon.png
 Allow: /manifest.webmanifest
-Allow: /llms.txt
-Allow: /llms-full.txt
-Allow: /.well-known/ai-plugin.json
-Allow: /.well-known/ai-context.json
