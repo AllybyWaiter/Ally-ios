@@ -75,7 +75,9 @@ Verify all secrets are configured in Lovable Cloud:
 
 ### Optional Configuration
 
-- [ ] **Leaked Password Protection**: Enable in Lovable Cloud auth settings
+- [ ] **Leaked Password Protection**: Enable in Lovable Cloud auth settings (Settings → Cloud → Authentication → Password Protection)
+  - This prevents users from using passwords that have been exposed in data breaches
+  - Recommended for production deployments
 - [ ] **Custom Domain**: Configure in Lovable Cloud settings
 - [ ] **Email Templates**: Customize auth emails in Lovable Cloud
 

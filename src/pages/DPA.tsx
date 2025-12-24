@@ -167,7 +167,6 @@ const DPA = () => {
               
               <div className="border-t pt-6">
                 <p className="text-muted-foreground mb-4">
-                  {/* [Legal review recommended] - Add downloadable DPA template when available */}
                   To request a DPA or download our standard template, please contact our legal team.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
