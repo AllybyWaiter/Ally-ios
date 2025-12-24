@@ -141,43 +141,41 @@ export const RoleManager = () => {
 
   const fetchAuditLogs = async () => {
     try {
-      // Audit log table not yet implemented
-      setAuditLogs([]);
-      // TODO: Implement role_audit_log table
-      // const { data, error } = await (supabase as any)
-      //   .from('role_audit_log')
-      //   .select('*')
-      //   .order('created_at', { ascending: false })
-      //   .limit(50);
+      const { data, error } = await supabase
+        .from('role_audit_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      // if (error) throw error;
+      if (error) throw error;
 
-      // Fetch user names separately
-      // const adminIds = [...new Set(data?.map((log: any) => log.admin_user_id) || [])];
-      // const targetIds = [...new Set(data?.map((log: any) => log.target_user_id) || [])];
-      // const allUserIds = [...adminIds, ...targetIds];
+      // Fetch user names for admin and target users
+      const adminIds = [...new Set(data?.map((log) => log.admin_user_id) || [])];
+      const targetIds = [...new Set(data?.map((log) => log.target_user_id) || [])];
+      const allUserIds = [...new Set([...adminIds, ...targetIds])];
 
-      // if (allUserIds.length > 0) {
-      //   const { data: profiles } = await (supabase as any)
-      //     .from('profiles')
-      //     .select('user_id, name, email')
-      //     .in('user_id', allUserIds);
+      if (allUserIds.length > 0 && data) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name, email')
+          .in('user_id', allUserIds);
 
-      //   const userMap = new Map(profiles?.map((p: any) => [p.user_id, p]) || []);
+        const userMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
 
-      //   const enrichedLogs = data?.map((log: any) => ({
-      //     ...log,
-      //     admin_name: userMap.get(log.admin_user_id)?.name || 'Unknown',
-      //     target_name: userMap.get(log.target_user_id)?.name || 'Unknown',
-      //   })) || [];
+        const enrichedLogs = data.map((log) => ({
+          ...log,
+          admin_name: userMap.get(log.admin_user_id)?.name || userMap.get(log.admin_user_id)?.email || 'Unknown',
+          target_name: userMap.get(log.target_user_id)?.name || userMap.get(log.target_user_id)?.email || 'Unknown',
+        }));
 
-      //   setAuditLogs(enrichedLogs);
-      // } else {
-      //   setAuditLogs(data || []);
-      // }
+        setAuditLogs(enrichedLogs);
+      } else {
+        setAuditLogs(data || []);
+      }
     } catch (error) {
       console.error('Error fetching audit logs:', error);
-      // Don't show toast for missing table
+      // Table exists but may be empty, don't show error
+      setAuditLogs([]);
     }
   };
 
