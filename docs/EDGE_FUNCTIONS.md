@@ -500,3 +500,112 @@ const { data, error } = await supabase.functions.invoke('my-function', {
 ### Checking Logs
 
 Use the Lovable Cloud dashboard or Supabase dashboard to view edge function logs.
+
+---
+
+## Ally Chat Guardrails & Safety
+
+The `ally-chat` function includes multiple safety guardrails to ensure responsible AI recommendations for pool/spa dosing and aquarium treatments.
+
+### Core Prompt v1.1 Principles
+
+Located in `supabase/functions/ally-chat/prompts/system.ts`:
+
+| Principle | Description |
+|-----------|-------------|
+| **No Guessing** | Never estimate dosing without complete data. Ask for missing info. |
+| **Safety Escalation** | Conservative dosing, vet/contractor referrals for serious issues |
+| **Clear Boundaries** | Not a vet, contractor, structural engineer, or doctor |
+| **Calm Brand Voice** | Reassuring, practical, trustworthy. Lead with positives. |
+
+### Input Gate System
+
+Located in `supabase/functions/ally-chat/utils/inputGate.ts`, the input gate automatically validates conversations before allowing dosing or treatment recommendations.
+
+#### Pool/Spa Dosing Requirements
+
+| Input | Detection Keywords |
+|-------|-------------------|
+| Volume | gallon, liter, pool size, capacity |
+| Free Chlorine | FC, chlorine level, free chlorine |
+| Combined Chlorine | CC, chloramines |
+| pH | ph, acidity |
+| Total Alkalinity | TA, alkalinity |
+| CYA | cyanuric, stabilizer, conditioner |
+| Sanitizer Type | salt, chlorine, bromine |
+
+#### Aquarium Treatment Requirements
+
+| Input | Detection Keywords |
+|-------|-------------------|
+| Species | fish, betta, guppy, tetra, etc. |
+| Tank Size | gallon, liter, tank size |
+| Ammonia | ammonia, nh3, nh4 |
+| Nitrite | nitrite, no2 |
+| Nitrate | nitrate, no3 |
+| Temperature | temp, temperature, degrees |
+| Symptoms | symptom, behavior, white spots, etc. |
+| Timeline | started, days ago, when did |
+| Salinity (saltwater only) | salinity, sg, specific gravity |
+
+**Gate Trigger**: If 2+ critical inputs are missing, the AI is instructed to ask targeted questions before proceeding.
+
+### Tool Confirmation Requirements
+
+All write operations require explicit user confirmation before execution:
+
+| Tool | Confirmation Required |
+|------|----------------------|
+| `save_memory` | Yes |
+| `log_water_test` | Yes |
+| `create_task` | Yes |
+| `add_livestock` | Yes |
+| `update_livestock` | Yes |
+| `add_plant` | Yes |
+| `update_plant` | Yes |
+| `add_equipment` | Yes |
+| `update_equipment` | Yes |
+| `calculate_pool_volume` (read-only) | No |
+
+**Correct Flow:**
+1. Summarize what will be saved/created
+2. Ask: "Would you like me to save/log/create this?"
+3. Wait for user confirmation (yes/sure/go ahead)
+4. Only then call the tool
+
+### Standardized Response Format
+
+For recommendations, diagnoses, and action items:
+
+```markdown
+**Summary**
+One sentence overview of the situation or recommendation.
+
+**What This Means**
+Brief explanation of why this matters (2-3 sentences max).
+
+**Steps to Take**
+1. First action (most important)
+2. Second action
+3. Third action
+
+**Next Actions**
+1-2 optional follow-up suggestions
+```
+
+**Note**: Simple conversational responses (greetings, quick clarifications) do NOT require this format.
+
+### Testing Guardrails
+
+Regression tests are located in `src/components/chat/__tests__/inputGate.test.ts`.
+
+Run tests:
+```bash
+npm test -- inputGate
+```
+
+Test categories:
+- Conversation type detection (pool/spa/aquarium/general)
+- Missing input detection
+- Gate triggering logic
+- Expected AI behavior documentation
