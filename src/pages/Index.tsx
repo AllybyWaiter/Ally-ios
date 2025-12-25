@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDomainType } from "@/hooks/useDomainType";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
@@ -17,14 +18,25 @@ import { SEO, StructuredData } from "@/components/SEO";
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const domainType = useDomainType();
 
   useEffect(() => {
+    // On app domain, redirect to auth/dashboard
+    if (domainType === 'app') {
+      if (!loading) {
+        navigate(user ? '/dashboard' : '/auth');
+      }
+      return;
+    }
+
+    // On marketing domain or development, redirect logged-in users to dashboard
     if (!loading && user) {
       navigate('/dashboard');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, domainType]);
 
-  if (loading) {
+  // Show loading while checking auth or on app domain
+  if (loading || domainType === 'app') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
