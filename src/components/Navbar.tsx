@@ -4,6 +4,7 @@ import logo from "@/assets/logo.png";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useDomainType, getAppUrl, getMarketingUrl } from "@/hooks/useDomainType";
 import { Menu, ChevronDown } from "lucide-react";
 import {
   Sheet,
@@ -31,6 +32,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, userName, signOut } = useAuth();
   const navigate = useNavigate();
+  const domainType = useDomainType();
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
@@ -44,24 +46,57 @@ const Navbar = () => {
   const handleAppClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    if (user) {
-      navigate('/dashboard');
+    
+    if (domainType === 'marketing') {
+      // On marketing domain, redirect to app domain
+      window.location.href = getAppUrl(user ? '/dashboard' : '/auth');
     } else {
-      navigate('/auth');
+      // On app/dev domain, use internal navigation
+      navigate(user ? '/dashboard' : '/auth');
     }
   };
+
+  const handleLogoClick = () => {
+    if (domainType === 'app') {
+      // On app domain, go to marketing site
+      window.location.href = getMarketingUrl('/');
+    }
+    // On marketing/dev domain, Link component handles it
+  };
+
+  const logoElement = domainType === 'app' ? (
+    <a 
+      href={getMarketingUrl('/')} 
+      className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      onClick={(e) => {
+        e.preventDefault();
+        handleLogoClick();
+      }}
+    >
+      <div className="w-10 h-10 flex items-center justify-center">
+        <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
+      </div>
+      <div>
+        <div className="font-bold text-lg leading-none">Ally</div>
+        <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
+      </div>
+    </a>
+  ) : (
+    <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <div className="w-10 h-10 flex items-center justify-center">
+        <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
+      </div>
+      <div>
+        <div className="font-bold text-lg leading-none">Ally</div>
+        <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
+      </div>
+    </Link>
+  );
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border pt-safe">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 flex items-center justify-center">
-            <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
-          </div>
-          <div>
-            <div className="font-bold text-lg leading-none">Ally</div>
-            <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
-          </div>
-        </Link>
+        {logoElement}
 
         <div className="hidden md:flex items-center gap-8">
           <Link 
@@ -115,24 +150,47 @@ const Navbar = () => {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="hidden md:flex items-center gap-2">
-              <Button variant="default" size="sm" asChild>
-                <Link to="/dashboard">Go to Dashboard</Link>
-              </Button>
+              {domainType === 'marketing' ? (
+                <Button variant="default" size="sm" asChild>
+                  <a href={getAppUrl('/dashboard')}>Go to Dashboard</a>
+                </Button>
+              ) : (
+                <Button variant="default" size="sm" asChild>
+                  <Link to="/dashboard">Go to Dashboard</Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={() => {
                 signOut();
-                navigate('/');
+                if (domainType === 'app') {
+                  window.location.href = getMarketingUrl('/');
+                } else {
+                  navigate('/');
+                }
               }}>
                 Sign Out
               </Button>
             </div>
           ) : (
             <>
-              <Button variant="ghost" size="sm" asChild className="hidden md:flex">
-                <Link to="/auth">Sign In</Link>
-              </Button>
-              <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)} className="hidden md:flex">
-                Get Early Access
-              </Button>
+              {domainType === 'marketing' ? (
+                <>
+                  <Button variant="ghost" size="sm" asChild className="hidden md:flex">
+                    <a href={getAppUrl('/auth')}>Sign In</a>
+                  </Button>
+                  <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)} className="hidden md:flex">
+                    Get Early Access
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild className="hidden md:flex">
+                    <Link to="/auth">Sign In</Link>
+                  </Button>
+                  <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)} className="hidden md:flex">
+                    Get Early Access
+                  </Button>
+                </>
+              )}
             </>
           )}
           
@@ -202,22 +260,38 @@ const Navbar = () => {
                 <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
                   {user ? (
                     <>
-                      <Button variant="default" asChild onClick={() => setMobileMenuOpen(false)}>
-                        <Link to="/dashboard">Go to Dashboard</Link>
-                      </Button>
+                      {domainType === 'marketing' ? (
+                        <Button variant="default" asChild onClick={() => setMobileMenuOpen(false)}>
+                          <a href={getAppUrl('/dashboard')}>Go to Dashboard</a>
+                        </Button>
+                      ) : (
+                        <Button variant="default" asChild onClick={() => setMobileMenuOpen(false)}>
+                          <Link to="/dashboard">Go to Dashboard</Link>
+                        </Button>
+                      )}
                       <Button variant="ghost" onClick={() => {
                         setMobileMenuOpen(false);
                         signOut();
-                        navigate('/');
+                        if (domainType === 'app') {
+                          window.location.href = getMarketingUrl('/');
+                        } else {
+                          navigate('/');
+                        }
                       }}>
                         Sign Out
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button variant="ghost" asChild onClick={() => setMobileMenuOpen(false)}>
-                        <Link to="/auth">Sign In</Link>
-                      </Button>
+                      {domainType === 'marketing' ? (
+                        <Button variant="ghost" asChild onClick={() => setMobileMenuOpen(false)}>
+                          <a href={getAppUrl('/auth')}>Sign In</a>
+                        </Button>
+                      ) : (
+                        <Button variant="ghost" asChild onClick={() => setMobileMenuOpen(false)}>
+                          <Link to="/auth">Sign In</Link>
+                        </Button>
+                      )}
                       <Button variant="hero" onClick={() => {
                         setMobileMenuOpen(false);
                         setShowWaitlist(true);
