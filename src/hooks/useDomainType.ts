@@ -5,12 +5,11 @@ export type DomainType = 'marketing' | 'app' | 'development';
 const MARKETING_DOMAINS = [
   'allybywaiter.com',
   'www.allybywaiter.com',
+  'allybywaiterapp.com',      // Temporary: show landing while DNS pending
+  'www.allybywaiterapp.com',  // Temporary: show landing while DNS pending
 ];
 
-const APP_DOMAINS = [
-  'allybywaiterapp.com',
-  'www.allybywaiterapp.com',
-];
+const APP_DOMAINS: string[] = []; // Empty until allybywaiter.com DNS is ready
 
 export function useDomainType(): DomainType {
   return useMemo(() => {
