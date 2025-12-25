@@ -25,6 +25,7 @@ import { buildAquariumContext } from './context/aquarium.ts';
 import { buildMemoryContext } from './context/memory.ts';
 import { buildSystemPrompt } from './prompts/system.ts';
 import { parseStreamForToolCalls, createContentStream } from './utils/streamParser.ts';
+import { validateRequiredInputs } from './utils/inputGate.ts';
 
 // Model configuration
 const AI_MODELS = {
@@ -165,6 +166,22 @@ serve(async (req) => {
       ? await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType)
       : { context: '', memories: [] };
 
+    // Validate required inputs for dosing/treatment conversations
+    const inputValidation = validateRequiredInputs(
+      messages,
+      {
+        waterType: aquariumResult.waterType,
+        aquariumData: aquariumResult.aquariumData
+      }
+    );
+
+    if (inputValidation.requiresGate) {
+      logger.info('Input gate triggered', {
+        conversationType: inputValidation.conversationType,
+        missingInputs: inputValidation.missingInputs
+      });
+    }
+
     // Build system prompt using module (water-type-specific for reduced token usage)
     const systemPrompt = buildSystemPrompt({
       hasMemoryAccess,
@@ -174,6 +191,7 @@ serve(async (req) => {
       skillLevel,
       waterType: aquariumResult.waterType as 'freshwater' | 'saltwater' | 'brackish' | 'pool' | 'spa' | null,
       aquariumType: aquariumResult.aquariumData?.type,
+      inputGateInstructions: inputValidation.gateInstructions,
     });
 
     logger.info('Processing chat request', { 
