@@ -2,6 +2,7 @@ import logo from "@/assets/logo.png";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useDomainType, getMarketingUrl } from "@/hooks/useDomainType";
 import {
   Accordion,
   AccordionContent,
@@ -64,30 +65,55 @@ const legalLinks = [
 const Footer = () => {
   const { isAdmin } = useAuth();
   const isMobile = useIsMobile();
+  const domainType = useDomainType();
+
+  // On app domain, logo links to marketing site
+  const logoLink = domainType === 'app' ? (
+    <a
+      href={getMarketingUrl('/')}
+      className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
+    >
+      <div className="w-10 h-10 flex items-center justify-center">
+        <img
+          src={logo}
+          alt="Ally Logo"
+          className="w-10 h-10 object-contain"
+        />
+      </div>
+      <div>
+        <div className="font-bold text-lg leading-none">Ally</div>
+        <div className="text-xs text-muted-foreground leading-none">
+          by WA.I.TER
+        </div>
+      </div>
+    </a>
+  ) : (
+    <Link
+      to="/"
+      className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
+    >
+      <div className="w-10 h-10 flex items-center justify-center">
+        <img
+          src={logo}
+          alt="Ally Logo"
+          className="w-10 h-10 object-contain"
+        />
+      </div>
+      <div>
+        <div className="font-bold text-lg leading-none">Ally</div>
+        <div className="text-xs text-muted-foreground leading-none">
+          by WA.I.TER
+        </div>
+      </div>
+    </Link>
+  );
 
   return (
     <footer className="bg-muted py-12 px-4">
       <div className="container mx-auto">
         {/* Logo Section */}
         <div className="mb-8">
-          <Link
-            to="/"
-            className="flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity"
-          >
-            <div className="w-10 h-10 flex items-center justify-center">
-              <img
-                src={logo}
-                alt="Ally Logo"
-                className="w-10 h-10 object-contain"
-              />
-            </div>
-            <div>
-              <div className="font-bold text-lg leading-none">Ally</div>
-              <div className="text-xs text-muted-foreground leading-none">
-                by WA.I.TER
-              </div>
-            </div>
-          </Link>
+          {logoLink}
           <p className="text-muted-foreground max-w-sm">
             Making aquarium water care effortless with AI powered insights and
             personalized care plans.

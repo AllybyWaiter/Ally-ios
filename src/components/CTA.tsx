@@ -4,10 +4,22 @@ import { ArrowRight, Mail } from "lucide-react";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useDomainType, getAppUrl } from "@/hooks/useDomainType";
 
 const CTA = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const navigate = useNavigate();
+  const domainType = useDomainType();
+
+  const handleGetStarted = () => {
+    if (domainType === 'marketing') {
+      // On marketing domain, link to app domain
+      window.location.href = getAppUrl('/auth');
+    } else {
+      // On app/dev domain, use internal navigation
+      navigate('/auth');
+    }
+  };
   
   return (
     <section className="py-24 px-4">
