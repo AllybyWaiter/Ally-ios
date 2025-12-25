@@ -506,3 +506,55 @@ export default defineConfig({
 4. **Mock at boundaries** - Mock external services, not internal functions
 5. **Test edge cases** - Empty states, loading, errors, boundaries
 6. **Write readable tests** - Clear descriptions, meaningful assertions
+
+---
+
+## Guardrails Testing
+
+### Ally Chat Input Gate Tests
+
+The input gate regression tests ensure safety-critical input validation doesn't regress.
+
+**Location**: `src/components/chat/__tests__/inputGate.test.ts`
+
+**Run Tests**:
+```bash
+npm test -- inputGate
+```
+
+### Test Categories
+
+| Category | Scenarios | Purpose |
+|----------|-----------|---------|
+| Conversation Detection | 5 | Verify pool/spa/aquarium/general intent detection |
+| Missing Inputs | 4 | Ensure required inputs are identified correctly |
+| Gate Triggering | 3 | Verify gate triggers when 2+ inputs missing |
+| Full Validation | 3 | End-to-end validation flow tests |
+| AI Behavior Docs | 6 | Document expected AI responses (manual verification) |
+
+### Adding New Guardrail Tests
+
+When adding new safety features to `ally-chat`:
+
+1. **Add detection keywords** to `inputGate.ts`
+2. **Create corresponding test** in `inputGate.test.ts`
+3. **Document expected AI behavior** in the "Expected AI Behavior" describe block
+
+Example test structure:
+```typescript
+it('detects new-feature intent from keywords', () => {
+  const messages: Message[] = [
+    { role: 'user', content: 'User message with keywords' }
+  ];
+  const result = detectConversationType(messages, 'water-type');
+  expect(result).toBe('expected_type');
+});
+```
+
+---
+
+## Additional Resources
+
+- [Vitest Documentation](https://vitest.dev/)
+- [Testing Library Docs](https://testing-library.com/docs/react-testing-library/intro/)
+- [React Testing Patterns](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
