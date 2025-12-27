@@ -19,7 +19,7 @@ const coreDifferentiators = [{
 }, {
   icon: Calendar,
   title: "14-Day Clarity Plans",
-  description: "Automatically generates a personalized recovery plan to restore and maintain crystal-clear water, step by step."
+  description: "Automatically generates a personalized recovery plan to restore and maintain crystal clear water, step by step."
 }, {
   icon: Bell,
   title: "Smart Scheduling & Equipment Tracking",
