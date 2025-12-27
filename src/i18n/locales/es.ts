@@ -116,6 +116,8 @@ export const es = {
         planted: "Plantado",
         brackish: "Salobre",
         pool: "Piscina",
+        pool_chlorine: "Piscina de Cloro",
+        pool_saltwater: "Piscina de Agua Salada",
         spa: "Spa / Jacuzzi",
       },
       statuses: {
