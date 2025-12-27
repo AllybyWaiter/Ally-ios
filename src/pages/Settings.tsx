@@ -276,12 +276,19 @@ const Settings = () => {
         body: { return_url: window.location.href }
       });
       
+      // Check for successful portal URL
       if (!error && data?.url) {
         window.open(data.url, '_blank');
         return;
       }
+      
+      // Handle "no subscription" response gracefully
+      if (data?.error === 'no_subscription') {
+        console.log('User has no active subscription');
+        // Fall through to platform store check below
+      }
     } catch (e) {
-      console.log('No Stripe subscription, checking platform stores');
+      console.log('Error checking subscription, falling back to platform stores');
     }
     
     // Fallback to platform stores
