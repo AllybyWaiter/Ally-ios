@@ -1,13 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Camera, Mic, Bell, Thermometer, Droplet, Smartphone, Star, CheckCircle2, ArrowRight, Sparkles, Timer, Waves } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { SEO, StructuredData, generateFAQStructuredData } from '@/components/SEO';
-import { WaitlistDialog } from '@/components/WaitlistDialog';
-import { useState } from 'react';
 import AllySupportChat from '@/components/AllySupportChat';
+import { useDomainType, getAppUrl } from '@/hooks/useDomainType';
 const features = [{
   icon: Camera,
   title: 'AI Photo Testing',
@@ -50,7 +49,17 @@ const faqs = [{
   answer: 'Yes! Ally fully supports both bromine and chlorine sanitizing systems. It knows the different target ranges for each and provides specific recommendations based on your spa setup.'
 }];
 export default function BestSpaApp() {
-  const [showWaitlist, setShowWaitlist] = useState(false);
+  const navigate = useNavigate();
+  const domainType = useDomainType();
+
+  const handleGetStarted = () => {
+    if (domainType === 'marketing') {
+      window.location.href = getAppUrl('/auth');
+    } else {
+      navigate('/auth');
+    }
+  };
+
   return <div className="min-h-screen bg-background">
       <SEO title="Best Spa App 2025 - AI Hot Tub Water Testing & Maintenance" description="Ally is the #1 spa and hot tub app with AI water test photo analysis, chemical dosage calculator, and smart maintenance reminders. Works with bromine and chlorine spas." path="/best-spa-app" />
       <StructuredData type="SoftwareApplication" />
@@ -59,7 +68,6 @@ export default function BestSpaApp() {
     }} />
 
       <Navbar />
-      <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
 
       <main className="pt-20">
         {/* Breadcrumb */}
@@ -89,9 +97,9 @@ export default function BestSpaApp() {
               <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">Ally is an AI powered spa care app that reads test strips from photos, calculates exact chemical dosages, and reminds you when to drain, test, and maintain your hot tub.</p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                <Button size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
+                <Button size="lg" className="text-lg px-8" onClick={handleGetStarted}>
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Try Ally Free
+                  Get Started Free
                 </Button>
                 <Button size="lg" variant="outline" className="text-lg px-8" asChild>
                   <Link to="/features">
@@ -277,7 +285,7 @@ export default function BestSpaApp() {
               <p className="text-xl text-muted-foreground mb-8">
                 Join spa owners who use Ally to keep their hot tubs crystal clear with less effort.
               </p>
-              <Button size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
+              <Button size="lg" className="text-lg px-8" onClick={handleGetStarted}>
                 <Sparkles className="w-5 h-5 mr-2" />
                 Get Started Free
               </Button>

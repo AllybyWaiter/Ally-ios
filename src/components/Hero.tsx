@@ -1,15 +1,22 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHeroBackground } from "@/hooks/useHeroBackground";
+import { useDomainType, getAppUrl } from "@/hooks/useDomainType";
 
 const Hero = () => {
-  const [showWaitlist, setShowWaitlist] = useState(false);
   const navigate = useNavigate();
   const { currentImage, previousImage, isTransitioning } = useHeroBackground();
+  const domainType = useDomainType();
+
+  const handleGetStarted = () => {
+    if (domainType === 'marketing') {
+      window.location.href = getAppUrl('/auth');
+    } else {
+      navigate('/auth');
+    }
+  };
   
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -56,13 +63,13 @@ const Hero = () => {
             transition={{ duration: 0.6 }}
           >
             <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8 border border-primary/20 animate-pulse"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8 border border-primary/20"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1, duration: 0.5 }}
             >
               <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Beta Now Live!</span>
+              <span className="text-sm font-medium text-primary">Now Available</span>
             </motion.div>
             
             <motion.h1 
@@ -92,8 +99,8 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              <Button variant="hero" size="lg" className="text-lg px-8" onClick={() => setShowWaitlist(true)}>
-                Join Beta Waitlist
+              <Button variant="hero" size="lg" className="text-lg px-8" onClick={handleGetStarted}>
+                Get Started Free
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button variant="heroOutline" size="lg" className="text-lg px-8" onClick={() => navigate("/how-it-works")}>
@@ -120,7 +127,7 @@ const Hero = () => {
           </motion.div>
         </div>
 
-        {/* Stats - Authentic Beta Stats */}
+        {/* Stats */}
         <motion.div 
           className="mt-20 grid grid-cols-3 gap-8 max-w-2xl mx-auto lg:mx-0"
           initial={{ opacity: 0, y: 30 }}
@@ -129,7 +136,7 @@ const Hero = () => {
         >
           <div className="text-center lg:text-left">
             <div className="text-2xl sm:text-3xl font-bold text-primary drop-shadow-md mb-1">500+</div>
-            <div className="text-sm text-foreground/80 drop-shadow-sm">Beta Testers</div>
+            <div className="text-sm text-foreground/80 drop-shadow-sm">Happy Users</div>
           </div>
           <div className="text-center lg:text-left">
             <div className="text-2xl sm:text-3xl font-bold text-primary drop-shadow-md mb-1">98%</div>
@@ -141,8 +148,6 @@ const Hero = () => {
           </div>
         </motion.div>
       </div>
-
-      <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
     </section>
   );
 };

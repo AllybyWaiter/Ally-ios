@@ -1,22 +1,17 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Mail } from "lucide-react";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useDomainType, getAppUrl } from "@/hooks/useDomainType";
 
 const CTA = () => {
-  const [showWaitlist, setShowWaitlist] = useState(false);
   const navigate = useNavigate();
   const domainType = useDomainType();
 
   const handleGetStarted = () => {
     if (domainType === 'marketing') {
-      // On marketing domain, link to app domain
       window.location.href = getAppUrl('/auth');
     } else {
-      // On app/dev domain, use internal navigation
       navigate('/auth');
     }
   };
@@ -40,7 +35,7 @@ const CTA = () => {
               Ready to Transform Your Water Care?
             </h2>
             <p className="text-lg text-primary-foreground/90 max-w-xl mx-auto mb-8">
-              Join our closed beta and be among the first to experience AI-powered water care for your aquarium, pool, or spa.
+              Join thousands of users who trust Ally for AI-powered water care for their aquariums, pools, and spas.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -48,10 +43,10 @@ const CTA = () => {
                 variant="secondary" 
                 size="lg" 
                 className="text-lg px-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90" 
-                onClick={() => setShowWaitlist(true)}
+                onClick={handleGetStarted}
               >
-                <Mail className="mr-2 w-5 h-5" />
-                Join Waitlist
+                <Sparkles className="mr-2 w-5 h-5" />
+                Get Started Free
               </Button>
               <Button 
                 variant="ghost" 
@@ -64,10 +59,8 @@ const CTA = () => {
               </Button>
             </div>
 
-            <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
-
             <p className="mt-8 text-sm text-primary-foreground/70">
-              Free during beta • No credit card required
+              Free tier available • No credit card required
             </p>
           </div>
         </motion.div>
