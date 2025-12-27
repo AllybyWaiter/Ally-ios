@@ -12,15 +12,15 @@ const corsHeaders = {
 const PRICE_IDS = {
   basic: {
     month: Deno.env.get('STRIPE_PRICE_BASIC_MONTHLY') || '',
-    year: Deno.env.get('STRIPE_PRICE_BASIC_ANNUAL') || '',
+    year: Deno.env.get('STRIPE_PRICE_BASIC_YEARLY') || '',
   },
   plus: {
     month: Deno.env.get('STRIPE_PRICE_PLUS_MONTHLY') || '',
-    year: Deno.env.get('STRIPE_PRICE_PLUS_ANNUAL') || '',
+    year: Deno.env.get('STRIPE_PRICE_PLUS_YEARLY') || '',
   },
   gold: {
     month: Deno.env.get('STRIPE_PRICE_GOLD_MONTHLY') || '',
-    year: Deno.env.get('STRIPE_PRICE_GOLD_ANNUAL') || '',
+    year: Deno.env.get('STRIPE_PRICE_GOLD_YEARLY') || '',
   },
 };
 
