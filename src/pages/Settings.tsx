@@ -264,21 +264,37 @@ const Settings = () => {
   };
 
   // Platform-aware subscription management
-  const handleManageSubscription = () => {
+  const handleManageSubscription = async () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
     
+    // Check if user has a Stripe subscription first
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke('create-portal-session', {
+        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+        body: { return_url: window.location.href }
+      });
+      
+      if (!error && data?.url) {
+        window.open(data.url, '_blank');
+        return;
+      }
+    } catch (e) {
+      console.log('No Stripe subscription, checking platform stores');
+    }
+    
+    // Fallback to platform stores
     if (isIOS) {
       window.open('https://apps.apple.com/account/subscriptions', '_blank');
     } else if (isAndroid) {
       window.open('https://play.google.com/store/account/subscriptions', '_blank');
     } else {
-      // Web users - redirect to contact for subscription help
       toast({ 
-        title: "Manage Subscription", 
-        description: "Contact support to manage your subscription." 
+        title: "No Active Subscription", 
+        description: "Upgrade your plan to manage your subscription." 
       });
-      navigate('/contact?type=general');
+      navigate('/pricing');
     }
   };
 
