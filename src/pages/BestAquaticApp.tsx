@@ -1,13 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Fish, Waves, Thermometer, Trees, Camera, Mic, Bell, Smartphone, Star, CheckCircle2, ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { SEO, StructuredData, generateFAQStructuredData } from '@/components/SEO';
-import { WaitlistDialog } from '@/components/WaitlistDialog';
-import { useState } from 'react';
 import AllySupportChat from '@/components/AllySupportChat';
+import { useDomainType, getAppUrl } from '@/hooks/useDomainType';
 
 const waterBodyCards = [
   {
@@ -100,7 +99,16 @@ const faqs = [
 ];
 
 export default function BestAquaticApp() {
-  const [showWaitlist, setShowWaitlist] = useState(false);
+  const navigate = useNavigate();
+  const domainType = useDomainType();
+
+  const handleGetStarted = () => {
+    if (domainType === 'marketing') {
+      window.location.href = getAppUrl('/auth');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,7 +124,6 @@ export default function BestAquaticApp() {
       />
 
       <Navbar />
-      <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
 
       <main className="pt-20">
         {/* Hero Section */}
@@ -143,10 +150,10 @@ export default function BestAquaticApp() {
                 <Button 
                   size="lg" 
                   className="text-lg px-8"
-                  onClick={() => setShowWaitlist(true)}
+                  onClick={handleGetStarted}
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Try Ally Free
+                  Get Started Free
                 </Button>
                 <Button 
                   size="lg" 
@@ -359,7 +366,7 @@ export default function BestAquaticApp() {
               <Button 
                 size="lg" 
                 className="text-lg px-8"
-                onClick={() => setShowWaitlist(true)}
+                onClick={handleGetStarted}
               >
                 <Sparkles className="w-5 h-5 mr-2" />
                 Get Started Free

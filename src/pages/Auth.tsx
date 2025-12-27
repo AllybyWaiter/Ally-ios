@@ -168,19 +168,6 @@ export default function Auth() {
           confirmPassword 
         });
         
-        // Check if user has beta access
-        const { data: hasBetaAccess, error: betaError } = await supabase.rpc('has_beta_access', {
-          user_email: validated.email.toLowerCase()
-        });
-
-        if (betaError) {
-          throw new Error('Unable to verify beta access. Please try again.');
-        }
-
-        if (!hasBetaAccess) {
-          throw new Error('Beta access required. Please join our waitlist to be notified when spots open up.');
-        }
-
         const { error } = await signUp(validated.email, validated.password, validated.name);
         
         if (error) {
@@ -262,7 +249,7 @@ export default function Auth() {
               {view === 'login' 
                 ? 'Sign in to your account' 
                 : view === 'signup' 
-                  ? 'Join our closed beta (requires waitlist approval)'
+                  ? 'Create your free account to get started'
                   : 'Enter your email to receive a reset link'}
             </CardDescription>
           </div>
