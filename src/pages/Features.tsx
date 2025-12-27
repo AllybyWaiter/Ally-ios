@@ -11,14 +11,14 @@ import AnimatedCounter from "@/components/AnimatedCounter";
 import appMockup from "@/assets/app-mockup.png";
 import AllySupportChat from "@/components/AllySupportChat";
 import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
-import { Camera, Calendar, Bell, Sparkles, Cpu, Brain, Target, Clock, Activity, Wrench, Beaker, Fish, Box, Settings, Zap, CheckCircle, PlayCircle, Star, Mic, Volume2, ImageIcon, TrendingUp, Download, Leaf, AlertTriangle, Repeat } from "lucide-react";
+import { Camera, Calendar, Bell, Sparkles, Cpu, Brain, Target, Clock, Activity, Wrench, Beaker, Fish, Box, Settings, Zap, CheckCircle, PlayCircle, Star, Mic, Volume2, ImageIcon, TrendingUp, Download, Leaf, AlertTriangle, Repeat, CloudSun, Thermometer, Droplets, Sun, Wind } from "lucide-react";
 const coreDifferentiators = [{
   icon: Camera,
   title: "AI Water Test Interpretation",
   description: "Instantly reads photos or manual values from any test kit with near lab accuracy. No more guessing, just snap and know."
 }, {
   icon: Calendar,
-  title: "14-Day Clarity Plans",
+  title: "14 Day Clarity Plans",
   description: "Automatically generates a personalized recovery plan to restore and maintain crystal clear water, step by step."
 }, {
   icon: Bell,
@@ -27,13 +27,35 @@ const coreDifferentiators = [{
 }, {
   icon: Sparkles,
   title: "Space Aware Intelligence",
-  description: "Every recommendation adapts to your unique aquatic space. Type, size, and livestock all considered."
+  description: "Every recommendation adapts to your unique aquatic space. Type, size, and inhabitants all considered."
 }, {
   icon: Cpu,
   title: "Future Hardware Integration",
   description: "Designed to sync with Ally's upcoming auto tester and auto doser, completing the hands free water care loop.",
   comingSoon: true
 }];
+
+const weatherFeatures = [{
+  icon: CloudSun,
+  title: "Weather Aware Care",
+  description: "Outdoor pools, spas, and ponds get recommendations adjusted for current and forecasted weather conditions."
+}, {
+  icon: Thermometer,
+  title: "Temperature Impact Predictions",
+  description: "AI predicts how temperature swings will affect your water chemistry and suggests preventive actions."
+}, {
+  icon: Droplets,
+  title: "Rain & Storm Advisories",
+  description: "Get alerts before storms that could dilute chemicals or introduce debris into outdoor water bodies."
+}, {
+  icon: Sun,
+  title: "UV Index Warnings",
+  description: "High UV days can degrade chlorine faster. Ally warns you when to increase testing frequency."
+}];
+
+const supportedTestBrands = [
+  "API", "Tetra", "Seachem", "AquaChek", "Taylor", "JNW Direct", "Salifert", "Red Sea", "Hanna", "LaMotte"
+];
 const aiCapabilities = [{
   icon: Brain,
   title: "Ally 1.0 Standard",
@@ -46,19 +68,19 @@ const aiCapabilities = [{
 }, {
   icon: Mic,
   title: "Voice Input",
-  description: "Speak naturally with voice recognition. Perfect for hands-free operation."
+  description: "Speak naturally with voice recognition. Perfect for hands free operation."
 }, {
   icon: Volume2,
   title: "Voice Output",
   description: "Natural voice synthesis brings Ally's responses to life with spoken audio."
 }, {
   icon: Zap,
-  title: "Hands-Free Mode",
-  description: "Auto-send and auto-speak for fully voice-driven conversations. Just talk and listen."
+  title: "Hands Free Mode",
+  description: "Auto send and auto speak for fully voice driven conversations. Just talk and listen."
 }, {
   icon: Target,
-  title: "Context-Aware Suggestions",
-  description: "Quick actions and follow-up questions based on your conversation and aquarium state."
+  title: "Context Aware Suggestions",
+  description: "Quick actions and follow up questions based on your conversation and water body state."
 }];
 const photoGalleryFeatures = [{
   icon: Fish,
@@ -122,7 +144,7 @@ const monitoringFeatures = [{
 }];
 const insightFeatures = [{
   icon: Calendar,
-  title: "14-Day Clarity Plans",
+  title: "14 Day Clarity Plans",
   description: "Get a complete recovery roadmap when water quality drops."
 }, {
   icon: Beaker,
@@ -130,9 +152,8 @@ const insightFeatures = [{
   description: "Precise chemical dosing recommendations to fix issues safely."
 }, {
   icon: Fish,
-  title: "Livestock Aware Recommendations",
-  description: "Coming soon: Care plans that consider your fish and plants.",
-  comingSoon: true
+  title: "Inhabitant Aware Recommendations",
+  description: "Care plans that consider your fish, corals, plants, and other inhabitants for tailored advice."
 }];
 const hardwareFeatures = [{
   icon: Box,
@@ -175,7 +196,7 @@ const Features = () => {
   const [showWaitlist, setShowWaitlist] = useState(false);
   const [isDemoVideoOpen, setIsDemoVideoOpen] = useState(false);
   return <div className="min-h-screen">
-      <SEO title="Features - AI Water Testing, Voice Commands & Smart Scheduling" description="Discover Ally's AI-powered features: instant photo water test analysis, voice commands, proactive alerts, photo galleries, push notifications, and smart maintenance scheduling for aquariums, pools, and spas." path="/features" />
+      <SEO title="Features | AI Water Testing, Voice Commands & Smart Scheduling" description="Discover Ally's AI powered features: instant photo water test analysis, voice commands, proactive alerts, photo galleries, push notifications, and smart maintenance scheduling for aquariums, pools, spas, and ponds." path="/features" />
       <StructuredData type="BreadcrumbList" data={{
       items: generateBreadcrumbData([{
         name: 'Home',
@@ -197,7 +218,7 @@ const Features = () => {
             The Complete Ally<br />Experience
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            From intelligent water testing to voice powered conversations, discover how Ally makes aquatic care effortless.
+            From intelligent water testing to voice powered conversations, discover how Ally makes water care effortless for aquariums, pools, spas, and ponds.
           </p>
         </div>
       </section>
@@ -211,7 +232,7 @@ const Features = () => {
                 Mobile First Design
               </Badge>
               <h2 className="text-4xl font-bold mb-6">
-                Your Aquarium Assistant,<br />In Your Pocket
+                Your Water Care Assistant,<br />In Your Pocket
               </h2>
               <div className="space-y-4 text-muted-foreground">
                 <div className="flex items-start gap-3">
@@ -324,7 +345,7 @@ const Features = () => {
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <Badge className="mb-4" variant="secondary">
-              AI-Powered Prevention
+              AI Powered Prevention
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Proactive Alerts
@@ -351,7 +372,7 @@ const Features = () => {
           
           <div className="text-center mt-8">
             <Badge variant="outline" className="text-sm">
-              AI-powered alerts available for Plus, Gold, Business & Enterprise tiers
+              AI powered alerts available on Pro, Business, and Enterprise plans
             </Badge>
           </div>
         </div>
@@ -521,10 +542,7 @@ const Features = () => {
                     <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
                       <Icon className="w-6 h-6 text-primary-foreground" />
                     </div>
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold">{feature.title}</h3>
-                      {feature.comingSoon && <Badge variant="secondary" className="ml-2 text-xs">Soon</Badge>}
-                    </div>
+                    <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground">{feature.description}</p>
                   </CardContent>
                 </Card>;
@@ -568,18 +586,79 @@ const Features = () => {
         </div>
       </section>
 
+      {/* Weather Integration Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4" variant="secondary">
+              Outdoor Water Bodies
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Weather Integration
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Pools, spas, and ponds get smarter recommendations based on real time weather data.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {weatherFeatures.map((feature, index) => {
+            const Icon = feature.icon;
+            return <Card key={index} className="border hover:border-primary transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-water flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  </CardContent>
+                </Card>;
+          })}
+          </div>
+        </div>
+      </section>
+
+      {/* Supported Test Brands */}
+      <section className="py-20 px-4 bg-gradient-hero">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="mb-4" variant="secondary">
+              Universal Compatibility
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Works With Your Test Kit
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Ally's AI recognizes test strips and liquid kits from all major brands with 98% accuracy.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
+            {supportedTestBrands.map((brand, index) => (
+              <Badge key={index} variant="outline" className="text-lg px-6 py-3 border-2">
+                {brand}
+              </Badge>
+            ))}
+          </div>
+          
+          <p className="text-center text-muted-foreground mt-8">
+            Plus many more regional and specialty brands. If you can photograph it, Ally can read it.
+          </p>
+        </div>
+      </section>
+
       {/* Trust & Proof */}
       <section className="py-20 px-4">
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4" variant="secondary">
-              Trusted by Aquarium Enthusiasts
+              Trusted by Water Care Enthusiasts
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Results That Speak
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Join thousands who've already transformed their aquarium care with Ally.
+              Join thousands who've already transformed their water care with Ally.
             </p>
           </div>
 
@@ -616,7 +695,7 @@ const Features = () => {
                     <div className="w-10 h-10 rounded-full bg-gradient-water"></div>
                     <div>
                       <div className="font-semibold">Beta User</div>
-                      <div className="text-sm text-muted-foreground">Aquarium Enthusiast</div>
+                      <div className="text-sm text-muted-foreground">Water Care Enthusiast</div>
                     </div>
                   </div>
                 </CardContent>
@@ -628,7 +707,7 @@ const Features = () => {
               <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-4">More Stories Coming Soon</h3>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                We're working with our beta users to collect real stories of how Ally has transformed their aquarium care.
+                We're working with our beta users to collect real stories of how Ally has transformed their water care.
                 Check back soon for detailed case studies and success stories.
               </p>
             </div>
@@ -641,10 +720,10 @@ const Features = () => {
         <div className="container mx-auto">
           <Card className="bg-gradient-water p-12 text-center">
             <h2 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">
-              Ready to Transform Your Aquarium Care?
+              Ready to Transform Your Water Care?
             </h2>
             <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-              Join the waitlist today and be among the first to experience the future of water care.
+              Join the waitlist today and be among the first to experience the future of water care for aquariums, pools, spas, and ponds.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="heroOutline" onClick={() => setShowWaitlist(true)} className="bg-background text-foreground hover:bg-background/90">
