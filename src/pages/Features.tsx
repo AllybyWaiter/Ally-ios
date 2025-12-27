@@ -197,7 +197,7 @@ const Features = () => {
             The Complete Ally<br />Experience
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            From intelligent water testing to voice-powered conversations, discover how Ally makes aquatic care effortless.
+            From intelligent water testing to voice powered conversations, discover how Ally makes aquatic care effortless.
           </p>
         </div>
       </section>
