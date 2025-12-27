@@ -26,7 +26,7 @@ const coreDifferentiators = [{
   description: "Reminds you when to test, clean, or replace equipment. No guessing, no forgotten maintenance."
 }, {
   icon: Sparkles,
-  title: "Space-Aware Intelligence",
+  title: "Space Aware Intelligence",
   description: "Every recommendation adapts to your unique aquatic space. Type, size, and livestock all considered."
 }, {
   icon: Cpu,
