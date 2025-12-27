@@ -175,20 +175,20 @@ const Pricing = () => {
       <Navbar />
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="py-10 md:py-20 px-4 bg-[linear-gradient(var(--gradient-hero))]">
+        <section className="py-6 md:py-20 px-4 bg-[linear-gradient(var(--gradient-hero))]">
           <div className="container mx-auto max-w-7xl text-center">
-            <Link to="/" className="inline-block text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
+            <Link to="/" className="inline-block text-sm text-muted-foreground hover:text-primary mb-4 md:mb-6 transition-colors">
               ← Back to Home
             </Link>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-[linear-gradient(var(--gradient-water))] bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 md:mb-6 bg-[linear-gradient(var(--gradient-water))] bg-clip-text text-transparent">
               Choose Your Plan
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-4 md:mb-8">
               Start your 7-day free trial. Cancel anytime.
             </p>
 
             {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4 mb-6 md:mb-12">
+            <div className="flex items-center justify-center gap-4 mb-4 md:mb-12">
               <span className={`text-sm font-medium ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Monthly
               </span>
@@ -204,7 +204,7 @@ const Pricing = () => {
         </section>
 
         {/* Pricing Cards */}
-        <section className="py-8 md:py-20 px-4">
+        <section className="py-4 md:py-20 px-4">
           <div className="container mx-auto max-w-7xl">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {plans.map((plan) => (
