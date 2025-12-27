@@ -126,11 +126,11 @@ export const getParameterTemplates = (aquariumType: string): ParameterTemplate[]
     ];
   }
 
-  if (type === "pool" || type === "spa") {
+  if (type === "pool_chlorine" || type === "pool") {
     return [
       {
-        id: "pool-standard",
-        name: "Pool Standard",
+        id: "pool-chlorine-standard",
+        name: "Chlorine Pool Standard",
         parameters: [
           { name: "Free Chlorine", unit: "ppm", range: { min: 1, max: 3 } },
           { name: "Total Chlorine", unit: "ppm", range: { min: 1, max: 5 } },
@@ -138,8 +138,42 @@ export const getParameterTemplates = (aquariumType: string): ParameterTemplate[]
           { name: "Alkalinity", unit: "ppm", range: { min: 80, max: 120 } },
           { name: "Calcium Hardness", unit: "ppm", range: { min: 200, max: 400 } },
           { name: "Cyanuric Acid", unit: "ppm", range: { min: 30, max: 50 } },
-          { name: "Salt", unit: "ppm", range: { min: 2700, max: 3400, target: { min: 3000, max: 3200 } } },
           { name: "Temperature", unit: "°F", range: { min: 78, max: 84 } },
+        ],
+      },
+    ];
+  }
+
+  if (type === "pool_saltwater") {
+    return [
+      {
+        id: "pool-saltwater-standard",
+        name: "Saltwater Pool Standard",
+        parameters: [
+          { name: "Salt", unit: "ppm", range: { min: 2700, max: 3400, target: { min: 3000, max: 3200 } } },
+          { name: "Free Chlorine", unit: "ppm", range: { min: 1, max: 3 } },
+          { name: "pH", unit: "", range: { min: 7.2, max: 7.8 } },
+          { name: "Alkalinity", unit: "ppm", range: { min: 80, max: 120 } },
+          { name: "Calcium Hardness", unit: "ppm", range: { min: 200, max: 400 } },
+          { name: "Cyanuric Acid", unit: "ppm", range: { min: 70, max: 80 } },
+          { name: "Temperature", unit: "°F", range: { min: 78, max: 84 } },
+        ],
+      },
+    ];
+  }
+
+  if (type === "spa") {
+    return [
+      {
+        id: "spa-standard",
+        name: "Spa / Hot Tub Standard",
+        parameters: [
+          { name: "Free Chlorine", unit: "ppm", range: { min: 3, max: 5 } },
+          { name: "Bromine", unit: "ppm", range: { min: 4, max: 6 } },
+          { name: "pH", unit: "", range: { min: 7.2, max: 7.8 } },
+          { name: "Alkalinity", unit: "ppm", range: { min: 80, max: 120 } },
+          { name: "Calcium Hardness", unit: "ppm", range: { min: 150, max: 250 } },
+          { name: "Temperature", unit: "°F", range: { min: 100, max: 104 } },
         ],
       },
     ];

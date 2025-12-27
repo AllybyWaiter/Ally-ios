@@ -221,7 +221,8 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
                       <SelectItem value="reef">{t('aquarium.types.reef')}</SelectItem>
                       <SelectItem value="planted">{t('aquarium.types.planted')}</SelectItem>
                       <SelectItem value="brackish">{t('aquarium.types.brackish')}</SelectItem>
-                      <SelectItem value="pool">{t('aquarium.types.pool')}</SelectItem>
+                      <SelectItem value="pool_chlorine">{t('aquarium.types.pool_chlorine')}</SelectItem>
+                      <SelectItem value="pool_saltwater">{t('aquarium.types.pool_saltwater')}</SelectItem>
                       <SelectItem value="spa">{t('aquarium.types.spa')}</SelectItem>
                     </SelectContent>
                   </Select>
@@ -235,7 +236,8 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
               name="volume_gallons"
               render={({ field }) => {
                 const selectedType = form.watch("type");
-                const isPoolOrSpa = selectedType === "pool" || selectedType === "spa";
+                const isPoolOrSpa = selectedType === "pool_chlorine" || selectedType === "pool_saltwater" || selectedType === "spa";
+                
                 
                 return (
                   <FormItem>
