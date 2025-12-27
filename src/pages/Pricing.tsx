@@ -307,7 +307,7 @@ const Pricing = () => {
                 </CardContent>
                 <CardFooter>
                   <Button variant="ghost" className="w-full" asChild>
-                    <a href="#contact">Contact Sales</a>
+                    <Link to="/contact">Contact Sales</Link>
                   </Button>
                 </CardFooter>
               </Card>
