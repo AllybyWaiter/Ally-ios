@@ -91,7 +91,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
         title: t('preferencesOnboarding.step5.notSupported'),
         variant: 'destructive',
       });
-      handleSubmit();
+      handleNext();
       return;
     }
 
@@ -151,7 +151,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
     }
 
     setPermissionLoading(false);
-    handleSubmit();
+    handleNext();
   };
 
   // Helper function to convert VAPID key
@@ -541,7 +541,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                   </button>
                   
                   <button
-                    onClick={handleSubmit}
+                    onClick={handleNext}
                     disabled={permissionLoading || isLoading}
                     className="p-6 rounded-lg border-2 border-border transition-all text-left cursor-pointer touch-manipulation hover:border-primary/50"
                   >
@@ -558,19 +558,21 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                   {t('preferencesOnboarding.back')}
                 </Button>
                 {notificationsEnabled && (
-                  <Button onClick={handleSubmit} disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {t('preferencesOnboarding.saving')}
-                      </>
-                    ) : (
-                      t('preferencesOnboarding.complete')
-                    )}
+                  <Button onClick={handleNext} disabled={isLoading}>
+                    {t('preferencesOnboarding.next')}
                   </Button>
                 )}
               </div>
             </div>
+          )}
+
+          {/* Step 6: Plan Selection */}
+          {step === 6 && (
+            <PlanSelectionStep
+              userId={userId}
+              onBack={() => setStep(5)}
+              onComplete={handleSubmit}
+            />
           )}
         </CardContent>
       </Card>
