@@ -59,7 +59,11 @@ Deno.serve(async (req) => {
       .single();
 
     if (!customer?.stripe_customer_id) {
-      return createErrorResponse('No subscription found', logger, { status: 404 });
+      logger.info('No customer record found, user has no subscription');
+      return new Response(
+        JSON.stringify({ error: 'no_subscription', message: 'No active subscription found' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Create portal session
