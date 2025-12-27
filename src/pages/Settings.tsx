@@ -16,13 +16,14 @@ import {
   ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, 
   Languages, Ruler, Palette, Globe, Shield, Crown, Brain, MapPin, 
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
-  Mail, ChevronRight, Settings as SettingsIcon, BookOpen
+  Mail, ChevronRight, Settings as SettingsIcon, BookOpen, Sparkles
 } from "lucide-react";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import MemoryManager from "@/components/settings/MemoryManager";
 import { WeatherSettings } from "@/components/settings/WeatherSettings";
+import { UpgradePlanDialog } from "@/components/settings/UpgradePlanDialog";
 
 const APP_VERSION = "1.0.0";
 
@@ -44,6 +45,7 @@ const Settings = () => {
   const [pendingUnitChange, setPendingUnitChange] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -455,15 +457,20 @@ const Settings = () => {
                       ))}
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Button variant="outline" onClick={() => navigate('/pricing')} className="w-full">
-                        View Plans
-                      </Button>
-                      {subscriptionTier && subscriptionTier !== 'free' && (
+                      {(!subscriptionTier || subscriptionTier === 'free') ? (
+                        <Button onClick={() => setShowUpgradeDialog(true)} className="w-full">
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Upgrade Plan
+                        </Button>
+                      ) : (
                         <Button variant="outline" onClick={handleManageSubscription} className="w-full">
                           <ExternalLink className="h-4 w-4 mr-2" />
                           Manage Subscription
                         </Button>
                       )}
+                      <Button variant="ghost" onClick={() => navigate('/pricing')} className="w-full text-muted-foreground">
+                        Compare All Plans
+                      </Button>
                       <Button 
                         variant="ghost" 
                         onClick={() => toast({ title: "Purchases Restored", description: "Your subscription status has been refreshed." })}
@@ -959,6 +966,12 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UpgradePlanDialog 
+        open={showUpgradeDialog} 
+        onOpenChange={setShowUpgradeDialog}
+        currentTier={subscriptionTier}
+      />
     </div>
   );
 };
