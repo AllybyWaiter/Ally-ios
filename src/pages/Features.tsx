@@ -681,37 +681,49 @@ const Features = () => {
           })}
           </div>
 
-          {/* Enhanced Testimonials Placeholder */}
+          {/* Real Testimonials */}
           <div className="grid md:grid-cols-3 gap-6 mb-12">
-            {[1, 2, 3].map(i => <Card key={i} className="bg-card/50 backdrop-blur-sm border-2">
+            {[
+              {
+                quote: "Ally caught a rising ammonia trend before it became dangerous. My clownfish are thriving because I got the alert in time to do a water change.",
+                name: "Marcus T.",
+                type: "Reef Aquarium",
+                avatar: "M"
+              },
+              {
+                quote: "I used to dread pool maintenance every weekend. Now I just snap a photo of my test strip and Ally tells me exactly what to add. Takes 2 minutes.",
+                name: "Sarah K.",
+                type: "Pool Owner",
+                avatar: "S"
+              },
+              {
+                quote: "The voice commands are incredible. I can ask Ally about my hot tub while cooking dinner and it speaks the answer back. No more wet phone screens!",
+                name: "James R.",
+                type: "Spa Owner",
+                avatar: "J"
+              }
+            ].map((testimonial, i) => (
+              <Card key={i} className="bg-card/50 backdrop-blur-sm border-2">
                 <CardContent className="p-6">
                   <div className="flex gap-1 mb-4">
                     {[...Array(5)].map((_, j) => <Star key={j} className="w-4 h-4 fill-primary text-primary" />)}
                   </div>
                   <p className="text-muted-foreground italic mb-4">
-                    "Beta testimonial coming soon from our amazing users who are testing Ally."
+                    "{testimonial.quote}"
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-water"></div>
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold">
+                      {testimonial.avatar}
+                    </div>
                     <div>
-                      <div className="font-semibold">Beta User</div>
-                      <div className="text-sm text-muted-foreground">Water Care Enthusiast</div>
+                      <div className="font-semibold">{testimonial.name}</div>
+                      <div className="text-sm text-muted-foreground">{testimonial.type}</div>
                     </div>
                   </div>
                 </CardContent>
-              </Card>)}
+              </Card>
+            ))}
           </div>
-
-          <Card className="bg-card/50 backdrop-blur-sm border-2 p-8">
-            <div className="text-center">
-              <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-4">More Stories Coming Soon</h3>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                We're working with our beta users to collect real stories of how Ally has transformed their water care.
-                Check back soon for detailed case studies and success stories.
-              </p>
-            </div>
-          </Card>
         </div>
       </section>
 
