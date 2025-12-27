@@ -8,6 +8,7 @@ import logo from '@/assets/logo.png';
 import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { PlanSelectionStep } from '@/components/onboarding/PlanSelectionStep';
 
 interface PreferencesOnboardingProps {
   userId: string;
@@ -30,7 +31,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const [weatherEnabled, setWeatherEnabled] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const handleNext = () => {
     setStep(step + 1);
@@ -229,10 +230,10 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-1 sm:gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="flex items-center">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-colors ${
+                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                     i <= step
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
@@ -242,7 +243,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 </div>
                 {i < totalSteps && (
                   <div
-                    className={`w-6 sm:w-10 h-1 mx-1 transition-colors ${
+                    className={`w-4 sm:w-6 h-1 mx-0.5 transition-colors ${
                       i < step ? 'bg-primary' : 'bg-muted'
                     }`}
                   />
