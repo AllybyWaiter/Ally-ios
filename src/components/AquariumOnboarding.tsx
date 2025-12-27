@@ -17,7 +17,7 @@ import { useLocationDetection } from '@/hooks/useLocationDetection';
 
 const aquariumSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
-  type: z.enum(['freshwater', 'saltwater', 'reef', 'planted', 'brackish', 'pool', 'spa'], {
+  type: z.enum(['freshwater', 'saltwater', 'reef', 'planted', 'brackish', 'pool_chlorine', 'pool_saltwater', 'spa'], {
     errorMap: () => ({ message: 'Please select a type' }),
   }),
   volume_gallons: z.number().min(1, 'Volume must be at least 1 gallon').max(50000, 'Volume seems too large'),
@@ -53,7 +53,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
     detectLocation();
   }, [detectLocation]);
 
-  const isPoolOrSpa = type === 'pool' || type === 'spa';
+  const isPoolOrSpa = type === 'pool_chlorine' || type === 'pool_saltwater' || type === 'spa';
   const totalSteps = isPoolOrSpa ? 4 : 3;
 
   // Get the actual step for validation (accounting for pool/spa guide step)
@@ -343,7 +343,8 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                     <SelectItem value="reef">{t('aquarium.types.reef')}</SelectItem>
                     <SelectItem value="planted">{t('aquarium.types.planted')}</SelectItem>
                     <SelectItem value="brackish">{t('aquarium.types.brackish')}</SelectItem>
-                    <SelectItem value="pool">{t('aquarium.types.pool')}</SelectItem>
+                    <SelectItem value="pool_chlorine">{t('aquarium.types.pool_chlorine')}</SelectItem>
+                    <SelectItem value="pool_saltwater">{t('aquarium.types.pool_saltwater')}</SelectItem>
                     <SelectItem value="spa">{t('aquarium.types.spa')}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -366,8 +367,8 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                 {errors.volume_gallons && (
                   <p className="text-sm text-destructive">{errors.volume_gallons}</p>
                 )}
-                {isPoolOrSpa && (
-                  <Link 
+                {(type === 'pool_chlorine' || type === 'pool_saltwater' || type === 'spa') && (
+                  <Link
                     to="/chat?message=Help me calculate how many gallons my pool holds"
                     className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
                   >
@@ -410,7 +411,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                     <li>• <strong>{t('aquariumOnboarding.poolGuide.alkalinity')}</strong></li>
                     <li>• <strong>{t('aquariumOnboarding.poolGuide.cyanuricAcid')}</strong></li>
                     <li>• <strong>{t('aquariumOnboarding.poolGuide.calciumHardness')}</strong></li>
-                    {type === 'pool' && <li>• <strong>{t('aquariumOnboarding.poolGuide.salt')}</strong></li>}
+                    {type === 'pool_saltwater' && <li>• <strong>{t('aquariumOnboarding.poolGuide.salt')}</strong></li>}
                     {type === 'spa' && <li>• <strong>{t('aquariumOnboarding.poolGuide.bromine')}</strong></li>}
                   </ul>
                 </div>
