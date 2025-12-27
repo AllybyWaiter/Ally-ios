@@ -58,11 +58,30 @@ const PARAMETER_THRESHOLDS: Record<string, Record<string, { min: number; max: nu
     Salt: { min: 2700, max: 3400 },
     Temperature: { min: 78, max: 84 },
   },
-  spa: {
+  pool_chlorine: {
     'Free Chlorine': { min: 1, max: 3, critical_min: 0.5, critical_max: 5 },
-    Bromine: { min: 3, max: 5, critical_min: 2, critical_max: 6 },
+    'Total Chlorine': { min: 1, max: 5, critical_max: 10 },
     pH: { min: 7.2, max: 7.6, critical_min: 7.0, critical_max: 7.8 },
     Alkalinity: { min: 80, max: 120, critical_min: 60, critical_max: 180 },
+    'Cyanuric Acid': { min: 30, max: 50, critical_max: 100 },
+    'Calcium Hardness': { min: 200, max: 400, critical_min: 150, critical_max: 500 },
+    Temperature: { min: 78, max: 84 },
+  },
+  pool_saltwater: {
+    Salt: { min: 2700, max: 3400, critical_min: 2500, critical_max: 3600 },
+    'Free Chlorine': { min: 1, max: 3, critical_min: 0.5, critical_max: 5 },
+    pH: { min: 7.2, max: 7.6, critical_min: 7.0, critical_max: 7.8 },
+    Alkalinity: { min: 80, max: 120, critical_min: 60, critical_max: 180 },
+    'Cyanuric Acid': { min: 70, max: 80, critical_max: 100 },
+    'Calcium Hardness': { min: 200, max: 400, critical_min: 150, critical_max: 500 },
+    Temperature: { min: 78, max: 84 },
+  },
+  spa: {
+    'Free Chlorine': { min: 3, max: 5, critical_min: 1, critical_max: 10 },
+    Bromine: { min: 4, max: 6, critical_min: 2, critical_max: 10 },
+    pH: { min: 7.2, max: 7.6, critical_min: 7.0, critical_max: 7.8 },
+    Alkalinity: { min: 80, max: 120, critical_min: 60, critical_max: 180 },
+    'Calcium Hardness': { min: 150, max: 250, critical_min: 100, critical_max: 400 },
     Temperature: { min: 100, max: 104, critical_max: 106 },
   },
 };
@@ -82,6 +101,8 @@ interface TrendAnalysis {
 
 function getWaterType(aquariumType: string): string {
   const type = aquariumType.toLowerCase();
+  if (['pool_chlorine'].includes(type)) return 'pool_chlorine';
+  if (['pool_saltwater'].includes(type)) return 'pool_saltwater';
   if (['pool'].includes(type)) return 'pool';
   if (['spa', 'hot_tub'].includes(type)) return 'spa';
   if (['saltwater', 'marine'].includes(type)) return 'saltwater';
