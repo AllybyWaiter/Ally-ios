@@ -26,10 +26,10 @@ const Pricing = () => {
       name: "Basic",
       monthlyPrice: 9.99,
       yearlyPrice: 95.90,
-      description: "Perfect for single aquarium owners",
+      description: "Perfect for getting started",
       priceId: isAnnual ? "price_basic_yearly" : "price_basic_monthly",
       features: [
-        "1 aquatic space",
+        "1 water body (pool, spa, aquarium, or pond)",
         "10 test logs per month",
         "AI recommendations",
         "Basic smart scheduling",
@@ -40,10 +40,10 @@ const Pricing = () => {
       name: "Plus",
       monthlyPrice: 14.99,
       yearlyPrice: 143.90,
-      description: "Most popular choice for hobbyists",
+      description: "Most popular for hobbyists",
       priceId: isAnnual ? "price_plus_yearly" : "price_plus_monthly",
       features: [
-        "3 aquatic spaces",
+        "3 water bodies",
         "Unlimited test logs",
         "AI recommendations",
         "Ally remembers your setup",
@@ -57,15 +57,15 @@ const Pricing = () => {
       name: "Gold",
       monthlyPrice: 19.99,
       yearlyPrice: 191.90,
-      description: "For serious aquarists",
+      description: "For serious enthusiasts",
       priceId: isAnnual ? "price_gold_yearly" : "price_gold_monthly",
       features: [
-        "10 aquatic spaces",
+        "10 water bodies",
         "Unlimited test logs",
         "AI recommendations",
         "Smart scheduling",
         "Equipment tracking",
-        "Multi-tank management",
+        "Multi-system management",
         "AI habit learning",
         "Connected device integration",
         "Export water history (PDF/CSV)",
@@ -78,7 +78,7 @@ const Pricing = () => {
     {
       category: "Basics",
       features: [
-        { name: "Aquatic spaces allowed", basic: "1", plus: "3", gold: "10", business: "Unlimited" },
+        { name: "Water bodies (pools, spas, aquariums, ponds)", basic: "1", plus: "3", gold: "10", business: "Unlimited" },
         { name: "Test logs per month", basic: "10", plus: "Unlimited", gold: "Unlimited", business: "Unlimited" },
         { name: "AI recommendations", basic: true, plus: true, gold: true, business: true },
       ],
@@ -95,11 +95,11 @@ const Pricing = () => {
       category: "Advanced Features",
       features: [
         { name: "Ally Chat Memory", basic: false, plus: true, gold: true, business: true },
-        { name: "Multi-tank management", basic: false, plus: false, gold: true, business: true },
+        { name: "Multi-system management", basic: false, plus: false, gold: true, business: true },
         { name: "AI habit learning", basic: false, plus: false, gold: true, business: true },
         { name: "Connected device integration", basic: false, plus: false, gold: "Coming Soon", business: true },
         { name: "Export water history", basic: false, plus: false, gold: true, business: true },
-        { name: "Livestock-specific guidance", basic: false, plus: false, gold: "Coming Soon", business: "Coming Soon" },
+        { name: "Species-specific guidance", basic: false, plus: false, gold: "Coming Soon", business: "Coming Soon" },
       ],
     },
     {
@@ -277,7 +277,7 @@ const Pricing = () => {
                   <ul className="space-y-3">
                     <li className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm">Unlimited aquatic spaces</span>
+                      <span className="text-sm">Unlimited water bodies</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
