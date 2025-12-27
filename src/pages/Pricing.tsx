@@ -1,19 +1,25 @@
 import { useState } from "react";
 import { Check, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import AllySupportChat from "@/components/AllySupportChat";
 import { SEO, StructuredData, generateBreadcrumbData } from "@/components/SEO";
+import { useAuth } from "@/hooks/useAuth";
+import { useDomainType, getAppUrl } from "@/hooks/useDomainType";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
-  const [showWaitlist, setShowWaitlist] = useState(false);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const domainType = useDomainType();
 
   const plans = [
     {
@@ -21,6 +27,7 @@ const Pricing = () => {
       monthlyPrice: 9.99,
       yearlyPrice: 95.90,
       description: "Perfect for single aquarium owners",
+      priceId: isAnnual ? "price_basic_yearly" : "price_basic_monthly",
       features: [
         "1 aquatic space",
         "10 test logs per month",
@@ -34,6 +41,7 @@ const Pricing = () => {
       monthlyPrice: 14.99,
       yearlyPrice: 143.90,
       description: "Most popular choice for hobbyists",
+      priceId: isAnnual ? "price_plus_yearly" : "price_plus_monthly",
       features: [
         "3 aquatic spaces",
         "Unlimited test logs",
@@ -50,6 +58,7 @@ const Pricing = () => {
       monthlyPrice: 19.99,
       yearlyPrice: 191.90,
       description: "For serious aquarists",
+      priceId: isAnnual ? "price_gold_yearly" : "price_gold_monthly",
       features: [
         "10 aquatic spaces",
         "Unlimited test logs",
@@ -105,6 +114,42 @@ const Pricing = () => {
     },
   ];
 
+  const handleGetStarted = () => {
+    if (domainType === 'marketing') {
+      window.location.href = getAppUrl('/auth');
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  const handleSubscribe = async (plan: typeof plans[0]) => {
+    if (!user) {
+      handleGetStarted();
+      return;
+    }
+
+    setIsLoading(plan.name);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          priceId: plan.priceId,
+          successUrl: `${window.location.origin}/dashboard?checkout=success`,
+          cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Unable to start checkout. Please try again.');
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
   const renderFeatureValue = (value: boolean | string) => {
     if (typeof value === "boolean") {
       return value ? (
@@ -139,7 +184,7 @@ const Pricing = () => {
               Choose Your Plan
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Start your 7-day free trial. Cancel anytime. Launch early 2025.
+              Start your 7-day free trial. Cancel anytime.
             </p>
 
             {/* Billing Toggle */}
@@ -209,9 +254,10 @@ const Pricing = () => {
                     <Button
                       variant={plan.popular ? "hero" : "heroOutline"}
                       className="w-full"
-                      onClick={() => setShowWaitlist(true)}
+                      onClick={() => handleSubscribe(plan)}
+                      disabled={isLoading === plan.name}
                     >
-                      Join Waitlist
+                      {isLoading === plan.name ? 'Loading...' : user ? 'Subscribe Now' : 'Get Started'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -349,7 +395,6 @@ const Pricing = () => {
         </section>
       </main>
       <Footer />
-      <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
       <AllySupportChat />
     </div>
   );

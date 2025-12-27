@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
-import { WaitlistDialog } from "@/components/WaitlistDialog";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDomainType, getAppUrl, getMarketingUrl } from "@/hooks/useDomainType";
@@ -28,7 +27,6 @@ const solutionsLinks = [
 ];
 
 const Navbar = () => {
-  const [showWaitlist, setShowWaitlist] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, userName, signOut } = useAuth();
   const navigate = useNavigate();
@@ -62,6 +60,14 @@ const Navbar = () => {
       window.location.href = getMarketingUrl('/');
     }
     // On marketing/dev domain, Link component handles it
+  };
+
+  const handleGetStarted = () => {
+    if (domainType === 'marketing') {
+      window.location.href = getAppUrl('/auth');
+    } else {
+      navigate('/auth');
+    }
   };
 
   const logoElement = domainType === 'app' ? (
@@ -177,8 +183,8 @@ const Navbar = () => {
                   <Button variant="ghost" size="sm" asChild className="hidden md:flex">
                     <a href={getAppUrl('/auth')}>Sign In</a>
                   </Button>
-                  <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)} className="hidden md:flex">
-                    Get Early Access
+                  <Button variant="hero" size="sm" onClick={handleGetStarted} className="hidden md:flex">
+                    Get Started
                   </Button>
                 </>
               ) : (
@@ -186,8 +192,8 @@ const Navbar = () => {
                   <Button variant="ghost" size="sm" asChild className="hidden md:flex">
                     <Link to="/auth">Sign In</Link>
                   </Button>
-                  <Button variant="hero" size="sm" onClick={() => setShowWaitlist(true)} className="hidden md:flex">
-                    Get Early Access
+                  <Button variant="hero" size="sm" onClick={handleGetStarted} className="hidden md:flex">
+                    Get Started
                   </Button>
                 </>
               )}
@@ -294,9 +300,9 @@ const Navbar = () => {
                       )}
                       <Button variant="hero" onClick={() => {
                         setMobileMenuOpen(false);
-                        setShowWaitlist(true);
+                        handleGetStarted();
                       }}>
-                        Get Early Access
+                        Get Started
                       </Button>
                     </>
                   )}
@@ -305,8 +311,6 @@ const Navbar = () => {
             </SheetContent>
           </Sheet>
         </div>
-        
-        <WaitlistDialog open={showWaitlist} onOpenChange={setShowWaitlist} />
       </div>
     </nav>
   );
