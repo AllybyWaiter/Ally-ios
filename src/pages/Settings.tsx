@@ -27,6 +27,42 @@ import { UpgradePlanDialog } from "@/components/settings/UpgradePlanDialog";
 
 const APP_VERSION = "1.0.0";
 
+const PLAN_FEATURES: Record<string, string[]> = {
+  free: [
+    '1 water body',
+    '5 test logs per month',
+    'Basic AI assistant',
+    'Task reminders',
+  ],
+  basic: [
+    '1 water body',
+    '10 test logs per month',
+    'AI recommendations',
+    'Basic smart scheduling',
+  ],
+  plus: [
+    '3 water bodies',
+    'Unlimited test logs',
+    'AI recommendations',
+    'Ally remembers your setup',
+    'Equipment tracking',
+  ],
+  gold: [
+    '10 water bodies',
+    'Unlimited test logs',
+    'Multi-system management',
+    'Export water history',
+    'Priority AI support',
+  ],
+  business: [
+    'Unlimited water bodies',
+    'Unlimited test logs',
+    'Multi-system management',
+    'Export water history',
+    'Priority AI support',
+  ],
+};
+
 const Settings = () => {
   const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut } = useAuth();
   const navigate = useNavigate();
@@ -449,7 +485,7 @@ const Settings = () => {
                 <AccordionContent className="px-4 pb-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      {['3 water bodies', 'Basic water testing', 'Task reminders', 'AI assistant'].map((feature) => (
+                      {(PLAN_FEATURES[subscriptionTier || 'free'] || PLAN_FEATURES.free).map((feature) => (
                         <div key={feature} className="flex items-center gap-2 text-sm">
                           <span className="text-green-600">✓</span>
                           <span>{feature}</span>
