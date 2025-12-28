@@ -133,7 +133,7 @@ const Pricing = () => {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           priceId: plan.priceId,
-          successUrl: `${window.location.origin}/dashboard?checkout=success`,
+          successUrl: `${window.location.origin}/checkout/success`,
           cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
         },
       });

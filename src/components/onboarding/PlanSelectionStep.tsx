@@ -60,7 +60,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack }: PlanSelectionS
         body: {
           plan_name: planId,
           billing_interval: isAnnual ? 'year' : 'month',
-          success_url: `${window.location.origin}/dashboard?checkout=success`,
+          success_url: `${window.location.origin}/checkout/success`,
           cancel_url: `${window.location.origin}/dashboard?checkout=cancelled`,
         },
       });
