@@ -14,3 +14,4 @@ export * from './feedback';
 export * from './permissions';
 // Export specific function from maintenanceTasks to avoid conflict with tasks.ts
 export { createMaintenanceTask } from './maintenanceTasks';
+export * from './aquariumPhotos';

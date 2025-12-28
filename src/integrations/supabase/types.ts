@@ -218,6 +218,47 @@ export type Database = {
         }
         Relationships: []
       }
+      aquarium_photos: {
+        Row: {
+          aquarium_id: string
+          caption: string | null
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          photo_url: string
+          taken_at: string | null
+          user_id: string
+        }
+        Insert: {
+          aquarium_id: string
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          photo_url: string
+          taken_at?: string | null
+          user_id: string
+        }
+        Update: {
+          aquarium_id?: string
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          photo_url?: string
+          taken_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aquarium_photos_aquarium_id_fkey"
+            columns: ["aquarium_id"]
+            isOneToOne: false
+            referencedRelation: "aquariums"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aquariums: {
         Row: {
           created_at: string
@@ -230,6 +271,7 @@ export type Database = {
           pool_adjustments: Json | null
           pool_dimensions: Json | null
           pool_shape: string | null
+          primary_photo_url: string | null
           setup_date: string | null
           status: string | null
           type: string
@@ -250,6 +292,7 @@ export type Database = {
           pool_adjustments?: Json | null
           pool_dimensions?: Json | null
           pool_shape?: string | null
+          primary_photo_url?: string | null
           setup_date?: string | null
           status?: string | null
           type: string
@@ -270,6 +313,7 @@ export type Database = {
           pool_adjustments?: Json | null
           pool_dimensions?: Json | null
           pool_shape?: string | null
+          primary_photo_url?: string | null
           setup_date?: string | null
           status?: string | null
           type?: string
