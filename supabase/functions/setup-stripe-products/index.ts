@@ -20,19 +20,19 @@ const PLANS: Record<string, PriceConfig> = {
     name: 'Basic',
     monthlyPrice: 999, // $9.99 in cents
     yearlyPrice: 9590, // $95.90 in cents (20% off)
-    features: ['5 water bodies', 'Unlimited water tests', 'Basic AI chat', 'Email support'],
+    features: ['1 water body', '10 test logs per month', 'AI recommendations', 'Basic smart scheduling'],
   },
   plus: {
     name: 'Plus',
     monthlyPrice: 1499, // $14.99 in cents
     yearlyPrice: 14390, // $143.90 in cents (20% off)
-    features: ['10 water bodies', 'Advanced analytics', 'Priority AI chat', 'Photo analysis', 'Priority support'],
+    features: ['3 water bodies', 'Unlimited test logs', 'AI recommendations', 'Ally remembers your setup', 'Equipment tracking'],
   },
   gold: {
     name: 'Gold',
     monthlyPrice: 1999, // $19.99 in cents
     yearlyPrice: 19190, // $191.90 in cents (20% off)
-    features: ['Unlimited water bodies', 'Premium analytics', 'Unlimited AI', 'Advanced photo AI', 'Custom reports', 'Dedicated support'],
+    features: ['10 water bodies', 'Unlimited test logs', 'Multi-tank management', 'Export history', 'Priority AI'],
   },
 };
 

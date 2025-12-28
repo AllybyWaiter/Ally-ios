@@ -121,7 +121,7 @@ const SLA = lazyWithRetry(() => import("./pages/SLA"));
 const PrivacyRights = lazyWithRetry(() => import("./pages/PrivacyRights"));
 const DataBreachPolicy = lazyWithRetry(() => import("./pages/DataBreachPolicy"));
 const CookiePreferences = lazyWithRetry(() => import("./pages/CookiePreferences"));
-
+const CheckoutSuccess = lazyWithRetry(() => import("./pages/CheckoutSuccess"));
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
 
@@ -192,6 +192,18 @@ const App = () => (
                   <Route path="/legal/cookie-preferences" element={<PageErrorBoundary pageName="Cookie Preferences" featureArea="general"><Suspense fallback={<FormSkeleton />}><CookiePreferences /></Suspense></PageErrorBoundary>} />
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
                   <Route path="/auth/reset-password" element={<PageErrorBoundary pageName="Reset Password" featureArea="auth"><ResetPassword /></PageErrorBoundary>} />
+                  <Route 
+                    path="/checkout/success" 
+                    element={
+                      <ProtectedRoute>
+                        <PageErrorBoundary pageName="Checkout Success" featureArea="general">
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <CheckoutSuccess />
+                          </Suspense>
+                        </PageErrorBoundary>
+                      </ProtectedRoute>
+                    } 
+                  />
                   <Route 
                     path="/dashboard" 
                     element={
