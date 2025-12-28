@@ -13,6 +13,7 @@ import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
 import { AquariumTasks } from "@/components/aquarium/AquariumTasks";
 import { AquariumLivestock } from "@/components/aquarium/AquariumLivestock";
 import { TaskSuggestions } from "@/components/aquarium/TaskSuggestions";
+import { AquariumPhotoGallery } from "@/components/aquarium/AquariumPhotoGallery";
 import { format, isValid } from "date-fns";
 import { AquariumDialog } from "@/components/aquarium/AquariumDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -204,6 +205,7 @@ export default function AquariumDetail() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="flex overflow-x-auto w-full max-w-3xl mx-auto gap-1 scrollbar-hide">
             <TabsTrigger value="overview" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.overview')}</TabsTrigger>
+            <TabsTrigger value="photos" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Photos</TabsTrigger>
             {!isPoolType(aquarium.type) && (
               <TabsTrigger value="livestock" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Livestock & Plants</TabsTrigger>
             )}
@@ -215,6 +217,12 @@ export default function AquariumDetail() {
           <TabsContent value="overview">
             <SectionErrorBoundary fallbackTitle="Failed to load overview" featureArea={FeatureArea.AQUARIUM}>
               <AquariumOverview aquariumId={id!} aquarium={aquarium} />
+            </SectionErrorBoundary>
+          </TabsContent>
+
+          <TabsContent value="photos">
+            <SectionErrorBoundary fallbackTitle="Failed to load photos" featureArea={FeatureArea.AQUARIUM}>
+              <AquariumPhotoGallery aquariumId={id!} aquariumName={aquarium.name} userId={user!.id} />
             </SectionErrorBoundary>
           </TabsContent>
 
