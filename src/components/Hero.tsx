@@ -121,6 +121,10 @@ const Hero = () => {
               alt="Ally AI Water Care Assistant" 
               className="relative w-full max-w-md mx-auto drop-shadow-2xl rounded-2xl"
               src="/images/ally-thinking-promo.png"
+              width={448}
+              height={560}
+              loading="eager"
+              fetchPriority="high"
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
             />
