@@ -30,4 +30,21 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks - separate heavy dependencies
+          'vendor-recharts': ['recharts'],
+          'vendor-framer': ['framer-motion'],
+          'vendor-markdown': ['react-markdown', 'react-syntax-highlighter'],
+          'vendor-leaflet': ['leaflet', 'react-leaflet'],
+          // i18n locales loaded dynamically, but group the library
+          'vendor-i18n': ['i18next', 'react-i18next'],
+        },
+      },
+    },
+    // Increase chunk size warning limit slightly to avoid noise
+    chunkSizeWarningLimit: 600,
+  },
 }));
