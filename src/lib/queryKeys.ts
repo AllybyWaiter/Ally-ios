@@ -15,6 +15,7 @@ export const queryKeys = {
     withEquipment: (id: string) => ['aquariums', 'detail', id, 'equipment'] as const,
     withLivestock: (id: string) => ['aquariums', 'detail', id, 'livestock'] as const,
     withPlants: (id: string) => ['aquariums', 'detail', id, 'plants'] as const,
+    photos: (aquariumId: string) => ['aquariums', 'photos', aquariumId] as const,
   },
 
   // Water Tests
