@@ -62,15 +62,17 @@ const lazyWithRetry = <T extends ComponentType<unknown>>(
 // Trigger service worker update check
 checkForServiceWorkerUpdate();
 
-// Eager load public pages (better UX for first visit)
+// Eager load essential public pages only (critical path)
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import Accessibility from "./pages/Accessibility";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import AquariumDetail from "./pages/AquariumDetail"; // Eagerly loaded to prevent iOS PWA module resolution errors
+
+// Lazy load rarely-accessed legal pages (reduces initial bundle)
+const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
+const Accessibility = lazyWithRetry(() => import("./pages/Accessibility"));
 
 // Lazy load authenticated pages with retry logic (code splitting)
 const Admin = lazyWithRetry(() => import("./pages/Admin"));
@@ -165,9 +167,9 @@ const App = () => (
                   <Route path="/ai-water-testing" element={<PageErrorBoundary pageName="AI Water Testing" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><AIWaterTesting /></Suspense></PageErrorBoundary>} />
                   <Route path="/press" element={<PageErrorBoundary pageName="Press" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Press /></Suspense></PageErrorBoundary>} />
                   <Route path="/contact" element={<PageErrorBoundary pageName="Contact" featureArea="general"><Suspense fallback={<FormSkeleton />}><Contact /></Suspense></PageErrorBoundary>} />
-                  <Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><PrivacyPolicy /></PageErrorBoundary>} />
-                  <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><TermsOfService /></PageErrorBoundary>} />
-                  <Route path="/accessibility" element={<PageErrorBoundary pageName="Accessibility" featureArea="general"><Accessibility /></PageErrorBoundary>} />
+<Route path="/privacy" element={<PageErrorBoundary pageName="Privacy Policy" featureArea="general"><Suspense fallback={<FormSkeleton />}><PrivacyPolicy /></Suspense></PageErrorBoundary>} />
+                  <Route path="/terms" element={<PageErrorBoundary pageName="Terms of Service" featureArea="general"><Suspense fallback={<FormSkeleton />}><TermsOfService /></Suspense></PageErrorBoundary>} />
+                  <Route path="/accessibility" element={<PageErrorBoundary pageName="Accessibility" featureArea="general"><Suspense fallback={<FormSkeleton />}><Accessibility /></Suspense></PageErrorBoundary>} />
                   <Route path="/cookies" element={<PageErrorBoundary pageName="Cookie Policy" featureArea="general"><Suspense fallback={<FormSkeleton />}><CookiePolicy /></Suspense></PageErrorBoundary>} />
                   <Route path="/testimonials" element={<PageErrorBoundary pageName="Testimonials" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Testimonials /></Suspense></PageErrorBoundary>} />
                   <Route path="/changelog" element={<PageErrorBoundary pageName="Changelog" featureArea="general"><Suspense fallback={<FormSkeleton />}><Changelog /></Suspense></PageErrorBoundary>} />
