@@ -80,7 +80,7 @@ const Navbar = () => {
       }}
     >
       <div className="w-10 h-10 flex items-center justify-center">
-        <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
+        <img src={logo} alt="Ally Logo" width={40} height={40} className="w-10 h-10 object-contain" />
       </div>
       <div>
         <div className="font-bold text-lg leading-none">Ally</div>
@@ -90,7 +90,7 @@ const Navbar = () => {
   ) : (
     <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
       <div className="w-10 h-10 flex items-center justify-center">
-        <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
+        <img src={logo} alt="Ally Logo" width={40} height={40} className="w-10 h-10 object-contain" />
       </div>
       <div>
         <div className="font-bold text-lg leading-none">Ally</div>
