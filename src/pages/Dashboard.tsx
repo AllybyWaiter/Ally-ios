@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { PreferencesOnboarding } from '@/components/PreferencesOnboarding';
@@ -31,7 +31,8 @@ interface Aquarium {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, isAdmin, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { user, isAdmin, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
   const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier, loading: limitsLoading } = usePlanLimits();
@@ -164,6 +165,41 @@ export default function Dashboard() {
       setShowAquariumOnboarding(true);
     }
   }, [dataFetched, aquariums.length, showPreferencesOnboarding]);
+
+  // Handle checkout success query parameters
+  useEffect(() => {
+    const checkoutStatus = searchParams.get('subscription') || searchParams.get('checkout');
+    
+    if (checkoutStatus === 'activated' || checkoutStatus === 'success') {
+      toast({
+        title: 'Subscription Activated!',
+        description: 'Welcome to your new plan. Enjoy your premium features!',
+      });
+      // Refresh profile to ensure we have latest subscription data
+      if (refreshProfile) {
+        refreshProfile();
+      }
+      // Clean up URL
+      searchParams.delete('subscription');
+      searchParams.delete('checkout');
+      setSearchParams(searchParams, { replace: true });
+    } else if (checkoutStatus === 'pending') {
+      toast({
+        title: 'Subscription Processing',
+        description: 'Your subscription is still being activated. It should appear shortly.',
+      });
+      searchParams.delete('checkout');
+      setSearchParams(searchParams, { replace: true });
+    } else if (checkoutStatus === 'cancelled') {
+      toast({
+        title: 'Checkout Cancelled',
+        description: 'Your checkout was cancelled. You can try again anytime.',
+        variant: 'destructive',
+      });
+      searchParams.delete('checkout');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams, toast, refreshProfile]);
 
   // Memoized event handlers
   const handlePreferencesComplete = useCallback(async () => {

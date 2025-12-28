@@ -205,17 +205,29 @@ async function handleSubscriptionUpdated(
   const planName = subscription.metadata.plan_name || 'basic';
   const billingInterval = subscription.metadata.billing_interval || 'month';
 
+  // Safely convert timestamps (handle undefined/null cases)
+  const periodStart = subscription.current_period_start 
+    ? new Date(subscription.current_period_start * 1000).toISOString() 
+    : null;
+  const periodEnd = subscription.current_period_end 
+    ? new Date(subscription.current_period_end * 1000).toISOString() 
+    : null;
+
   // Update subscription record
+  const updateData: Record<string, unknown> = {
+    status: subscription.status,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    plan_name: planName,
+    billing_interval: billingInterval,
+  };
+
+  // Only add period dates if they're valid
+  if (periodStart) updateData.current_period_start = periodStart;
+  if (periodEnd) updateData.current_period_end = periodEnd;
+
   const { error: subError } = await supabase
     .from('subscriptions')
-    .update({
-      status: subscription.status,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      plan_name: planName,
-      billing_interval: billingInterval,
-    })
+    .update(updateData)
     .eq('stripe_subscription_id', subscription.id);
 
   if (subError) {

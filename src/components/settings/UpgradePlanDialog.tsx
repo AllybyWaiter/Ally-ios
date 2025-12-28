@@ -82,7 +82,7 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
         body: {
           plan_name: planId,
           billing_interval: isAnnual ? 'year' : 'month',
-          success_url: `${window.location.origin}/settings?checkout=success`,
+          success_url: `${window.location.origin}/checkout/success`,
           cancel_url: `${window.location.origin}/settings?checkout=cancelled`,
         },
       });
