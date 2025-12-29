@@ -27,7 +27,6 @@ const Pricing = () => {
       monthlyPrice: 9.99,
       yearlyPrice: 95.90,
       description: "Perfect for getting started",
-      priceId: isAnnual ? "price_basic_yearly" : "price_basic_monthly",
       features: [
         "1 water body (pool, spa, aquarium, or pond)",
         "10 test logs per month",
@@ -41,7 +40,6 @@ const Pricing = () => {
       monthlyPrice: 14.99,
       yearlyPrice: 143.90,
       description: "Most popular for hobbyists",
-      priceId: isAnnual ? "price_plus_yearly" : "price_plus_monthly",
       features: [
         "3 water bodies",
         "Unlimited test logs",
@@ -58,7 +56,6 @@ const Pricing = () => {
       monthlyPrice: 19.99,
       yearlyPrice: 191.90,
       description: "For serious enthusiasts",
-      priceId: isAnnual ? "price_gold_yearly" : "price_gold_monthly",
       features: [
         "10 water bodies",
         "Unlimited test logs",
@@ -132,9 +129,10 @@ const Pricing = () => {
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
-          priceId: plan.priceId,
-          successUrl: `${window.location.origin}/checkout/success`,
-          cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
+          plan_name: plan.name.toLowerCase(),
+          billing_interval: isAnnual ? 'year' : 'month',
+          success_url: `${window.location.origin}/checkout/success`,
+          cancel_url: `${window.location.origin}/pricing?checkout=cancelled`,
         },
       });
 
