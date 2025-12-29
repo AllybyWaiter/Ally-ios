@@ -20,7 +20,7 @@ const plans = [
     monthlyPrice: 9.99,
     yearlyPrice: 95.90,
     description: 'Perfect for single tank owners',
-    features: ['1 aquatic space', '10 test logs/month', 'AI recommendations'],
+    features: ['1 water body', '10 test logs/month', 'AI recommendations'],
     popular: false,
   },
   {
@@ -30,7 +30,7 @@ const plans = [
     monthlyPrice: 14.99,
     yearlyPrice: 143.90,
     description: 'Most popular for hobbyists',
-    features: ['3 aquatic spaces', 'Unlimited test logs', 'Ally remembers your setup', 'Equipment tracking'],
+    features: ['3 water bodies', 'Unlimited test logs', 'Ally remembers your setup', 'Equipment tracking'],
     popular: true,
   },
   {
@@ -40,7 +40,7 @@ const plans = [
     monthlyPrice: 19.99,
     yearlyPrice: 191.90,
     description: 'For serious aquarists',
-    features: ['10 aquatic spaces', 'Multi-tank management', 'Export history', 'Priority AI'],
+    features: ['10 water bodies', 'Multi-tank management', 'Export history', 'Priority AI'],
     popular: false,
   },
 ];
