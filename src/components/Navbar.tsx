@@ -207,32 +207,32 @@ const Navbar = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px]">
-              <nav className="flex flex-col gap-4 mt-8">
+            <SheetContent side="right" className="w-[300px] overflow-hidden">
+              <nav className="flex flex-col gap-3 mt-6 overflow-y-auto max-h-[calc(100vh-4rem)] pb-safe">
                 <Link 
                   to="/features" 
-                  className="text-lg font-medium hover:text-primary transition-colors py-2"
+                  className="text-base font-medium hover:text-primary transition-colors py-1.5"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Features
                 </Link>
                 <Link 
                   to="/how-it-works" 
-                  className="text-lg font-medium hover:text-primary transition-colors py-2"
+                  className="text-base font-medium hover:text-primary transition-colors py-1.5"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   How It Works
                 </Link>
                 
                 {/* Solutions Section */}
-                <div className="py-2">
-                  <div className="text-lg font-medium text-muted-foreground mb-2">Solutions</div>
-                  <div className="pl-4 flex flex-col gap-2">
+                <div className="py-1.5">
+                  <div className="text-base font-medium text-muted-foreground mb-1.5">Solutions</div>
+                  <div className="pl-4 flex flex-col gap-1">
                     {solutionsLinks.map((link) => (
                       <Link
                         key={link.path}
                         to={link.path}
-                        className="text-base hover:text-primary transition-colors py-1"
+                        className="text-sm hover:text-primary transition-colors py-0.5"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         {link.label}
@@ -243,27 +243,27 @@ const Navbar = () => {
                 
                 <Link 
                   to="/pricing" 
-                  className="text-lg font-medium hover:text-primary transition-colors py-2"
+                  className="text-base font-medium hover:text-primary transition-colors py-1.5"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Pricing
                 </Link>
                 <Link 
                   to="/blog" 
-                  className="text-lg font-medium hover:text-primary transition-colors py-2"
+                  className="text-base font-medium hover:text-primary transition-colors py-1.5"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Blog
                 </Link>
                 <a 
                   href="#app" 
-                  className="text-lg font-medium hover:text-primary transition-colors py-2"
+                  className="text-base font-medium hover:text-primary transition-colors py-1.5"
                   onClick={handleAppClick}
                 >
                   App
                 </a>
                 
-                <div className="border-t border-border pt-4 mt-4 flex flex-col gap-3">
+                <div className="border-t border-border pt-3 mt-3 flex flex-col gap-2">
                   {user ? (
                     <>
                       {domainType === 'marketing' ? (
