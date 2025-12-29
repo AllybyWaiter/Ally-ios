@@ -16,7 +16,7 @@ import {
   ArrowLeft, User, Lock, CreditCard, Trash2, Moon, Sun, Monitor, 
   Languages, Ruler, Palette, Globe, Shield, Crown, Brain, MapPin, 
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
-  Mail, ChevronRight, Settings as SettingsIcon, BookOpen, Sparkles
+  Mail, ChevronRight, Settings as SettingsIcon, BookOpen, Sparkles, Loader2
 } from "lucide-react";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useTheme } from "next-themes";
@@ -82,6 +82,7 @@ const Settings = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -306,34 +307,68 @@ const Settings = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
     
-    // Check if user has a Stripe subscription first
+    setPortalLoading(true);
+    
     try {
       const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session?.access_token) {
+        toast({
+          title: "Session Expired",
+          description: "Please sign in again to manage your subscription.",
+          variant: "destructive"
+        });
+        setPortalLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
-        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
         body: { return_url: window.location.href }
       });
       
-      // Check for successful portal URL
-      if (!error && data?.url) {
-        window.open(data.url, '_blank');
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Check for successful portal URL - use location.href for iOS compatibility
+      if (data?.url) {
+        window.location.href = data.url;
         return;
       }
       
       // Handle "no subscription" response gracefully
       if (data?.error === 'no_subscription') {
-        console.log('User has no active subscription');
         // Fall through to platform store check below
+        setPortalLoading(false);
+      } else {
+        throw new Error('Failed to get portal URL');
       }
     } catch (e) {
-      console.log('Error checking subscription, falling back to platform stores');
+      console.error('Subscription management error:', e);
+      setPortalLoading(false);
+      
+      // Fallback to platform stores
+      if (isIOS) {
+        window.location.href = 'https://apps.apple.com/account/subscriptions';
+        return;
+      } else if (isAndroid) {
+        window.location.href = 'https://play.google.com/store/account/subscriptions';
+        return;
+      }
+      
+      toast({ 
+        title: "Unable to Open Portal", 
+        description: "There was an error opening subscription management. Please try again.",
+        variant: "destructive"
+      });
+      return;
     }
     
-    // Fallback to platform stores
+    // If no Stripe subscription, fallback to platform stores
     if (isIOS) {
-      window.open('https://apps.apple.com/account/subscriptions', '_blank');
+      window.location.href = 'https://apps.apple.com/account/subscriptions';
     } else if (isAndroid) {
-      window.open('https://play.google.com/store/account/subscriptions', '_blank');
+      window.location.href = 'https://play.google.com/store/account/subscriptions';
     } else {
       toast({ 
         title: "No Active Subscription", 
@@ -499,9 +534,23 @@ const Settings = () => {
                           Upgrade Plan
                         </Button>
                       ) : (
-                        <Button variant="outline" onClick={handleManageSubscription} className="w-full">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Manage Subscription
+                        <Button 
+                          variant="outline" 
+                          onClick={handleManageSubscription} 
+                          disabled={portalLoading}
+                          className="w-full"
+                        >
+                          {portalLoading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Opening Portal...
+                            </>
+                          ) : (
+                            <>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Manage Subscription
+                            </>
+                          )}
                         </Button>
                       )}
                       <Button variant="ghost" onClick={() => navigate('/pricing')} className="w-full text-muted-foreground">
