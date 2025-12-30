@@ -456,6 +456,40 @@ export default function Auth() {
                   </div>
                 )}
                 {view === 'signup' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="referralCode" className="flex items-center gap-2">
+                      <Gift size={14} className="text-primary" />
+                      Referral Code (optional)
+                    </Label>
+                    <Input
+                      id="referralCode"
+                      type="text"
+                      placeholder="ALLY-XXXXXX"
+                      value={referralCode}
+                      onChange={(e) => {
+                        const code = e.target.value.toUpperCase();
+                        setReferralCode(code);
+                        if (code.length >= 10) {
+                          validateReferralCode(code);
+                        } else {
+                          setReferrerName('');
+                        }
+                      }}
+                      disabled={isLoading}
+                      className="uppercase"
+                    />
+                    {referrerName && (
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <Gift size={12} />
+                        Referred by {referrerName} — you'll both get 1 month free!
+                      </p>
+                    )}
+                    {errors.referralCode && (
+                      <p className="text-sm text-destructive">{errors.referralCode}</p>
+                    )}
+                  </div>
+                )}
+                {view === 'signup' && (
                   <p className="text-xs text-muted-foreground text-center">
                     By creating an account, you agree to our{' '}
                     <Link to="/terms" className="text-primary hover:underline">
