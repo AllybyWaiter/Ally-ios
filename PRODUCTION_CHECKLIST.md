@@ -95,10 +95,21 @@ After deployment, verify:
 6. [ ] Push notifications can be enabled
 7. [ ] Admin panel accessible to admins
 
+### Analytics & Conversion Tracking
+
+| Tracking | Status | Notes |
+|----------|--------|-------|
+| Google Analytics 4 | ⚠️ Pending | Replace `G-XXXXXXXXXX` in index.html |
+| Meta Pixel | ⚠️ Pending | Replace `YOUR_PIXEL_ID` in index.html |
+| Signup Event | ✅ | Fires on successful registration |
+| Checkout Initiated | ✅ | Fires when user clicks Subscribe |
+| Purchase Complete | ✅ | Fires on successful subscription |
+
 ### Monitoring
 
 - [ ] **Sentry**: Verify errors are being captured
-- [ ] **Analytics**: Confirm page views tracking
+- [ ] **Google Analytics**: Confirm page views and conversion events
+- [ ] **Meta Pixel**: Verify events in Facebook Events Manager
 - [ ] **Edge Function Logs**: Check for errors in Lovable Cloud
 
 ## Rollback Plan
