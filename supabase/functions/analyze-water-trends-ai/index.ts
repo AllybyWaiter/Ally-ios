@@ -274,7 +274,7 @@ serve(async (req) => {
     const currentSeason = getCurrentSeason(profile?.hemisphere || null);
 
     // Build AI prompt
-    const analysisPrompt = `Analyze water quality trends for this aquatic space and identify concerns:
+    const analysisPrompt = `Analyze water quality trends for this water body and identify concerns:
 
 AQUARIUM PROFILE:
 - Name: ${aquarium.name}

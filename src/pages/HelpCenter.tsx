@@ -206,7 +206,7 @@ const quickStartGuides = [
     icon: Camera,
     color: "text-pink-500",
     steps: [
-      "Navigate to any livestock or plant in your aquatic space",
+      "Navigate to any livestock or plant in your water body",
       "Tap 'View Photos' or open the detail dialog",
       "Add photos with captions and dates taken",
       "Set a primary photo to display on cards",
@@ -249,7 +249,7 @@ const helpArticles = [
     category: "Water Testing",
     icon: Droplets,
     articles: [
-      { title: "Log your first water test", difficulty: "Beginner", content: "Navigate to Water Tests from your dashboard, select your aquatic space, and enter your parameter values. Save to track your water quality over time." },
+      { title: "Log your first water test", difficulty: "Beginner", content: "Navigate to Water Tests from your dashboard, select your water body, and enter your parameter values. Save to track your water quality over time." },
       { title: "Use AI photo analysis", difficulty: "Beginner", content: "Tap the camera icon when logging a water test. Take a clear photo of your test strip and Ally will automatically read the values for you." },
       { title: "Understand water parameters", difficulty: "Intermediate", content: "pH measures acidity (6.5-7.5 for freshwater). Ammonia and Nitrite should be 0. Nitrate under 40ppm. Temperature varies by species." },
       { title: "Read trend alerts", difficulty: "Intermediate", content: "Ally analyzes your test history to detect concerning patterns like rising nitrates or falling pH before they become problems." },
@@ -260,10 +260,10 @@ const helpArticles = [
     category: "Maintenance Tasks",
     icon: Wrench,
     articles: [
-      { title: "Create a maintenance task", difficulty: "Beginner", content: "From your aquatic space detail page, tap Tasks > Add Task. Enter the task name, type, and due date." },
+      { title: "Create a maintenance task", difficulty: "Beginner", content: "From your water body detail page, tap Tasks > Add Task. Enter the task name, type, and due date." },
       { title: "Set up recurring schedules", difficulty: "Beginner", content: "When creating a task, enable 'Repeat this task' and select a frequency (daily, weekly, biweekly, monthly, or custom)." },
       { title: "AI task suggestions", difficulty: "Intermediate", content: "Ally analyzes your water tests, equipment, and weather to suggest maintenance tasks tailored to your specific needs." },
-      { title: "Use the calendar view", difficulty: "Beginner", content: "Navigate to Calendar from the main menu to see all your tasks across all aquatic spaces in a monthly or weekly view." },
+      { title: "Use the calendar view", difficulty: "Beginner", content: "Navigate to Calendar from the main menu to see all your tasks across all water bodies in a monthly or weekly view." },
       { title: "Mark tasks complete", difficulty: "Beginner", content: "Tap the checkmark on any task to mark it complete. For recurring tasks, the next occurrence is automatically created." }
     ]
   },
@@ -271,7 +271,7 @@ const helpArticles = [
     category: "Equipment",
     icon: Settings,
     articles: [
-      { title: "Add equipment to your tank", difficulty: "Beginner", content: "From your aquatic space, go to Equipment > Add Equipment. Enter details like brand, model, and installation date." },
+      { title: "Add equipment to your tank", difficulty: "Beginner", content: "From your water body, go to Equipment > Add Equipment. Enter details like brand, model, and installation date." },
       { title: "Set maintenance intervals", difficulty: "Beginner", content: "For each piece of equipment, set a maintenance interval (e.g., clean filter every 30 days) to get automatic reminders." },
       { title: "Track filter media", difficulty: "Intermediate", content: "Add filter media as separate equipment items to track when each type (mechanical, biological, chemical) needs replacement." },
       { title: "Equipment health monitoring", difficulty: "Intermediate", content: "Review equipment status from your dashboard. Ally flags items that are overdue for maintenance or nearing replacement age." }
@@ -355,7 +355,7 @@ const helpArticles = [
       { title: "Weather on your dashboard", difficulty: "Beginner", content: "Your dashboard shows current temperature, conditions, UV index, and humidity. Weather updates automatically when you open the app." },
       { title: "Weather-aware task suggestions", difficulty: "Intermediate", content: "For pools and spas, Ally considers weather when suggesting tasks. High UV prompts chlorine checks; rain forecasts suggest pH testing." },
       { title: "View detailed weather page", difficulty: "Beginner", content: "Tap the weather card or navigate to Weather for 5-day forecast, hourly temperatures, sunrise/sunset times, and more." },
-      { title: "Set aquatic space location", difficulty: "Intermediate", content: "Each pool or aquarium can have its own location. When creating a new space, confirm the detected location or skip to add later." }
+      { title: "Set water body location", difficulty: "Intermediate", content: "Each pool or aquarium can have its own location. When creating a new space, confirm the detected location or skip to add later." }
     ]
   }
 ];
