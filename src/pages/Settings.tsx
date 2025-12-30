@@ -24,6 +24,8 @@ import { useTranslation } from "react-i18next";
 import MemoryManager from "@/components/settings/MemoryManager";
 import { WeatherSettings } from "@/components/settings/WeatherSettings";
 import { UpgradePlanDialog } from "@/components/settings/UpgradePlanDialog";
+import { ReferralSection } from "@/components/settings/ReferralSection";
+import { ReferralRewards } from "@/components/settings/ReferralRewards";
 
 const APP_VERSION = "1.0.0";
 
@@ -829,6 +831,26 @@ const Settings = () => {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <MemoryManager />
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Referrals */}
+              <AccordionItem value="referrals" className="border rounded-lg bg-card shadow-sm">
+                <AccordionTrigger className="px-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <Sparkles className="h-4 w-4 text-green-500" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold">Refer Friends</p>
+                      <p className="text-sm text-muted-foreground">Earn free months of Plus</p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <ReferralSection />
+                  <Separator className="my-6" />
+                  <ReferralRewards />
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
