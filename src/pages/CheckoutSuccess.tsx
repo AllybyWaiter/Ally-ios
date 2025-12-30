@@ -44,6 +44,26 @@ export default function CheckoutSuccess() {
       if (tier && tier !== 'free') {
         setSubscriptionTier(tier);
         setStatus('success');
+        
+        // Track purchase conversion
+        if (typeof window !== 'undefined') {
+          // GA4 purchase event
+          if ((window as any).gtag) {
+            (window as any).gtag('event', 'purchase', {
+              transaction_id: searchParams.get('session_id') || Date.now().toString(),
+              currency: 'USD',
+              items: [{ item_name: tier }]
+            });
+          }
+          // Meta Pixel Purchase event
+          if ((window as any).fbq) {
+            (window as any).fbq('track', 'Purchase', {
+              currency: 'USD',
+              content_name: tier
+            });
+          }
+        }
+        
         // Refresh the auth context to update everywhere
         if (refreshProfile) {
           await refreshProfile();
