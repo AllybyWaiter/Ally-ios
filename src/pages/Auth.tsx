@@ -180,6 +180,18 @@ export default function Auth() {
           title: 'Success',
           description: 'Account created successfully!',
         });
+        
+        // Track signup conversion
+        if (typeof window !== 'undefined') {
+          // GA4 signup event
+          if ((window as any).gtag) {
+            (window as any).gtag('event', 'sign_up', { method: 'email' });
+          }
+          // Meta Pixel registration event
+          if ((window as any).fbq) {
+            (window as any).fbq('track', 'CompleteRegistration');
+          }
+        }
       }
       
       resetRateLimit();

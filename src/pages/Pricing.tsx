@@ -138,6 +138,25 @@ const Pricing = () => {
 
       if (error) throw error;
       if (data?.url) {
+        // Track checkout initiated
+        if (typeof window !== 'undefined') {
+          // GA4 begin_checkout event
+          if ((window as any).gtag) {
+            (window as any).gtag('event', 'begin_checkout', {
+              currency: 'USD',
+              value: isAnnual ? plan.yearlyPrice : plan.monthlyPrice,
+              items: [{ item_name: plan.name, price: isAnnual ? plan.yearlyPrice : plan.monthlyPrice }]
+            });
+          }
+          // Meta Pixel InitiateCheckout event
+          if ((window as any).fbq) {
+            (window as any).fbq('track', 'InitiateCheckout', {
+              currency: 'USD',
+              value: isAnnual ? plan.yearlyPrice : plan.monthlyPrice,
+              content_name: plan.name
+            });
+          }
+        }
         window.location.href = data.url;
       }
     } catch (error) {
