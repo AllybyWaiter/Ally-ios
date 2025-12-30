@@ -1,15 +1,17 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useReferralCode } from '@/hooks/useReferralCode';
-import { Gift, Clock, CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { Gift, Clock, CheckCircle2, XCircle, Sparkles, Loader2 } from 'lucide-react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export function ReferralRewards() {
   const { rewards, isLoading } = useReferralCode();
-  const navigate = useNavigate();
+  const [redeemingId, setRedeemingId] = useState<string | null>(null);
 
   const getStatusBadge = (status: string, expiresAt: string) => {
     const expired = isPast(new Date(expiresAt));
@@ -61,12 +63,36 @@ export function ReferralRewards() {
     }
   };
 
-  const handleRedeem = (couponId: string | null) => {
-    // Navigate to pricing with coupon context
-    if (couponId) {
-      navigate(`/pricing?coupon=${couponId}`);
-    } else {
-      navigate('/pricing');
+  const handleRedeem = async (rewardId: string, couponId: string | null) => {
+    if (!couponId) {
+      toast.error('No coupon available for this reward');
+      return;
+    }
+
+    setRedeemingId(rewardId);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          plan_name: 'plus',
+          billing_interval: 'month',
+          coupon_id: couponId,
+          reward_id: rewardId,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err) {
+      console.error('Failed to start checkout:', err);
+      toast.error('Failed to start checkout. Please try again.');
+    } finally {
+      setRedeemingId(null);
     }
   };
 
@@ -136,9 +162,17 @@ export function ReferralRewards() {
                 {isAvailable && (
                   <Button
                     size="sm"
-                    onClick={() => handleRedeem(reward.stripe_coupon_id)}
+                    onClick={() => handleRedeem(reward.id, reward.stripe_coupon_id)}
+                    disabled={redeemingId === reward.id}
                   >
-                    Redeem
+                    {redeemingId === reward.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Redeem'
+                    )}
                   </Button>
                 )}
               </div>

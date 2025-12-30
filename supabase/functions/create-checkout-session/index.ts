@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     logger.setUserId(user.id);
     logger.info('Creating checkout session');
 
-    const { plan_name, billing_interval, success_url, cancel_url } = await req.json();
+    const { plan_name, billing_interval, success_url, cancel_url, coupon_id, reward_id } = await req.json();
 
     // Validate inputs
     if (!plan_name || !['basic', 'plus', 'gold'].includes(plan_name)) {
@@ -125,8 +125,8 @@ Deno.serve(async (req) => {
       logger.info('Created new Stripe customer', { stripeCustomerId });
     }
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Build session options
+    const sessionOptions: Record<string, unknown> = {
       customer: stripeCustomerId,
       line_items: [
         {
@@ -144,7 +144,19 @@ Deno.serve(async (req) => {
           billing_interval,
         },
       },
-    });
+      metadata: {
+        user_id: user.id,
+        reward_id: reward_id || '',
+      },
+    };
+
+    // Apply coupon if provided
+    if (coupon_id) {
+      sessionOptions.discounts = [{ coupon: coupon_id }];
+      logger.info('Applying coupon to checkout', { coupon_id });
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionOptions);
 
     logger.info('Checkout session created', { sessionId: session.id });
 
