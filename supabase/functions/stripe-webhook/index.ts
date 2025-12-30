@@ -89,6 +89,19 @@ Deno.serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         await handleCheckoutCompleted(supabaseAdmin, stripe, session, logger);
+        // Mark reward as applied if one was used
+        const rewardId = session.metadata?.reward_id;
+        if (rewardId) {
+          try {
+            await supabaseAdmin
+              .from('referral_rewards')
+              .update({ status: 'applied', applied_at: new Date().toISOString() })
+              .eq('id', rewardId);
+            logger.info('Referral reward marked as applied', { rewardId });
+          } catch (err) {
+            logger.warn('Error updating reward status', { rewardId, error: err });
+          }
+        }
         // Check for referral and trigger rewards
         await triggerReferralReward(session.metadata?.user_id, logger);
         break;
