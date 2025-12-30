@@ -317,7 +317,7 @@ const HowItWorksPage = () => {
             Ready to Transform Your Water Care?
           </h2>
           <p className="text-xl text-primary-foreground/90 mb-8">
-            Join thousands of aquatic space owners who trust Ally for perfect water quality.
+            Join thousands of water body owners who trust Ally for perfect water quality.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

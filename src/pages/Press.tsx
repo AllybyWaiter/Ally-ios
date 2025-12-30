@@ -84,7 +84,7 @@ const Press = () => {
     {
       name: "Jacob Stephens",
       title: "Founder and CEO",
-      bio: "Jacob Stephens is the Founder and CEO of Ally by WA.I.TER AI Inc., the company building Ally, an AI powered water care platform designed to remove guesswork from aquatic spaces. Ally helps users track water data, understand what it means, and take the right next steps with clear, actionable guidance. Jacob leads product vision, brand, and go to market strategy with a focus on trust, simplicity, and a premium user experience. He graduated from Auburn University and is building Ally to feel like the Tesla of water care, sleek, smart, and reliable for everyday users.",
+      bio: "Jacob Stephens is the Founder and CEO of Ally by WA.I.TER AI Inc., the company building Ally, an AI powered water care platform designed to remove guesswork from water care. Ally helps users track water data, understand what it means, and take the right next steps with clear, actionable guidance. Jacob leads product vision, brand, and go to market strategy with a focus on trust, simplicity, and a premium user experience. He graduated from Auburn University and is building Ally to feel like the Tesla of water care, sleek, smart, and reliable for everyday users.",
       email: "Jacob@allybywaiterapp.com",
       initials: "JS"
     },
