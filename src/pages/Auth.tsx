@@ -45,6 +45,7 @@ export default function Auth() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [referrerName, setReferrerName] = useState('');
+  const [referralData, setReferralData] = useState<{ referralCodeId: string; referrerId: string } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,15 +70,29 @@ export default function Auth() {
   }, [searchParams]);
 
   const validateReferralCode = async (code: string) => {
+    if (!code || code.length < 10) return;
+    
     try {
       const { data, error } = await supabase.functions.invoke('validate-referral-code', {
         body: { code },
       });
-      if (!error && data?.valid) {
-        setReferrerName(data.referrer_name);
+
+      if (error || !data?.valid) {
+        setReferrerName('');
+        setReferralData(null);
+        setErrors(prev => ({ ...prev, referralCode: 'Invalid referral code' }));
+        return;
       }
+
+      setReferrerName(data.referrer_name || 'a friend');
+      setReferralData({
+        referralCodeId: data.referral_code_id,
+        referrerId: data.referrer_id,
+      });
+      setErrors(prev => ({ ...prev, referralCode: '' }));
     } catch {
-      // Silently fail - we'll validate again on submit
+      setReferrerName('');
+      setReferralData(null);
     }
   };
 
@@ -203,6 +218,23 @@ export default function Auth() {
       }
 
       if (view === 'signup') {
+        // Create referral record if user signed up with a referral code
+        if (referralData) {
+          try {
+            const { data: { user: newUser } } = await supabase.auth.getUser();
+            if (newUser) {
+              await supabase.from('referrals').insert({
+                referrer_id: referralData.referrerId,
+                referee_id: newUser.id,
+                referral_code_id: referralData.referralCodeId,
+                status: 'pending',
+              });
+            }
+          } catch (refError) {
+            console.error('Failed to create referral record:', refError);
+          }
+        }
+
         toast({
           title: 'Success',
           description: 'Account created successfully!',
