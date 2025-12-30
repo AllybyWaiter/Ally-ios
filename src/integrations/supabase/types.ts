@@ -1405,6 +1405,118 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_rewards: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          referral_id: string
+          reward_type: string
+          reward_value: string
+          status: string
+          stripe_coupon_id: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          referral_id: string
+          reward_type: string
+          reward_value?: string
+          status?: string
+          stripe_coupon_id?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          referral_id?: string
+          reward_type?: string
+          reward_value?: string
+          status?: string
+          stripe_coupon_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          qualified_at: string | null
+          referee_id: string
+          referral_code_id: string
+          referrer_id: string
+          rewarded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qualified_at?: string | null
+          referee_id: string
+          referral_code_id: string
+          referrer_id: string
+          rewarded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qualified_at?: string | null
+          referee_id?: string
+          referral_code_id?: string
+          referrer_id?: string
+          rewarded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_audit_log: {
         Row: {
           action: string
@@ -2034,6 +2146,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_referral_code: { Args: never; Returns: string }
       get_masked_user_profiles: {
         Args: never
         Returns: {
@@ -2045,6 +2158,10 @@ export type Database = {
           subscription_tier: string
           user_id: string
         }[]
+      }
+      get_or_create_referral_code: {
+        Args: { _user_id: string }
+        Returns: string
       }
       get_user_permissions: {
         Args: { _user_id: string }
