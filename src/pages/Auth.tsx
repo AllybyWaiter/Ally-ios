@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Gift } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/lib/utils';
@@ -43,16 +43,43 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referrerName, setReferrerName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string; referralCode?: string }>({});
   
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Check for referral code in URL
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode.toUpperCase());
+      setView('signup');
+      // Validate the code
+      validateReferralCode(refCode);
+    }
+  }, [searchParams]);
+
+  const validateReferralCode = async (code: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-referral-code', {
+        body: { code },
+      });
+      if (!error && data?.valid) {
+        setReferrerName(data.referrer_name);
+      }
+    } catch {
+      // Silently fail - we'll validate again on submit
+    }
+  };
 
   const { isRateLimited, checkRateLimit, resetRateLimit } = useRateLimit({
     maxAttempts: 5,

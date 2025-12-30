@@ -89,6 +89,8 @@ Deno.serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         await handleCheckoutCompleted(supabaseAdmin, stripe, session, logger);
+        // Check for referral and trigger rewards
+        await triggerReferralReward(session.metadata?.user_id, logger);
         break;
       }
 
@@ -301,4 +303,34 @@ async function handlePaymentFailed(
     .eq('stripe_subscription_id', subscriptionId);
 
   logger.info('Payment failed, subscription marked past_due', { subscriptionId });
+}
+
+// Trigger referral reward when a user makes their first payment
+async function triggerReferralReward(userId: string | undefined, logger: Logger) {
+  if (!userId) return;
+
+  try {
+    // Call apply-referral-reward function
+    const response = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/apply-referral-reward`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({ referee_id: userId, trigger: 'checkout_completed' }),
+      }
+    );
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.rewarded) {
+        logger.info('Referral reward triggered', { userId, referral_id: result.referral_id });
+      }
+    }
+  } catch (error) {
+    logger.warn('Failed to trigger referral reward', { userId, error });
+    // Don't throw - referral reward failure shouldn't block subscription
+  }
 }
