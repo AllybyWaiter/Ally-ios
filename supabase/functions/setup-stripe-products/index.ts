@@ -15,24 +15,48 @@ interface PriceConfig {
   features: string[];
 }
 
+// Plan definitions aligned with src/lib/planConstants.ts
 const PLANS: Record<string, PriceConfig> = {
   basic: {
     name: 'Basic',
     monthlyPrice: 999, // $9.99 in cents
     yearlyPrice: 9590, // $95.90 in cents (20% off)
-    features: ['1 water body', '10 test logs per month', 'AI recommendations', 'Basic smart scheduling'],
+    features: [
+      '1 water body (pool, spa, aquarium, or pond)',
+      '10 test logs per month',
+      'AI recommendations',
+      'Basic smart scheduling',
+    ],
   },
   plus: {
     name: 'Plus',
     monthlyPrice: 1499, // $14.99 in cents
     yearlyPrice: 14390, // $143.90 in cents (20% off)
-    features: ['3 water bodies', 'Unlimited test logs', 'AI recommendations', 'Ally remembers your setup', 'Equipment tracking'],
+    features: [
+      '3 water bodies',
+      'Unlimited test logs',
+      'AI recommendations',
+      'Ally remembers your setup',
+      'Smart scheduling',
+      'Equipment tracking',
+      'Custom notifications',
+    ],
   },
   gold: {
     name: 'Gold',
     monthlyPrice: 1999, // $19.99 in cents
     yearlyPrice: 19190, // $191.90 in cents (20% off)
-    features: ['10 water bodies', 'Unlimited test logs', 'Multi-tank management', 'Export history', 'Priority AI'],
+    features: [
+      '10 water bodies',
+      'Unlimited test logs',
+      'AI recommendations',
+      'Smart scheduling',
+      'Equipment tracking',
+      'Multi-system management',
+      'AI habit learning',
+      'Connected device integration',
+      'Export water history (PDF/CSV)',
+    ],
   },
 };
 

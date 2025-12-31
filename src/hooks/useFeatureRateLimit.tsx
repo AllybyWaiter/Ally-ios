@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { addBreadcrumb, FeatureArea } from '@/lib/sentry';
+import { PLAN_DEFINITIONS, type PlanTier } from '@/lib/planConstants';
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -16,28 +17,42 @@ interface RateLimitState {
   limited: boolean;
 }
 
-const RATE_LIMITS: Record<string, Record<string, RateLimitConfig>> = {
-  free: {
-    'water-test-photo': { maxRequests: 5, windowMs: 3600000, feature: 'Water Test Photo Analysis' },
-    'ai-chat': { maxRequests: 10, windowMs: 3600000, feature: 'AI Chat' },
-    'maintenance-suggestions': { maxRequests: 20, windowMs: 86400000, feature: 'Maintenance Suggestions' },
-  },
-  plus: {
-    'water-test-photo': { maxRequests: 25, windowMs: 3600000, feature: 'Water Test Photo Analysis' },
-    'ai-chat': { maxRequests: 50, windowMs: 3600000, feature: 'AI Chat' },
-    'maintenance-suggestions': { maxRequests: 100, windowMs: 86400000, feature: 'Maintenance Suggestions' },
-  },
-  gold: {
-    'water-test-photo': { maxRequests: 100, windowMs: 3600000, feature: 'Water Test Photo Analysis' },
-    'ai-chat': { maxRequests: 200, windowMs: 3600000, feature: 'AI Chat' },
-    'maintenance-suggestions': { maxRequests: 500, windowMs: 86400000, feature: 'Maintenance Suggestions' },
-  },
-  enterprise: {
-    'water-test-photo': { maxRequests: 1000, windowMs: 3600000, feature: 'Water Test Photo Analysis' },
-    'ai-chat': { maxRequests: 1000, windowMs: 3600000, feature: 'AI Chat' },
-    'maintenance-suggestions': { maxRequests: 5000, windowMs: 86400000, feature: 'Maintenance Suggestions' },
-  },
+// Build rate limits from plan constants
+const FEATURE_NAMES: Record<string, string> = {
+  'water-test-photo': 'Water Test Photo Analysis',
+  'ai-chat': 'AI Chat',
+  'maintenance-suggestions': 'Maintenance Suggestions',
 };
+
+function buildRateLimits(): Record<string, Record<string, RateLimitConfig>> {
+  const tiers: PlanTier[] = ['free', 'basic', 'plus', 'gold', 'business', 'enterprise'];
+  const limits: Record<string, Record<string, RateLimitConfig>> = {};
+  
+  for (const tier of tiers) {
+    const plan = PLAN_DEFINITIONS[tier];
+    limits[tier] = {
+      'water-test-photo': {
+        maxRequests: plan.rateLimits.waterTestPhoto.maxRequests,
+        windowMs: plan.rateLimits.waterTestPhoto.windowMs,
+        feature: FEATURE_NAMES['water-test-photo'],
+      },
+      'ai-chat': {
+        maxRequests: plan.rateLimits.aiChat.maxRequests,
+        windowMs: plan.rateLimits.aiChat.windowMs,
+        feature: FEATURE_NAMES['ai-chat'],
+      },
+      'maintenance-suggestions': {
+        maxRequests: plan.rateLimits.maintenanceSuggestions.maxRequests,
+        windowMs: plan.rateLimits.maintenanceSuggestions.windowMs,
+        feature: FEATURE_NAMES['maintenance-suggestions'],
+      },
+    };
+  }
+  
+  return limits;
+}
+
+const RATE_LIMITS = buildRateLimits();
 
 export const useFeatureRateLimit = (endpoint: string) => {
   const { user, subscriptionTier } = useAuth();

@@ -2,80 +2,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth } from 'date-fns';
+import { getPlanDefinition, type PlanFeatures } from '@/lib/planConstants';
 
-export interface PlanLimits {
-  maxAquariums: number;
-  maxTestLogsPerMonth: number | null; // null = unlimited
-  hasEquipmentTracking: boolean;
-  hasAllyMemory: boolean;
-  hasMultiTankManagement: boolean;
-  hasExportHistory: boolean;
-  hasReasoningModel: boolean; // Ally 1.0 Thinking
-  hasAITrendAlerts: boolean; // AI-powered predictive alerts
-}
+export interface PlanLimits extends PlanFeatures {}
 
-const PLAN_LIMITS: Record<string, PlanLimits> = {
-  free: {
-    maxAquariums: 1,
-    maxTestLogsPerMonth: 5,
-    hasEquipmentTracking: false,
-    hasAllyMemory: false,
-    hasMultiTankManagement: false,
-    hasExportHistory: false,
-    hasReasoningModel: false,
-    hasAITrendAlerts: false,
-  },
-  basic: {
-    maxAquariums: 1,
-    maxTestLogsPerMonth: 10,
-    hasEquipmentTracking: false,
-    hasAllyMemory: false,
-    hasMultiTankManagement: false,
-    hasExportHistory: false,
-    hasReasoningModel: false,
-    hasAITrendAlerts: false,
-  },
-  plus: {
-    maxAquariums: 3,
-    maxTestLogsPerMonth: null,
-    hasEquipmentTracking: true,
-    hasAllyMemory: true,
-    hasMultiTankManagement: false,
-    hasExportHistory: false,
-    hasReasoningModel: false,
-    hasAITrendAlerts: true,
-  },
-  gold: {
-    maxAquariums: 10,
-    maxTestLogsPerMonth: null,
-    hasEquipmentTracking: true,
-    hasAllyMemory: true,
-    hasMultiTankManagement: true,
-    hasExportHistory: true,
-    hasReasoningModel: true,
-    hasAITrendAlerts: true,
-  },
-  business: {
-    maxAquariums: Infinity,
-    maxTestLogsPerMonth: null,
-    hasEquipmentTracking: true,
-    hasAllyMemory: true,
-    hasMultiTankManagement: true,
-    hasExportHistory: true,
-    hasReasoningModel: true,
-    hasAITrendAlerts: true,
-  },
-  enterprise: {
-    maxAquariums: Infinity,
-    maxTestLogsPerMonth: null,
-    hasEquipmentTracking: true,
-    hasAllyMemory: true,
-    hasMultiTankManagement: true,
-    hasExportHistory: true,
-    hasReasoningModel: true,
-    hasAITrendAlerts: true,
-  },
-};
+// Re-export for backwards compatibility
+export type { PlanFeatures };
 
 export function usePlanLimits() {
   const { subscriptionTier, user, loading: authLoading } = useAuth();
@@ -83,7 +15,8 @@ export function usePlanLimits() {
   // Only resolve tier once auth is complete and subscriptionTier is loaded
   const isLoading = authLoading || (user && subscriptionTier === null);
   const tier = isLoading ? null : (subscriptionTier || 'free');
-  const limits = tier ? (PLAN_LIMITS[tier] || PLAN_LIMITS.free) : PLAN_LIMITS.free;
+  const planDefinition = getPlanDefinition(tier);
+  const limits = planDefinition.features;
 
   // Query for monthly test log count
   const { data: monthlyTestCount = 0 } = useQuery({
