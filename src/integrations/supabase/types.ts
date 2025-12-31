@@ -1306,12 +1306,15 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          current_streak: number | null
           email: string
           hemisphere: string | null
           id: string
           language_preference: string | null
           last_ai_interaction: string | null
+          last_test_date: string | null
           latitude: number | null
+          longest_streak: number | null
           longitude: number | null
           name: string | null
           onboarding_completed: boolean | null
@@ -1328,12 +1331,15 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          current_streak?: number | null
           email: string
           hemisphere?: string | null
           id?: string
           language_preference?: string | null
           last_ai_interaction?: string | null
+          last_test_date?: string | null
           latitude?: number | null
+          longest_streak?: number | null
           longitude?: number | null
           name?: string | null
           onboarding_completed?: boolean | null
@@ -1350,12 +1356,15 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          current_streak?: number | null
           email?: string
           hemisphere?: string | null
           id?: string
           language_preference?: string | null
           last_ai_interaction?: string | null
+          last_test_date?: string | null
           latitude?: number | null
+          longest_streak?: number | null
           longitude?: number | null
           name?: string | null
           onboarding_completed?: boolean | null
