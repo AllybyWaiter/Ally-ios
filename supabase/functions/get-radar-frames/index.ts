@@ -22,11 +22,12 @@ serve(async (req) => {
   const logger = createLogger(FUNCTION_NAME);
 
   try {
-    const identifier = extractIdentifier(req, "ip") || "unknown";
-    const rateLimit = checkRateLimit(identifier, FUNCTION_NAME, {
+    const identifier = extractIdentifier(req) || "unknown";
+    const rateLimit = checkRateLimit({
+      identifier,
       maxRequests: 120,
       windowMs: 60 * 60 * 1000,
-    });
+    }, logger);
 
     if (!rateLimit.allowed) {
       return new Response(
