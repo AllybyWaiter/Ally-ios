@@ -15,7 +15,8 @@ import {
   LogOut,
   ChevronDown,
   Server,
-  Handshake
+  Handshake,
+  Gift
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminBadgeCounts } from '@/hooks/useAdminBadgeCounts';
@@ -74,6 +75,7 @@ const menuGroups: MenuGroup[] = [
       { id: 'users', label: 'Users', icon: Users, permission: 'manage_users' },
       { id: 'roles', label: 'Roles', icon: Shield, permission: 'manage_roles' },
       { id: 'beta', label: 'Beta Access', icon: UserPlus, roles: ['admin'] },
+      { id: 'referrals', label: 'Referrals', icon: Gift, roles: ['admin'] },
     ],
   },
   {
