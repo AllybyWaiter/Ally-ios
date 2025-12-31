@@ -17,6 +17,9 @@ interface ProfileContextType {
   units: UnitSystem;
   onboardingCompleted: boolean | null;
   profileLoading: boolean;
+  currentStreak: number | null;
+  longestStreak: number | null;
+  lastTestDate: string | null;
   refreshProfile: () => Promise<void>;
 }
 
@@ -33,13 +36,16 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [unitPreference, setUnitPreference] = useState<string | null>(null);
   const [hemisphere, setHemisphere] = useState<string | null>(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [currentStreak, setCurrentStreak] = useState<number | null>(null);
+  const [longestStreak, setLongestStreak] = useState<number | null>(null);
+  const [lastTestDate, setLastTestDate] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
   const fetchUserProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, hemisphere, onboarding_completed')
+        .select('name, subscription_tier, theme_preference, language_preference, unit_preference, hemisphere, onboarding_completed, current_streak, longest_streak, last_test_date')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -62,6 +68,9 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         setUnitPreference(data.unit_preference);
         setHemisphere(data.hemisphere);
         setOnboardingCompleted(data.onboarding_completed === true);
+        setCurrentStreak(data.current_streak ?? 0);
+        setLongestStreak(data.longest_streak ?? 0);
+        setLastTestDate(data.last_test_date);
         setCanCreateCustomTemplates(['plus', 'gold', 'enterprise'].includes(data.subscription_tier || ''));
         setUserContext(userId, undefined, data.name || undefined);
       } else {
@@ -88,6 +97,9 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     setLanguagePreference(null);
     setUnitPreference(null);
     setHemisphere(null);
+    setCurrentStreak(null);
+    setLongestStreak(null);
+    setLastTestDate(null);
     // Use null (unknown) instead of false - we don't know onboarding state when logged out
     setOnboardingCompleted(null);
   }, []);
@@ -156,6 +168,9 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       units: (unitPreference as UnitSystem) || 'imperial',
       onboardingCompleted,
       profileLoading,
+      currentStreak,
+      longestStreak,
+      lastTestDate,
       refreshProfile
     }}>
       {children}
@@ -177,6 +192,9 @@ export const useProfileContext = () => {
       units: 'imperial' as UnitSystem,
       onboardingCompleted: null,
       profileLoading: true,
+      currentStreak: null,
+      longestStreak: null,
+      lastTestDate: null,
       refreshProfile: async () => {},
     };
   }
