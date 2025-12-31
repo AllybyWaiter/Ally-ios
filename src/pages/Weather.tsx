@@ -77,7 +77,7 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
 
   return (
     <LazyLoadWithTimeout
-      timeoutMs={15000}
+      timeoutMs={20000}
       errorTitle="Unable to load radar"
       icon={<Radar className="h-5 w-5" />}
       fallback={radarFallback}
