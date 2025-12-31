@@ -139,16 +139,30 @@ function MapResizer() {
   const map = useMap();
   
   useEffect(() => {
-    // Force map to recalculate after mount and visibility
-    const timer = setTimeout(() => {
+    // Force map to recalculate after mount and visibility - multiple passes for reliability
+    const timer1 = setTimeout(() => {
       try {
-        console.log('[Radar] MapResizer: invalidating size');
+        console.log('[Radar] MapResizer: invalidating size (300ms)');
         map.invalidateSize();
       } catch (err) {
         console.error('[Radar] MapResizer error:', err);
       }
-    }, 100);
-    return () => clearTimeout(timer);
+    }, 300);
+    
+    // Second pass for slow renders
+    const timer2 = setTimeout(() => {
+      try {
+        console.log('[Radar] MapResizer: invalidating size (1000ms)');
+        map.invalidateSize();
+      } catch (err) {
+        console.error('[Radar] MapResizer error (1s):', err);
+      }
+    }, 1000);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [map]);
   
   return null;
@@ -307,12 +321,14 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
     }
   }, []);
 
-  // Signal ready when map is mounted
+  // Signal ready earlier - when leafletReady is true (don't wait for full map mount)
+  // This prevents LazyLoadWithTimeout from timing out while waiting for tiles
   useEffect(() => {
-    if (mapMounted && onReady) {
+    if (leafletReady && onReady) {
+      console.log('[Radar] Leaflet ready - signaling onReady to clear timeout');
       onReady();
     }
-  }, [mapMounted, onReady]);
+  }, [leafletReady, onReady]);
 
   // Fetch radar frames from RainViewer
   useEffect(() => {
