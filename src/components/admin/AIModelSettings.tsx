@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
 import { queryPresets } from '@/lib/queryConfig';
+import { PLAN_DEFINITIONS, type PlanTier } from '@/lib/planConstants';
 
 interface RateLimitInfo {
   tier: string;
@@ -30,12 +31,13 @@ interface RateLimitInfo {
   memoryLimit: number;
 }
 
-const tierLimits: RateLimitInfo[] = [
-  { tier: 'free', chatLimit: 10, photoLimit: 5, memoryLimit: 0 },
-  { tier: 'plus', chatLimit: 100, photoLimit: 50, memoryLimit: 50 },
-  { tier: 'gold', chatLimit: 500, photoLimit: 200, memoryLimit: 200 },
-  { tier: 'enterprise', chatLimit: -1, photoLimit: -1, memoryLimit: -1 },
-];
+// Build tier limits from plan constants
+const tierLimits: RateLimitInfo[] = (['free', 'basic', 'plus', 'gold', 'business', 'enterprise'] as PlanTier[]).map(tier => ({
+  tier,
+  chatLimit: PLAN_DEFINITIONS[tier].adminLimits.chatLimit,
+  photoLimit: PLAN_DEFINITIONS[tier].adminLimits.photoLimit,
+  memoryLimit: PLAN_DEFINITIONS[tier].adminLimits.memoryLimit,
+}));
 
 const systemPromptPreview = `You are Ally, a friendly AI assistant specialized in aquatic care...
 
