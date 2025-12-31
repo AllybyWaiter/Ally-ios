@@ -22,6 +22,7 @@ import AIModelSettings from '@/components/admin/AIModelSettings';
 import AIMonitoring from '@/components/admin/AIMonitoring';
 import FeatureFlagManager from '@/components/admin/FeatureFlagManager';
 import { AdminDashboardHome } from '@/components/admin/AdminDashboardHome';
+import { ReferralLeaderboard } from '@/components/admin/ReferralLeaderboard';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { formatDate } from '@/lib/formatters';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
@@ -186,10 +187,19 @@ export default function Admin() {
           </SectionErrorBoundary>
         );
 
+      case 'referrals':
+        if (!hasAnyRole(['admin'])) return <AccessDenied />;
+        return (
+          <SectionErrorBoundary fallbackTitle="Failed to load referral leaderboard" featureArea={FeatureArea.ADMIN}>
+            <ReferralLeaderboard />
+          </SectionErrorBoundary>
+        );
+
       case 'blog':
         if (!hasPermission('manage_blog') && !hasPermission('publish_blog')) return <AccessDenied />;
         return (
           <SectionErrorBoundary fallbackTitle="Failed to load blog manager" featureArea={FeatureArea.ADMIN}>
+            <BlogManager />
             <BlogManager />
           </SectionErrorBoundary>
         );
