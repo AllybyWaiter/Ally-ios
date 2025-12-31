@@ -18,6 +18,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { PLAN_DEFINITIONS, getPaidPlans } from '@/lib/planConstants';
 
 interface UpgradePlanDialogProps {
   open: boolean;
@@ -25,38 +26,23 @@ interface UpgradePlanDialogProps {
   currentTier?: string;
 }
 
-const plans = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    icon: Zap,
-    monthlyPrice: 9.99,
-    yearlyPrice: 95.90,
-    description: 'Perfect for single tank owners',
-    features: ['1 water body', '10 test logs/month', 'AI recommendations'],
-    popular: false,
-  },
-  {
-    id: 'plus',
-    name: 'Plus',
-    icon: Sparkles,
-    monthlyPrice: 14.99,
-    yearlyPrice: 143.90,
-    description: 'Most popular for hobbyists',
-    features: ['3 water bodies', 'Unlimited test logs', 'Ally remembers your setup', 'Equipment tracking'],
-    popular: true,
-  },
-  {
-    id: 'gold',
-    name: 'Gold',
-    icon: Crown,
-    monthlyPrice: 19.99,
-    yearlyPrice: 191.90,
-    description: 'For serious aquarists',
-    features: ['10 water bodies', 'Multi-tank management', 'Export history', 'Priority AI'],
-    popular: false,
-  },
-];
+const PLAN_ICONS = {
+  basic: Zap,
+  plus: Sparkles,
+  gold: Crown,
+};
+
+// Build plans from constants
+const plans = getPaidPlans().map(({ tier, definition }) => ({
+  id: tier,
+  name: definition.name,
+  icon: PLAN_ICONS[tier as keyof typeof PLAN_ICONS] || Zap,
+  monthlyPrice: definition.pricing?.displayMonthly || 0,
+  yearlyPrice: definition.pricing?.displayYearly || 0,
+  description: definition.description,
+  features: definition.marketingFeatures.slice(0, 4), // Show first 4 features
+  popular: tier === 'plus',
+}));
 
 function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: () => void }) {
   const [isAnnual, setIsAnnual] = useState(true);

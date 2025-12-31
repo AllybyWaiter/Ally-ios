@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDomainType, getAppUrl } from "@/hooks/useDomainType";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PLAN_DEFINITIONS, getPaidPlans } from "@/lib/planConstants";
 
 const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -21,55 +22,15 @@ const Pricing = () => {
   const navigate = useNavigate();
   const domainType = useDomainType();
 
-  const plans = [
-    {
-      name: "Basic",
-      monthlyPrice: 9.99,
-      yearlyPrice: 95.90,
-      description: "Perfect for getting started",
-      features: [
-        "1 water body (pool, spa, aquarium, or pond)",
-        "10 test logs per month",
-        "AI recommendations",
-        "Basic smart scheduling",
-      ],
-      popular: false,
-    },
-    {
-      name: "Plus",
-      monthlyPrice: 14.99,
-      yearlyPrice: 143.90,
-      description: "Most popular for hobbyists",
-      features: [
-        "3 water bodies",
-        "Unlimited test logs",
-        "AI recommendations",
-        "Ally remembers your setup",
-        "Smart scheduling",
-        "Equipment tracking",
-        "Custom notifications",
-      ],
-      popular: true,
-    },
-    {
-      name: "Gold",
-      monthlyPrice: 19.99,
-      yearlyPrice: 191.90,
-      description: "For serious enthusiasts",
-      features: [
-        "10 water bodies",
-        "Unlimited test logs",
-        "AI recommendations",
-        "Smart scheduling",
-        "Equipment tracking",
-        "Multi-system management",
-        "AI habit learning",
-        "Connected device integration",
-        "Export water history (PDF/CSV)",
-      ],
-      popular: false,
-    },
-  ];
+  // Build plans from constants
+  const plans = getPaidPlans().map(({ tier, definition }) => ({
+    name: definition.name,
+    monthlyPrice: definition.pricing?.displayMonthly || 0,
+    yearlyPrice: definition.pricing?.displayYearly || 0,
+    description: definition.description,
+    features: definition.marketingFeatures,
+    popular: tier === 'plus',
+  }));
 
   const comparisonFeatures = [
     {
