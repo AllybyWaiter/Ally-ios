@@ -87,10 +87,26 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
         });
 
       if (messageError) throw messageError;
+
+      // Send confirmation email (non-blocking)
+      try {
+        await supabase.functions.invoke('send-ticket-confirmation', {
+          body: {
+            name: formData.name,
+            email: formData.email,
+            ticketId: ticket.id,
+            priority: priority || 'medium',
+            messagePreview: formData.message,
+          },
+        });
+      } catch (emailError) {
+        console.warn('Failed to send confirmation email:', emailError);
+        // Don't fail the ticket creation if email fails
+      }
       
       toast({
         title: "Ticket Created!",
-        description: `Priority: ${priority.toUpperCase()}. We'll get back to you soon.`,
+        description: `We've sent a confirmation to ${formData.email}. Priority: ${(priority || 'medium').toUpperCase()}.`,
       });
       
       onOpenChange(false);
