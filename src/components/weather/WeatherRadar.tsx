@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, Component, ReactNode }
 import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Critical: ensure Leaflet CSS is loaded
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -330,19 +331,36 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
     }
   }, [leafletReady, onReady]);
 
-  // Fetch radar frames from RainViewer
+  // Fetch radar frames (via backend proxy for reliability)
   useEffect(() => {
     const fetchRadarFrames = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-        if (!response.ok) throw new Error('Failed to fetch radar data');
-        
-        const data: RainViewerResponse = await response.json();
-        const allFrames = [...data.radar.past, ...data.radar.nowcast];
+
+        // Prefer backend proxy to avoid CORS and network filtering issues
+        const { data: proxyData, error: proxyError } = await supabase.functions.invoke('get-radar-frames');
+
+        let raw: RainViewerResponse | null = null;
+
+        if (!proxyError && proxyData?.data) {
+          raw = proxyData.data as RainViewerResponse;
+          console.log('[Radar] Loaded frames via backend proxy:', proxyData?.source);
+        } else {
+          if (proxyError) {
+            console.warn('[Radar] Backend proxy failed, falling back to direct fetch:', proxyError);
+          }
+
+          const response = await fetch('https://api.rainviewer.com/public/weather-maps.json', {
+            headers: { Accept: 'application/json' },
+          });
+          if (!response.ok) throw new Error(`Failed to fetch radar data (${response.status})`);
+          raw = (await response.json()) as RainViewerResponse;
+        }
+
+        const allFrames = [...raw.radar.past, ...raw.radar.nowcast];
         setFrames(allFrames);
-        setCurrentFrameIndex(data.radar.past.length - 1);
+        setCurrentFrameIndex(raw.radar.past.length - 1);
       } catch (err) {
         setError('Unable to load radar data');
         console.error('[Radar] Radar fetch error:', err);
