@@ -18,12 +18,13 @@ This guide covers how to create and maintain Supabase Edge Functions for Ally.
 
 ## Overview
 
-Edge functions are serverless functions that run on Supabase's edge network. They're used for:
+Edge functions are serverless functions that run on the edge network. They're used for:
 
-- AI/ML operations (chat, image analysis)
+- AI and ML operations (chat, image analysis)
 - External API integrations
 - Sensitive operations requiring secrets
 - Complex business logic
+- Proxying third party APIs when browsers block direct requests (example: get radar frames for the weather radar)
 
 **Location**: `supabase/functions/`
 
