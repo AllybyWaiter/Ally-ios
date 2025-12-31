@@ -86,3 +86,9 @@ verify_jwt = false
 
 [functions.apply-referral-reward]
 verify_jwt = false
+
+[functions.send-ticket-confirmation]
+verify_jwt = false
+
+[functions.send-announcement]
+verify_jwt = true
