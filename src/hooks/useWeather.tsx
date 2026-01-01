@@ -167,7 +167,7 @@ export function useWeather() {
     }
   }, []);
 
-  // Auto-detect GPS and fetch weather like native weather apps
+  // Request fresh GPS location and save to profile
   const fetchWeatherForCurrentLocation = useCallback(async (forceRefresh = false) => {
     if (!navigator.geolocation) {
       setState(prev => ({ ...prev, loading: false, error: 'Geolocation not supported' }));
@@ -179,6 +179,15 @@ export function useWeather() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
+        
+        // Save the new coordinates to profile for future sessions (no more GPS prompts)
+        if (user?.id) {
+          await supabase
+            .from('profiles')
+            .update({ latitude, longitude })
+            .eq('user_id', user.id);
+        }
+        
         await fetchWeather(latitude, longitude);
       },
       async (error) => {
@@ -208,7 +217,7 @@ export function useWeather() {
     );
   }, [user?.id, fetchWeather]);
 
-  // Load weather on mount if user has weather enabled
+  // Load weather on mount if user has weather enabled - prioritize saved location
   useEffect(() => {
     if (!user?.id) {
       setState(prev => ({ ...prev, initializing: false, loading: false }));
@@ -219,7 +228,7 @@ export function useWeather() {
       try {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('weather_enabled')
+          .select('weather_enabled, latitude, longitude')
           .eq('user_id', user.id)
           .single();
 
@@ -233,8 +242,13 @@ export function useWeather() {
             return;
           }
 
-          // Fetch fresh weather using current GPS
-          await fetchWeatherForCurrentLocation();
+          // Use saved profile coordinates if available (NO GPS PROMPT!)
+          if (profile.latitude && profile.longitude) {
+            await fetchWeather(profile.latitude, profile.longitude);
+          } else {
+            // Only request GPS if no saved location exists
+            await fetchWeatherForCurrentLocation();
+          }
         }
       } finally {
         setState(prev => ({ ...prev, initializing: false, loading: false }));
@@ -242,7 +256,7 @@ export function useWeather() {
     };
 
     loadWeather();
-  }, [user?.id, fetchWeatherForCurrentLocation]);
+  }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation]);
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(CACHE_KEY);
