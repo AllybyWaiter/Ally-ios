@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { getDistanceKm } from '@/lib/geoUtils';
+
+const LOCATION_CHANGE_THRESHOLD_KM = 10; // Auto-update if moved more than 10km
 
 export type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'snow' | 'storm' | 'fog';
 
@@ -217,6 +220,48 @@ export function useWeather() {
     );
   }, [user?.id, fetchWeather]);
 
+  // Silently check if user moved significantly and update location if needed
+  const checkAndUpdateLocation = useCallback(async (
+    savedLat: number,
+    savedLon: number
+  ): Promise<{ lat: number; lon: number }> => {
+    if (!navigator.geolocation) {
+      return { lat: savedLat, lon: savedLon };
+    }
+
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const distance = getDistanceKm(savedLat, savedLon, latitude, longitude);
+
+          // If moved significantly, update profile silently
+          if (distance > LOCATION_CHANGE_THRESHOLD_KM) {
+            console.log(`Location changed by ${distance.toFixed(1)}km, updating...`);
+            if (user?.id) {
+              await supabase
+                .from('profiles')
+                .update({ latitude, longitude })
+                .eq('user_id', user.id);
+            }
+            resolve({ lat: latitude, lon: longitude });
+          } else {
+            resolve({ lat: savedLat, lon: savedLon });
+          }
+        },
+        () => {
+          // GPS failed silently, use saved location
+          resolve({ lat: savedLat, lon: savedLon });
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: 60000,
+        }
+      );
+    });
+  }, [user?.id]);
+
   // Load weather on mount if user has weather enabled - prioritize saved location
   useEffect(() => {
     if (!user?.id) {
@@ -244,7 +289,9 @@ export function useWeather() {
 
           // Use saved profile coordinates if available (NO GPS PROMPT!)
           if (profile.latitude && profile.longitude) {
-            await fetchWeather(profile.latitude, profile.longitude);
+            // Silently check if location changed significantly
+            const { lat, lon } = await checkAndUpdateLocation(profile.latitude, profile.longitude);
+            await fetchWeather(lat, lon);
           } else {
             // Only request GPS if no saved location exists
             await fetchWeatherForCurrentLocation();
@@ -256,7 +303,7 @@ export function useWeather() {
     };
 
     loadWeather();
-  }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation]);
+  }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation, checkAndUpdateLocation]);
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(CACHE_KEY);
