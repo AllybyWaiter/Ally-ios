@@ -64,6 +64,20 @@ export default function CheckoutSuccess() {
           }
         }
         
+        // CRITICAL: Complete onboarding if user paid during onboarding flow
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (profile && profile.onboarding_completed === false) {
+          await supabase
+            .from('profiles')
+            .update({ onboarding_completed: true })
+            .eq('user_id', user.id);
+        }
+        
         // Refresh the auth context to update everywhere
         if (refreshProfile) {
           await refreshProfile();
