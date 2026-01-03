@@ -11,6 +11,11 @@ interface PlanSelectionStepProps {
   userId: string;
   onComplete: () => void;
   onBack: () => void;
+  currentPreferences?: {
+    units: string;
+    theme: string;
+    language: string;
+  };
 }
 
 const PLAN_ICONS = {
@@ -31,7 +36,7 @@ const plans = getPaidPlans().map(({ tier, definition }) => ({
   popular: tier === 'plus',
 }));
 
-export function PlanSelectionStep({ userId, onComplete, onBack }: PlanSelectionStepProps) {
+export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferences }: PlanSelectionStepProps) {
   const [isAnnual, setIsAnnual] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +47,19 @@ export function PlanSelectionStep({ userId, onComplete, onBack }: PlanSelectionS
     setIsLoading(true);
 
     try {
+      // Save preferences before redirecting to Stripe (prevents data loss if user pays during onboarding)
+      if (currentPreferences) {
+        await supabase
+          .from('profiles')
+          .update({
+            unit_preference: currentPreferences.units,
+            theme_preference: currentPreferences.theme,
+            language_preference: currentPreferences.language,
+            // NOTE: NOT setting onboarding_completed here - that happens after payment confirmation
+          })
+          .eq('user_id', userId);
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           plan_name: planId,
