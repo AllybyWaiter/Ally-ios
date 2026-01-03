@@ -572,6 +572,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               userId={userId}
               onBack={() => setStep(5)}
               onComplete={handleSubmit}
+              currentPreferences={{
+                units: unitPreference,
+                theme: themePreference,
+                language: languagePreference,
+              }}
             />
           )}
         </CardContent>
