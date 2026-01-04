@@ -109,7 +109,9 @@ const AquariumCard = memo(function AquariumCard({
       className="glass-card animate-fade-up opacity-0 relative"
       style={{ animationDelay: `${(index + 3) * 100}ms` }}
       onMouseEnter={() => {
-        import('@/pages/AquariumDetail').catch(() => {});
+        import('@/pages/AquariumDetail').catch((error) => {
+          console.debug('Failed to preload AquariumDetail:', error);
+        });
       }}
       {...(isMobile ? longPressHandlers : {})}
     >

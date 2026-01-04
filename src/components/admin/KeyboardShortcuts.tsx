@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -59,6 +59,11 @@ export function KeyboardShortcuts({
   onCommandPaletteOpen,
   onSectionChange,
 }: KeyboardShortcutsProps) {
+  // Track timeouts for cleanup
+  const gKeyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const secondKeyListenerRef = useRef<((e: KeyboardEvent) => void) | null>(null);
+
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Skip if user is typing in an input
     if (
@@ -88,6 +93,14 @@ export function KeyboardShortcuts({
 
     // Navigation shortcuts (G + key)
     if (key === 'g' && !isMeta) {
+      // Clear any existing listeners/timeouts
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+      }
+      if (secondKeyListenerRef.current) {
+        document.removeEventListener('keydown', secondKeyListenerRef.current);
+      }
+
       const handleSecondKey = (e: KeyboardEvent) => {
         const secondKey = e.key.toLowerCase();
         const navigationMap: Record<string, string> = {
@@ -108,15 +121,22 @@ export function KeyboardShortcuts({
           onSectionChange(navigationMap[secondKey]);
         }
         
+        if (cleanupTimeoutRef.current) {
+          clearTimeout(cleanupTimeoutRef.current);
+        }
         document.removeEventListener('keydown', handleSecondKey);
+        secondKeyListenerRef.current = null;
       };
 
+      secondKeyListenerRef.current = handleSecondKey;
+
       // Listen for the second key
-      setTimeout(() => {
+      gKeyTimeoutRef.current = setTimeout(() => {
         document.addEventListener('keydown', handleSecondKey, { once: true });
         // Remove listener after 1 second if no key pressed
-        setTimeout(() => {
+        cleanupTimeoutRef.current = setTimeout(() => {
           document.removeEventListener('keydown', handleSecondKey);
+          secondKeyListenerRef.current = null;
         }, 1000);
       }, 0);
     }
@@ -129,7 +149,18 @@ export function KeyboardShortcuts({
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (gKeyTimeoutRef.current) {
+        clearTimeout(gKeyTimeoutRef.current);
+      }
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+      }
+      if (secondKeyListenerRef.current) {
+        document.removeEventListener('keydown', secondKeyListenerRef.current);
+      }
+    };
   }, [handleKeyDown]);
 
   return (
