@@ -36,6 +36,7 @@ import { compressImage, validateImageFile } from "@/lib/imageCompression";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { useTTS } from "@/hooks/useTTS";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface Message {
   role: "user" | "assistant";
@@ -324,9 +325,11 @@ const AllyChat = () => {
   };
 
   const copyMessage = useCallback(async (content: string, index: number) => {
-    await navigator.clipboard.writeText(content);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
+    const success = await copyToClipboard(content);
+    if (success) {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    }
   }, []);
 
   const startEditMessage = useCallback((index: number, content: string) => {

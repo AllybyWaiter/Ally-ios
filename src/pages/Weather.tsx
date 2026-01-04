@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LazyLoadWithTimeout } from '@/components/ui/lazy-load-with-timeout';
+import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
@@ -393,7 +394,9 @@ export default function Weather() {
 
           {/* Weather Radar - with error boundary fallback */}
           {weather.latitude != null && weather.longitude != null && (
-            <WeatherRadarWrapper latitude={weather.latitude} longitude={weather.longitude} />
+            <SectionErrorBoundary fallbackTitle="Weather radar unavailable">
+              <WeatherRadarWrapper latitude={weather.latitude} longitude={weather.longitude} />
+            </SectionErrorBoundary>
           )}
 
           {/* Hourly Forecast */}

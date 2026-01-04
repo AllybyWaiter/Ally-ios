@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { copyToClipboard } from "@/lib/clipboard";
 
 interface LocationMapPreviewProps {
   latitude: number;
@@ -39,16 +40,15 @@ export function LocationMapPreview({
   const coordinatesText = `${formatCoordinate(latitude, true)}, ${formatCoordinate(longitude, false)}`;
 
   const handleCopyCoordinates = async () => {
-    try {
-      await navigator.clipboard.writeText(`${latitude}, ${longitude}`);
+    const success = await copyToClipboard(`${latitude}, ${longitude}`);
+    if (success) {
       setCopied(true);
       toast({
         title: t('common.copied'),
         description: coordinatesText,
       });
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback for older browsers
+    } else {
       toast({
         title: t('aquarium.coordinates'),
         description: `${latitude}, ${longitude}`,

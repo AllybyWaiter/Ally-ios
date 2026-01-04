@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { copyToClipboard } from '@/lib/clipboard';
 
 interface ReferralStats {
   totalReferrals: number;
@@ -149,10 +149,10 @@ export function useReferralCode() {
   const copyCode = async () => {
     if (!referralCode) return;
     
-    try {
-      await navigator.clipboard.writeText(referralCode);
+    const success = await copyToClipboard(referralCode);
+    if (success) {
       toast.success('Referral code copied!');
-    } catch {
+    } else {
       toast.error('Failed to copy code');
     }
   };
@@ -162,10 +162,10 @@ export function useReferralCode() {
     const url = getShareUrl();
     if (!url) return;
     
-    try {
-      await navigator.clipboard.writeText(url);
+    const success = await copyToClipboard(url);
+    if (success) {
       toast.success('Share link copied!');
-    } catch {
+    } else {
       toast.error('Failed to copy link');
     }
   };
