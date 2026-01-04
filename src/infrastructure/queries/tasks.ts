@@ -41,9 +41,10 @@ export async function fetchTask(taskId: string) {
     .from('maintenance_tasks')
     .select('*')
     .eq('id', taskId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Task not found');
   return data as MaintenanceTask;
 }
 

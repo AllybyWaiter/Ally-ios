@@ -135,9 +135,10 @@ export async function fetchWaterTest(testId: string) {
     .from('water_tests')
     .select('*, test_parameters(*)')
     .eq('id', testId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Water test not found');
   return data as WaterTestWithParameters;
 }
 

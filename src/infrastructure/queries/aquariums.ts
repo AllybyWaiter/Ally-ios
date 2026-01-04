@@ -58,9 +58,10 @@ export async function fetchAquarium(aquariumId: string) {
     .from('aquariums')
     .select('*')
     .eq('id', aquariumId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Aquarium not found');
   return data as Aquarium;
 }
 
@@ -76,9 +77,10 @@ export async function fetchAquariumWithDetails(aquariumId: string) {
       water_tests(*, test_parameters(*))
     `)
     .eq('id', aquariumId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Aquarium not found');
   return data;
 }
 

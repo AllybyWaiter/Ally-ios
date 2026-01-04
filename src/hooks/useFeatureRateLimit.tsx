@@ -70,12 +70,21 @@ export const useFeatureRateLimit = (endpoint: string) => {
 
     const checkRateLimit = async () => {
       const storageKey = `rate_limit_${user.id}_${endpoint}`;
-      const stored = localStorage.getItem(storageKey);
       const now = Date.now();
+      
+      // Safe localStorage parsing
+      let data: { count: number; timestamp: number; reset: number } | null = null;
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          data = JSON.parse(stored);
+        }
+      } catch {
+        // Invalid JSON in localStorage, reset
+        data = null;
+      }
 
-      if (stored) {
-        const data = JSON.parse(stored);
-        
+      if (data && typeof data.count === 'number' && typeof data.timestamp === 'number') {
         // Reset if window expired
         if (now - data.timestamp > config.windowMs) {
           const newData = {
@@ -99,7 +108,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
           });
         }
       } else {
-        // First request
+        // First request or invalid data
         const newData = {
           count: 0,
           timestamp: now,
@@ -121,10 +130,21 @@ export const useFeatureRateLimit = (endpoint: string) => {
     if (!user || !config) return false;
 
     const storageKey = `rate_limit_${user.id}_${endpoint}`;
-    const stored = localStorage.getItem(storageKey);
     const now = Date.now();
+    
+    // Safe localStorage parsing
+    let data: { count: number; timestamp: number; reset: number } | null = null;
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        data = JSON.parse(stored);
+      }
+    } catch {
+      // Invalid JSON, treat as no data
+      data = null;
+    }
 
-    if (!stored) {
+    if (!data || typeof data.count !== 'number' || typeof data.timestamp !== 'number') {
       const newData = {
         count: 1,
         timestamp: now,
@@ -150,8 +170,6 @@ export const useFeatureRateLimit = (endpoint: string) => {
       
       return true;
     }
-
-    const data = JSON.parse(stored);
 
     // Reset if window expired
     if (now - data.timestamp > config.windowMs) {

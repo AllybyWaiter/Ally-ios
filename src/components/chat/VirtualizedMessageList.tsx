@@ -416,10 +416,16 @@ export const VirtualizedMessageList = memo(({
     measureElement: (element) => element.getBoundingClientRect().height,
   });
 
-  // Auto-scroll to bottom on new messages
+  // Smart auto-scroll: only scroll if user is near the bottom
   useEffect(() => {
-    if (parentRef.current) {
-      virtualizer.scrollToIndex(messages.length - 1, { align: 'end', behavior: 'smooth' });
+    if (parentRef.current && messages.length > 0) {
+      const container = parentRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      
+      // Only auto-scroll if user is near the bottom (not scrolled up reading history)
+      if (isNearBottom) {
+        virtualizer.scrollToIndex(messages.length - 1, { align: 'end', behavior: 'smooth' });
+      }
     }
   }, [messages.length, virtualizer]);
 

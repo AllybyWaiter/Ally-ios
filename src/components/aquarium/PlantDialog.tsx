@@ -121,9 +121,10 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Common Name *</Label>
+              <Label htmlFor="plant-name">Common Name *</Label>
               <Input
-                id="name"
+                id="plant-name"
+                aria-label="Plant common name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Java Fern"
@@ -131,9 +132,10 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="species">Species *</Label>
+              <Label htmlFor="plant-species">Species *</Label>
               <Input
-                id="species"
+                id="plant-species"
+                aria-label="Plant species"
                 value={formData.species}
                 onChange={(e) => setFormData({ ...formData, species: e.target.value })}
                 placeholder="e.g., Microsorum pteropus"
@@ -144,9 +146,10 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
+              <Label htmlFor="plant-quantity">Quantity *</Label>
               <Input
-                id="quantity"
+                id="plant-quantity"
+                aria-label="Plant quantity"
                 type="number"
                 min="1"
                 value={formData.quantity}
@@ -155,9 +158,10 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date_added">Date Added *</Label>
+              <Label htmlFor="plant-date-added">Date Added *</Label>
               <Input
-                id="date_added"
+                id="plant-date-added"
+                aria-label="Date plant was added"
                 type="date"
                 value={formData.date_added}
                 onChange={(e) => setFormData({ ...formData, date_added: e.target.value })}
@@ -168,9 +172,12 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="placement">Placement *</Label>
-              <Select value={formData.placement} onValueChange={(value) => setFormData({ ...formData, placement: value })}>
-                <SelectTrigger>
+              <Label htmlFor="plant-placement">Placement *</Label>
+              <Select 
+                value={formData.placement} 
+                onValueChange={(value) => setFormData({ ...formData, placement: value })}
+              >
+                <SelectTrigger id="plant-placement" aria-label="Plant placement in tank">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,9 +189,12 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="condition">Condition *</Label>
-              <Select value={formData.condition} onValueChange={(value) => setFormData({ ...formData, condition: value })}>
-                <SelectTrigger>
+              <Label htmlFor="plant-condition">Condition *</Label>
+              <Select 
+                value={formData.condition} 
+                onValueChange={(value) => setFormData({ ...formData, condition: value })}
+              >
+                <SelectTrigger id="plant-condition" aria-label="Plant condition">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -197,9 +207,10 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+            <Label htmlFor="plant-notes">Notes</Label>
             <Textarea
-              id="notes"
+              id="plant-notes"
+              aria-label="Additional notes about the plant"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Add care requirements, growth observations, or fertilization schedule..."

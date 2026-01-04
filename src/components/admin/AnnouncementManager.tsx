@@ -84,6 +84,19 @@ export default function AnnouncementManager() {
     try {
       announcementSchema.parse(formData);
 
+      // Validate scheduled date is in the future if provided
+      if (formData.scheduled_at) {
+        const scheduledDate = new Date(formData.scheduled_at);
+        if (scheduledDate <= new Date()) {
+          toast({
+            title: 'Error',
+            description: 'Scheduled date must be in the future',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -187,20 +200,40 @@ export default function AnnouncementManager() {
     return <Badge variant={variants[type] || 'default'}>{type}</Badge>;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   const stats = {
     total: announcements.length,
     draft: announcements.filter(a => a.status === 'draft').length,
     scheduled: announcements.filter(a => a.status === 'scheduled').length,
     sent: announcements.filter(a => a.status === 'sent').length,
   };
+
+  // Loading skeleton for stats
+  const StatsCardSkeleton = () => (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+      </CardHeader>
+      <CardContent>
+        <div className="h-8 w-12 bg-muted rounded animate-pulse" />
+      </CardContent>
+    </Card>
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
