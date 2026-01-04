@@ -25,9 +25,22 @@ import { LazySyntaxHighlighter } from "./LazySyntaxHighlighter";
 import { parseFollowUpSuggestions, FollowUpSuggestions, type FollowUpItem } from "./FollowUpSuggestions";
 import { QuickActionChips, detectQuickActions, type QuickAction } from "./QuickActionChips";
 
+// Typed props for markdown components
+interface CodeProps {
+  node?: unknown;
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
+interface AnchorProps {
+  children?: React.ReactNode;
+  href?: string;
+}
+
 // Memoized markdown components to prevent recreation on every render
 const markdownComponents = {
-  code({ node, inline, className, children, ...props }: any) {
+  code({ inline, className, children, ...props }: CodeProps) {
     const match = /language-(\w+)/.exec(className || '');
     const codeString = String(children).replace(/\n$/, '');
     
@@ -42,7 +55,7 @@ const markdownComponents = {
       </code>
     );
   },
-  a: ({ children, href }: any) => (
+  a: ({ children, href }: AnchorProps) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
       {children}
     </a>

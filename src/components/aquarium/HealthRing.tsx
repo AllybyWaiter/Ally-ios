@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { useMemo } from 'react';
+import { useId } from 'react';
 
 interface HealthRingProps {
   score: number;
@@ -29,7 +29,8 @@ export function HealthRing({
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
 
-  const gradientId = useMemo(() => `health-gradient-${Math.random().toString(36).slice(2)}`, []);
+  // Use React's useId for stable, unique gradient IDs
+  const gradientId = useId();
 
   return (
     <div className="relative inline-flex items-center justify-center">

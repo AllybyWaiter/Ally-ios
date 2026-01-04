@@ -256,8 +256,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     });
   }, [taskToComplete, completeMutation]);
 
-  // All hooks MUST be called before any early returns (React Rules of Hooks)
-  const today = useMemo(() => startOfDay(new Date()), []);
+  // Calculate today fresh on each render to prevent stale date issues past midnight
+  const today = startOfDay(new Date());
   
   const pendingTasks = useMemo(
     () => tasks?.filter((t) => t.status === "pending") || [],
