@@ -35,26 +35,32 @@ export function useConversationManager(userId: string | null) {
   const [selectedAquarium, setSelectedAquarium] = useState<string>("general");
 
   const fetchAquariums = useCallback(async () => {
+    if (!userId) return;
+    
     const { data } = await supabase
       .from('aquariums')
       .select('id, name, type')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (data) {
       setAquariums(data);
     }
-  }, []);
+  }, [userId]);
 
   const fetchConversations = useCallback(async () => {
+    if (!userId) return;
+    
     const { data } = await supabase
       .from('chat_conversations')
       .select('*')
+      .eq('user_id', userId)
       .order('updated_at', { ascending: false });
 
     if (data) {
       setConversations(data);
     }
-  }, []);
+  }, [userId]);
 
   const loadConversation = useCallback(async (conversationId: string): Promise<Message[]> => {
     const { data: messagesData } = await supabase

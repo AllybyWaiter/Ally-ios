@@ -79,16 +79,32 @@ export async function getFishSpeciesByNames(names: string[]): Promise<FishSpecie
 }
 
 /**
- * Get all fish species (for admin/reference)
+ * Get all fish species with pagination (for admin/reference)
  */
-export async function getAllFishSpecies(): Promise<FishSpecies[]> {
+export async function getAllFishSpecies(
+  page: number = 0,
+  pageSize: number = 100
+): Promise<{ data: FishSpecies[]; hasMore: boolean; total: number }> {
+  // First get total count
+  const { count, error: countError } = await supabase
+    .from('fish_species')
+    .select('*', { count: 'exact', head: true });
+
+  if (countError) throw countError;
+
   const { data, error } = await supabase
     .from('fish_species')
     .select('*')
-    .order('common_name');
+    .order('common_name')
+    .range(page * pageSize, (page + 1) * pageSize - 1);
 
   if (error) throw error;
-  return data as FishSpecies[];
+  
+  return {
+    data: data as FishSpecies[],
+    hasMore: (count || 0) > (page + 1) * pageSize,
+    total: count || 0
+  };
 }
 
 /**
