@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { RoleBadge } from '@/components/RoleBadge';
 import { toast } from 'sonner';
-import { Shield, UserCog, Edit, Eye, Users, Search, Plus, Trash2, History } from 'lucide-react';
+import { Shield, UserCog, Edit, Eye, Users, Search, Plus, Trash2, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,11 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getErrorMessage } from '@/lib/errorUtils';
+import type { Database } from '@/integrations/supabase/types';
+
+type AppRole = Database['public']['Enums']['app_role'];
 
 interface UserWithRoles {
   user_id: string;
@@ -56,56 +61,47 @@ interface AuditLog {
   target_name?: string;
 }
 
+const PAGE_SIZE = 20;
+
 export const RoleManager = () => {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<UserWithRoles[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserWithRoles[]>([]);
-  const [roleStats, setRoleStats] = useState<RoleStats>({ super_admin: 0, admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 });
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [showAuditDialog, setShowAuditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [reason, setReason] = useState('');
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    fetchUsersWithRoles();
-    fetchAuditLogs();
-  }, []);
-
-  useEffect(() => {
-    const filtered = users.filter(user =>
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.roles.some(role => role.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-    setFilteredUsers(filtered);
-  }, [searchQuery, users]);
-
-  const fetchUsersWithRoles = async () => {
-    try {
-      setLoading(true);
+  // Fetch users with roles using React Query
+  const { data: usersData, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['admin-users-with-roles', page],
+    queryFn: async () => {
+      // Fetch profiles with pagination
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       
-      // Fetch all profiles
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles, error: profilesError, count } = await supabase
         .from('profiles')
-        .select('user_id, email, name');
+        .select('user_id, email, name', { count: 'exact' })
+        .range(from, to);
 
       if (profilesError) throw profilesError;
 
-      // Fetch all user roles
+      // Fetch all user roles for these profiles
+      const userIds = profiles?.map(p => p.user_id) || [];
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role');
+        .select('user_id, role')
+        .in('user_id', userIds);
 
       if (rolesError) throw rolesError;
 
       // Combine data
-      const usersWithRoles: UserWithRoles[] = profiles.map(profile => {
-        const roles = userRoles
+      const usersWithRoles: UserWithRoles[] = (profiles || []).map(profile => {
+        const roles = (userRoles || [])
           .filter(ur => ur.user_id === profile.user_id)
           .map(ur => ur.role);
         
@@ -117,30 +113,37 @@ export const RoleManager = () => {
         };
       });
 
-      setUsers(usersWithRoles);
-      setFilteredUsers(usersWithRoles);
+      return { users: usersWithRoles, totalCount: count || 0 };
+    },
+  });
 
-      // Calculate role statistics
-      const stats: RoleStats = { super_admin: 0, admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 };
-      usersWithRoles.forEach(user => {
-        user.roles.forEach(role => {
-          if (role in stats) {
-            stats[role as keyof RoleStats]++;
-          }
-        });
+  // Calculate role statistics from current page (or fetch separately for accuracy)
+  const roleStats = useMemo((): RoleStats => {
+    const stats: RoleStats = { super_admin: 0, admin: 0, moderator: 0, editor: 0, viewer: 0, user: 0 };
+    (usersData?.users || []).forEach(user => {
+      user.roles.forEach(role => {
+        if (role in stats) {
+          stats[role as keyof RoleStats]++;
+        }
       });
-      setRoleStats(stats);
+    });
+    return stats;
+  }, [usersData?.users]);
 
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Filter users based on search query
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return usersData?.users || [];
+    return (usersData?.users || []).filter(user =>
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.roles.some(role => role.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [searchQuery, usersData?.users]);
 
-  const fetchAuditLogs = async () => {
-    try {
+  // Fetch audit logs using React Query
+  const { data: auditLogs = [] } = useQuery({
+    queryKey: ['admin-role-audit-logs'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('role_audit_log')
         .select('*')
@@ -162,22 +165,134 @@ export const RoleManager = () => {
 
         const userMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
 
-        const enrichedLogs = data.map((log) => ({
+        return data.map((log) => ({
           ...log,
           admin_name: userMap.get(log.admin_user_id)?.name || userMap.get(log.admin_user_id)?.email || 'Unknown',
           target_name: userMap.get(log.target_user_id)?.name || userMap.get(log.target_user_id)?.email || 'Unknown',
-        }));
-
-        setAuditLogs(enrichedLogs);
-      } else {
-        setAuditLogs(data || []);
+        })) as AuditLog[];
       }
-    } catch (error) {
-      console.error('Error fetching audit logs:', error);
-      // Table exists but may be empty, don't show error
-      setAuditLogs([]);
-    }
-  };
+
+      return (data || []) as AuditLog[];
+    },
+  });
+
+  // Assign role mutation
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ userId, role, userRoles }: { userId: string; role: string; userRoles: string[] }) => {
+      if (!currentUser) throw new Error('Not authenticated');
+
+      // Check if user already has this role
+      if (userRoles.includes(role)) {
+        throw new Error('User already has this role');
+      }
+
+      // Check permissions for assigning admin/super_admin roles
+      const { data: currentUserRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id);
+
+      const isSuperAdmin = currentUserRoles?.some((r) => r.role === 'super_admin');
+
+      // Only super admins can assign super_admin or admin roles
+      if ((role === 'admin' || role === 'super_admin') && !isSuperAdmin) {
+        throw new Error('Only super admins can assign admin or super admin roles');
+      }
+
+      // Insert new role
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: role as AppRole
+        });
+
+      if (insertError) throw insertError;
+
+      // Log the role change for audit
+      await supabase.from('role_audit_log').insert({
+        admin_user_id: currentUser.id,
+        target_user_id: userId,
+        action: 'assign_role',
+        old_roles: userRoles,
+        new_roles: [...userRoles, role],
+        reason: reason || 'No reason provided'
+      });
+    },
+    onSuccess: () => {
+      toast.success(`${selectedRole} role assigned successfully`);
+      setShowAssignDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-role-audit-logs'] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
+
+  // Remove role mutation
+  const removeRoleMutation = useMutation({
+    mutationFn: async ({ userId, role, userRoles, allUsers }: { userId: string; role: string; userRoles: string[]; allUsers: UserWithRoles[] }) => {
+      if (!currentUser) throw new Error('Not authenticated');
+
+      // Check permissions for removing admin/super_admin roles
+      const { data: currentUserRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id);
+
+      const isSuperAdmin = currentUserRoles?.some((r) => r.role === 'super_admin');
+
+      // Only super admins can remove super_admin or admin roles
+      if ((role === 'admin' || role === 'super_admin') && !isSuperAdmin) {
+        throw new Error('Only super admins can remove admin or super admin roles');
+      }
+
+      // Check if this is the last super admin
+      if (role === 'super_admin') {
+        const superAdminCount = allUsers.filter(u => u.roles.includes('super_admin')).length;
+        if (superAdminCount <= 1) {
+          throw new Error('Cannot remove the last super admin role');
+        }
+      }
+
+      // Check if this is the last admin
+      if (role === 'admin') {
+        const adminCount = allUsers.filter(u => u.roles.includes('admin')).length;
+        if (adminCount <= 1 && !isSuperAdmin) {
+          throw new Error('Cannot remove the last admin role');
+        }
+      }
+
+      // Remove role
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', role as AppRole);
+
+      if (deleteError) throw deleteError;
+
+      // Log the role change for audit
+      await supabase.from('role_audit_log').insert({
+        admin_user_id: currentUser.id,
+        target_user_id: userId,
+        action: 'remove_role',
+        old_roles: userRoles,
+        new_roles: userRoles.filter(r => r !== role),
+        reason: reason || 'No reason provided'
+      });
+    },
+    onSuccess: () => {
+      toast.success(`${selectedRole} role removed successfully`);
+      setShowRemoveDialog(false);
+      queryClient.invalidateQueries({ queryKey: ['admin-users-with-roles'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-role-audit-logs'] });
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error));
+    },
+  });
 
   const openAssignDialog = (user: UserWithRoles) => {
     setSelectedUser(user);
@@ -193,126 +308,28 @@ export const RoleManager = () => {
     setShowRemoveDialog(true);
   };
 
-  const assignRole = async () => {
-    if (!selectedUser || !selectedRole || !currentUser) return;
-
-    try {
-      // Check if user already has this role
-      if (selectedUser.roles.includes(selectedRole)) {
-        toast.error('User already has this role');
-        return;
-      }
-
-      // Check permissions for assigning admin/super_admin roles
-      const { data: currentUserRoles } = await (supabase as any)
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', currentUser.id);
-
-      const isSuperAdmin = currentUserRoles?.some((r: any) => r.role === 'super_admin');
-
-      // Only super admins can assign super_admin or admin roles
-      if ((selectedRole === 'admin' || selectedRole === 'super_admin') && !isSuperAdmin) {
-        toast.error('Only super admins can assign admin or super admin roles');
-        return;
-      }
-
-      // Insert new role
-      const { error: insertError } = await (supabase as any)
-        .from('user_roles')
-        .insert({
-          user_id: selectedUser.user_id,
-          role: selectedRole
-        });
-
-      if (insertError) throw insertError;
-
-      // Log the role change for audit
-      await supabase.from('role_audit_log').insert({
-        admin_user_id: currentUser.id,
-        target_user_id: selectedUser.user_id,
-        action: 'assign_role',
-        old_roles: selectedUser.roles,
-        new_roles: [...selectedUser.roles, selectedRole],
-        reason: reason || 'No reason provided'
-      });
-
-      toast.success(`${selectedRole} role assigned successfully`);
-      setShowAssignDialog(false);
-      fetchUsersWithRoles();
-      fetchAuditLogs();
-    } catch (error) {
-      console.error('Error assigning role:', error);
-      toast.error('Failed to assign role');
-    }
+  const handleAssignRole = () => {
+    if (!selectedUser || !selectedRole) return;
+    assignRoleMutation.mutate({
+      userId: selectedUser.user_id,
+      role: selectedRole,
+      userRoles: selectedUser.roles,
+    });
   };
 
-  const removeRole = async () => {
-    if (!selectedUser || !selectedRole || !currentUser) return;
-
-    try {
-      // Check permissions for removing admin/super_admin roles
-      const { data: currentUserRoles } = await (supabase as any)
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', currentUser.id);
-
-      const isSuperAdmin = currentUserRoles?.some((r: any) => r.role === 'super_admin');
-
-      // Only super admins can remove super_admin or admin roles
-      if ((selectedRole === 'admin' || selectedRole === 'super_admin') && !isSuperAdmin) {
-        toast.error('Only super admins can remove admin or super admin roles');
-        return;
-      }
-
-      // Check if this is the last super admin
-      if (selectedRole === 'super_admin') {
-        const superAdminCount = users.filter(u => u.roles.includes('super_admin')).length;
-        if (superAdminCount <= 1) {
-          toast.error('Cannot remove the last super admin role');
-          return;
-        }
-      }
-
-      // Check if this is the last admin
-      if (selectedRole === 'admin') {
-        const adminCount = users.filter(u => u.roles.includes('admin')).length;
-        if (adminCount <= 1 && !isSuperAdmin) {
-          toast.error('Cannot remove the last admin role');
-          return;
-        }
-      }
-
-      // Remove role
-      const { error: deleteError } = await (supabase as any)
-        .from('user_roles')
-        .delete()
-        .eq('user_id', selectedUser.user_id)
-        .eq('role', selectedRole);
-
-      if (deleteError) throw deleteError;
-
-      // Log the role change for audit
-      await supabase.from('role_audit_log').insert({
-        admin_user_id: currentUser.id,
-        target_user_id: selectedUser.user_id,
-        action: 'remove_role',
-        old_roles: selectedUser.roles,
-        new_roles: selectedUser.roles.filter(r => r !== selectedRole),
-        reason: reason || 'No reason provided'
-      });
-
-      toast.success(`${selectedRole} role removed successfully`);
-      setShowRemoveDialog(false);
-      fetchUsersWithRoles();
-      fetchAuditLogs();
-    } catch (error) {
-      console.error('Error removing role:', error);
-      toast.error('Failed to remove role');
-    }
+  const handleRemoveRole = () => {
+    if (!selectedUser || !selectedRole) return;
+    removeRoleMutation.mutate({
+      userId: selectedUser.user_id,
+      role: selectedRole,
+      userRoles: selectedUser.roles,
+      allUsers: usersData?.users || [],
+    });
   };
 
-  if (loading) {
+  const totalPages = Math.ceil((usersData?.totalCount || 0) / PAGE_SIZE);
+
+  if (isLoadingUsers) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -387,7 +404,7 @@ export const RoleManager = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
+            <div className="text-2xl font-bold">{usersData?.totalCount || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -433,7 +450,7 @@ export const RoleManager = () => {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {user.roles.map((role) => (
-                        <div key={role} className="flex items-center gap-1">
+                        <div key={`${user.user_id}-${role}`} className="flex items-center gap-1">
                           <RoleBadge role={role} />
                           {role !== 'user' && (
                             <Button
@@ -463,6 +480,35 @@ export const RoleManager = () => {
               ))}
             </TableBody>
           </Table>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -504,7 +550,7 @@ export const RoleManager = () => {
             <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={assignRole} disabled={!selectedRole}>
+            <Button onClick={handleAssignRole} disabled={!selectedRole || assignRoleMutation.isPending}>
               Assign Role
             </Button>
           </DialogFooter>
@@ -534,7 +580,7 @@ export const RoleManager = () => {
             <Button variant="outline" onClick={() => setShowRemoveDialog(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={removeRole}>
+            <Button variant="destructive" onClick={handleRemoveRole} disabled={removeRoleMutation.isPending}>
               Remove Role
             </Button>
           </DialogFooter>
@@ -568,9 +614,9 @@ export const RoleManager = () => {
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground">Old roles:</span>
-                        {log.old_roles?.map(role => <RoleBadge key={role} role={role} />)}
+                        {log.old_roles?.map((role, idx) => <RoleBadge key={`${log.id}-old-${idx}`} role={role} />)}
                         <span className="text-muted-foreground">→ New roles:</span>
-                        {log.new_roles?.map(role => <RoleBadge key={role} role={role} />)}
+                        {log.new_roles?.map((role, idx) => <RoleBadge key={`${log.id}-new-${idx}`} role={role} />)}
                       </div>
                       {log.reason && (
                         <p className="text-sm text-muted-foreground">Reason: {log.reason}</p>
