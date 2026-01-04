@@ -82,12 +82,14 @@ export function WeatherCard() {
     weather.temperatureUnit === 'celsius' ? 'C' : 'F'
   );
 
-  // Format feels-like temperature
-  const feelsLikeTemp = formatTemperature(
-    weather.feelsLike,
-    units,
-    weather.temperatureUnit === 'celsius' ? 'C' : 'F'
-  );
+  // Format feels-like temperature (with null check)
+  const feelsLikeTemp = weather.feelsLike != null
+    ? formatTemperature(
+        weather.feelsLike,
+        units,
+        weather.temperatureUnit === 'celsius' ? 'C' : 'F'
+      )
+    : null;
 
   // Get UV level info
   const uvLevel = getUVLevel(weather.uvIndex);
@@ -121,7 +123,7 @@ export function WeatherCard() {
                 <p className="text-2xl font-semibold tracking-tight">
                   {displayTemp}
                 </p>
-                {weather.feelsLike != null && weather.feelsLike !== weather.temperature && (
+                {feelsLikeTemp && weather.feelsLike !== weather.temperature && (
                   <span className="text-xs text-muted-foreground">
                     Feels {feelsLikeTemp}
                   </span>

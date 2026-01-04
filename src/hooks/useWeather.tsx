@@ -219,7 +219,7 @@ export function useWeather() {
             .from('profiles')
             .select('latitude, longitude')
             .eq('user_id', user.id)
-            .single();
+            .maybeSingle();
 
           if (profile?.latitude && profile?.longitude) {
             await fetchWeather(profile.latitude, profile.longitude);
@@ -293,7 +293,7 @@ export function useWeather() {
           .from('profiles')
           .select('weather_enabled, latitude, longitude')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (profile?.weather_enabled) {
           setState(prev => ({ ...prev, enabled: true }));

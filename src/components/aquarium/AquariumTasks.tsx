@@ -144,7 +144,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         .from("maintenance_tasks")
         .select("*")
         .eq("id", taskId)
-        .single();
+        .maybeSingle();
 
       // Complete the task
       await completeTask(taskId);
@@ -176,7 +176,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
           .from("equipment")
           .select("maintenance_interval_days, name")
           .eq("id", task.equipment_id)
-          .single();
+          .maybeSingle();
 
         if (equipment?.maintenance_interval_days) {
           const nextDueDate = new Date();

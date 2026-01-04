@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Users, Mail, Download, Search, CheckCircle2, XCircle } from 'lucide-react';
+import { UserPlus, Users, Mail, Download, Search, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -131,6 +131,7 @@ export const BetaAccessManager = () => {
     a.href = url;
     a.download = `beta-access-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const filteredWaitlist = waitlist.filter(entry =>
@@ -209,7 +210,7 @@ export const BetaAccessManager = () => {
             <Button onClick={grantRandomBetaAccess} disabled={granting || stats.pending === 0}>
               {granting ? (
                 <>
-                  <span className="animate-spin mr-2">⏳</span>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Granting...
                 </>
               ) : (
