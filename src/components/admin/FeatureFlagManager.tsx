@@ -73,20 +73,20 @@ export default function FeatureFlagManager() {
       setIsCreateOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateFeatureFlag(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Omit<FeatureFlag, 'id' | 'created_at' | 'updated_at'>> }) => updateFeatureFlag(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.featureFlags.all });
       toast({ title: 'Success', description: 'Feature flag updated' });
       setEditingFlag(null);
       resetForm();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     },
   });
@@ -97,7 +97,7 @@ export default function FeatureFlagManager() {
       queryClient.invalidateQueries({ queryKey: queryKeys.featureFlags.all });
       toast({ title: 'Success', description: 'Feature flag deleted' });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     },
   });

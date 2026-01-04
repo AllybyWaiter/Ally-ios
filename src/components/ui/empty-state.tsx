@@ -50,9 +50,9 @@ export function EmptyState({
           <div className="mt-8 pt-6 border-t border-border/50">
             <p className="text-xs font-medium text-muted-foreground mb-2">Quick Tips</p>
             <ul className="text-sm text-muted-foreground space-y-1">
-              {tips.map((tip, index) => (
-                <li key={index}>• {tip}</li>
-              ))}
+            {tips.map((tip) => (
+              <li key={tip}>• {tip}</li>
+            ))}
             </ul>
           </div>
         )}

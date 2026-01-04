@@ -22,8 +22,12 @@ import { FeatureArea } from "@/lib/sentry";
 const checkForServiceWorkerUpdate = () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready.then((registration) => {
-      registration.update().catch(() => {});
-    }).catch(() => {});
+      registration.update().catch((error) => {
+        console.debug('Service worker update check failed:', error);
+      });
+    }).catch((error) => {
+      console.debug('Service worker not ready:', error);
+    });
   }
 };
 
