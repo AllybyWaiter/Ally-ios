@@ -72,9 +72,9 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
           priority: priority || 'medium'
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (ticketError) throw ticketError;
+      if (ticketError || !ticket) throw ticketError || new Error('Failed to create ticket');
 
       // Add initial message to ticket
       const { error: messageError } = await supabase

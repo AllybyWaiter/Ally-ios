@@ -119,7 +119,7 @@ const Settings = () => {
         .from('profiles')
         .select('skill_level')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       if (data?.skill_level) setSkillLevel(data.skill_level);
     };
     fetchSkillLevel();
