@@ -62,6 +62,15 @@ export default function BlogEditor() {
     tags: '',
   });
 
+  // Cleanup object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (featuredImagePreview && !featuredImagePreview.startsWith('http')) {
+        URL.revokeObjectURL(featuredImagePreview);
+      }
+    };
+  }, [featuredImagePreview]);
+
   useEffect(() => {
     fetchCategories();
     if (isEditing) {
@@ -138,6 +147,12 @@ export default function BlogEditor() {
         });
         return;
       }
+      
+      // Revoke previous preview URL to prevent memory leak
+      if (featuredImagePreview && !featuredImagePreview.startsWith('http')) {
+        URL.revokeObjectURL(featuredImagePreview);
+      }
+      
       setFeaturedImage(file);
       setFeaturedImagePreview(URL.createObjectURL(file));
     }
@@ -235,13 +250,25 @@ export default function BlogEditor() {
 
         if (error) throw error;
       } else {
+        // Check if slug already exists
+        const { data: existingPost } = await supabase
+          .from('blog_posts')
+          .select('id')
+          .eq('slug', validatedData.slug)
+          .maybeSingle();
+
+        if (existingPost) {
+          throw new Error('A post with this slug already exists. Please choose a different slug.');
+        }
+
         const { data: newPost, error } = await supabase
           .from('blog_posts')
           .insert(postData)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
+        if (!newPost) throw new Error('Failed to create post');
         postId = newPost.id;
       }
 

@@ -171,6 +171,10 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
   };
 
   const handleRemovePhoto = () => {
+    // Revoke object URL to prevent memory leak
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
     setPhotoFile(null);
     setPhotoPreview(null);
     setAnalysisResult(null);
