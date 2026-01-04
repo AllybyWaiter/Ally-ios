@@ -169,10 +169,11 @@ export default function Auth() {
         title: 'Check your email',
         description: 'We sent you a password reset link.',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send reset email. Please try again.';
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to send reset email. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -218,21 +219,32 @@ export default function Auth() {
       }
 
       if (view === 'signup') {
-        // Create referral record if user signed up with a referral code
+        // Create referral record after auth state is confirmed
         if (referralData) {
-          try {
-            const { data: { user: newUser } } = await supabase.auth.getUser();
-            if (newUser) {
+          // Use auth state change listener to ensure user is fully created
+          const createReferral = async (userId: string) => {
+            try {
               await supabase.from('referrals').insert({
                 referrer_id: referralData.referrerId,
-                referee_id: newUser.id,
+                referee_id: userId,
                 referral_code_id: referralData.referralCodeId,
                 status: 'pending',
               });
+            } catch (refError) {
+              console.error('Failed to create referral record:', refError);
             }
-          } catch (refError) {
-            console.error('Failed to create referral record:', refError);
-          }
+          };
+          
+          // Listen for auth state change to get confirmed user
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+              createReferral(session.user.id);
+              subscription.unsubscribe();
+            }
+          });
+          
+          // Cleanup subscription after timeout
+          setTimeout(() => subscription.unsubscribe(), 10000);
         }
 
         toast({
@@ -258,7 +270,7 @@ export default function Auth() {
       // Keep authenticating state to show "Redirecting..." and prevent form flash
       setIsAuthenticating(true);
       return; // Exit early, don't set isLoading to false
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const fieldErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
         error.errors.forEach((err) => {
@@ -267,22 +279,23 @@ export default function Auth() {
           }
         });
         setErrors(fieldErrors);
-      } else if (error?.message) {
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
         // Handle suspension and ban errors prominently
-        if (error.message.includes('suspended') || error.message.includes('banned')) {
+        if (errorMessage.includes('suspended') || errorMessage.includes('banned')) {
           toast({
             title: 'Account Access Restricted',
-            description: error.message,
+            description: errorMessage,
             variant: 'destructive',
             duration: 10000, // Show for longer
           });
-        } else if (error.message.includes('Invalid login credentials')) {
+        } else if (errorMessage.includes('Invalid login credentials')) {
           toast({
             title: 'Error',
             description: 'Invalid email or password',
             variant: 'destructive',
           });
-        } else if (error.message.includes('User already registered')) {
+        } else if (errorMessage.includes('User already registered')) {
           toast({
             title: 'Error',
             description: 'An account with this email already exists',
@@ -291,7 +304,7 @@ export default function Auth() {
         } else {
           toast({
             title: 'Error',
-            description: error.message,
+            description: errorMessage,
             variant: 'destructive',
           });
         }

@@ -26,11 +26,9 @@ export function WeatherSettings() {
         .from('profiles')
         .select('weather_enabled')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (profile) {
-        setWeatherEnabled(profile.weather_enabled || false);
-      }
+      setWeatherEnabled(profile?.weather_enabled ?? false);
       setSettingsLoading(false);
     };
 

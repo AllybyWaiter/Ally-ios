@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,10 +18,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/lib/toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Send, Sparkles, Lightbulb, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 interface Ticket {
   id: string;
@@ -46,65 +49,106 @@ interface ReplyTemplate {
 }
 
 const SupportTickets = () => {
-  const { toast } = useToast();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const queryClient = useQueryClient();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [replyMessage, setReplyMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [suggestedReplies, setSuggestedReplies] = useState<ReplyTemplate[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [lastSuggestionFetch, setLastSuggestionFetch] = useState<number>(0);
 
-  useEffect(() => {
-    fetchTickets();
-  }, []);
+  // Fetch tickets with React Query
+  const { data: tickets = [], isLoading: isLoadingTickets } = useQuery({
+    queryKey: ['admin-support-tickets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  useEffect(() => {
-    if (selectedTicket) {
-      fetchMessages(selectedTicket.id);
-      fetchSuggestedReplies(selectedTicket);
+      if (error) throw error;
+      return (data || []) as Ticket[];
+    },
+  });
+
+  // Fetch messages for selected ticket
+  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
+    queryKey: ['admin-ticket-messages', selectedTicket?.id],
+    queryFn: async () => {
+      if (!selectedTicket?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('support_messages')
+        .select('*')
+        .eq('ticket_id', selectedTicket.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as Message[];
+    },
+    enabled: !!selectedTicket?.id,
+  });
+
+  // Update ticket status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ ticketId, status }: { ticketId: string; status: Ticket['status'] }) => {
+      const { error } = await supabase
+        .from('support_tickets')
+        .update({ status })
+        .eq('id', ticketId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Ticket status updated');
+      queryClient.invalidateQueries({ queryKey: ['admin-support-tickets'] });
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to update ticket status', { description: getErrorMessage(error) });
+    },
+  });
+
+  // Send reply mutation
+  const sendReplyMutation = useMutation({
+    mutationFn: async ({ ticketId, message }: { ticketId: string; message: string }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase
+        .from('support_messages')
+        .insert({
+          ticket_id: ticketId,
+          sender_type: 'admin',
+          message,
+          sender_user_id: user?.id
+        });
+
+      if (error) throw error;
+      return { ticketId };
+    },
+    onSuccess: ({ ticketId }) => {
+      toast.success('Reply sent successfully');
+      setReplyMessage("");
+      queryClient.invalidateQueries({ queryKey: ['admin-ticket-messages', ticketId] });
+      
+      // Update ticket status to in_progress if it was open
+      if (selectedTicket?.status === 'open') {
+        updateStatusMutation.mutate({ ticketId, status: 'in_progress' });
+      }
+    },
+    onError: (error: unknown) => {
+      toast.error('Failed to send reply', { description: getErrorMessage(error) });
+    },
+  });
+
+  // Debounced fetch for suggested replies
+  const fetchSuggestedReplies = useCallback(async (ticket: Ticket) => {
+    const now = Date.now();
+    const DEBOUNCE_MS = 2000; // 2 second cooldown between AI suggestion requests
+    
+    if (now - lastSuggestionFetch < DEBOUNCE_MS) {
+      return;
     }
-  }, [selectedTicket]);
-
-  const fetchTickets = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load tickets",
-        variant: "destructive",
-      });
-    } else {
-      setTickets(data || []);
-    }
-    setIsLoading(false);
-  };
-
-  const fetchMessages = async (ticketId: string) => {
-    const { data, error } = await supabase
-      .from('support_messages')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load messages",
-        variant: "destructive",
-      });
-    } else {
-      setMessages(data || []);
-    }
-  };
-
-  const fetchSuggestedReplies = async (ticket: Ticket) => {
+    
+    setLastSuggestionFetch(now);
     setIsLoadingSuggestions(true);
     setSuggestedReplies([]);
     
@@ -140,65 +184,23 @@ const SupportTickets = () => {
     } finally {
       setIsLoadingSuggestions(false);
     }
-  };
+  }, [lastSuggestionFetch]);
 
-  const updateTicketStatus = async (ticketId: string, status: Ticket['status']) => {
-    const { error } = await supabase
-      .from('support_tickets')
-      .update({ status })
-      .eq('id', ticketId);
+  const handleTicketSelect = useCallback((ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    fetchSuggestedReplies(ticket);
+  }, [fetchSuggestedReplies]);
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update ticket status",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Ticket status updated",
-      });
-      fetchTickets();
-      if (selectedTicket) {
-        setSelectedTicket({ ...selectedTicket, status });
-      }
+  const handleStatusChange = (status: Ticket['status']) => {
+    if (selectedTicket) {
+      updateStatusMutation.mutate({ ticketId: selectedTicket.id, status });
+      setSelectedTicket({ ...selectedTicket, status });
     }
   };
 
-  const sendReply = async () => {
+  const handleSendReply = () => {
     if (!selectedTicket || !replyMessage.trim()) return;
-
-    setIsSending(true);
-    const { error } = await supabase
-      .from('support_messages')
-      .insert({
-        ticket_id: selectedTicket.id,
-        sender_type: 'admin',
-        message: replyMessage,
-        sender_user_id: (await supabase.auth.getUser()).data.user?.id
-      });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send reply",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Reply sent successfully",
-      });
-      setReplyMessage("");
-      fetchMessages(selectedTicket.id);
-      
-      // Update ticket status to in_progress if it was open
-      if (selectedTicket.status === 'open') {
-        updateTicketStatus(selectedTicket.id, 'in_progress');
-      }
-    }
-    setIsSending(false);
+    sendReplyMutation.mutate({ ticketId: selectedTicket.id, message: replyMessage });
   };
 
   const getStatusIcon = (status: string) => {
@@ -246,14 +248,16 @@ const SupportTickets = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoadingTickets) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Support Tickets</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Loading tickets...</p>
+        <CardContent className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
         </CardContent>
       </Card>
     );
@@ -281,7 +285,7 @@ const SupportTickets = () => {
                 <div
                   key={ticket.id}
                   className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => setSelectedTicket(ticket)}
+                  onClick={() => handleTicketSelect(ticket)}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
@@ -334,7 +338,8 @@ const SupportTickets = () => {
               <label className="text-sm font-medium">Status:</label>
               <Select
                 value={selectedTicket?.status}
-                onValueChange={(value) => selectedTicket && updateTicketStatus(selectedTicket.id, value as Ticket['status'])}
+                onValueChange={(value) => handleStatusChange(value as Ticket['status'])}
+                disabled={updateStatusMutation.isPending}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
@@ -351,25 +356,33 @@ const SupportTickets = () => {
 
             {/* Messages */}
             <div className="border rounded-lg p-4 space-y-4 max-h-[400px] overflow-y-auto">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg p-3 ${
-                      message.sender_type === 'admin'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
-                    <p className="text-xs mt-1 opacity-70">
-                      {format(new Date(message.created_at), 'MMM d, HH:mm')}
-                    </p>
-                  </div>
+              {isLoadingMessages ? (
+                <div className="space-y-4">
+                  {[...Array(2)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-3/4" />
+                  ))}
                 </div>
-              ))}
+              ) : (
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.sender_type === 'admin' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg p-3 ${
+                        message.sender_type === 'admin'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                      <p className="text-xs mt-1 opacity-70">
+                        {format(new Date(message.created_at), 'MMM d, HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Reply Box */}
@@ -411,10 +424,13 @@ const SupportTickets = () => {
                 placeholder="Type your reply..."
                 className="min-h-[100px]"
               />
-              <Button onClick={sendReply} disabled={isSending || !replyMessage.trim()}>
-                {isSending ? (
+              <Button 
+                onClick={handleSendReply} 
+                disabled={sendReplyMutation.isPending || !replyMessage.trim()}
+              >
+                {sendReplyMutation.isPending ? (
                   <>
-                    <Clock className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Sending...
                   </>
                 ) : (

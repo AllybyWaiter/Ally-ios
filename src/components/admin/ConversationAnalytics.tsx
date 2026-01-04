@@ -39,7 +39,9 @@ export default function ConversationAnalytics() {
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   const daysBack = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
-  const startDate = subDays(new Date(), daysBack);
+  // Ensure start date is never in the future
+  const now = new Date();
+  const startDate = subDays(now, daysBack);
 
   // Fetch conversations
   const { data: conversations, isLoading: conversationsLoading } = useQuery({
@@ -74,7 +76,10 @@ export default function ConversationAnalytics() {
 
   // Calculate daily trends
   const dailyTrends = useMemo(() => {
-    const days = eachDayOfInterval({ start: startDate, end: new Date() });
+    const today = new Date();
+    // Ensure we don't try to process future dates
+    const endDate = startDate > today ? today : today;
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
     
     return days.map(day => {
       const dayStart = startOfDay(day);
