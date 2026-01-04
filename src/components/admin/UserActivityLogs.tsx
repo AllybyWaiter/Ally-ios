@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/formatters';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, Activity, LogIn, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ActivityLog {
   id: string;
   user_id: string;
   action_type: string;
-  action_details: any;
+  action_details: unknown;
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
   profiles?: {
     email: string;
     name: string | null;
-  };
+  } | null;
 }
 
 interface LoginHistory {
@@ -34,83 +35,65 @@ interface LoginHistory {
   profiles?: {
     email: string;
     name: string | null;
-  };
+  } | null;
 }
 
-export default function UserActivityLogs() {
-  const { toast } = useToast();
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [loginHistory, setLoginHistory] = useState<LoginHistory[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
-    setLoading(true);
-
-    // Fetch activity logs
-    const { data: activities, error: activitiesError } = await supabase
+// Fetch activity logs and login history with profile data
+async function fetchActivityData() {
+  // Fetch both in parallel for better performance
+  const [activitiesResult, loginsResult] = await Promise.all([
+    supabase
       .from('activity_logs')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(100);
-
-    // Fetch login history
-    const { data: logins, error: loginsError } = await supabase
+      .limit(100),
+    supabase
       .from('login_history')
       .select('*')
       .order('login_at', { ascending: false })
-      .limit(100);
+      .limit(100),
+  ]);
 
-    // Fetch user profiles separately
-    const userIds = new Set([
-      ...(activities?.map(a => a.user_id) || []),
-      ...(logins?.map(l => l.user_id) || [])
-    ]);
+  const activities = activitiesResult.data || [];
+  const logins = loginsResult.data || [];
 
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('user_id, email, name')
-      .in('user_id', Array.from(userIds));
+  // Collect unique user IDs from both datasets
+  const userIds = new Set([
+    ...activities.map(a => a.user_id),
+    ...logins.map(l => l.user_id)
+  ]);
 
-    const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+  // Fetch profiles for all users in one query
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('user_id, email, name')
+    .in('user_id', Array.from(userIds));
 
-    // Merge profiles with activities
-    const activitiesWithProfiles = activities?.map(a => ({
-      ...a,
-      profiles: profileMap.get(a.user_id) || null
-    })) || [];
+  const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
-    // Merge profiles with logins
-    const loginsWithProfiles = logins?.map(l => ({
-      ...l,
-      profiles: profileMap.get(l.user_id) || null
-    })) || [];
+  // Merge profiles with activities and logins
+  const activitiesWithProfiles = activities.map(a => ({
+    ...a,
+    profiles: profileMap.get(a.user_id) || null
+  })) as ActivityLog[];
 
-    if (activitiesError) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch activity logs',
-        variant: 'destructive',
-      });
-    } else {
-      setActivityLogs(activitiesWithProfiles as any);
-    }
+  const loginsWithProfiles = logins.map(l => ({
+    ...l,
+    profiles: profileMap.get(l.user_id) || null
+  })) as LoginHistory[];
 
-    if (loginsError) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch login history',
-        variant: 'destructive',
-      });
-    } else {
-      setLoginHistory(loginsWithProfiles as any);
-    }
+  return { activities: activitiesWithProfiles, logins: loginsWithProfiles };
+}
 
-    setLoading(false);
-  };
+export default function UserActivityLogs() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'activity-logs'],
+    queryFn: fetchActivityData,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  const activityLogs = data?.activities || [];
+  const loginHistory = data?.logins || [];
 
   const getActionBadge = (actionType: string) => {
     const colors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -139,15 +122,34 @@ export default function UserActivityLogs() {
     return 'Other';
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[200px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const stats = {
+  const stats = useMemo(() => ({
     totalActivities: activityLogs.length,
     totalLogins: loginHistory.filter(l => l.success).length,
     failedLogins: loginHistory.filter(l => !l.success).length,
@@ -156,7 +158,7 @@ export default function UserActivityLogs() {
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       return logDate > yesterday;
     }).length,
-  };
+  }), [activityLogs, loginHistory]);
 
   return (
     <div className="space-y-6">
@@ -248,7 +250,7 @@ export default function UserActivityLogs() {
                         </TableCell>
                         <TableCell>{getActionBadge(log.action_type)}</TableCell>
                         <TableCell className="max-w-xs truncate">
-                          {log.action_details && Object.keys(log.action_details).length > 0
+                          {log.action_details && typeof log.action_details === 'object' && Object.keys(log.action_details).length > 0
                             ? JSON.stringify(log.action_details)
                             : '-'}
                         </TableCell>
