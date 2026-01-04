@@ -15,7 +15,9 @@ export function usePlanLimits() {
   // Only resolve tier once auth is complete and subscriptionTier is loaded
   const isLoading = authLoading || (user && subscriptionTier === null);
   const tier = isLoading ? null : (subscriptionTier || 'free');
-  const planDefinition = getPlanDefinition(tier);
+  // Ensure tier is never null when passed to getPlanDefinition
+  const safeTier = tier ?? 'free';
+  const planDefinition = getPlanDefinition(safeTier);
   const limits = planDefinition.features;
 
   // Query for monthly test log count

@@ -46,11 +46,11 @@ function ForecastDayCard({ day, units }: ForecastDayCardProps) {
 }
 
 export function WeatherForecast() {
-  const { weather, enabled } = useWeather();
+  const { weather, enabled, error } = useWeather();
   const { units } = useAuth();
 
-  // Don't render if weather is not enabled or no forecast
-  if (!enabled || !weather?.forecast || weather.forecast.length === 0) {
+  // Don't render if weather is not enabled, has error, or no forecast
+  if (!enabled || error || !weather?.forecast || weather.forecast.length === 0) {
     return null;
   }
 

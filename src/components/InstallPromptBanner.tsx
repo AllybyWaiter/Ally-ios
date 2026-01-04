@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { X, Share, PlusSquare, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,19 +8,25 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
+}
+
 const InstallPromptBanner = () => {
   const { user } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // All hooks must be called before any conditional returns (React Rules of Hooks)
   useEffect(() => {
     // Only run for authenticated users
     if (!user) return;
     // Check if already installed (standalone mode)
+    const nav = window.navigator as NavigatorWithStandalone;
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches 
-      || (window.navigator as any).standalone === true;
+      || nav.standalone === true;
     if (isStandalone) return;
 
     // Check if mobile
@@ -60,15 +66,17 @@ const InstallPromptBanner = () => {
 
     // For iOS, show banner after a short delay
     if (isIOSDevice) {
-      const timer = setTimeout(() => setIsVisible(true), 2000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      };
+      timerRef.current = setTimeout(() => setIsVisible(true), 2000);
     }
 
     return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      // Clear the deferred prompt on cleanup
+      setDeferredPrompt(null);
     };
   }, [user]);
 

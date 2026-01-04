@@ -115,7 +115,15 @@ const AllyChat = () => {
       setAutoSendPending(false);
       sendMessage();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSendPending, input, isLoading]);
+
+  // Cleanup auto-send pending state on unmount
+  useEffect(() => {
+    return () => {
+      setAutoSendPending(false);
+    };
+  }, []);
 
   useEffect(() => {
     initializeChat();
