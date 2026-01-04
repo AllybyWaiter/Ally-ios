@@ -110,7 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
       for (const user of targetUsers) {
         try {
           await resend.emails.send({
-            from: "Aquahub <onboarding@resend.dev>",
+            from: "Ally <support@allyaquatic.com>",
             to: [user.email],
             subject: announcement.title,
             html: `
