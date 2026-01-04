@@ -72,8 +72,8 @@ const Security = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">How We Protect Your Data</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {securityFeatures.map((feature, index) => (
-              <Card key={index}>
+            {securityFeatures.map((feature) => (
+              <Card key={feature.title}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10">
@@ -214,8 +214,8 @@ const Security = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground">Compliance & Certifications</h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {complianceItems.map((item, index) => (
-              <Card key={index}>
+            {complianceItems.map((item) => (
+              <Card key={item.name}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     {item.status ? (

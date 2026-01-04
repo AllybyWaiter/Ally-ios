@@ -176,8 +176,8 @@ const Changelog = () => {
               
               <CardContent>
                 <ul className="space-y-3">
-                  {release.changes.map((change, changeIndex) => (
-                    <li key={changeIndex} className="flex items-start gap-3">
+                  {release.changes.map((change) => (
+                    <li key={`${release.version}-${change.type}-${change.description.slice(0, 20)}`} className="flex items-start gap-3">
                       <Badge 
                         variant={getChangeBadgeVariant(change.type)} 
                         className="gap-1 shrink-0 mt-0.5"
