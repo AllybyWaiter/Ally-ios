@@ -73,18 +73,18 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshot-wide.png",
+      "src": "/screenshot-wide.webp",
       "sizes": "1280x720",
-      "type": "image/png",
+      "type": "image/webp",
       "form_factor": "wide",
-      "label": "Ally Dashboard - Desktop View"
+      "label": "Ally Dashboard Desktop View"
     },
     {
-      "src": "/screenshot-narrow.png",
+      "src": "/screenshot-narrow-v2.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Ally Dashboard - Mobile View"
+      "label": "Ally Dashboard Mobile View"
     }
   ],
   "categories": ["lifestyle", "utilities"],
