@@ -37,7 +37,7 @@ export function useReferralCode() {
         .select('code')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
       if (existing?.code) {
         return existing.code;
@@ -139,10 +139,10 @@ export function useReferralCode() {
     }
   };
 
-  // Generate share URL
+  // Generate share URL with proper URL encoding
   const getShareUrl = () => {
     if (!referralCode) return '';
-    return `${window.location.origin}/auth?ref=${referralCode}`;
+    return `${window.location.origin}/auth?ref=${encodeURIComponent(referralCode)}`;
   };
 
   // Copy code to clipboard
