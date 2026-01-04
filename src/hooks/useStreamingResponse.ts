@@ -56,8 +56,12 @@ export function useStreamingResponse() {
 
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
 
-    // Cancel any in-flight request
+    // Cancel any in-flight request and clear existing timeout
     abortControllerRef.current?.abort();
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     abortControllerRef.current = new AbortController();
 
     // Format messages for API - convert imageUrl to proper format

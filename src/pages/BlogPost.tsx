@@ -47,11 +47,13 @@ export default function BlogPost() {
     if (!error && data) {
       setPost(data);
       
-      // Increment view count
-      await supabase
+      // Increment view count in the background - not awaited to avoid blocking UI
+      // The view count will be slightly stale in the current view but accurate on refresh
+      supabase
         .from('blog_posts')
-        .update({ view_count: data.view_count + 1 })
-        .eq('id', data.id);
+        .update({ view_count: (data.view_count || 0) + 1 })
+        .eq('id', data.id)
+        .then(); // Fire and forget
     }
     setLoading(false);
   };
