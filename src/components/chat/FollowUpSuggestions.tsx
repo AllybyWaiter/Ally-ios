@@ -71,9 +71,9 @@ export const FollowUpSuggestions = React.memo(function FollowUpSuggestions({
 
   return (
     <div className="flex flex-wrap gap-2 mt-3">
-      {suggestions.map((item, index) => (
+      {suggestions.map((item) => (
         <Button
-          key={index}
+          key={`${item.label}-${item.template}`}
           variant="outline"
           size="sm"
           className={cn(
