@@ -89,7 +89,7 @@ export function usePushNotifications() {
           .from('notification_preferences')
           .select('*')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (prefs) {
           setPreferences({

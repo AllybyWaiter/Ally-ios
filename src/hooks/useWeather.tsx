@@ -96,12 +96,29 @@ interface WeatherState {
 const CACHE_KEY = 'ally_weather_cache';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+function isValidWeatherData(data: unknown): data is WeatherData {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.temperature === 'number' &&
+    typeof d.condition === 'string' &&
+    typeof d.fetchedAt === 'string'
+  );
+}
+
 function getCachedWeather(): WeatherData | null {
   try {
     const cached = sessionStorage.getItem(CACHE_KEY);
     if (!cached) return null;
     
     const data = JSON.parse(cached);
+    
+    // Validate the parsed data has required structure
+    if (!isValidWeatherData(data)) {
+      sessionStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    
     const fetchedAt = new Date(data.fetchedAt).getTime();
     const now = Date.now();
     
@@ -112,6 +129,7 @@ function getCachedWeather(): WeatherData | null {
     
     return data;
   } catch {
+    sessionStorage.removeItem(CACHE_KEY);
     return null;
   }
 }

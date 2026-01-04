@@ -149,26 +149,36 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
       return null;
     }
 
-    // Get species data for existing livestock
-    const existingSpeciesNames = existingLivestock
-      .filter(l => l.id !== livestock?.id) // Exclude current if editing
-      .map(l => l.species);
-    
-    const existingSpeciesData = await getFishSpeciesByNames(existingSpeciesNames);
+    try {
+      // Get species data for existing livestock
+      const existingSpeciesNames = existingLivestock
+        .filter(l => l.id !== livestock?.id) // Exclude current if editing
+        .map(l => l.species);
+      
+      const existingSpeciesData = await getFishSpeciesByNames(existingSpeciesNames);
 
-    const result = checkCompatibility(
-      selectedSpecies,
-      existingLivestock.filter(l => l.id !== livestock?.id),
-      {
-        id: aquarium.id,
-        name: aquarium.name,
-        type: aquarium.type,
-        volume_gallons: aquarium.volume_gallons,
-      },
-      existingSpeciesData
-    );
+      const result = checkCompatibility(
+        selectedSpecies,
+        existingLivestock.filter(l => l.id !== livestock?.id),
+        {
+          id: aquarium.id,
+          name: aquarium.name,
+          type: aquarium.type,
+          volume_gallons: aquarium.volume_gallons,
+        },
+        existingSpeciesData
+      );
 
-    return result;
+      return result;
+    } catch (error) {
+      console.error('Error running compatibility check:', error);
+      toast({
+        title: 'Compatibility check failed',
+        description: 'Could not verify species compatibility. You can still add the livestock.',
+        variant: 'destructive',
+      });
+      return null;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
