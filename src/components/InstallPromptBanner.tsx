@@ -14,10 +14,10 @@ const InstallPromptBanner = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
-  // Only show for authenticated users
-  if (!user) return null;
-
+  // All hooks must be called before any conditional returns (React Rules of Hooks)
   useEffect(() => {
+    // Only run for authenticated users
+    if (!user) return;
     // Check if already installed (standalone mode)
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches 
       || (window.navigator as any).standalone === true;
@@ -65,7 +65,7 @@ const InstallPromptBanner = () => {
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [user]);
 
   const handleInstall = async () => {
     if (deferredPrompt) {
@@ -91,7 +91,7 @@ const InstallPromptBanner = () => {
     }));
   };
 
-  if (!isVisible) return null;
+  if (!user || !isVisible) return null;
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">

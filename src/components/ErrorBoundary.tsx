@@ -141,7 +141,7 @@ class ErrorBoundary extends Component<Props, State> {
                   <p className="text-sm font-mono text-destructive">
                     {this.state.error.toString()}
                   </p>
-                  {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+                  {import.meta.env.DEV && this.state.errorInfo && (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
                         Stack trace (development only)

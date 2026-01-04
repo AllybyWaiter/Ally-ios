@@ -523,10 +523,10 @@ const HelpCenter = () => {
                       {expandedGuide === guide.id && (
                         <CardContent className="pt-0">
                           <div className="space-y-3 border-t pt-4">
-                            {guide.steps.map((step, index) => (
-                              <div key={index} className="flex items-start gap-3">
+                            {guide.steps.map((step, stepIndex) => (
+                              <div key={`${guide.id}-step-${stepIndex}`} className="flex items-start gap-3">
                                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
-                                  {index + 1}
+                                  {stepIndex + 1}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{step}</p>
                               </div>
