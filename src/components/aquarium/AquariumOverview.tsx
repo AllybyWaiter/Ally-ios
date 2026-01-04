@@ -29,9 +29,19 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
   }
 };
 
+interface Aquarium {
+  id: string;
+  name: string;
+  type: string;
+  volume_gallons: number | null;
+  status: string | null;
+  setup_date: string | null;
+  notes: string | null;
+}
+
 interface AquariumOverviewProps {
   aquariumId: string;
-  aquarium: any;
+  aquarium: Aquarium;
 }
 
 export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {

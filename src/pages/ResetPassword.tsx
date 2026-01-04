@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,9 +28,19 @@ export default function ResetPassword() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; confirmPassword?: string }>({});
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null);
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Cleanup redirect timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Check if user has a valid recovery session
   useEffect(() => {
@@ -73,11 +83,11 @@ export default function ResetPassword() {
       });
 
       // Sign out and redirect to login after 2 seconds
-      setTimeout(async () => {
+      redirectTimeoutRef.current = setTimeout(async () => {
         await supabase.auth.signOut();
         navigate('/auth');
       }, 2000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const fieldErrors: { password?: string; confirmPassword?: string } = {};
         error.errors.forEach((err) => {
@@ -86,7 +96,7 @@ export default function ResetPassword() {
           }
         });
         setErrors(fieldErrors);
-      } else if (error?.message) {
+      } else if (error instanceof Error && error.message) {
         toast({
           title: 'Error',
           description: error.message,

@@ -10,6 +10,7 @@ export const FeatureArea = {
   CHAT: 'chat',
   SETTINGS: 'settings',
   ADMIN: 'admin',
+  WEATHER: 'weather',
   GENERAL: 'general',
 } as const;
 

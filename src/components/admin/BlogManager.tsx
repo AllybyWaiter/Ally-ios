@@ -6,6 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/formatters';
 import { format } from 'date-fns';
@@ -32,6 +42,7 @@ export default function BlogManager() {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletePostId, setDeletePostId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -63,13 +74,19 @@ export default function BlogManager() {
     setLoading(false);
   };
 
-  const handleDelete = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this blog post?')) return;
+  const handleDeleteClick = (postId: string) => {
+    setDeletePostId(postId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletePostId) return;
 
     const { error } = await supabase
       .from('blog_posts')
       .delete()
-      .eq('id', postId);
+      .eq('id', deletePostId);
+
+    setDeletePostId(null);
 
     if (error) {
       toast({
@@ -264,27 +281,44 @@ export default function BlogManager() {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(post.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(post.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
         </TabsContent>
 
         <TabsContent value="calendar">
           <BlogCalendar posts={posts} />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!deletePostId} onOpenChange={(open) => !open && setDeletePostId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this blog post? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

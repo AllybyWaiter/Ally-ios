@@ -32,6 +32,7 @@ export function useStreamingResponse() {
   // Accumulated content ref
   const assistantMessageRef = useRef<string>("");
   const lastUpdateRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const streamResponse = useCallback(async (
     messages: Message[],
@@ -52,6 +53,10 @@ export function useStreamingResponse() {
     }
 
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
+
+    // Cancel any in-flight request
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
 
     // Format messages for API - convert imageUrl to proper format
     const formattedMessages = messages.map(msg => {
@@ -79,6 +84,7 @@ export function useStreamingResponse() {
         aquariumId,
         model, // Pass model selection to backend
       }),
+      signal: abortControllerRef.current.signal,
     });
 
     if (!response.ok || !response.body) {
@@ -154,8 +160,14 @@ export function useStreamingResponse() {
     return finalContent;
   }, [navigate, toast]);
 
+  const abort = useCallback(() => {
+    abortControllerRef.current?.abort();
+    setIsStreaming(false);
+  }, []);
+
   return {
     isStreaming,
     streamResponse,
+    abort,
   };
 }

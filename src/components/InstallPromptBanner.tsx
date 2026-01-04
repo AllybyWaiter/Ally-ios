@@ -34,14 +34,19 @@ const InstallPromptBanner = () => {
     // Check dismissal with expiry (show again after 7 days)
     const dismissedData = localStorage.getItem("install-prompt-dismissed");
     if (dismissedData) {
-      const { timestamp, type } = JSON.parse(dismissedData);
-      const daysSinceDismissal = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
-      
-      // If permanently dismissed, don't show
-      if (type === "permanent") return;
-      
-      // If temporarily dismissed, show again after 7 days
-      if (type === "temporary" && daysSinceDismissal < 7) return;
+      try {
+        const { timestamp, type } = JSON.parse(dismissedData);
+        const daysSinceDismissal = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
+        
+        // If permanently dismissed, don't show
+        if (type === "permanent") return;
+        
+        // If temporarily dismissed, show again after 7 days
+        if (type === "temporary" && daysSinceDismissal < 7) return;
+      } catch {
+        // Invalid JSON, remove corrupt data
+        localStorage.removeItem("install-prompt-dismissed");
+      }
     }
 
     // Listen for beforeinstallprompt event (Android/Chrome)
