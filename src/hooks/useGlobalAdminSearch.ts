@@ -34,7 +34,7 @@ export function useGlobalAdminSearch() {
     const allResults: SearchResult[] = [];
 
     try {
-      // Search users
+      // Search users - only search on text columns (email, name), not UUIDs
       const { data: users } = await supabase
         .from('profiles')
         .select('user_id, email, name')
@@ -43,14 +43,14 @@ export function useGlobalAdminSearch() {
 
       if (users) {
         allResults.push(...users.map(u => ({
-          id: u.user_id,
+          id: u.user_id as string,
           type: 'user' as const,
           title: u.name || u.email,
           subtitle: u.email,
         })));
       }
 
-      // Search tickets
+      // Search tickets - only search on text columns (subject, email), not UUIDs
       const { data: tickets } = await supabase
         .from('support_tickets')
         .select('id, subject, email, status')
@@ -59,14 +59,14 @@ export function useGlobalAdminSearch() {
 
       if (tickets) {
         allResults.push(...tickets.map(t => ({
-          id: t.id,
+          id: t.id as string,
           type: 'ticket' as const,
           title: t.subject,
           subtitle: `${t.email} • ${t.status}`,
         })));
       }
 
-      // Search blog posts
+      // Search blog posts - only search on text columns (title), not UUIDs
       const { data: posts } = await supabase
         .from('blog_posts')
         .select('id, title, status, slug')
@@ -75,7 +75,7 @@ export function useGlobalAdminSearch() {
 
       if (posts) {
         allResults.push(...posts.map(p => ({
-          id: p.id,
+          id: p.id as string,
           type: 'blog' as const,
           title: p.title,
           subtitle: p.status,
@@ -83,7 +83,7 @@ export function useGlobalAdminSearch() {
         })));
       }
 
-      // Search contacts
+      // Search contacts - only search on text columns, not UUIDs
       const { data: contacts } = await supabase
         .from('contacts')
         .select('id, name, email, subject')
@@ -92,14 +92,14 @@ export function useGlobalAdminSearch() {
 
       if (contacts) {
         allResults.push(...contacts.map(c => ({
-          id: c.id,
+          id: c.id as string,
           type: 'contact' as const,
           title: c.name,
           subtitle: c.email,
         })));
       }
 
-      // Search waitlist
+      // Search waitlist - only search on text columns (email), not UUIDs
       const { data: waitlist } = await supabase
         .from('waitlist')
         .select('id, email')
@@ -108,14 +108,14 @@ export function useGlobalAdminSearch() {
 
       if (waitlist) {
         allResults.push(...waitlist.map(w => ({
-          id: w.id,
+          id: w.id as string,
           type: 'waitlist' as const,
           title: w.email,
           subtitle: 'Waitlist',
         })));
       }
 
-      // Search announcements
+      // Search announcements - only search on text columns (title), not UUIDs
       const { data: announcements } = await supabase
         .from('announcements')
         .select('id, title, status')
@@ -124,7 +124,7 @@ export function useGlobalAdminSearch() {
 
       if (announcements) {
         allResults.push(...announcements.map(a => ({
-          id: a.id,
+          id: a.id as string,
           type: 'announcement' as const,
           title: a.title,
           subtitle: a.status,
