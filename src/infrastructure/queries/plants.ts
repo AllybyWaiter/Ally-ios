@@ -50,9 +50,10 @@ export async function fetchPlant(plantId: string) {
     .from('plants')
     .select('*')
     .eq('id', plantId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Plant not found');
   return data as Plant;
 }
 
@@ -94,12 +95,13 @@ export async function updatePlant(
   return data as Plant;
 }
 
-// Delete plant
-export async function deletePlant(plantId: string) {
+// Delete plant (with user_id for defense in depth)
+export async function deletePlant(plantId: string, userId: string) {
   const { error } = await supabase
     .from('plants')
     .delete()
-    .eq('id', plantId);
+    .eq('id', plantId)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }

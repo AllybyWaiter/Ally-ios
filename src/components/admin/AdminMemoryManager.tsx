@@ -273,8 +273,8 @@ export default function AdminMemoryManager() {
                   outerRadius={70}
                   label={({ name, count }) => `${name}: ${count}`}
                 >
-                  {sourceChartData.map((entry, index) => (
-                    <Cell key={index} fill={entry.fill} />
+                  {sourceChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.fill} />
                   ))}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />

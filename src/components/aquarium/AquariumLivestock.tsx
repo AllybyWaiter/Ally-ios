@@ -73,10 +73,11 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
   // Delete mutation with optimistic updates
   const deleteMutation = useMutation({
     mutationFn: async ({ id, type }: { id: string; type: 'livestock' | 'plant' }) => {
+      if (!user) throw new Error('Not authenticated');
       if (type === 'livestock') {
-        await deleteLivestock(id);
+        await deleteLivestock(id, user.id);
       } else {
-        await deletePlant(id);
+        await deletePlant(id, user.id);
       }
     },
     onMutate: async ({ id, type }) => {

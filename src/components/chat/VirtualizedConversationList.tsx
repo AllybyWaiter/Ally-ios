@@ -34,17 +34,20 @@ const ConversationItem = memo(({
   conversation, 
   isActive, 
   onLoad, 
-  onRequestDelete 
+  onRequestDelete,
+  isDeleting = false
 }: { 
   conversation: Conversation; 
   isActive: boolean; 
   onLoad: () => void; 
   onRequestDelete: () => void;
+  isDeleting?: boolean;
 }) => (
   <div
     className={cn(
       "relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors",
-      isActive && "bg-accent"
+      isActive && "bg-accent",
+      isDeleting && "opacity-50 pointer-events-none"
     )}
     onClick={onLoad}
   >
@@ -61,12 +64,17 @@ const ConversationItem = memo(({
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          disabled={isDeleting}
           onClick={(e) => {
             e.stopPropagation();
             onRequestDelete();
           }}
         >
-          <Trash2 className="h-4 w-4" />
+          {isDeleting ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
@@ -87,6 +95,7 @@ export const VirtualizedConversationList = memo(({
   const parentRef = useRef<HTMLDivElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const virtualizer = useVirtualizer({
     count: conversations.length,
@@ -104,11 +113,16 @@ export const VirtualizedConversationList = memo(({
     setDeleteDialogOpen(true);
   }, []);
 
-  const handleConfirmDelete = useCallback((e: React.MouseEvent) => {
+  const handleConfirmDelete = useCallback(async (e: React.MouseEvent) => {
     if (conversationToDelete) {
-      onDeleteConversation(conversationToDelete, e);
-      setDeleteDialogOpen(false);
-      setConversationToDelete(null);
+      setIsDeleting(true);
+      try {
+        await onDeleteConversation(conversationToDelete, e);
+      } finally {
+        setIsDeleting(false);
+        setDeleteDialogOpen(false);
+        setConversationToDelete(null);
+      }
     }
   }, [conversationToDelete, onDeleteConversation]);
 
@@ -151,6 +165,7 @@ export const VirtualizedConversationList = memo(({
                   isActive={currentConversationId === conv.id}
                   onLoad={handleLoad(conv.id)}
                   onRequestDelete={handleRequestDelete(conv.id)}
+                  isDeleting={isDeleting && conversationToDelete === conv.id}
                 />
               </div>
             );
@@ -170,9 +185,10 @@ export const VirtualizedConversationList = memo(({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
+              disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

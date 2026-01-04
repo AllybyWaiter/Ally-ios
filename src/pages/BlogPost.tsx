@@ -9,6 +9,7 @@ import { ArrowLeft, Clock, Eye } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { SEO, StructuredData, generateBreadcrumbData } from '@/components/SEO';
+import { SectionErrorBoundary } from '@/components/error-boundaries';
 
 interface BlogPostData {
   id: string;
@@ -180,10 +181,12 @@ export default function BlogPost() {
           </header>
 
           {/* Post Content */}
-          <div 
-            className="prose prose-lg dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
-          />
+          <SectionErrorBoundary fallbackTitle="Failed to load blog content">
+            <div 
+              className="prose prose-lg dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
+            />
+          </SectionErrorBoundary>
         </article>
       </main>
 
