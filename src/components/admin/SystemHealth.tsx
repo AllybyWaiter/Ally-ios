@@ -73,19 +73,19 @@ export function SystemHealth() {
 
       setTableStats(stats);
 
-      // Check storage buckets
+      // Check storage buckets in parallel
       const buckets = ['blog-images', 'water-test-photos', 'livestock-photos', 'plant-photos'];
-      const bucketStats: { bucket: string; count: number }[] = [];
+      const bucketResults = await Promise.all(
+        buckets.map(async (bucket) => {
+          const { data } = await supabase.storage.from(bucket).list('', { limit: 1000 });
+          return {
+            bucket,
+            count: data?.length || 0,
+          };
+        })
+      );
       
-      for (const bucket of buckets) {
-        const { data } = await supabase.storage.from(bucket).list('', { limit: 1000 });
-        bucketStats.push({
-          bucket,
-          count: data?.length || 0,
-        });
-      }
-      
-      setStorageUsage(bucketStats);
+      setStorageUsage(bucketResults);
 
       // Simple health check - if we got here, database is working
       setSystemStatus({

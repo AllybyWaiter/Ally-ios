@@ -3,6 +3,7 @@ import { AuthProvider, useAuthContext } from './AuthContext';
 import { ProfileProvider, useProfileContext } from './ProfileContext';
 import { PermissionsProvider, usePermissionsContext } from './PermissionsContext';
 import { FeatureFlagsProvider, useFeatureFlagsContext } from './FeatureFlagsContext';
+import { OnboardingProvider } from './OnboardingContext';
 
 // Combined provider that nests all contexts in correct order
 export const AppProviders = ({ children }: { children: ReactNode }) => {
@@ -11,7 +12,9 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
       <ProfileProvider>
         <PermissionsProvider>
           <FeatureFlagsProvider>
-            {children}
+            <OnboardingProvider>
+              {children}
+            </OnboardingProvider>
           </FeatureFlagsProvider>
         </PermissionsProvider>
       </ProfileProvider>
@@ -24,6 +27,7 @@ export { useAuthContext } from './AuthContext';
 export { useProfileContext } from './ProfileContext';
 export { usePermissionsContext } from './PermissionsContext';
 export { useFeatureFlagsContext } from './FeatureFlagsContext';
+export { useOnboarding, useOnboardingOptional } from './OnboardingContext';
 
 // Backward-compatible combined hook that maintains the same API as the old useAuth
 export const useAuth = () => {

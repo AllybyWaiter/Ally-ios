@@ -29,16 +29,22 @@ export function useSuggestedQuestions({
   // Fetch active alerts for context
   const { data: alerts = [] } = useQuery({
     queryKey: queryKeys.waterTests.alerts(user?.id || ''),
-    queryFn: () => fetchActiveAlerts(user!.id),
-    enabled: !!user,
+    queryFn: async () => {
+      if (!user?.id) return [];
+      return fetchActiveAlerts(user.id);
+    },
+    enabled: !!user?.id,
     staleTime: 60000,
   });
 
   // Fetch upcoming/overdue tasks
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', 'upcoming', user?.id],
-    queryFn: () => fetchUpcomingTasks(user!.id),
-    enabled: !!user,
+    queryFn: async () => {
+      if (!user?.id) return [];
+      return fetchUpcomingTasks(user.id);
+    },
+    enabled: !!user?.id,
     staleTime: 60000,
   });
 
