@@ -721,6 +721,93 @@ export type Database = {
         }
         Relationships: []
       }
+      fish_species: {
+        Row: {
+          adult_size_inches: number
+          bottom_dweller: boolean | null
+          category: string
+          common_name: string
+          created_at: string | null
+          fin_nipper: boolean | null
+          hardness_max_dgh: number | null
+          hardness_min_dgh: number | null
+          id: string
+          incompatible_categories: string[] | null
+          mid_dweller: boolean | null
+          min_school_size: number | null
+          min_tank_gallons: number
+          ph_max: number | null
+          ph_min: number | null
+          predator: boolean | null
+          schooling: boolean | null
+          scientific_name: string
+          species_only_tank: boolean | null
+          temp_max_f: number | null
+          temp_min_f: number | null
+          temperament: string
+          territorial: boolean | null
+          top_dweller: boolean | null
+          updated_at: string | null
+          water_type: string
+        }
+        Insert: {
+          adult_size_inches: number
+          bottom_dweller?: boolean | null
+          category?: string
+          common_name: string
+          created_at?: string | null
+          fin_nipper?: boolean | null
+          hardness_max_dgh?: number | null
+          hardness_min_dgh?: number | null
+          id?: string
+          incompatible_categories?: string[] | null
+          mid_dweller?: boolean | null
+          min_school_size?: number | null
+          min_tank_gallons: number
+          ph_max?: number | null
+          ph_min?: number | null
+          predator?: boolean | null
+          schooling?: boolean | null
+          scientific_name: string
+          species_only_tank?: boolean | null
+          temp_max_f?: number | null
+          temp_min_f?: number | null
+          temperament?: string
+          territorial?: boolean | null
+          top_dweller?: boolean | null
+          updated_at?: string | null
+          water_type: string
+        }
+        Update: {
+          adult_size_inches?: number
+          bottom_dweller?: boolean | null
+          category?: string
+          common_name?: string
+          created_at?: string | null
+          fin_nipper?: boolean | null
+          hardness_max_dgh?: number | null
+          hardness_min_dgh?: number | null
+          id?: string
+          incompatible_categories?: string[] | null
+          mid_dweller?: boolean | null
+          min_school_size?: number | null
+          min_tank_gallons?: number
+          ph_max?: number | null
+          ph_min?: number | null
+          predator?: boolean | null
+          schooling?: boolean | null
+          scientific_name?: string
+          species_only_tank?: boolean | null
+          temp_max_f?: number | null
+          temp_min_f?: number | null
+          temperament?: string
+          territorial?: boolean | null
+          top_dweller?: boolean | null
+          updated_at?: string | null
+          water_type?: string
+        }
+        Relationships: []
+      }
       incident_updates: {
         Row: {
           created_at: string
