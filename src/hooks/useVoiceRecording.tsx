@@ -54,11 +54,18 @@ export const useVoiceRecording = () => {
   }, []);
 
   const stopRecording = useCallback(async (): Promise<string | null> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') {
         resolve(null);
         return;
       }
+
+      // Add error handler for media recorder
+      mediaRecorderRef.current.onerror = (event) => {
+        setIsRecording(false);
+        setIsProcessing(false);
+        reject(new Error('MediaRecorder error'));
+      };
 
       mediaRecorderRef.current.onstop = async () => {
         setIsRecording(false);

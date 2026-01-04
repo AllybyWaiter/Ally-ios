@@ -215,11 +215,11 @@ export const getCustomTemplates = async (
   return (data || []).map((template) => ({
     id: template.id,
     name: template.name,
-    parameters: template.parameters as any as Parameter[],
+    parameters: template.parameters as unknown as Parameter[],
     isCustom: true,
     userId: template.user_id,
     aquariumType: template.aquarium_type,
-    isDefault: template.is_default,
+    isDefault: template.is_default ?? false,
     createdAt: template.created_at,
     updatedAt: template.updated_at,
   }));
