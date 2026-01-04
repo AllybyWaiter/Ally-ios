@@ -1037,7 +1037,24 @@ async function executeCheckFishCompatibility(
 
     // 4. Get species data for existing livestock
     const existingSpeciesNames = livestock.map(l => l.species);
-    let existingSpeciesData: Record<string, unknown>[] = [];
+    
+    interface FishSpeciesRecord {
+      id: string;
+      common_name: string;
+      scientific_name: string;
+      temperament: 'peaceful' | 'semi-aggressive' | 'aggressive';
+      adult_size_inches: number;
+      min_tank_gallons: number;
+      water_type: string;
+      temp_min_f: number | null;
+      temp_max_f: number | null;
+      schooling: boolean;
+      min_school_size: number;
+      fin_nipper: boolean;
+      predator: boolean;
+    }
+    
+    let existingSpeciesData: FishSpeciesRecord[] = [];
     
     if (existingSpeciesNames.length > 0) {
       const conditions = existingSpeciesNames.map(name => 
@@ -1049,7 +1066,7 @@ async function executeCheckFishCompatibility(
         .select('*')
         .or(conditions);
       
-      existingSpeciesData = speciesResults || [];
+      existingSpeciesData = (speciesResults || []) as FishSpeciesRecord[];
     }
 
     // 5. Run compatibility checks
@@ -1108,10 +1125,13 @@ async function executeCheckFishCompatibility(
     }
 
     // Check against each existing inhabitant
+    // Long-finned species keywords for fin nipper checks
+    const LONG_FINNED_KEYWORDS = ['betta', 'angelfish', 'guppy', 'gourami', 'goldfish', 'veiltail', 'butterfly'];
+    
     for (const inhabitant of livestock) {
-      const existingData = existingSpeciesData.find((s: Record<string, unknown>) => 
-        (s.common_name as string)?.toLowerCase() === inhabitant.species.toLowerCase() ||
-        (s.scientific_name as string)?.toLowerCase() === inhabitant.species.toLowerCase()
+      const existingData = existingSpeciesData.find((s) => 
+        s.common_name?.toLowerCase() === inhabitant.species.toLowerCase() ||
+        s.scientific_name?.toLowerCase() === inhabitant.species.toLowerCase()
       );
 
       if (!existingData) continue;
@@ -1133,10 +1153,9 @@ async function executeCheckFishCompatibility(
         });
       }
 
-      // Fin nipper check
-      const longFinnedKeywords = ['betta', 'angelfish', 'guppy', 'gourami', 'goldfish'];
-      const existingHasLongFins = longFinnedKeywords.some(k => inhabitant.species.toLowerCase().includes(k));
-      const newHasLongFins = longFinnedKeywords.some(k => speciesData.common_name.toLowerCase().includes(k));
+      // Fin nipper check using shared keywords
+      const existingHasLongFins = LONG_FINNED_KEYWORDS.some(k => inhabitant.species.toLowerCase().includes(k));
+      const newHasLongFins = LONG_FINNED_KEYWORDS.some(k => speciesData.common_name.toLowerCase().includes(k));
 
       if (speciesData.fin_nipper && existingHasLongFins) {
         warnings.push({
@@ -1156,7 +1175,7 @@ async function executeCheckFishCompatibility(
 
       // Size/Predation check
       if (speciesData.predator && existingData.adult_size_inches) {
-        const sizeDiff = speciesData.adult_size_inches / (existingData.adult_size_inches as number);
+        const sizeDiff = speciesData.adult_size_inches / existingData.adult_size_inches;
         if (sizeDiff >= 3) {
           warnings.push({
             severity: 'critical',
@@ -1170,8 +1189,8 @@ async function executeCheckFishCompatibility(
       // Temperature compatibility
       if (speciesData.temp_min_f && speciesData.temp_max_f && 
           existingData.temp_min_f && existingData.temp_max_f) {
-        const overlapMin = Math.max(speciesData.temp_min_f, existingData.temp_min_f as number);
-        const overlapMax = Math.min(speciesData.temp_max_f, existingData.temp_max_f as number);
+        const overlapMin = Math.max(speciesData.temp_min_f, existingData.temp_min_f);
+        const overlapMax = Math.min(speciesData.temp_max_f, existingData.temp_max_f);
         if (overlapMin > overlapMax) {
           warnings.push({
             severity: 'critical',

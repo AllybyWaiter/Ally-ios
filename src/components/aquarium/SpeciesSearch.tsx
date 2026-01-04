@@ -117,6 +117,9 @@ export function SpeciesSearch({
 
   const showDropdown = isOpen && value.length >= 2 && (isLoading || (species && species.length > 0));
 
+  const listboxId = 'species-search-listbox';
+  const getOptionId = (index: number) => `species-option-${index}`;
+
   return (
     <div className="relative">
       <div className="relative">
@@ -136,6 +139,12 @@ export function SpeciesSearch({
           placeholder={placeholder}
           disabled={disabled}
           className="pl-9"
+          role="combobox"
+          aria-expanded={showDropdown}
+          aria-haspopup="listbox"
+          aria-controls={showDropdown ? listboxId : undefined}
+          aria-activedescendant={selectedIndex >= 0 ? getOptionId(selectedIndex) : undefined}
+          aria-autocomplete="list"
         />
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -145,6 +154,9 @@ export function SpeciesSearch({
       {showDropdown && (
         <div 
           ref={listRef}
+          id={listboxId}
+          role="listbox"
+          aria-label="Fish species search results"
           className="absolute z-50 w-full mt-1 bg-popover border rounded-lg shadow-lg overflow-hidden"
         >
           {isLoading ? (
@@ -157,7 +169,10 @@ export function SpeciesSearch({
               {species.map((sp, index) => (
                 <button
                   key={sp.id}
+                  id={getOptionId(index)}
                   type="button"
+                  role="option"
+                  aria-selected={selectedIndex === index}
                   onClick={() => selectSpecies(sp)}
                   className={cn(
                     "w-full text-left px-3 py-2 flex items-start gap-3 hover:bg-accent transition-colors",
