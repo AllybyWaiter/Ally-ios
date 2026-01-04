@@ -19,6 +19,7 @@ import {
   Filter
 } from 'lucide-react';
 import { formatDate, formatRelativeTime } from '@/lib/formatters';
+import { responseTemplates, applyTemplateVariables } from '@/lib/emailTemplates';
 import {
   Dialog,
   DialogContent,
@@ -62,42 +63,7 @@ const statusColors: Record<string, string> = {
   spam: 'bg-red-500',
 };
 
-const responseTemplates = [
-  {
-    name: 'Thank You',
-    subject: 'Thank you for contacting us',
-    body: `Hi {{name}},
-
-Thank you for reaching out to us. We've received your message and will get back to you shortly.
-
-Best regards,
-The Team`,
-  },
-  {
-    name: 'Follow Up',
-    subject: 'Following up on your inquiry',
-    body: `Hi {{name}},
-
-Thank you for your patience. We wanted to follow up on your inquiry about your message.
-
-Is there anything else we can help you with?
-
-Best regards,
-The Team`,
-  },
-  {
-    name: 'Issue Resolved',
-    subject: 'Your inquiry has been resolved',
-    body: `Hi {{name}},
-
-We're pleased to inform you that your inquiry has been resolved.
-
-If you have any further questions, please don't hesitate to reach out.
-
-Best regards,
-The Team`,
-  },
-];
+// Email templates imported from @/lib/emailTemplates
 
 export function ContactsManager() {
   const { toast } = useToast();
@@ -204,7 +170,7 @@ export function ContactsManager() {
     setSelectedContact(contact);
     if (template) {
       setReplySubject(template.subject);
-      setReplyMessage(template.body.replace('{{name}}', contact.name));
+      setReplyMessage(applyTemplateVariables(template.body, { name: contact.name }));
     } else {
       setReplySubject(`Re: ${contact.subject || 'Your inquiry'}`);
       setReplyMessage('');
@@ -246,6 +212,7 @@ export function ContactsManager() {
     a.href = url;
     a.download = `contacts-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const stats = {

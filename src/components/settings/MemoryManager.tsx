@@ -78,7 +78,7 @@ export default function MemoryManager() {
         .from('profiles')
         .select('subscription_tier')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (!error && data?.subscription_tier) {
         setSubscriptionTier(data.subscription_tier);
