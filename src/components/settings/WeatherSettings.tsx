@@ -166,7 +166,7 @@ export function WeatherSettings() {
               size="icon"
               onClick={refreshWeather}
               disabled={weatherLoading}
-              title="Refresh weather"
+              aria-label="Refresh weather data"
             >
               <RefreshCw className={`h-4 w-4 ${weatherLoading ? 'animate-spin' : ''}`} />
             </Button>

@@ -84,7 +84,12 @@ export function CommandPalette({ open, onOpenChange, onSectionChange }: CommandP
   useEffect(() => {
     const saved = localStorage.getItem('admin-recent-sections');
     if (saved) {
-      setRecentSections(JSON.parse(saved));
+      try {
+        setRecentSections(JSON.parse(saved));
+      } catch {
+        // Invalid JSON, reset storage
+        localStorage.removeItem('admin-recent-sections');
+      }
     }
   }, []);
 
