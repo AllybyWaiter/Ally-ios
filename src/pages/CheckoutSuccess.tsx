@@ -24,9 +24,9 @@ export default function CheckoutSuccess() {
       .from('profiles')
       .select('subscription_tier')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    return profile?.subscription_tier;
+    return profile?.subscription_tier ?? null;
   }, [user]);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function CheckoutSuccess() {
           .from('profiles')
           .select('onboarding_completed')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
           
         if (profile && profile.onboarding_completed === false) {
           await supabase

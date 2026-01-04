@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, MessageSquare, Droplets, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -6,6 +5,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardVisibility } from "@/hooks/useKeyboardVisibility";
 import { triggerHaptic } from "@/hooks/useHaptics";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboardingOptional } from "@/contexts/OnboardingContext";
 
 interface NavItem {
   icon: typeof Home;
@@ -26,23 +26,8 @@ export function MobileBottomNav() {
   const isMobile = useIsMobile();
   const { isKeyboardVisible } = useKeyboardVisibility();
   const { user } = useAuth();
-  const [isOnboarding, setIsOnboarding] = useState(false);
-
-  // Detect onboarding state - useEffect MUST be before any returns
-  useEffect(() => {
-    const checkOnboarding = () => {
-      const onboardingElement = document.querySelector('[data-onboarding="true"]');
-      setIsOnboarding(!!onboardingElement);
-    };
-    
-    checkOnboarding();
-    
-    // Observe DOM changes to detect onboarding mounting/unmounting
-    const observer = new MutationObserver(checkOnboarding);
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    return () => observer.disconnect();
-  }, []);
+  const onboardingContext = useOnboardingOptional();
+  const isOnboarding = onboardingContext?.isOnboarding ?? false;
 
   // NOW safe to do early returns - all hooks have been called
   if (!user) return null;

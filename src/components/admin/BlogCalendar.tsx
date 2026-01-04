@@ -137,6 +137,8 @@ export default function BlogCalendar({ posts }: BlogCalendarProps) {
                       className="w-80 p-0 pointer-events-auto" 
                       align="center"
                       side="top"
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      onCloseAutoFocus={(e) => e.preventDefault()}
                     >
                       <div className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -153,7 +155,7 @@ export default function BlogCalendar({ posts }: BlogCalendarProps) {
                               key={post.id}
                               className="border rounded-md p-3 hover:bg-accent/50 transition-colors"
                             >
-                              <div className="space-y-1">
+                            <div className="space-y-1" role="article" aria-label={`Scheduled post: ${post.title}`}>
                                 <p className="font-medium text-sm line-clamp-2">
                                   {post.title}
                                 </p>
