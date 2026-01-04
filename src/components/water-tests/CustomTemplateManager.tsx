@@ -158,7 +158,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
     setIsFormOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast({ title: "Template name is required", variant: "destructive" });
       return;
@@ -172,6 +172,22 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
     if (formData.parameters.some(p => p.range.min >= p.range.max)) {
       toast({ title: "Min value must be less than max value", variant: "destructive" });
       return;
+    }
+
+    // Check for duplicate template name (only when creating new or changing name)
+    if (!editingTemplate || templates?.find(t => t.id === editingTemplate)?.name !== formData.name.trim()) {
+      const existingTemplate = templates?.find(
+        t => t.name.toLowerCase() === formData.name.trim().toLowerCase() && t.id !== editingTemplate
+      );
+      
+      if (existingTemplate) {
+        toast({ 
+          title: "Template name already exists", 
+          description: "Please choose a different name for your template.",
+          variant: "destructive" 
+        });
+        return;
+      }
     }
 
     if (editingTemplate) {

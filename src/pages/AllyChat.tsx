@@ -48,32 +48,7 @@ interface Message {
   imageUrl?: string;
 }
 
-type ModelType = 'standard' | 'thinking';
-
-interface ModelOption {
-  id: ModelType;
-  name: string;
-  description: string;
-  icon: typeof Sparkles;
-  requiresGold: boolean;
-}
-
-const MODEL_OPTIONS: ModelOption[] = [
-  { 
-    id: 'standard', 
-    name: 'Ally 1.0', 
-    description: 'Fast & helpful',
-    icon: Zap,
-    requiresGold: false 
-  },
-  { 
-    id: 'thinking', 
-    name: 'Ally 1.0 Thinking', 
-    description: 'Deep reasoning',
-    icon: Brain,
-    requiresGold: true
-  }
-];
+import { MODEL_OPTIONS, type ModelType, type ModelOption } from '@/lib/constants';
 
 const AllyChat = () => {
   const navigate = useNavigate();

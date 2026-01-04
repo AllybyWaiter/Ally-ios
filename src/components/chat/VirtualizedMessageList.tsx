@@ -433,6 +433,8 @@ export const VirtualizedMessageList = memo(({
     <div 
       ref={parentRef} 
       className="h-full overflow-auto px-4 lg:px-6"
+      aria-live="polite"
+      aria-atomic="false"
     >
       <div
         className="max-w-4xl mx-auto"
