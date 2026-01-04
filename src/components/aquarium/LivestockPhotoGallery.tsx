@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { X, Star, Trash2, ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,6 +137,9 @@ export default function LivestockPhotoGallery({
       {/* Lightbox */}
       <Dialog open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
         <DialogContent className="max-w-3xl p-0 bg-black/95 border-none">
+          <VisuallyHidden.Root>
+            <DialogTitle>Photo Viewer</DialogTitle>
+          </VisuallyHidden.Root>
           {selectedPhoto && (
             <div className="relative">
               {/* Close button */}
