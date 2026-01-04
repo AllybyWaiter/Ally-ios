@@ -283,6 +283,22 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "check_fish_compatibility",
+      description: "Check if a fish species is compatible with the user's existing tank inhabitants before they add it. Use when user asks about adding a specific fish, mentions getting a new fish, or asks if fish X goes with fish Y. Returns compatibility warnings about temperament, size, water parameters, fin nipping, predation risk, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          aquarium_id: { type: "string", description: "ID of the aquarium to check compatibility for" },
+          species_name: { type: "string", description: "Common or scientific name of the species to check (e.g., 'betta', 'neon tetra', 'oscar')" }
+        },
+        required: ["aquarium_id", "species_name"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 
