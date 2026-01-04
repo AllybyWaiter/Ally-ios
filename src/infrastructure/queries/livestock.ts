@@ -50,9 +50,10 @@ export async function fetchLivestockItem(livestockId: string) {
     .from('livestock')
     .select('*')
     .eq('id', livestockId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Livestock not found');
   return data as Livestock;
 }
 
@@ -94,12 +95,13 @@ export async function updateLivestock(
   return data as Livestock;
 }
 
-// Delete livestock
-export async function deleteLivestock(livestockId: string) {
+// Delete livestock (with user_id for defense in depth)
+export async function deleteLivestock(livestockId: string, userId: string) {
   const { error } = await supabase
     .from('livestock')
     .delete()
-    .eq('id', livestockId);
+    .eq('id', livestockId)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }

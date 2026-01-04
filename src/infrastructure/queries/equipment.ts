@@ -60,9 +60,10 @@ export async function fetchEquipmentItem(equipmentId: string) {
     .from('equipment')
     .select('*')
     .eq('id', equipmentId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Equipment not found');
   return data as Equipment;
 }
 

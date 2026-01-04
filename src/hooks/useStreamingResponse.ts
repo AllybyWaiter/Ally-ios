@@ -23,6 +23,7 @@ interface StreamingCallbacks {
 type ModelType = 'standard' | 'thinking';
 
 const UPDATE_INTERVAL = 16; // ~60fps for smooth typewriter effect
+const STREAM_TIMEOUT_MS = 60000; // 60 second timeout for streaming
 
 export function useStreamingResponse() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ export function useStreamingResponse() {
   const assistantMessageRef = useRef<string>("");
   const lastUpdateRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   const streamResponse = useCallback(async (
     messages: Message[],
@@ -73,6 +75,12 @@ export function useStreamingResponse() {
       };
     });
 
+    // Set up timeout
+    timeoutRef.current = window.setTimeout(() => {
+      abortControllerRef.current?.abort();
+      callbacks.onError(new Error('Request timed out after 60 seconds'));
+    }, STREAM_TIMEOUT_MS);
+
     const response = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
@@ -88,6 +96,7 @@ export function useStreamingResponse() {
     });
 
     if (!response.ok || !response.body) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       throw new Error("Failed to get response");
     }
 
@@ -150,6 +159,9 @@ export function useStreamingResponse() {
       }
     }
 
+    // Clear timeout on successful completion
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    
     // Final update to ensure all content is sent
     callbacks.onToken(assistantMessageRef.current);
     setIsStreaming(false);
@@ -161,6 +173,7 @@ export function useStreamingResponse() {
   }, [navigate, toast]);
 
   const abort = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     abortControllerRef.current?.abort();
     setIsStreaming(false);
   }, []);

@@ -231,23 +231,23 @@ describe('plants DAL', () => {
 
   describe('deletePlant', () => {
     it('should delete plant successfully', async () => {
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      });
+      const mockEq2 = vi.fn().mockResolvedValue({ error: null });
+      const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 });
+      const mockDelete = vi.fn().mockReturnValue({ eq: mockEq1 });
       vi.mocked(supabase.from).mockReturnValue({ delete: mockDelete } as any);
 
-      await deletePlant('pl-1');
+      await deletePlant('pl-1', 'user-123');
 
       expect(supabase.from).toHaveBeenCalledWith('plants');
     });
 
     it('should throw error on failure', async () => {
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } }),
-      });
+      const mockEq2 = vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } });
+      const mockEq1 = vi.fn().mockReturnValue({ eq: mockEq2 });
+      const mockDelete = vi.fn().mockReturnValue({ eq: mockEq1 });
       vi.mocked(supabase.from).mockReturnValue({ delete: mockDelete } as any);
 
-      await expect(deletePlant('pl-1')).rejects.toEqual({ message: 'Delete failed' });
+      await expect(deletePlant('pl-1', 'user-123')).rejects.toEqual({ message: 'Delete failed' });
     });
   });
 });
