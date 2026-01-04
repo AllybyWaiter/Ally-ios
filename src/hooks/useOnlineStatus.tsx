@@ -14,12 +14,14 @@ export const useOnlineStatus = (): OnlineStatusReturn => {
   const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handleOnline = () => {
       setIsOnline(true);
       setWasOffline(true);
       
       // Reset wasOffline after 5 seconds
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
         setWasOffline(false);
       }, 5000);
     };
@@ -32,6 +34,7 @@ export const useOnlineStatus = (): OnlineStatusReturn => {
     window.addEventListener('offline', handleOffline);
 
     return () => {
+      clearTimeout(timeoutId);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };

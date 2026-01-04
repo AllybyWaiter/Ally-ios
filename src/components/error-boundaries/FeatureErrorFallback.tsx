@@ -42,7 +42,7 @@ export function FeatureErrorFallback({
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-muted-foreground">{message}</p>
-          {process.env.NODE_ENV === "development" && (
+          {import.meta.env.DEV && (
             <details className="text-left text-xs bg-muted/50 p-3 rounded-md">
               <summary className="cursor-pointer font-medium text-muted-foreground">
                 Error Details

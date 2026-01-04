@@ -192,8 +192,8 @@ const BugBounty = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {inScopeItems.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  {inScopeItems.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                       <span>{item}</span>
                     </li>
@@ -211,8 +211,8 @@ const BugBounty = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
-                  {outOfScopeItems.map((item, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  {outOfScopeItems.map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
                       <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
                       <span>{item}</span>
                     </li>
@@ -237,10 +237,10 @@ const BugBounty = () => {
             </CardHeader>
             <CardContent>
               <ul className="grid md:grid-cols-2 gap-4">
-                {rules.map((rule, index) => (
-                  <li key={index} className="flex items-start gap-3 text-muted-foreground">
+                {rules.map((rule, ruleIndex) => (
+                  <li key={`rule-${ruleIndex}`} className="flex items-start gap-3 text-muted-foreground">
                     <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold shrink-0">
-                      {index + 1}
+                      {ruleIndex + 1}
                     </span>
                     <span className="text-sm">{rule}</span>
                   </li>
@@ -254,8 +254,8 @@ const BugBounty = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground">Rewards</h2>
           <div className="grid md:grid-cols-2 gap-4">
-            {rewardTiers.map((tier, index) => (
-              <Card key={index} className={`${tier.bgColor} border-0`}>
+            {rewardTiers.map((tier) => (
+              <Card key={tier.severity} className={`${tier.bgColor} border-0`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className={`text-lg ${tier.color}`}>{tier.severity}</CardTitle>
@@ -280,8 +280,8 @@ const BugBounty = () => {
           <div className="relative">
             <div className="absolute left-8 top-0 bottom-0 w-px bg-border hidden md:block" />
             <div className="space-y-6">
-              {submissionSteps.map((item, index) => (
-                <div key={index} className="flex gap-6">
+              {submissionSteps.map((item) => (
+                <div key={`step-${item.step}`} className="flex gap-6">
                   <div className="relative z-10 flex items-center justify-center w-16 h-16 rounded-full bg-primary text-primary-foreground font-bold text-xl shrink-0">
                     {item.step}
                   </div>
