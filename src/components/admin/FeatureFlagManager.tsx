@@ -60,7 +60,10 @@ export default function FeatureFlagManager() {
 
   const { data: overrides = [] } = useQuery({
     queryKey: queryKeys.featureFlags.overrides(selectedFlagForOverrides?.id ?? ''),
-    queryFn: () => fetchFlagOverrides(selectedFlagForOverrides!.id),
+    queryFn: () => {
+      if (!selectedFlagForOverrides) return [];
+      return fetchFlagOverrides(selectedFlagForOverrides.id);
+    },
     enabled: !!selectedFlagForOverrides,
   });
 

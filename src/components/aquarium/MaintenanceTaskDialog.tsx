@@ -171,9 +171,10 @@ export const MaintenanceTaskDialog = ({
       if (mode === "edit" && taskId) {
         const { data } = await supabase
           .from("maintenance_tasks")
-          .select("*")
+          .select("*, aquariums!inner(user_id)")
           .eq("id", taskId)
-          .single();
+          .eq("aquariums.user_id", (await supabase.auth.getUser()).data.user?.id)
+          .maybeSingle();
 
         if (data) {
           form.reset({

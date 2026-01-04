@@ -96,10 +96,13 @@ export function useConversationManager(userId: string | null) {
   }, []);
 
   const deleteConversation = useCallback(async (conversationId: string) => {
+    if (!userId) return false;
+    
     const { error } = await supabase
       .from('chat_conversations')
       .delete()
-      .eq('id', conversationId);
+      .eq('id', conversationId)
+      .eq('user_id', userId);
 
     if (!error) {
       toast({
@@ -114,7 +117,7 @@ export function useConversationManager(userId: string | null) {
       }
     }
     return false;
-  }, [currentConversationId, toast, fetchConversations]);
+  }, [userId, currentConversationId, toast, fetchConversations]);
 
   const saveConversation = useCallback(async (
     userMessage: Message,
