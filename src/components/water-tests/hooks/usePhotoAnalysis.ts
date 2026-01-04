@@ -5,10 +5,22 @@ import { useFeatureRateLimit } from '@/hooks/useFeatureRateLimit';
 import { measurePerformance } from '@/lib/performanceMonitor';
 import { FeatureArea } from '@/lib/sentry';
 import { compressImage, validateImageFile, formatFileSize } from '@/lib/imageCompression';
+import type { Json } from '@/integrations/supabase/types';
 
 interface AiDetectedParam {
   value: number;
   confidence: number;
+}
+
+interface AnalysisResultParam {
+  name: string;
+  value: number | null;
+  confidence?: number;
+}
+
+interface AnalysisResult {
+  parameters?: AnalysisResultParam[];
+  error?: string;
 }
 
 interface UsePhotoAnalysisProps {
@@ -24,7 +36,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,7 +118,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         const newParams: Record<string, string> = {};
         const detectedParams: Record<string, AiDetectedParam> = {};
         
-        data.parameters.forEach((param: any) => {
+        data.parameters.forEach((param: AnalysisResultParam) => {
           if (param.value != null) {
             newParams[param.name] = param.value.toString();
             detectedParams[param.name] = {
@@ -126,7 +138,8 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
           description: 'Please enter values manually',
         });
       }
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as Error;
       console.error('Error analyzing photo:', error);
 
       const errorMessage = error.message || 'Unable to analyze the photo';
@@ -168,16 +181,22 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) return;
 
-      await supabase.from('ai_feedback').insert({
+      const contextData: Json = {
+        aquariumType,
+        detectedParameters: (analysisResult?.parameters || []).map(p => ({
+          name: p.name,
+          value: p.value,
+          confidence: p.confidence ?? null,
+        })),
+        photoAnalyzed: true,
+      };
+      
+      await supabase.from('ai_feedback').insert([{
         user_id: authUser.id,
         feature: 'photo_analysis',
         rating,
-        context: {
-          aquariumType,
-          detectedParameters: analysisResult?.parameters || [],
-          photoAnalyzed: true,
-        },
-      });
+        context: contextData,
+      }]);
 
       toast.success(rating === 'positive' ? "Thanks for the feedback!" : "Thanks! We'll work to improve.");
     } catch (error) {

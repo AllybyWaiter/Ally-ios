@@ -20,11 +20,28 @@ interface TemperatureChartProps {
   units: UnitSystem | null;
 }
 
+interface ChartDataPoint {
+  time: string;
+  fullTime: string;
+  temperature: number;
+  precipProbability: number;
+  isDay: boolean;
+}
+
+interface TooltipPayloadItem {
+  payload: ChartDataPoint;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+}
+
 export function TemperatureChart({ hourlyForecast, units }: TemperatureChartProps) {
   const unitSystem = units || 'imperial';
   
   // Transform data for chart
-  const chartData = hourlyForecast.map((hour) => {
+  const chartData: ChartDataPoint[] = hourlyForecast.map((hour) => {
     const time = parseISO(hour.time);
     const temp = unitSystem === 'imperial' 
       ? celsiusToFahrenheit(hour.temperature) 
@@ -43,7 +60,7 @@ export function TemperatureChart({ hourlyForecast, units }: TemperatureChartProp
   const minTemp = Math.min(...temps) - 2;
   const maxTemp = Math.max(...temps) + 2;
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
