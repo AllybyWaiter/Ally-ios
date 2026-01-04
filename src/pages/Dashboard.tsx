@@ -109,7 +109,7 @@ export default function Dashboard() {
     return () => clearTimeout(maxLoadingTimeout);
   }, [user, dataFetched, onboardingCompleted, loading, loadAquariums, setLoading]);
 
-  // iOS PWA wake-up recovery
+  // iOS PWA wake-up recovery - soft refresh instead of hard reload
   useEffect(() => {
     let stuckCheckTimeout: NodeJS.Timeout | null = null;
     
@@ -120,14 +120,12 @@ export default function Dashboard() {
         if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
         
         stuckCheckTimeout = setTimeout(() => {
-          if (loading || authLoading) {
-            console.warn('Dashboard: Still loading after wake-up, forcing reload');
-            window.location.reload();
-          } else if (user && aquariums.length === 0 && dataFetched) {
-            console.log('Dashboard: Showing empty after wake-up, refreshing data with userId:', user.id);
+          if (user) {
+            // Always attempt soft refresh on wake-up instead of hard reload
+            console.log('Dashboard: Wake-up detected, performing soft refresh with userId:', user.id);
             loadAquariums(user.id);
           }
-        }, 2000);
+        }, 1000);
       }
     };
     
@@ -136,7 +134,7 @@ export default function Dashboard() {
       document.removeEventListener('visibilitychange', handleVisibility);
       if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
     };
-  }, [loading, authLoading, user, aquariums.length, dataFetched, loadAquariums]);
+  }, [user, loadAquariums]);
 
   // Main data loading effect
   useEffect(() => {

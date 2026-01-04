@@ -54,7 +54,7 @@ export const VirtualizedTestHistory = ({ tests, units }: VirtualizedTestHistoryP
   return (
     <div 
       ref={parentRef} 
-      className="h-[600px] overflow-auto"
+      className="h-[calc(100vh-300px)] min-h-[400px] max-h-[800px] overflow-auto"
     >
       <div
         style={{

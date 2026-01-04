@@ -138,15 +138,19 @@ function shareWaterLevel(species1: FishSpecies, species2: FishSpecies): boolean 
 }
 
 /**
+ * Long-finned species keywords - shared constant for consistency
+ */
+export const LONG_FINNED_KEYWORDS = [
+  'betta', 'angelfish', 'guppy', 'fancy goldfish', 'gourami', 
+  'veiltail', 'butterfly', 'long fin', 'longfin'
+] as const;
+
+/**
  * Check if a species has long fins (simplified check)
  */
-function hasLongFins(speciesName: string): boolean {
-  const longFinnedKeywords = [
-    'betta', 'angelfish', 'guppy', 'fancy goldfish', 'gourami', 
-    'veiltail', 'butterfly', 'long fin', 'longfin'
-  ];
+export function hasLongFins(speciesName: string): boolean {
   const lowerName = speciesName.toLowerCase();
-  return longFinnedKeywords.some(keyword => lowerName.includes(keyword));
+  return LONG_FINNED_KEYWORDS.some(keyword => lowerName.includes(keyword));
 }
 
 /**
