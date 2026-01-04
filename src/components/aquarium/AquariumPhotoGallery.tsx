@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, ChevronLeft, ChevronRight, X, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { fetchAquariumPhotos, setAsPrimaryAquariumPhoto, deleteAquariumPhoto } from '@/infrastructure/queries/aquariumPhotos';
@@ -116,6 +117,9 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
       {/* Lightbox */}
       <Dialog open={selectedIndex !== null} onOpenChange={() => setSelectedIndex(null)}>
         <DialogContent className="max-w-4xl p-0 bg-black/95">
+          <VisuallyHidden.Root>
+            <DialogTitle>Photo Viewer</DialogTitle>
+          </VisuallyHidden.Root>
           {selectedPhoto && (
             <div className="relative">
               <img
