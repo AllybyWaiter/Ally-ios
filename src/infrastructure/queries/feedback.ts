@@ -32,9 +32,10 @@ export async function createFeedback(feedback: {
     .from('ai_feedback')
     .insert(feedback)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Failed to create feedback');
   return data as AIFeedback;
 }
 

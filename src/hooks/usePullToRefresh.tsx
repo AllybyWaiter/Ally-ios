@@ -34,18 +34,26 @@ export function usePullToRefresh(
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || isRefreshing || !isTouchDevice) return;
     
-    // Only activate if at the top of the page
-    if (window.scrollY > 0) return;
+    // Check scroll position - support both window and container scroll
+    const container = containerRef.current;
+    const scrollTop = container ? container.scrollTop : window.scrollY;
+    
+    // Only activate if at the top
+    if (scrollTop > 0) return;
     
     startY.current = e.touches[0].clientY;
     isPulling.current = true;
-  }, [disabled, isRefreshing, isTouchDevice]);
+  }, [disabled, isRefreshing, isTouchDevice, containerRef]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isPulling.current || disabled || isRefreshing) return;
     
+    // Check scroll position - support both window and container scroll
+    const container = containerRef.current;
+    const scrollTop = container ? container.scrollTop : window.scrollY;
+    
     // Only activate if still at top
-    if (window.scrollY > 0) {
+    if (scrollTop > 0) {
       isPulling.current = false;
       setPullDistance(0);
       return;

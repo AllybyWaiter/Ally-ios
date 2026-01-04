@@ -31,35 +31,39 @@ export const logActivity = async ({
     const userIdToLog = userId || user?.id;
 
     if (!userIdToLog) {
-      console.warn('No user ID available for activity logging');
+      // Silently skip logging if no user - don't warn in console
       return;
     }
 
-    // Get user agent
-    const userAgent = navigator.userAgent;
+    // Get user agent (available client-side)
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
+    // Note: IP address should be captured server-side via edge functions, not client-side
     await supabase.from('activity_logs').insert({
       user_id: userIdToLog,
       action_type: actionType,
       action_details: actionDetails || {},
       user_agent: userAgent,
+      // ip_address is intentionally omitted - should only be set server-side
     });
-  } catch (error) {
-    console.error('Failed to log activity:', error);
+  } catch {
+    // Silently fail - activity logging should not disrupt user experience
   }
 };
 
 export const logLoginHistory = async (userId: string, success: boolean = true, failureReason?: string): Promise<void> => {
   try {
-    const userAgent = navigator.userAgent;
+    const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
+    // Note: IP address should be captured server-side via edge functions, not client-side
     await supabase.from('login_history').insert({
       user_id: userId,
       success,
       failure_reason: failureReason,
       user_agent: userAgent,
+      // ip_address is intentionally omitted - should only be set server-side
     });
-  } catch (error) {
-    console.error('Failed to log login history:', error);
+  } catch {
+    // Silently fail - login history logging should not disrupt user experience
   }
 };

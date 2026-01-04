@@ -149,3 +149,33 @@ export const formatUnit = (value: number, unit: string): string => {
   // In the future, this could use Intl.NumberFormat with unit style when more widely supported
   return `${formattedNumber} ${unit}`;
 };
+
+/**
+ * Convert a Date to an ISO date string (YYYY-MM-DD)
+ */
+export const toDateString = (date: Date = new Date()): string => {
+  return date.toISOString().split('T')[0];
+};
+
+/**
+ * Convert a Date to a full ISO string
+ */
+export const toISOString = (date: Date = new Date()): string => {
+  return date.toISOString();
+};
+
+/**
+ * Get today's date as an ISO date string (YYYY-MM-DD)
+ */
+export const getTodayString = (): string => {
+  return toDateString(new Date());
+};
+
+/**
+ * Get a future date as an ISO date string
+ */
+export const getFutureDateString = (daysAhead: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  return toDateString(date);
+};

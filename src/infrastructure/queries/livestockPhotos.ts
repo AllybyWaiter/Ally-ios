@@ -71,9 +71,10 @@ export async function uploadLivestockPhoto(
       taken_at: takenAt || new Date().toISOString().split('T')[0],
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Failed to create photo record');
   return data as LivestockPhoto;
 }
 
@@ -87,9 +88,10 @@ export async function updateLivestockPhoto(
     .update(updates)
     .eq('id', photoId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Photo not found');
   return data as LivestockPhoto;
 }
 

@@ -183,7 +183,11 @@ export const EquipmentDialog = ({
                 <FormItem>
                   <FormLabel>Equipment Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Canister Filter" {...field} />
+                    <Input 
+                      placeholder="e.g., Canister Filter" 
+                      aria-label="Equipment name"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -201,7 +205,7 @@ export const EquipmentDialog = ({
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger aria-label="Equipment type">
                         <SelectValue placeholder="Select equipment type" />
                       </SelectTrigger>
                     </FormControl>

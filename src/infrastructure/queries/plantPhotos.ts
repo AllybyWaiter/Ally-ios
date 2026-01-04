@@ -67,9 +67,10 @@ export async function uploadPlantPhoto(
       taken_at: takenAt || new Date().toISOString().split('T')[0],
     })
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Failed to create photo record');
   return data;
 }
 
@@ -88,9 +89,10 @@ export async function setAsPrimaryPlantPhoto(photoId: string, plantId: string): 
     .update({ is_primary: true })
     .eq('id', photoId)
     .select('photo_url')
-    .single();
+    .maybeSingle();
 
   if (photoError) throw photoError;
+  if (!photo) throw new Error('Photo not found');
 
   // Update the plant's primary_photo_url
   const { error: plantError } = await supabase
@@ -109,9 +111,10 @@ export async function deletePlantPhoto(photoId: string, plantId: string): Promis
     .from('plant_photos')
     .select('photo_url, is_primary')
     .eq('id', photoId)
-    .single();
+    .maybeSingle();
 
   if (fetchError) throw fetchError;
+  if (!photo) throw new Error('Photo not found');
 
   // Delete from storage
   const urlParts = photo.photo_url.split('/plant-photos/');

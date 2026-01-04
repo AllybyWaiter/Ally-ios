@@ -91,9 +91,10 @@ export async function createFeatureFlag(data: CreateFeatureFlagData): Promise<Fe
     .from('feature_flags')
     .insert(insertData)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!result) throw new Error('Failed to create feature flag');
   return result as FeatureFlag;
 }
 
@@ -104,9 +105,10 @@ export async function updateFeatureFlag(id: string, data: UpdateFeatureFlagData)
     .update(data)
     .eq('id', id)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!result) throw new Error('Feature flag not found');
   return result as FeatureFlag;
 }
 
@@ -156,9 +158,10 @@ export async function upsertFlagOverride(
       { onConflict: 'flag_id,user_id' }
     )
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) throw new Error('Failed to upsert flag override');
   return data as FeatureFlagOverride;
 }
 
