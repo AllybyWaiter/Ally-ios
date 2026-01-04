@@ -71,7 +71,20 @@ export async function fetchUpcomingTasks(userId: string) {
   const { data, error } = await supabase
     .from('maintenance_tasks')
     .select(`
-      *,
+      id,
+      aquarium_id,
+      task_name,
+      task_type,
+      due_date,
+      completed_date,
+      status,
+      notes,
+      is_recurring,
+      recurrence_interval,
+      recurrence_days,
+      equipment_id,
+      created_at,
+      updated_at,
       aquariums!inner(user_id)
     `)
     .eq('aquariums.user_id', userId)

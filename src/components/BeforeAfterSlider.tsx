@@ -38,7 +38,7 @@ const BeforeAfterSlider = ({
 
     window.addEventListener('mousemove', handleGlobalMove);
     window.addEventListener('mouseup', handleGlobalUp);
-    window.addEventListener('touchmove', handleGlobalMove);
+    window.addEventListener('touchmove', handleGlobalMove, { passive: false });
     window.addEventListener('touchend', handleGlobalUp);
 
     return () => {

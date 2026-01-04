@@ -140,29 +140,31 @@ function MapResizer() {
   const map = useMap();
   
   useEffect(() => {
-    // Force map to recalculate after mount and visibility - multiple passes for reliability
-    const timer1 = setTimeout(() => {
+    // Use ResizeObserver instead of multiple timeouts for reliable size detection
+    const container = map.getContainer();
+    
+    const resizeObserver = new ResizeObserver(() => {
       try {
-        console.log('[Radar] MapResizer: invalidating size (300ms)');
         map.invalidateSize();
       } catch (err) {
         console.error('[Radar] MapResizer error:', err);
       }
-    }, 300);
+    });
     
-    // Second pass for slow renders
-    const timer2 = setTimeout(() => {
+    resizeObserver.observe(container);
+    
+    // Initial invalidation after mount
+    const timer = setTimeout(() => {
       try {
-        console.log('[Radar] MapResizer: invalidating size (1000ms)');
         map.invalidateSize();
       } catch (err) {
-        console.error('[Radar] MapResizer error (1s):', err);
+        console.error('[Radar] MapResizer initial error:', err);
       }
-    }, 1000);
+    }, 300);
     
     return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      clearTimeout(timer);
+      resizeObserver.disconnect();
     };
   }, [map]);
   
