@@ -93,6 +93,7 @@ src/
 │       ├── equipment.ts
 │       ├── livestock.ts
 │       ├── plants.ts
+│       ├── fishSpecies.ts   # Fish compatibility database queries
 │       └── index.ts
 ├── lib/
 │   ├── queryKeys.ts       # Query key factory
