@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WaitlistDialog } from "@/components/WaitlistDialog";
-import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+
 import DemoVideoModal from "@/components/DemoVideoModal";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import appMockup from "@/assets/app-mockup.png";
@@ -424,17 +424,6 @@ const Features = () => {
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               No more guessing or manual calculations. Just snap, analyze, and act.
-            </p>
-          </div>
-
-          {/* Before/After Comparison */}
-          <div className="mb-16 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold text-center mb-6">
-              See The Difference
-            </h3>
-            <BeforeAfterSlider beforeImage="https://images.unsplash.com/photo-1520990378085-483217737dce?w=800&q=80" afterImage="https://images.unsplash.com/photo-1524704654690-b56c05c78a00?w=800&q=80" beforeLabel="Manual Testing" afterLabel="With Ally" />
-            <p className="text-center text-muted-foreground mt-4">
-              Drag the slider to see how Ally transforms water care from chaos to clarity
             </p>
           </div>
 
