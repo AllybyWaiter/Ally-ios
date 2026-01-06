@@ -2,10 +2,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Camera, Upload, X, Sparkles, Loader2, CheckCircle2, ThumbsUp, ThumbsDown } from 'lucide-react';
 
+interface AnalysisParameter {
+  name: string;
+  value: number | null;
+  confidence?: number;
+}
+
+interface AnalysisResult {
+  notes?: string;
+  parameters?: AnalysisParameter[];
+  error?: string;
+}
+
 interface PhotoUploadSectionProps {
   photoPreview: string | null;
   analyzingPhoto: boolean;
-  analysisResult: any;
+  analysisResult: AnalysisResult | null;
   feedbackGiven: boolean;
   onPhotoSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAnalyzePhoto: () => void;
@@ -119,9 +131,9 @@ export function PhotoUploadSection({
                 <p className="text-xs text-muted-foreground">{analysisResult.notes}</p>
               )}
               <div className="flex flex-wrap gap-2">
-                {analysisResult.parameters?.map((param: any, idx: number) => (
-                  <Badge key={idx} variant="outline">
-                    {param.name}: {param.value} {param.unit}
+                {analysisResult.parameters?.map((param) => (
+                  <Badge key={param.name} variant="outline">
+                    {param.name}: {param.value ?? 'N/A'}
                   </Badge>
                 ))}
               </div>
