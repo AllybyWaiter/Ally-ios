@@ -80,7 +80,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
       // Check role targeting
       if (flag.target_roles && flag.target_roles.length > 0) {
         const hasTargetRole = flag.target_roles.some(role => 
-          roles.includes(role as any)
+          roles.includes(role)
         );
         if (!hasTargetRole) return false;
       }
