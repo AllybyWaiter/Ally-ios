@@ -175,7 +175,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              {latestTest.test_parameters?.slice(0, 6).map((param: any) => {
+              {latestTest.test_parameters?.slice(0, 6).map((param: { id: string; parameter_name: string; value: number | null; unit: string; status?: string }) => {
                 const getStatusBadgeClass = (status: string) => {
                   switch (status) {
                     case 'good':

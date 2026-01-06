@@ -116,7 +116,7 @@ export default function BlogEditor() {
         setFeaturedImagePreview(data.featured_image_url);
       }
       // Load selected categories
-      const postCategories = data.blog_post_categories?.map((pc: any) => pc.category_id) || [];
+      const postCategories = data.blog_post_categories?.map((pc: { category_id: string }) => pc.category_id) || [];
       setSelectedCategories(postCategories);
     }
     setLoading(false);

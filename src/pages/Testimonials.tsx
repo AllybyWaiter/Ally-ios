@@ -136,8 +136,8 @@ const Testimonials = () => {
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-          {stats.map((stat, index) => (
-            <Card key={index} className="text-center">
+          {stats.map((stat) => (
+            <Card key={stat.label} className="text-center">
               <CardContent className="pt-6">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
                   {stat.value}

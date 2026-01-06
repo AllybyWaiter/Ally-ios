@@ -41,18 +41,14 @@ class PerformanceMonitor {
               FeatureArea.GENERAL
             );
 
-            // Log as warning if > 100ms
-            if (entry.duration > 100) {
-              console.warn(`Long task blocking main thread: ${entry.duration.toFixed(2)}ms`);
-            }
           }
         }
       });
 
       longTaskObserver.observe({ entryTypes: ['longtask'] });
       this.observers.push(longTaskObserver);
-    } catch (e) {
-      console.log('Long task observer not supported');
+    } catch {
+      // Long task observer not supported
     }
 
     // Monitor layout shifts (CLS)
@@ -76,8 +72,8 @@ class PerformanceMonitor {
 
       clsObserver.observe({ entryTypes: ['layout-shift'] });
       this.observers.push(clsObserver);
-    } catch (e) {
-      console.log('Layout shift observer not supported');
+    } catch {
+      // Layout shift observer not supported
     }
 
     // Monitor largest contentful paint (LCP)
@@ -98,16 +94,12 @@ class PerformanceMonitor {
           FeatureArea.GENERAL
         );
 
-        // Log as warning if > 2.5s
-        if (lcpEntry.renderTime > 2500) {
-          console.warn(`Slow LCP: ${lcpEntry.renderTime.toFixed(2)}ms`);
-        }
       });
 
       lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
       this.observers.push(lcpObserver);
-    } catch (e) {
-      console.log('LCP observer not supported');
+    } catch {
+      // LCP observer not supported
     }
   }
 
@@ -149,10 +141,8 @@ class PerformanceMonitor {
       featureArea || FeatureArea.GENERAL
     );
 
-    // Log warning for slow operations
+    // Log slow operations to Sentry
     if (duration > 1000) {
-      console.warn(`Slow operation detected: ${name} took ${duration.toFixed(2)}ms`);
-      
       logError(
         new Error(`Slow operation: ${name}`),
         { duration, metric },
@@ -222,15 +212,6 @@ class PerformanceMonitor {
       FeatureArea.GENERAL
     );
 
-    console.log('Navigation Timing Metrics:', {
-      'DNS Lookup': `${timing.dns.toFixed(2)}ms`,
-      'TCP Connection': `${timing.tcp.toFixed(2)}ms`,
-      'Request Time': `${timing.request.toFixed(2)}ms`,
-      'Response Time': `${timing.response.toFixed(2)}ms`,
-      'DOM Processing': `${timing.dom.toFixed(2)}ms`,
-      'Load Event': `${timing.load.toFixed(2)}ms`,
-      'Total Time': `${timing.total.toFixed(2)}ms`,
-    });
   }
 
   disconnect() {
