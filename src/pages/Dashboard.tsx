@@ -96,13 +96,10 @@ export default function Dashboard() {
   useEffect(() => {
     const maxLoadingTimeout = setTimeout(() => {
       if (loading && user && !dataFetched) {
-        console.warn('Dashboard: Max 4s timeout - forcing data load with userId:', user.id);
         loadAquariums(user.id);
       } else if (loading && user && onboardingCompleted === null) {
-        console.warn('Dashboard: Onboarding state unknown after 4s, attempting to load data');
         loadAquariums(user.id);
       } else if (loading) {
-        console.warn('Dashboard: Max 4s timeout - forcing completion');
         setLoading(false);
       }
     }, 4000);
@@ -115,14 +112,10 @@ export default function Dashboard() {
     
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        console.log('Dashboard: Visibility changed to visible, checking state...');
-        
         if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
         
         stuckCheckTimeout = setTimeout(() => {
           if (user) {
-            // Always attempt soft refresh on wake-up instead of hard reload
-            console.log('Dashboard: Wake-up detected, performing soft refresh with userId:', user.id);
             loadAquariums(user.id);
           }
         }, 1000);
@@ -153,7 +146,6 @@ export default function Dashboard() {
       return;
     }
     
-    console.log('Dashboard: Main useEffect calling loadAquariums with userId:', user.id);
     loadAquariums(user.id);
   }, [user, navigate, onboardingCompleted, authLoading, loadAquariums, setLoading]);
 
