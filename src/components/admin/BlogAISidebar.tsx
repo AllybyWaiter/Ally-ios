@@ -91,10 +91,11 @@ export default function BlogAISidebar({ formData, onUpdate, generateSlug }: Blog
         title: 'Success',
         description: `${action === 'generate' ? 'Post generated' : action === 'improve' ? 'Content improved' : 'SEO fields generated'} successfully`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'AI operation failed';
       toast({
         title: 'Error',
-        description: error.message || 'AI operation failed',
+        description: message,
         variant: 'destructive',
       });
     } finally {

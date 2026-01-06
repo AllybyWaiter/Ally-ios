@@ -80,7 +80,7 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
       } else {
         throw new Error('No checkout URL returned');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Checkout error:', error);
       toast({
         title: 'Unable to start checkout',

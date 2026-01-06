@@ -125,10 +125,11 @@ export default function AnnouncementManager() {
         scheduled_at: '',
       });
       fetchAnnouncements();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to create announcement';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create announcement',
+        description: message,
         variant: 'destructive',
       });
     }
@@ -148,10 +149,11 @@ export default function AnnouncementManager() {
         description: 'Announcement sent successfully',
       });
       fetchAnnouncements();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to send announcement';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to send announcement',
+        description: message,
         variant: 'destructive',
       });
     } finally {
