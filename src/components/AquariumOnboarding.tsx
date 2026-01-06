@@ -155,7 +155,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
       });
 
       onComplete();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating aquarium:', error);
       
       if (error instanceof z.ZodError) {
@@ -169,7 +169,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
       } else {
         toast({
           title: t('aquariumOnboarding.error'),
-          description: error.message || t('aquariumOnboarding.errorDescription'),
+          description: error instanceof Error ? error.message : t('aquariumOnboarding.errorDescription'),
           variant: 'destructive',
         });
       }

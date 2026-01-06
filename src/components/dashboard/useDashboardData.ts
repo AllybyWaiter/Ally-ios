@@ -43,10 +43,10 @@ export function useDashboardData() {
       setDataFetched(true);
       
       return data || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading aquariums:', error);
       
-      const errorMessage = error.message || 'Failed to load aquariums';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load aquariums';
       const isNetworkError = errorMessage.toLowerCase().includes('network') || 
                              errorMessage.toLowerCase().includes('fetch');
       
