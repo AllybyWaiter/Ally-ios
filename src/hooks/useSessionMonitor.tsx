@@ -37,11 +37,10 @@ export const useSessionMonitor = () => {
       if (!session) {
         // If visibility change and no session, might need to force refresh
         if (isVisibilityChange) {
-          console.log('🔵 Session: No session on visibility change, attempting refresh...');
           try {
             await supabase.auth.refreshSession();
-          } catch (e) {
-            console.log('🔵 Session: Refresh attempt failed (user may be logged out)');
+          } catch {
+            // User may be logged out
           }
         }
         return;
@@ -64,19 +63,12 @@ export const useSessionMonitor = () => {
 
       // On visibility change, always try to refresh if session exists
       if (isVisibilityChange) {
-        console.log('🔵 Session: Visibility change, refreshing session...');
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
-          console.error('🔴 Session: Visibility refresh failed:', refreshError.message);
-        } else {
-          console.log('🟢 Session: Visibility refresh successful');
-        }
+        await supabase.auth.refreshSession();
         return;
       }
 
       // Refresh session if close to expiry
       if (timeUntilExpiry < SESSION_REFRESH_THRESHOLD && timeUntilExpiry > 0) {
-        console.log('Refreshing session - close to expiry');
         const { error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {

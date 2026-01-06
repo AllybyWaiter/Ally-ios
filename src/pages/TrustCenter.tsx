@@ -129,8 +129,8 @@ const TrustCenter = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Policies & Documentation</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {policyLinks.map((link, index) => (
-              <Link key={index} to={link.href}>
+            {policyLinks.map((link) => (
+              <Link key={link.href} to={link.href}>
                 <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-3">
@@ -154,8 +154,8 @@ const TrustCenter = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Security Highlights</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {securityHighlights.map((item, index) => (
-              <div key={index} className="p-6 bg-muted/30 rounded-lg border text-center">
+            {securityHighlights.map((item) => (
+              <div key={item.title} className="p-6 bg-muted/30 rounded-lg border text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
                   <item.icon className="h-6 w-6 text-primary" />
                 </div>
@@ -170,8 +170,8 @@ const TrustCenter = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Compliance & Certifications</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {complianceItems.map((item, index) => (
-              <Card key={index}>
+            {complianceItems.map((item) => (
+              <Card key={item.name}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">

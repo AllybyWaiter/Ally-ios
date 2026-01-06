@@ -87,8 +87,8 @@ const DataBreachPolicy = () => {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6 text-foreground">Notification Timeline</h2>
           <div className="space-y-6">
-            {notificationSteps.map((step, index) => (
-              <Card key={index}>
+            {notificationSteps.map((step) => (
+              <Card key={step.title}>
                 <CardContent className="pt-6">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">

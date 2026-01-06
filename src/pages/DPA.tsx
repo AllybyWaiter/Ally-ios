@@ -67,8 +67,8 @@ const DPA = () => {
           <Card>
             <CardContent className="pt-6">
               <ul className="grid md:grid-cols-2 gap-4">
-                {dpaIncludes.map((item, index) => (
-                  <li key={index} className="flex items-center gap-3 text-muted-foreground">
+                {dpaIncludes.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-muted-foreground">
                     <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                     {item}
                   </li>

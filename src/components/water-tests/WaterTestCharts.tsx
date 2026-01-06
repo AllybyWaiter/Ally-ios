@@ -76,13 +76,28 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
       const data = await fetchWaterTestsForChart(aquarium.id, dateRange);
 
       // Transform data for charts with unit conversion
-      const formattedData = data.map((test: any) => {
-        const dataPoint: any = {
+      interface TestData {
+        test_date: string;
+        test_parameters?: Array<{
+          parameter_name: string;
+          value: number;
+          unit: string;
+        }>;
+      }
+      
+      interface ChartDataPoint {
+        date: string;
+        fullDate: string;
+        [key: string]: string | number;
+      }
+      
+      const formattedData = data.map((test: TestData) => {
+        const dataPoint: ChartDataPoint = {
           date: format(new Date(test.test_date), "MMM dd"),
           fullDate: test.test_date,
         };
 
-        test.test_parameters?.forEach((param: any) => {
+        test.test_parameters?.forEach((param) => {
           let displayValue = param.value;
           
           // Convert temperature to user's preferred unit
