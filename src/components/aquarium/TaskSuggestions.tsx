@@ -73,7 +73,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
           description: `Found ${data.suggestions.length} recommended tasks`,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error getting suggestions:', error);
       toast({
         title: "Error",

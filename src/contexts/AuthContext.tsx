@@ -122,8 +122,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       return { error };
-    } catch (error: any) {
-      addBreadcrumb('Sign in error', 'auth', { error: error.message }, FeatureArea.AUTH);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      addBreadcrumb('Sign in error', 'auth', { error: errorMessage }, FeatureArea.AUTH);
       return { error };
     }
   }, []);

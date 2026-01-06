@@ -124,7 +124,6 @@ const Hero = () => {
               width={448}
               height={560}
               loading="eager"
-              fetchPriority="high"
               animate={{ y: [0, -10, 0] }}
               transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
             />

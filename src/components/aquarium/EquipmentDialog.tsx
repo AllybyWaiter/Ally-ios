@@ -152,10 +152,11 @@ export const EquipmentDialog = ({
       onOpenChange(false);
       form.reset();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     },

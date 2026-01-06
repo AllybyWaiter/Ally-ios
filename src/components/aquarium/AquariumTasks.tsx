@@ -119,13 +119,14 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         description: t('tasks.taskDeleted'),
       });
     },
-    onError: (error: any, _, context) => {
+    onError: (error: unknown, _, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(queryKeys.tasks.list(aquariumId), context.previousTasks);
       }
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     },
@@ -219,13 +220,14 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
         description: result?.hasNextTask ? t('tasks.taskCompletedAndNext') : t('tasks.taskMarkedComplete'),
       });
     },
-    onError: (error: any, _, context) => {
+    onError: (error: unknown, _, context) => {
       if (context?.previousTasks) {
         queryClient.setQueryData(queryKeys.tasks.list(aquariumId), context.previousTasks);
       }
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Error",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     },

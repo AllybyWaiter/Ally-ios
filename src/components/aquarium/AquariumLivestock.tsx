@@ -103,7 +103,7 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
         description: `${type === 'livestock' ? 'Livestock' : 'Plant'} removed successfully` 
       });
     },
-    onError: (error: any, { type }, context) => {
+    onError: (error: unknown, { type }, context) => {
       // Rollback on error
       if (context?.previousData && context?.queryKey) {
         queryClient.setQueryData(context.queryKey, context.previousData);

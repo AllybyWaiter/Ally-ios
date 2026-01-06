@@ -67,16 +67,16 @@ const HowItWorks = () => {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          {steps.map((step, index) => {
+          {steps.map((step, stepIndex) => {
             const Icon = step.icon;
             return (
               <motion.div 
-                key={index} 
+                key={step.number} 
                 className="relative"
                 variants={stepVariants}
               >
                 {/* Connector Line - Desktop */}
-                {index < steps.length - 1 && (
+                {stepIndex < steps.length - 1 && (
                   <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-px bg-border" />
                 )}
                 
@@ -84,7 +84,7 @@ const HowItWorks = () => {
                   {/* Step Number Badge */}
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
                     <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                      {index + 1}
+                      {stepIndex + 1}
                     </span>
                   </div>
                   
