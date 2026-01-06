@@ -189,10 +189,10 @@ export default function TaskCalendar() {
       });
 
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to reschedule task',
         variant: "destructive",
       });
     } finally {
@@ -224,10 +224,10 @@ export default function TaskCalendar() {
       });
 
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to complete task',
         variant: "destructive",
       });
     }

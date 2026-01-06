@@ -93,11 +93,11 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
       queryClient.invalidateQueries({ queryKey: queryKeys.plants.list(aquariumId) });
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error('Error saving plant:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to save plant',
         variant: 'destructive',
       });
     },

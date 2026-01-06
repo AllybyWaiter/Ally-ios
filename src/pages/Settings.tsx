@@ -145,8 +145,9 @@ const Settings = () => {
         .eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Profile updated", description: "Your profile has been updated successfully." });
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -157,7 +158,7 @@ const Settings = () => {
     setTheme(newTheme);
     try {
       await supabase.from('profiles').update({ theme_preference: newTheme }).eq('user_id', user.id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save theme preference:', error);
     }
   };
@@ -169,7 +170,7 @@ const Settings = () => {
       const { error } = await supabase.from('profiles').update({ language_preference: newLanguage }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Language updated", description: "Your language preference has been saved." });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ title: "Error", description: "Failed to save language preference.", variant: "destructive" });
     }
   };
@@ -181,7 +182,7 @@ const Settings = () => {
       const { error } = await supabase.from('profiles').update({ hemisphere: newHemisphere }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Location updated", description: "Your hemisphere has been saved for seasonal reminders." });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ title: "Error", description: "Failed to save hemisphere preference.", variant: "destructive" });
     }
   };
@@ -199,7 +200,7 @@ const Settings = () => {
       const { error } = await supabase.from('profiles').update({ unit_preference: pendingUnitChange }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Units updated", description: "Your unit preference has been saved." });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({ title: "Error", description: "Failed to save unit preference.", variant: "destructive" });
     } finally {
       setShowUnitConfirmDialog(false);
@@ -230,8 +231,9 @@ const Settings = () => {
       toast({ title: "Password updated", description: "Your password has been updated successfully." });
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -258,8 +260,9 @@ const Settings = () => {
       URL.revokeObjectURL(url);
       
       toast({ title: "Data exported", description: "Your data has been downloaded successfully." });
-    } catch (error: any) {
-      toast({ title: "Export failed", description: error.message || "Failed to export data.", variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to export data.';
+      toast({ title: "Export failed", description: message, variant: "destructive" });
     } finally {
       setExportLoading(false);
     }
@@ -289,8 +292,9 @@ const Settings = () => {
       setDeleteConfirmText("");
       await signOut();
       navigate("/");
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to delete account", variant: "destructive" });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to delete account';
+      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

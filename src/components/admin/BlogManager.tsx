@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { PermissionGuard } from '@/components/PermissionGuard';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/formatters';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Eye, FileText, Calendar as CalendarIcon, List } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Calendar as CalendarIcon, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BlogCalendar from './BlogCalendar';
 
@@ -38,69 +38,58 @@ interface BlogPost {
 
 export default function BlogManager() {
   const { toast } = useToast();
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [deletePostId, setDeletePostId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPosts();
-    
-    // Auto-refresh every minute to update scheduled posts
-    const interval = setInterval(() => {
-      fetchPosts();
-    }, 60000);
+  // Fetch posts with React Query
+  const { data: posts = [], isLoading: loading } = useQuery({
+    queryKey: ['admin-blog-posts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, excerpt, status, published_at, view_count, created_at, tags')
+        .order('created_at', { ascending: false });
 
-    return () => clearInterval(interval);
-  }, []);
+      if (error) throw error;
+      return (data || []) as BlogPost[];
+    },
+    refetchInterval: 60000, // Auto-refresh every minute for scheduled posts
+  });
 
-  const fetchPosts = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select('id, title, slug, excerpt, status, published_at, view_count, created_at, tags')
-      .order('created_at', { ascending: false });
-
-    if (error) {
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', postId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch blog posts',
-        variant: 'destructive',
+        title: 'Success',
+        description: 'Post deleted successfully',
       });
-    } else {
-      setPosts(data || []);
-    }
-    setLoading(false);
-  };
-
-  const handleDeleteClick = (postId: string) => {
-    setDeletePostId(postId);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deletePostId) return;
-
-    const { error } = await supabase
-      .from('blog_posts')
-      .delete()
-      .eq('id', deletePostId);
-
-    setDeletePostId(null);
-
-    if (error) {
+      queryClient.invalidateQueries({ queryKey: ['admin-blog-posts'] });
+    },
+    onError: () => {
       toast({
         title: 'Error',
         description: 'Failed to delete post',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Post deleted successfully',
-      });
-      fetchPosts();
-    }
+    },
+  });
+
+  const handleDeleteClick = (postId: string) => {
+    setDeletePostId(postId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletePostId) return;
+    deleteMutation.mutate(deletePostId);
+    setDeletePostId(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -190,112 +179,112 @@ export default function BlogManager() {
 
         <TabsContent value="list">
           <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Blog Posts</CardTitle>
-              <CardDescription>Create and manage your blog content</CardDescription>
-            </div>
-            <Button onClick={() => navigate('/admin/blog/new')}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Post
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Views</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {posts.map((post) => (
-                <TableRow key={post.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{post.title}</div>
-                      {post.excerpt && (
-                        <div className="text-sm text-muted-foreground truncate max-w-xs">
-                          {post.excerpt}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(post.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                      {post.view_count}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {post.status === 'scheduled' && post.published_at ? (
-                      <span className="text-orange-600 dark:text-orange-400 text-sm">
-                        {format(new Date(post.published_at), 'MMM d, yyyy h:mm a')}
-                      </span>
-                    ) : post.published_at ? (
-                      formatDate(post.published_at, 'PP')
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {post.tags && post.tags.length > 0 ? (
-                      <div className="flex gap-1 flex-wrap">
-                        {post.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {post.tags.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{post.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex gap-2 justify-end">
-                      {post.status === 'published' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/admin/blog/edit/${post.id}`)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteClick(post.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Blog Posts</CardTitle>
+                  <CardDescription>Create and manage your blog content</CardDescription>
+                </div>
+                <Button onClick={() => navigate('/admin/blog/new')}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Post
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Views</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {posts.map((post) => (
+                    <TableRow key={post.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{post.title}</div>
+                          {post.excerpt && (
+                            <div className="text-sm text-muted-foreground truncate max-w-xs">
+                              {post.excerpt}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(post.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          {post.view_count}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {post.status === 'scheduled' && post.published_at ? (
+                          <span className="text-orange-600 dark:text-orange-400 text-sm">
+                            {format(new Date(post.published_at), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        ) : post.published_at ? (
+                          formatDate(post.published_at, 'PP')
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {post.tags && post.tags.length > 0 ? (
+                          <div className="flex gap-1 flex-wrap">
+                            {post.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {post.tags.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{post.tags.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          {post.status === 'published' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/admin/blog/edit/${post.id}`)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(post.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="calendar">

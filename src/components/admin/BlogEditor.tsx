@@ -297,10 +297,10 @@ export default function BlogEditor() {
       });
 
       navigate('/admin');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to save post',
+        description: error instanceof Error ? error.message : 'Failed to save post',
         variant: 'destructive',
       });
     } finally {

@@ -78,8 +78,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         console.warn('⚠️ Profile: No data for user - new user needs onboarding');
         setOnboardingCompleted(false);
       }
-    } catch (error: any) {
-      console.error('🔴 Profile: Exception:', error.message);
+    } catch (error: unknown) {
+      console.error('🔴 Profile: Exception:', error instanceof Error ? error.message : 'Unknown error');
       // Retry once on exception
       if (retryCount < 1) {
         console.warn('⚠️ Profile: Retrying after exception...');
