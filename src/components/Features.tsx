@@ -82,10 +82,10 @@ const Features = () => {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          {features.map((feature, index) => {
+          {features.map((feature) => {
             const Icon = feature.icon;
             return (
-              <motion.div key={index} variants={itemVariants}>
+              <motion.div key={feature.title} variants={itemVariants}>
                 <Card className="h-full border border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <CardContent className="p-8">
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5">
