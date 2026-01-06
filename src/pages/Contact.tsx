@@ -111,14 +111,15 @@ const Contact = () => {
 
       setIsSuccess(true);
       toast.success("Message sent successfully!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Contact form error:", error);
+      const message = error instanceof Error ? error.message : '';
       
       // Handle rate limit response
-      if (error?.message?.includes('Rate limit')) {
+      if (message.includes('Rate limit')) {
         toast.error("Too many submissions. Please try again later.");
       } else {
-        toast.error(error?.message || "Failed to send message. Please try again.");
+        toast.error(message || "Failed to send message. Please try again.");
       }
     } finally {
       setIsLoading(false);

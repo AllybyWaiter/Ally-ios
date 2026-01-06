@@ -103,10 +103,11 @@ export default function MemoryManager() {
 
       if (error) throw error;
       setMemories(data || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Error loading memories",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -170,10 +171,11 @@ export default function MemoryManager() {
 
       setDialogOpen(false);
       fetchMemories();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Error saving memory",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -192,10 +194,11 @@ export default function MemoryManager() {
       
       toast({ title: "Memory deleted" });
       fetchMemories();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: "Error deleting memory",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     }

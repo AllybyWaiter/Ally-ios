@@ -211,10 +211,11 @@ export default function UserManagement() {
         title: 'Emails sent',
         description: `Successfully sent to ${response.data?.successCount || selectedUserEmails.length} users`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to send bulk email';
       toast({
         title: 'Error sending emails',
-        description: error.message || 'Failed to send bulk email',
+        description: message,
         variant: 'destructive',
       });
     }
@@ -296,10 +297,11 @@ export default function UserManagement() {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to reactivate user';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to reactivate user',
+        description: message,
         variant: 'destructive',
       });
     }
@@ -309,9 +311,14 @@ export default function UserManagement() {
     if (!suspendingUser) return;
 
     try {
-      const updates: any = {
+      const updates: {
+        status: string;
+        suspension_reason: string;
+        suspended_until: string | null;
+      } = {
         status: suspensionType === 'ban' ? 'banned' : 'suspended',
         suspension_reason: suspensionReason,
+        suspended_until: null,
       };
 
       if (suspensionType === 'suspend' && suspensionDuration) {
@@ -319,8 +326,6 @@ export default function UserManagement() {
         const suspendedUntil = new Date();
         suspendedUntil.setDate(suspendedUntil.getDate() + days);
         updates.suspended_until = suspendedUntil.toISOString();
-      } else {
-        updates.suspended_until = null;
       }
 
       const { error } = await supabase
@@ -336,10 +341,11 @@ export default function UserManagement() {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : `Failed to ${suspensionType} user`;
       toast({
         title: 'Error',
-        description: error.message || `Failed to ${suspensionType} user`,
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -367,10 +373,11 @@ export default function UserManagement() {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to delete user';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to delete user',
+        description: message,
         variant: 'destructive',
       });
     } finally {
