@@ -66,7 +66,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           toast({
             title: t('preferencesOnboarding.step4.enabled'),
           });
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Failed to save weather settings:', error);
         }
         setPermissionLoading(false);
@@ -142,7 +142,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           description: t('preferencesOnboarding.step5.enableLater'),
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to enable notifications:', error);
       toast({
         title: t('preferencesOnboarding.step5.permissionDenied'),
@@ -201,11 +201,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
       });
 
       onComplete();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving preferences:', error);
       toast({
         title: t('common.error'),
-        description: error.message || t('settings.saveError'),
+        description: error instanceof Error ? error.message : t('settings.saveError'),
         variant: 'destructive',
       });
     } finally {

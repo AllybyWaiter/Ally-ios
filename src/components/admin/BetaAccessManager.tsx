@@ -77,10 +77,10 @@ export const BetaAccessManager = () => {
         description: `Granted beta access to ${data?.length || 0} users`,
       });
       fetchWaitlist();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to grant beta access',
         variant: 'destructive',
       });
     } finally {

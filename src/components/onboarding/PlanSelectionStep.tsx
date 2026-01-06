@@ -76,7 +76,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
       } else {
         throw new Error('No checkout URL returned');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Checkout error:', error);
       toast({
         title: 'Payment setup not ready',

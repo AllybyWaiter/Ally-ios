@@ -75,14 +75,14 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
       setDeleteDialogOpen(false);
       setEquipmentToDelete(null);
     },
-    onError: (error: any, _, context) => {
+    onError: (error: unknown, _, context) => {
       // Rollback on error
       if (context?.previousEquipment) {
         queryClient.setQueryData(queryKeys.equipment.list(aquariumId), context.previousEquipment);
       }
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Failed to delete equipment',
         variant: "destructive",
       });
     },
