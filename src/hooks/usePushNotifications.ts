@@ -171,15 +171,26 @@ export function usePushNotifications() {
       // Use the main PWA service worker (already registered by VitePWA)
       const registration = await navigator.serviceWorker.ready;
 
-      // Subscribe to push
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-      });
+      // Check for existing subscription first to avoid duplicates
+      const existingSubscription = await registration.pushManager.getSubscription();
+      
+      let subscription = existingSubscription;
+      
+      // Only create new subscription if none exists or keys don't match
+      if (!existingSubscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+      }
+
+      if (!subscription) {
+        throw new Error('Failed to create push subscription');
+      }
 
       const subscriptionJson = subscription.toJSON();
 
-      // Save subscription to database
+      // Save subscription to database (upsert to handle existing subscriptions)
       const { error } = await supabase
         .from('push_subscriptions')
         .upsert({

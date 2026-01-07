@@ -38,18 +38,37 @@ async function ensureFreshSession() {
 export async function fetchAquariumsWithTaskCounts(userId: string) {
   await ensureFreshSession();
   
-  const { data, error } = await supabase
+  // First, fetch aquariums
+  const { data: aquariums, error: aquariumError } = await supabase
     .from('aquariums')
-    .select(`
-      *,
-      maintenance_tasks!aquarium_id(count)
-    `)
+    .select('*')
     .eq('user_id', userId)
-    .eq('maintenance_tasks.status', 'pending')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data as AquariumWithTaskCount[];
+  if (aquariumError) throw aquariumError;
+  if (!aquariums || aquariums.length === 0) return [];
+
+  // Then, fetch pending task counts separately for reliable filtering
+  const aquariumIds = aquariums.map(a => a.id);
+  const { data: taskCounts, error: taskError } = await supabase
+    .from('maintenance_tasks')
+    .select('aquarium_id')
+    .in('aquarium_id', aquariumIds)
+    .eq('status', 'pending');
+
+  if (taskError) throw taskError;
+
+  // Count tasks per aquarium
+  const countMap = new Map<string, number>();
+  (taskCounts || []).forEach(t => {
+    countMap.set(t.aquarium_id, (countMap.get(t.aquarium_id) || 0) + 1);
+  });
+
+  // Merge counts with aquariums
+  return aquariums.map(aq => ({
+    ...aq,
+    maintenance_tasks: [{ count: countMap.get(aq.id) || 0 }]
+  })) as AquariumWithTaskCount[];
 }
 
 // Fetch a single aquarium by ID

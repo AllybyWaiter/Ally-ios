@@ -322,9 +322,11 @@ export default function UserManagement() {
       };
 
       if (suspensionType === 'suspend' && suspensionDuration) {
-        const days = parseInt(suspensionDuration);
+        const days = parseInt(suspensionDuration, 10);
+        // Validate that days is a valid number, default to 7 if NaN
+        const validDays = Number.isNaN(days) || days <= 0 ? 7 : days;
         const suspendedUntil = new Date();
-        suspendedUntil.setDate(suspendedUntil.getDate() + days);
+        suspendedUntil.setDate(suspendedUntil.getDate() + validDays);
         updates.suspended_until = suspendedUntil.toISOString();
       }
 
