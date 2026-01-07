@@ -63,23 +63,26 @@ export function calculateAverageDepth(
 export function calculateSurfaceArea(dimensions: PoolDimensions): number {
   switch (dimensions.shape) {
     case 'round':
-      if (!dimensions.diameter_ft) return 0;
+      if (!dimensions.diameter_ft || dimensions.diameter_ft <= 0) return 0;
       const radius = dimensions.diameter_ft / 2;
       return Math.PI * radius * radius;
 
     case 'oval':
-      if (!dimensions.length_ft || !dimensions.width_ft) return 0;
+      if (!dimensions.length_ft || !dimensions.width_ft || 
+          dimensions.length_ft <= 0 || dimensions.width_ft <= 0) return 0;
       const a = dimensions.length_ft / 2;
       const b = dimensions.width_ft / 2;
       return Math.PI * a * b;
 
     case 'rectangle':
-      if (!dimensions.length_ft || !dimensions.width_ft) return 0;
+      if (!dimensions.length_ft || !dimensions.width_ft ||
+          dimensions.length_ft <= 0 || dimensions.width_ft <= 0) return 0;
       return dimensions.length_ft * dimensions.width_ft;
 
     case 'kidney':
       // Kidney/freeform pools: estimate as 80% of rectangle
-      if (!dimensions.length_ft || !dimensions.width_ft) return 0;
+      if (!dimensions.length_ft || !dimensions.width_ft ||
+          dimensions.length_ft <= 0 || dimensions.width_ft <= 0) return 0;
       return dimensions.length_ft * dimensions.width_ft * 0.8;
 
     default:

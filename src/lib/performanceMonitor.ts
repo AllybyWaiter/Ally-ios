@@ -110,6 +110,18 @@ class PerformanceMonitor {
   }
 
   startMeasure(name: string) {
+    // Clean up old metrics if we have too many (prevent memory leak)
+    if (this.metrics.size > 100) {
+      const entries = Array.from(this.metrics.entries());
+      const now = performance.now();
+      // Remove metrics older than 5 minutes (likely orphaned)
+      entries.forEach(([key, startTime]) => {
+        if (now - startTime > 300000) {
+          this.metrics.delete(key);
+        }
+      });
+    }
+    
     this.metrics.set(name, performance.now());
     
     addBreadcrumb(
