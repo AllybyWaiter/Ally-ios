@@ -12,19 +12,27 @@ const WEATHER_ICONS: Record<string, React.ComponentType<{ className?: string }>>
   fog: CloudFog,
 };
 
-// Check WebP support once
+// Check WebP support once with proper cleanup
 let webpSupported: boolean | null = null;
 function checkWebPSupport(): Promise<boolean> {
   if (webpSupported !== null) return Promise.resolve(webpSupported);
   
   return new Promise((resolve) => {
     const img = new Image();
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
+      img.src = ''; // Clear src to release resources
+    };
+    
     img.onload = () => {
       webpSupported = img.width > 0 && img.height > 0;
+      cleanup();
       resolve(webpSupported);
     };
     img.onerror = () => {
       webpSupported = false;
+      cleanup();
       resolve(false);
     };
     img.src = 'data:image/webp;base64,UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==';

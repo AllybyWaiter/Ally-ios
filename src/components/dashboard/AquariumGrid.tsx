@@ -42,7 +42,7 @@ interface AquariumGridProps {
 }
 
 // Health indicator badge component
-function HealthIndicator({ aquariumId }: { aquariumId: string }) {
+function HealthIndicator({ aquariumId, t }: { aquariumId: string; t: (key: string) => string }) {
   const health = useAquariumHealthScore(aquariumId);
   
   if (health.isLoading) {
@@ -59,11 +59,13 @@ function HealthIndicator({ aquariumId }: { aquariumId: string }) {
         <div 
           className={`w-3 h-3 rounded-full transition-all ${hasAlerts ? 'animate-pulse' : ''}`}
           style={{ backgroundColor: health.color }}
+          role="status"
+          aria-label={`Health: ${health.label}, ${health.score}%${hasAlerts ? ', has alerts' : ''}`}
         />
       </TooltipTrigger>
       <TooltipContent side="top" className="text-xs">
         <p>{health.label} ({health.score}%)</p>
-        {hasAlerts && <p className="text-orange-400">Tap & hold for details</p>}
+        {hasAlerts && <p className="text-orange-400">{t('dashboard.tapHoldDetails')}</p>}
       </TooltipContent>
     </Tooltip>
   );
@@ -119,7 +121,7 @@ const AquariumCard = memo(function AquariumCard({
       {/* Health indicator badge */}
       <TooltipProvider>
         <div className="absolute top-3 right-3 z-10">
-          <HealthIndicator aquariumId={aquarium.id} />
+          <HealthIndicator aquariumId={aquarium.id} t={t} />
         </div>
       </TooltipProvider>
 
@@ -318,7 +320,7 @@ export function AquariumGrid({
               </TooltipTrigger>
               {!canCreate && (
                 <TooltipContent>
-                  <p>Upgrade your plan to add more water bodies</p>
+                  <p>{t('dashboard.upgradeToAddMore')}</p>
                 </TooltipContent>
               )}
             </Tooltip>
