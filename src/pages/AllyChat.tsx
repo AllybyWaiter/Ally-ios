@@ -428,6 +428,7 @@ const AllyChat = () => {
                   onDeleteConversation={handleDeleteConversation}
                   onNewChat={handleStartNewConversation}
                   onPinConversation={conversationManager.pinConversation}
+                  onRenameConversation={conversationManager.renameConversation}
                   aquariums={conversationManager.aquariums}
                 />
               </SheetContent>
