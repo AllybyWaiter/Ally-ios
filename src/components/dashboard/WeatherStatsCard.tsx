@@ -35,6 +35,16 @@ function formatWindSpeed(speed: number, units: string): string {
   return `${Math.round(speed * 0.621371)} mph`;
 }
 
+// Safe time parsing with error handling
+function formatSunTime(isoString: string | undefined): string {
+  if (!isoString) return '--:--';
+  try {
+    return format(parseISO(isoString), 'h:mm a');
+  } catch {
+    return '--:--';
+  }
+}
+
 export function WeatherStatsCard() {
   const { weather, loading, enabled, initializing } = useWeather();
   const { units } = useAuth();
@@ -152,7 +162,7 @@ export function WeatherStatsCard() {
         <div className="bg-background/40 rounded-lg p-3 text-center">
           <Sunrise className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
           <div className="text-sm font-medium text-foreground">
-            {weather.sunrise ? format(parseISO(weather.sunrise), 'h:mm a') : '--'}
+            {formatSunTime(weather.sunrise)}
           </div>
           <div className="text-xs text-muted-foreground">Sunrise</div>
         </div>
@@ -161,7 +171,7 @@ export function WeatherStatsCard() {
         <div className="bg-background/40 rounded-lg p-3 text-center">
           <Sunset className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
           <div className="text-sm font-medium text-foreground">
-            {weather.sunset ? format(parseISO(weather.sunset), 'h:mm a') : '--'}
+            {formatSunTime(weather.sunset)}
           </div>
           <div className="text-xs text-muted-foreground">Sunset</div>
         </div>

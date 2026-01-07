@@ -27,7 +27,7 @@ export function AllyCTA() {
             </div>
           </div>
           <Button 
-            onClick={() => navigate('/chat')}
+            onClick={() => navigate('/ally')}
             variant="secondary"
             className="gap-2"
           >

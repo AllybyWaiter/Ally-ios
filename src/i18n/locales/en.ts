@@ -94,6 +94,10 @@ export const en = {
       aquariumDeleted: "Aquarium deleted successfully",
       failedToDelete: "Failed to delete aquarium",
       failedToLoad: "Failed to load aquariums",
+      adminPanel: "Admin Panel",
+      adminPanelDescription: "Manage users, content, and system settings",
+      staffDashboard: "Dashboard",
+      staffDashboardDescription: "Access your management tools",
     },
     aquarium: {
       createNew: "Create New Water Body",
