@@ -407,5 +407,20 @@ export const fr = {
       error: "Erreur",
       errorDescription: "Échec de la création du plan d'eau. Veuillez réessayer.",
     },
+    chat: {
+      filters: {
+        all: "Tous",
+        pinned: "Épinglés",
+        thisWeek: "Cette Semaine",
+        withTank: "Avec Aquarium",
+      },
+      groups: {
+        pinned: "Épinglés",
+        today: "Aujourd'hui",
+        yesterday: "Hier",
+        lastWeek: "7 Derniers Jours",
+        older: "Plus Anciens",
+      },
+    },
   },
 };
