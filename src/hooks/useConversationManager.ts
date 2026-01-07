@@ -85,6 +85,20 @@ export function useConversationManager(userId: string | null) {
     }
   }, [userId, conversations, fetchConversations]);
 
+  const renameConversation = useCallback(async (conversationId: string, newTitle: string) => {
+    if (!userId || !newTitle.trim()) return;
+    
+    const { error } = await supabase
+      .from('chat_conversations')
+      .update({ title: newTitle.trim() })
+      .eq('id', conversationId)
+      .eq('user_id', userId);
+
+    if (!error) {
+      await fetchConversations();
+    }
+  }, [userId, fetchConversations]);
+
   const loadConversation = useCallback(async (conversationId: string): Promise<Message[]> => {
     const { data: messagesData } = await supabase
       .from('chat_messages')
@@ -271,5 +285,6 @@ export function useConversationManager(userId: string | null) {
     getSelectedAquariumName,
     getAquariumIdForApi,
     pinConversation,
+    renameConversation,
   };
 }
