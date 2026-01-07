@@ -39,9 +39,9 @@ export function useLocationDetection() {
             if (response.ok) {
               const data = await response.json();
               const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county;
-              const state = data.address?.state;
+              const stateValue = data.address?.state;
               const country = data.address?.country_code?.toUpperCase();
-              locationName = [city, state, country].filter(Boolean).join(', ');
+              locationName = [city, stateValue, country].filter(Boolean).join(', ');
             }
           } catch (err) {
             console.warn('Failed to get location name:', err);

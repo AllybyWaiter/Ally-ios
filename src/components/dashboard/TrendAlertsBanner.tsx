@@ -98,8 +98,8 @@ export function TrendAlertsBanner() {
 
   // Sort by severity (critical first)
   const sortedAlerts = [...alerts].sort((a, b) => {
-    const severityOrder = { critical: 0, warning: 1, info: 2 };
-    return severityOrder[a.severity] - severityOrder[b.severity];
+    const severityOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+    return (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3);
   });
 
   // Show max 3 alerts in banner

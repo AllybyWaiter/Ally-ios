@@ -161,13 +161,22 @@ const SupportTickets = () => {
 
       const initialMessage = messagesData?.[0]?.message || '';
       
+      // Get auth token for authenticated request
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData.session?.access_token;
+      
+      if (!authToken) {
+        console.warn('No auth token available for ticket reply suggestions');
+        return;
+      }
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/suggest-ticket-reply`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             ticketContent: initialMessage,

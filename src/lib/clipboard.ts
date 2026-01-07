@@ -3,6 +3,12 @@
  */
 
 export async function copyToClipboard(text: string): Promise<boolean> {
+  // Input validation
+  if (typeof text !== 'string') {
+    console.warn('copyToClipboard: Expected string input');
+    return false;
+  }
+  
   // Modern Clipboard API with feature detection
   if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
     try {
@@ -21,6 +27,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     textArea.style.position = 'fixed';
     textArea.style.left = '-9999px';
     textArea.style.top = '0';
+    textArea.setAttribute('readonly', ''); // Prevent mobile keyboard popup
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();

@@ -67,13 +67,13 @@ export const FollowUpSuggestions = React.memo(function FollowUpSuggestions({
   suggestions,
   onSelectSuggestion,
 }: FollowUpSuggestionsProps) {
-  if (suggestions.length === 0) return null;
+  if (!suggestions || suggestions.length === 0) return null;
 
   return (
     <div className="flex flex-wrap gap-2 mt-3">
-      {suggestions.map((item) => (
+      {suggestions.map((item, index) => (
         <Button
-          key={`${item.label}-${item.template}`}
+          key={`${item.label}-${item.template}-${index}`}
           variant="outline"
           size="sm"
           className={cn(
