@@ -25,7 +25,7 @@ type TimePeriod = 'all' | '30d' | '7d';
 
 export function useReferralLeaderboard(period: TimePeriod = 'all') {
   return useQuery({
-    queryKey: ['admin', 'referral-leaderboard', period],
+    queryKey: ['referralLeaderboard', period],
     queryFn: async (): Promise<LeaderboardEntry[]> => {
       // Get all referral codes with user info
       const { data: codes, error: codesError } = await supabase
@@ -112,7 +112,7 @@ export function useReferralLeaderboard(period: TimePeriod = 'all') {
 
 export function useReferralProgramStats() {
   return useQuery({
-    queryKey: ['admin', 'referral-program-stats'],
+    queryKey: ['referralProgramStats'],
     queryFn: async (): Promise<ReferralProgramStats> => {
       // Count total codes
       const { count: totalCodes } = await supabase

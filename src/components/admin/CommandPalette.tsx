@@ -93,9 +93,9 @@ export function CommandPalette({ open, onOpenChange, onSectionChange }: CommandP
     }
   }, []);
 
-  // Trigger search when debounced query changes
+  // Trigger search when debounced query changes (search function already debounces internally)
   useEffect(() => {
-    if (debouncedQuery) {
+    if (debouncedQuery && debouncedQuery.length >= 2) {
       search(debouncedQuery);
     }
   }, [debouncedQuery, search]);

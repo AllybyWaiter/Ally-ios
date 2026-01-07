@@ -266,7 +266,7 @@ export function SystemHealth() {
             </div>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Database Version</p>
-              <Badge variant="outline">PostgreSQL 15</Badge>
+              <Badge variant="outline">PostgreSQL 15+</Badge>
             </div>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">API Version</p>
