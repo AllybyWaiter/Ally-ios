@@ -15,12 +15,31 @@ const CookieConsent = () => {
 
   useEffect(() => {
     const consent = localStorage.getItem(COOKIE_CONSENT_KEY) as ConsentStatus;
-    // Also check legacy key for backwards compatibility
+    // Also check legacy key for backwards compatibility and migrate if found
     const legacyConsent = localStorage.getItem("ally_cookie_consent") as ConsentStatus;
+    
+    if (legacyConsent && !consent) {
+      // Migrate legacy consent to new key
+      localStorage.setItem(COOKIE_CONSENT_KEY, legacyConsent);
+      // Apply preferences based on legacy consent
+      if (legacyConsent === 'accepted') {
+        localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: true, analytics: true }));
+        updateSentryConsent();
+      } else if (legacyConsent === 'declined') {
+        localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: false, analytics: false }));
+      }
+      return; // Don't show banner since we migrated
+    }
+    
     if (!consent && !legacyConsent) {
       // Delay showing banner slightly for better UX
       const timer = setTimeout(() => setShowBanner(true), 1500);
       return () => clearTimeout(timer);
+    }
+    
+    // Apply saved preferences on page load
+    if (consent === 'accepted') {
+      updateSentryConsent();
     }
   }, []);
 
