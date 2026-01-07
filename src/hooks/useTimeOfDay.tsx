@@ -156,8 +156,9 @@ export function useTimeOfDay(): TimeOfDayInfo {
   }, [weatherCondition, weatherEnabled]);
 
   useEffect(() => {
-    // Check every minute for time slot changes
-    const interval = setInterval(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    
+    const updateTimeInfo = () => {
       const hour = new Date().getHours();
       const slot = getTimeSlot(hour);
       
@@ -176,9 +177,32 @@ export function useTimeOfDay(): TimeOfDayInfo {
         }
         return prev;
       });
-    }, 60000);
+    };
+    
+    const startInterval = () => {
+      interval = setInterval(updateTimeInfo, 60000);
+    };
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (interval) {
+          clearInterval(interval);
+          interval = null;
+        }
+      } else {
+        // Immediate update when tab becomes visible
+        updateTimeInfo();
+        startInterval();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    if (!document.hidden) startInterval();
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [weatherCondition, weatherEnabled]);
 
   return timeInfo;

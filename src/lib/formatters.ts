@@ -22,12 +22,19 @@ const getCurrentLanguage = (): 'en' | 'es' | 'fr' => {
 
 /**
  * Format a date according to the user's locale
+ * Returns empty string for null/undefined/invalid dates to avoid showing "Invalid date" in UI
  */
-export const formatDate = (date: Date | string | number, formatStr: string = 'PPP'): string => {
+export const formatDate = (
+  date: Date | string | number | null | undefined, 
+  formatStr: string = 'PPP'
+): string => {
+  if (!date) return '';
+  
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   
   if (!isValid(dateObj)) {
-    return 'Invalid date';
+    console.warn('formatDate received invalid date:', date);
+    return '';
   }
 
   const lang = getCurrentLanguage();
@@ -44,11 +51,14 @@ export const formatDateTime = (date: Date | string | number): string => {
 /**
  * Format a date in short format (e.g., "12/31/2024", "31/12/2024")
  */
-export const formatDateShort = (date: Date | string | number): string => {
+export const formatDateShort = (date: Date | string | number | null | undefined): string => {
+  if (!date) return '';
+  
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   
   if (!isValid(dateObj)) {
-    return 'Invalid date';
+    console.warn('formatDateShort received invalid date:', date);
+    return '';
   }
 
   const lang = getCurrentLanguage();
@@ -62,11 +72,14 @@ export const formatDateShort = (date: Date | string | number): string => {
 /**
  * Format time according to the user's locale
  */
-export const formatTime = (date: Date | string | number): string => {
+export const formatTime = (date: Date | string | number | null | undefined): string => {
+  if (!date) return '';
+  
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   
   if (!isValid(dateObj)) {
-    return 'Invalid time';
+    console.warn('formatTime received invalid date:', date);
+    return '';
   }
 
   const lang = getCurrentLanguage();
@@ -85,7 +98,8 @@ export const formatRelativeTime = (date: Date | string | number | null | undefin
   const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   
   if (!isValid(dateObj)) {
-    return 'Invalid date';
+    console.warn('formatRelativeTime received invalid date:', date);
+    return '';
   }
 
   const lang = getCurrentLanguage();
