@@ -126,8 +126,12 @@ const Settings = () => {
   }, [user]);
 
   useEffect(() => {
-    if (themePreference && theme !== themePreference) setTheme(themePreference);
-  }, [themePreference]);
+    let mounted = true;
+    if (themePreference && theme !== themePreference && mounted) {
+      setTheme(themePreference);
+    }
+    return () => { mounted = false; };
+  }, [themePreference, theme, setTheme]);
 
   useEffect(() => {
     if (languagePreference && i18n.language !== languagePreference) {

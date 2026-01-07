@@ -153,8 +153,10 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
             <p className="text-sm text-muted-foreground">{t('overview.tasksPending')}</p>
             {upcomingTasks && upcomingTasks.length > 0 && (
               <div className="mt-4 space-y-2">
-              {(upcomingTasks || []).slice(0, 3).map((task) => {
-                  if (!task?.id || !task?.due_date) return null;
+              {(upcomingTasks || [])
+                .filter((task) => task?.id && task?.due_date)
+                .slice(0, 3)
+                .map((task) => {
                   const dueDateStatus = getTaskDueDateStatus(task.due_date);
                   return (
                     <div key={task.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">

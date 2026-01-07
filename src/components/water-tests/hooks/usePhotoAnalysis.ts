@@ -171,8 +171,9 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
   };
 
   const handleRemovePhoto = () => {
-    // Revoke object URL to prevent memory leak
-    if (photoPreview) {
+    // Revoke data URL if it's a blob URL to prevent memory leak
+    // Note: Data URLs (base64) from FileReader don't need revoking, but blob URLs do
+    if (photoPreview && photoPreview.startsWith('blob:')) {
       URL.revokeObjectURL(photoPreview);
     }
     setPhotoFile(null);

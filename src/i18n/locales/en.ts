@@ -28,6 +28,7 @@ export const en = {
       viewAll: "View All",
       remove: "Remove",
       showLess: "Show Less",
+      viewPricing: "View Pricing",
     },
     settings: {
       title: "Settings",
@@ -155,6 +156,7 @@ export const en = {
       viewInMaps: "View in Maps",
       coordinates: "Coordinates",
       copied: "Copied to clipboard",
+      volumeCalculatorHelp: "Not sure? Let Ally help you calculate →",
     },
     waterTests: {
       title: "Water Test Logging",
@@ -184,6 +186,7 @@ export const en = {
       plusDescription: "Up to 10 custom templates",
       goldPlan: "Gold Plan",
       goldDescription: "Unlimited custom templates",
+      visitPricingPage: "Visit the Pricing page to compare plans and upgrade.",
       currentPlan: "Current plan:",
       tagsPlaceholder: "water change, new livestock, dosing (comma-separated)",
       // New keys for redesigned water tests
