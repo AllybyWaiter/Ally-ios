@@ -121,11 +121,12 @@ export default function Admin() {
     }
   };
 
-  const exportToCSV = (data: Array<Record<string, string | number | boolean | null>>, filename: string) => {
-    const headers = Object.keys(data[0] || {});
+  const exportToCSV = <T extends object>(data: T[], filename: string) => {
+    if (data.length === 0) return;
+    const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(','),
-      ...data.map(row => headers.map(header => JSON.stringify(row[header] || '')).join(','))
+      ...data.map(row => headers.map(header => JSON.stringify((row as Record<string, unknown>)[header] ?? '')).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
