@@ -294,14 +294,14 @@ const ConversationCard = memo(({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
       className={cn(
-        "group relative flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-        "hover:bg-accent/80",
-        isActive && !isSelectionMode && "bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-sm shadow-primary/5",
+        "group relative flex items-start gap-2.5 p-2.5 rounded-lg cursor-pointer transition-all duration-200",
+        "hover:bg-accent/60",
+        isActive && !isSelectionMode && "bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20",
         isSelected && "bg-primary/10 border border-primary/30",
         isDeleting && "opacity-50 pointer-events-none"
       )}
@@ -313,26 +313,26 @@ const ConversationCard = memo(({
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onToggleSelect?.()}
-            className="h-5 w-5"
+            className="h-4 w-4"
           />
         </div>
       )}
 
-      {/* Icon with gradient */}
+      {/* Icon */}
       {!isSelectionMode && (
         <div className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0",
+          "flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200 shrink-0",
           isActive 
-            ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/20" 
-            : "bg-gradient-to-br from-muted to-muted/50 group-hover:from-accent group-hover:to-accent/50"
+            ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-sm" 
+            : "bg-muted/80 group-hover:bg-accent"
         )}>
-          <MessageSquare className="h-4.5 w-4.5" />
+          <MessageSquare className="h-3.5 w-3.5" />
         </div>
       )}
       
-      <div className="flex-1 min-w-0 space-y-1.5">
+      <div className="flex-1 min-w-0 space-y-0.5">
         {/* Title row with pin indicator */}
-        <div className="flex items-start gap-2">
+        <div className="flex items-center gap-1.5">
           {isEditing ? (
             <InlineEdit
               value={conversation.title}
@@ -343,7 +343,7 @@ const ConversationCard = memo(({
             <>
               <p 
                 className={cn(
-                  "text-sm font-medium truncate leading-tight flex-1",
+                  "text-[13px] font-medium truncate leading-snug flex-1",
                   isActive && "text-primary"
                 )}
                 onDoubleClick={handleDoubleClick}
@@ -352,7 +352,7 @@ const ConversationCard = memo(({
                 {conversation.title}
               </p>
               {conversation.is_pinned && (
-                <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
+                <Star className="h-3 w-3 text-amber-500 fill-amber-500 shrink-0" />
               )}
             </>
           )}
@@ -360,45 +360,45 @@ const ConversationCard = memo(({
         
         {/* Message preview */}
         {!isEditing && conversation.last_message_preview && (
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+          <p className="text-[11px] text-muted-foreground line-clamp-1 leading-normal">
             {conversation.last_message_preview}
           </p>
         )}
         
         {/* Metadata row */}
         {!isEditing && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {/* Aquarium badge */}
             {aquarium ? (
               <Badge 
                 variant="outline" 
                 className={cn(
-                  "text-[10px] px-1.5 py-0 h-5 gap-1 font-medium border",
+                  "text-[9px] px-1 py-0 h-4 gap-0.5 font-medium border",
                   aquariumColorClass
                 )}
               >
-                {AquariumIcon && <AquariumIcon className="h-2.5 w-2.5" />}
-                <span className="truncate max-w-[80px]">{aquarium.name}</span>
+                {AquariumIcon && <AquariumIcon className="h-2 w-2" />}
+                <span className="truncate max-w-[60px]">{aquarium.name}</span>
               </Badge>
             ) : (
               <Badge 
                 variant="outline" 
-                className="text-[10px] px-1.5 py-0 h-5 gap-1 font-medium bg-muted/50"
+                className="text-[9px] px-1 py-0 h-4 gap-0.5 font-medium bg-muted/50"
               >
-                <Sparkles className="h-2.5 w-2.5" />
+                <Sparkles className="h-2 w-2" />
                 General
               </Badge>
             )}
             
             {/* Message count */}
             {typeof conversation.message_count === 'number' && conversation.message_count > 0 && (
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[9px] text-muted-foreground">
                 {conversation.message_count} msg{conversation.message_count !== 1 ? 's' : ''}
               </span>
             )}
             
             {/* Time */}
-            <span className="text-[10px] text-muted-foreground ml-auto">
+            <span className="text-[9px] text-muted-foreground ml-auto">
               {format(new Date(conversation.updated_at), isToday(new Date(conversation.updated_at)) ? "h:mm a" : "MMM d")}
             </span>
           </div>
@@ -408,7 +408,7 @@ const ConversationCard = memo(({
       {/* Action buttons on hover - hidden in selection mode */}
       {!isEditing && !isSelectionMode && (
         <div className={cn(
-          "absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+          "absolute right-1.5 top-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity",
         )}>
           {/* More actions dropdown */}
           <DropdownMenu>
@@ -416,7 +416,7 @@ const ConversationCard = memo(({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-accent"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="h-3.5 w-3.5" />
@@ -424,34 +424,40 @@ const ConversationCard = memo(({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               {onRename && (
-                <DropdownMenuItem onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditing(true);
-                }}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                  }}
+                >
                   <Pencil className="h-3.5 w-3.5 mr-2" />
                   Rename
                 </DropdownMenuItem>
               )}
               {onPin && (
-                <DropdownMenuItem onClick={(e) => {
-                  e.stopPropagation();
-                  onPin();
-                }}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPin();
+                  }}
+                >
                   <Star className={cn("h-3.5 w-3.5 mr-2", conversation.is_pinned && "fill-current")} />
-                  {conversation.is_pinned ? 'Unpin' : 'Pin'}
+                  {conversation.is_pinned ? "Unpin" : "Pin"}
                 </DropdownMenuItem>
               )}
               {onExport && (
-                <DropdownMenuItem onClick={(e) => {
-                  e.stopPropagation();
-                  onExport();
-                }}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExport();
+                  }}
+                >
                   <Download className="h-3.5 w-3.5 mr-2" />
                   Export
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
                   onRequestDelete();
@@ -471,7 +477,7 @@ const ConversationCard = memo(({
 
 ConversationCard.displayName = "ConversationCard";
 
-export function ChatHistorySidebar({
+export const ChatHistorySidebar = ({
   conversations,
   currentConversationId,
   onLoadConversation,
@@ -483,97 +489,25 @@ export function ChatHistorySidebar({
   onExportConversation,
   aquariums = [],
   isLoading = false,
-}: ChatHistorySidebarProps) {
+}: ChatHistorySidebarProps) => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
-  // Bulk selection state
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // Create aquarium lookup map
+  // Memoize aquarium lookup map
   const aquariumMap = useMemo(() => {
     const map = new Map<string, Aquarium>();
     aquariums.forEach(aq => map.set(aq.id, aq));
     return map;
   }, [aquariums]);
 
-  // Filter counts for badges
-  const filterCounts = useMemo(() => {
-    const now = new Date();
-    const weekAgo = subDays(now, 7);
-    
-    return {
-      all: conversations.length,
-      pinned: conversations.filter(c => c.is_pinned).length,
-      week: conversations.filter(c => {
-        const date = new Date(c.updated_at);
-        return isWithinInterval(date, { start: weekAgo, end: now });
-      }).length,
-      "with-aquarium": conversations.filter(c => c.aquarium_id).length,
-    };
-  }, [conversations]);
-
-  const filteredConversations = useMemo(() => {
-    let result = conversations;
-    
-    // Apply filter
-    if (activeFilter !== "all") {
-      const now = new Date();
-      const weekAgo = subDays(now, 7);
-      
-      switch (activeFilter) {
-        case "pinned":
-          result = result.filter(c => c.is_pinned);
-          break;
-        case "week":
-          result = result.filter(c => {
-            const date = new Date(c.updated_at);
-            return isWithinInterval(date, { start: weekAgo, end: now });
-          });
-          break;
-        case "with-aquarium":
-          result = result.filter(c => c.aquarium_id);
-          break;
-      }
-    }
-    
-    // Apply search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(c => 
-        c.title.toLowerCase().includes(query) ||
-        c.last_message_preview?.toLowerCase().includes(query)
-      );
-    }
-    
-    return result;
-  }, [conversations, searchQuery, activeFilter]);
-
-  const groupedConversations = useMemo(() => {
-    const groups: Record<DateGroup, Conversation[]> = {
-      pinned: [],
-      today: [],
-      yesterday: [],
-      week: [],
-      older: [],
-    };
-
-    filteredConversations.forEach(conv => {
-      const group = getDateGroup(conv);
-      groups[group].push(conv);
-    });
-
-    return groups;
-  }, [filteredConversations]);
-
-  // Selection handlers
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -587,8 +521,8 @@ export function ChatHistorySidebar({
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(filteredConversations.map(c => c.id)));
-  }, [filteredConversations]);
+    setSelectedIds(new Set(conversations.map(c => c.id)));
+  }, [conversations]);
 
   const deselectAll = useCallback(() => {
     setSelectedIds(new Set());
@@ -599,42 +533,61 @@ export function ChatHistorySidebar({
     setSelectedIds(new Set());
   }, []);
 
-  const handleBulkDelete = async () => {
+  const handleRequestDelete = useCallback((id: string) => {
+    setConversationToDelete(id);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!conversationToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const fakeEvent = { stopPropagation: () => {} } as React.MouseEvent;
+      await onDeleteConversation(conversationToDelete, fakeEvent);
+      setDeleteDialogOpen(false);
+      setConversationToDelete(null);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [conversationToDelete, onDeleteConversation]);
+
+  const handleBulkDelete = useCallback(async () => {
     if (selectedIds.size === 0 || !onBulkDelete) return;
     
     setIsBulkDeleting(true);
     try {
       await onBulkDelete(Array.from(selectedIds));
+      setBulkDeleteDialogOpen(false);
+      exitSelectionMode();
       toast({
         title: "Deleted",
-        description: `${selectedIds.size} conversation${selectedIds.size > 1 ? 's' : ''} deleted`,
+        description: `${selectedIds.size} conversation${selectedIds.size > 1 ? 's' : ''} deleted.`,
       });
-      exitSelectionMode();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to delete conversations",
+        description: "Failed to delete some conversations.",
         variant: "destructive",
       });
     } finally {
       setIsBulkDeleting(false);
-      setBulkDeleteDialogOpen(false);
     }
-  };
+  }, [selectedIds, onBulkDelete, exitSelectionMode, toast]);
 
-  const handleExport = async (id: string) => {
+  const handleExport = useCallback(async (id: string) => {
     if (!onExportConversation) return;
     
     try {
-      const content = await onExportConversation(id);
+      const markdown = await onExportConversation(id);
+      const conversation = conversations.find(c => c.id === id);
+      const filename = `${conversation?.title || 'conversation'}.md`.replace(/[^a-z0-9]/gi, '_');
       
-      // Create and download file
-      const blob = new Blob([content], { type: 'text/markdown' });
+      const blob = new Blob([markdown], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const conv = conversations.find(c => c.id === id);
       a.href = url;
-      a.download = `${conv?.title || 'conversation'}.md`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -642,72 +595,107 @@ export function ChatHistorySidebar({
       
       toast({
         title: "Exported",
-        description: "Conversation downloaded as Markdown",
+        description: "Conversation exported as Markdown.",
       });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to export conversation",
+        description: "Failed to export conversation.",
         variant: "destructive",
       });
     }
-  };
+  }, [onExportConversation, conversations, toast]);
 
-  const handleRequestDelete = (id: string) => {
-    setConversationToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async (e: React.MouseEvent) => {
-    if (conversationToDelete) {
-      setIsDeleting(true);
-      try {
-        await onDeleteConversation(conversationToDelete, e);
-      } finally {
-        setIsDeleting(false);
-        setDeleteDialogOpen(false);
-        setConversationToDelete(null);
-      }
+  // Filter and search logic
+  const filteredConversations = useMemo(() => {
+    let result = conversations;
+    
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(c => 
+        c.title.toLowerCase().includes(query) ||
+        c.last_message_preview?.toLowerCase().includes(query)
+      );
     }
-  };
+    
+    // Apply filter
+    switch (activeFilter) {
+      case "pinned":
+        result = result.filter(c => c.is_pinned);
+        break;
+      case "week":
+        result = result.filter(c => {
+          const date = new Date(c.updated_at);
+          return isWithinInterval(date, { start: subDays(new Date(), 7), end: new Date() });
+        });
+        break;
+      case "with-aquarium":
+        result = result.filter(c => c.aquarium_id !== null);
+        break;
+    }
+    
+    return result;
+  }, [conversations, searchQuery, activeFilter]);
+
+  // Group conversations by date
+  const groupedConversations = useMemo(() => {
+    const groups: Record<DateGroup, Conversation[]> = {
+      pinned: [],
+      today: [],
+      yesterday: [],
+      week: [],
+      older: [],
+    };
+    
+    filteredConversations.forEach(conv => {
+      const group = getDateGroup(conv);
+      groups[group].push(conv);
+    });
+    
+    return groups;
+  }, [filteredConversations]);
+
+  // Filter counts for badges
+  const filterCounts = useMemo(() => ({
+    all: conversations.length,
+    pinned: conversations.filter(c => c.is_pinned).length,
+    week: conversations.filter(c => {
+      const date = new Date(c.updated_at);
+      return isWithinInterval(date, { start: subDays(new Date(), 7), end: new Date() });
+    }).length,
+    "with-aquarium": conversations.filter(c => c.aquarium_id !== null).length,
+  }), [conversations]);
 
   const hasConversations = conversations.length > 0;
   const hasResults = filteredConversations.length > 0;
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header with gradient accent */}
-      <div className="relative px-4 pt-4 pb-3 space-y-4">
-        {/* Subtle gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
-        
-        {/* Selection mode header */}
+      {/* Header */}
+      <div className="p-4 space-y-3 border-b">
         {isSelectionMode ? (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative flex items-center justify-between"
-          >
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
-                onClick={exitSelectionMode}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-              <span className="font-medium">
-                {selectedIds.size} selected
-              </span>
-            </div>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={selectedIds.size === filteredConversations.length ? deselectAll : selectAll}
+                onClick={exitSelectionMode}
               >
-                {selectedIds.size === filteredConversations.length ? 'Deselect All' : 'Select All'}
+                <X className="h-4 w-4 mr-1" />
+                Cancel
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {selectedIds.size} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectedIds.size === conversations.length ? deselectAll : selectAll}
+              >
+                {selectedIds.size === conversations.length ? "Deselect All" : "Select All"}
               </Button>
               <Button
                 variant="destructive"
@@ -715,11 +703,11 @@ export function ChatHistorySidebar({
                 disabled={selectedIds.size === 0}
                 onClick={() => setBulkDeleteDialogOpen(true)}
               >
-                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                <Trash2 className="h-4 w-4 mr-1" />
                 Delete
               </Button>
             </div>
-          </motion.div>
+          </div>
         ) : (
           <>
             <div className="relative flex items-center gap-3">
