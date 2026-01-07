@@ -21,6 +21,34 @@ interface LogActivityParams {
   userId?: string;
 }
 
+// Maximum queue size to prevent memory issues
+const MAX_QUEUE_SIZE = 100;
+
+// Activity queue for batching
+let activityQueue: Array<{
+  user_id: string;
+  action_type: ActivityType;
+  action_details: Record<string, any>;
+  user_agent: string | null;
+}> = [];
+
+let flushTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Flush the queue to the database
+const flushQueue = async () => {
+  if (activityQueue.length === 0) return;
+
+  const toFlush = [...activityQueue];
+  activityQueue = [];
+  flushTimeout = null;
+
+  try {
+    await supabase.from('activity_logs').insert(toFlush);
+  } catch {
+    // Silently fail - activity logging should not disrupt user experience
+  }
+};
+
 export const logActivity = async ({
   actionType,
   actionDetails,
@@ -31,21 +59,37 @@ export const logActivity = async ({
     const userIdToLog = userId || user?.id;
 
     if (!userIdToLog) {
-      // Silently skip logging if no user - don't warn in console
+      // Silently skip logging if no user
       return;
     }
 
     // Get user agent (available client-side)
     const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
-    // Note: IP address should be captured server-side via edge functions, not client-side
-    await supabase.from('activity_logs').insert({
+    // Add to queue
+    activityQueue.push({
       user_id: userIdToLog,
       action_type: actionType,
       action_details: actionDetails || {},
       user_agent: userAgent,
-      // ip_address is intentionally omitted - should only be set server-side
     });
+
+    // If queue exceeds max size, flush immediately
+    if (activityQueue.length >= MAX_QUEUE_SIZE) {
+      if (flushTimeout) {
+        clearTimeout(flushTimeout);
+        flushTimeout = null;
+      }
+      await flushQueue();
+      return;
+    }
+
+    // Schedule flush after 5 seconds of inactivity
+    if (!flushTimeout) {
+      flushTimeout = setTimeout(() => {
+        flushQueue();
+      }, 5000);
+    }
   } catch {
     // Silently fail - activity logging should not disrupt user experience
   }

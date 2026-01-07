@@ -33,9 +33,30 @@ export const GC_TIMES = {
 } as const;
 
 // Query options presets for different data types
+// Note: Related data types share the same stale times to prevent refetch cascades
 export const queryPresets = {
-  /** For aquariums, equipment, livestock - user's core data */
+  /** For aquariums, equipment, livestock, plants - user's core data */
   aquariumData: {
+    staleTime: STALE_TIMES.semiStatic,
+    gcTime: GC_TIMES.semiStatic,
+  },
+  /** For equipment - same as aquariumData to prevent cascade */
+  equipment: {
+    staleTime: STALE_TIMES.semiStatic,
+    gcTime: GC_TIMES.semiStatic,
+  },
+  /** For livestock - same as aquariumData to prevent cascade */
+  livestock: {
+    staleTime: STALE_TIMES.semiStatic,
+    gcTime: GC_TIMES.semiStatic,
+  },
+  /** For plants - same as aquariumData to prevent cascade */
+  plants: {
+    staleTime: STALE_TIMES.semiStatic,
+    gcTime: GC_TIMES.semiStatic,
+  },
+  /** For photos (aquarium, livestock, plant) - same as parent data */
+  photos: {
     staleTime: STALE_TIMES.semiStatic,
     gcTime: GC_TIMES.semiStatic,
   },
@@ -71,6 +92,11 @@ export const queryPresets = {
   },
   /** For user profile and settings */
   userProfile: {
+    staleTime: STALE_TIMES.semiStatic,
+    gcTime: GC_TIMES.semiStatic,
+  },
+  /** For referral data */
+  referrals: {
     staleTime: STALE_TIMES.semiStatic,
     gcTime: GC_TIMES.semiStatic,
   },
