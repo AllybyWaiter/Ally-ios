@@ -156,7 +156,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
 
       onComplete();
     } catch (error: unknown) {
-      console.error('Error creating aquarium:', error);
+      // Handle validation and database errors
       
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};

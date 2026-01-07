@@ -121,7 +121,7 @@ export default function Admin() {
     }
   };
 
-  const exportToCSV = (data: any[], filename: string) => {
+  const exportToCSV = (data: Array<Record<string, string | number | boolean | null>>, filename: string) => {
     const headers = Object.keys(data[0] || {});
     const csvContent = [
       headers.join(','),

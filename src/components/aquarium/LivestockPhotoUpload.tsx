@@ -58,10 +58,9 @@ export default function LivestockPhotoUpload({
       toast.success('Photo uploaded');
       handleClose();
     },
-    onError: (error) => {
+    onError: () => {
       setIsCompressing(false);
       toast.error('Failed to upload photo');
-      console.error(error);
     },
   });
 

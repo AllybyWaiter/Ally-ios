@@ -96,8 +96,8 @@ export function SystemHealth() {
       });
 
       setLastRefresh(new Date());
-    } catch (error) {
-      console.error('Error fetching system stats:', error);
+    } catch {
+      // Error fetching system stats - mark database as degraded
       setSystemStatus(prev => ({
         ...prev,
         database: 'degraded',
