@@ -1,33 +1,36 @@
-import { useState, Suspense, useEffect } from "react";
+import { useState, Suspense, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ChevronDown } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { WaterTestForm } from "@/components/water-tests/WaterTestForm";
-import { WaterTestHistory } from "@/components/water-tests/WaterTestHistory";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
+import { WaterQualityHero } from "@/components/water-tests/WaterQualityHero";
+import { QuickLogSection } from "@/components/water-tests/QuickLogSection";
+import { ParameterInsightsGrid } from "@/components/water-tests/ParameterInsightsGrid";
+import { RecentActivityTimeline } from "@/components/water-tests/RecentActivityTimeline";
 import { queryKeys } from "@/lib/queryKeys";
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
-import { 
-  WaterTestFormSkeleton, 
-  WaterTestHistorySkeleton, 
-  WaterTestChartsSkeleton 
-} from "@/components/water-tests/WaterTestSkeletons";
+import { WaterTestChartsSkeleton } from "@/components/water-tests/WaterTestSkeletons";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAquariumHealthScore } from "@/hooks/useAquariumHealthScore";
+import { fetchAllWaterTests } from "@/infrastructure/queries/waterTests";
+import { useProfileContext } from "@/contexts/ProfileContext";
+import type { UnitSystem } from "@/lib/unitConversions";
 
 const WaterTests = () => {
   const [searchParams] = useSearchParams();
   const urlAquariumId = searchParams.get('aquariumId');
-  const urlTab = searchParams.get('tab');
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(urlAquariumId);
-  const [activeTab, setActiveTab] = useState(urlTab || 'log');
+  const [trendsOpen, setTrendsOpen] = useState(false);
   const { t } = useTranslation();
+  const { units } = useProfileContext();
 
-  const { data: aquariums, isLoading } = useQuery({
+  const { data: aquariums, isLoading: aquariumsLoading } = useQuery({
     queryKey: queryKeys.aquariums.all,
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -47,11 +50,9 @@ const WaterTests = () => {
   // Auto-select aquarium from URL param or first available
   useEffect(() => {
     if (aquariums && aquariums.length > 0) {
-      // Check if URL param exists and is valid
       if (urlAquariumId && aquariums.some(a => a.id === urlAquariumId)) {
         setSelectedAquariumId(urlAquariumId);
       } else if (!selectedAquariumId) {
-        // Fallback to first aquarium
         setSelectedAquariumId(aquariums[0].id);
       }
     }
@@ -59,21 +60,52 @@ const WaterTests = () => {
 
   const selectedAquarium = aquariums?.find((a) => a.id === selectedAquariumId);
 
-  if (isLoading) {
+  // Fetch health score data
+  const healthData = useAquariumHealthScore(selectedAquariumId || '');
+
+  // Fetch recent water tests
+  const { data: testsData } = useQuery({
+    queryKey: ['water-tests-recent', selectedAquariumId],
+    queryFn: () => fetchAllWaterTests(selectedAquariumId!, 20),
+    enabled: !!selectedAquariumId,
+  });
+
+  // Build alerts from latest test parameters
+  const parameterAlerts = useMemo(() => {
+    if (!testsData?.length) return [];
+    const latest = testsData[0];
+    return latest.test_parameters?.map(p => ({
+      parameter: p.parameter_name,
+      status: (p.status as 'good' | 'warning' | 'critical') || 'unknown'
+    })) || [];
+  }, [testsData]);
+
+  const handleAquariumChange = (aquarium: { id: string }) => {
+    setSelectedAquariumId(aquarium.id);
+  };
+
+  const handleParameterClick = (paramName: string) => {
+    // Open trends section when parameter clicked
+    setTrendsOpen(true);
+  };
+
+  const handleTestClick = (testId: string) => {
+    // Could open detail view in future
+    console.log('Clicked test:', testId);
+  };
+
+  if (aquariumsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <div className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe">
-          <div className="mb-6">
-            <Skeleton className="h-10 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
+        <div className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe space-y-6">
+          <Skeleton className="h-48 w-full rounded-2xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-xl" />
+            ))}
           </div>
-          <div className="mb-6">
-            <Skeleton className="h-4 w-32 mb-2" />
-            <Skeleton className="h-10 w-64" />
-          </div>
-          <Skeleton className="h-10 w-full md:w-96 mb-6" />
-          <WaterTestFormSkeleton />
         </div>
       </div>
     );
@@ -98,62 +130,57 @@ const WaterTests = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <div className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">{t('waterTests.title')}</h1>
-          <p className="text-muted-foreground">
-            {t('waterTests.subtitle')}
-          </p>
-        </div>
+      <div className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe space-y-6">
+        {/* Hero Section */}
+        <SectionErrorBoundary fallbackTitle="Failed to load health overview" featureArea={FeatureArea.WATER_TESTS}>
+          <WaterQualityHero
+            aquariums={aquariums}
+            selectedAquarium={selectedAquarium || null}
+            onAquariumChange={handleAquariumChange}
+            healthScore={healthData.score}
+            healthLabel={healthData.label}
+            healthColor={healthData.color}
+            lastTestDate={healthData.lastWaterTest}
+            alerts={parameterAlerts}
+          />
+        </SectionErrorBoundary>
 
-        {/* Aquarium Selector - Using shadcn Select for consistent styling */}
-        <div className="mb-6">
-          <label className="text-sm font-medium mb-2 block">{t('waterTests.selectAquarium')}</label>
-          <Select
-            value={selectedAquariumId || ""}
-            onValueChange={(value) => setSelectedAquariumId(value)}
-          >
-            <SelectTrigger className="w-full md:w-64">
-              <SelectValue placeholder={t('waterTests.selectAquarium')} />
-            </SelectTrigger>
-            <SelectContent>
-              {aquariums.map((aquarium) => (
-                <SelectItem key={aquarium.id} value={aquarium.id}>
-                  {aquarium.name} ({aquarium.type})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Quick Log CTA */}
+        <SectionErrorBoundary fallbackTitle="Failed to load quick log" featureArea={FeatureArea.WATER_TESTS}>
+          <QuickLogSection aquarium={selectedAquarium ? { id: selectedAquarium.id, name: selectedAquarium.name, type: selectedAquarium.type } : null} />
+        </SectionErrorBoundary>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full md:w-auto grid-cols-3 mb-6">
-            <TabsTrigger value="log">{t('waterTests.logTest')}</TabsTrigger>
-            <TabsTrigger value="history">{t('waterTests.history')}</TabsTrigger>
-            <TabsTrigger value="charts">{t('waterTests.charts')}</TabsTrigger>
-          </TabsList>
+        {/* Parameter Insights Grid */}
+        <SectionErrorBoundary fallbackTitle="Failed to load parameters" featureArea={FeatureArea.WATER_TESTS}>
+          <ParameterInsightsGrid
+            tests={testsData || []}
+            units={units}
+            onParameterClick={handleParameterClick}
+          />
+        </SectionErrorBoundary>
 
-          <TabsContent value="log">
-            <SectionErrorBoundary fallbackTitle="Failed to load test form" featureArea={FeatureArea.WATER_TESTS}>
-              <Suspense fallback={<WaterTestFormSkeleton />}>
-                {selectedAquarium && (
-                  <WaterTestForm aquarium={selectedAquarium} />
-                )}
-              </Suspense>
-            </SectionErrorBoundary>
-          </TabsContent>
+        {/* Recent Activity Timeline */}
+        <SectionErrorBoundary fallbackTitle="Failed to load activity" featureArea={FeatureArea.WATER_TESTS}>
+          <RecentActivityTimeline
+            tests={testsData || []}
+            units={units}
+            onTestClick={handleTestClick}
+            maxItems={10}
+          />
+        </SectionErrorBoundary>
 
-          <TabsContent value="history">
-            <SectionErrorBoundary fallbackTitle="Failed to load test history" featureArea={FeatureArea.WATER_TESTS}>
-              <Suspense fallback={<WaterTestHistorySkeleton />}>
-                {selectedAquarium && (
-                  <WaterTestHistory aquariumId={selectedAquarium.id} />
-                )}
-              </Suspense>
-            </SectionErrorBoundary>
-          </TabsContent>
-
-          <TabsContent value="charts">
+        {/* Collapsible Trends Section */}
+        <Collapsible open={trendsOpen} onOpenChange={setTrendsOpen}>
+          <CollapsibleTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center justify-between"
+            >
+              <span>{t('waterTests.trends')}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${trendsOpen ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-4">
             <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
               <Suspense fallback={<WaterTestChartsSkeleton />}>
                 {selectedAquarium && (
@@ -161,8 +188,8 @@ const WaterTests = () => {
                 )}
               </Suspense>
             </SectionErrorBoundary>
-          </TabsContent>
-        </Tabs>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   );
