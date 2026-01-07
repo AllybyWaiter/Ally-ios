@@ -42,6 +42,10 @@ export function CompactWeatherWidget() {
     return null;
   }
 
+  // Defensive check with logging for unknown conditions
+  if (!weather.condition || !weatherIcons[weather.condition]) {
+    console.warn(`CompactWeatherWidget: Unknown weather condition "${weather.condition}"`);
+  }
   const WeatherIcon = weatherIcons[weather.condition] || Sun;
   const temperature = formatTemperature(weather.temperature, units, 'C');
   const feelsLike = formatTemperature(weather.feelsLike, units, 'C');

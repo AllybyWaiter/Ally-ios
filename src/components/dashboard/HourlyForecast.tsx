@@ -24,8 +24,17 @@ interface HourlyItemProps {
 function HourlyItem({ hour, units, isNow }: HourlyItemProps) {
   const icons = weatherIcons[hour.condition] || weatherIcons.clear;
   const Icon = hour.isDay ? icons.day : icons.night;
-  const time = parseISO(hour.time);
   const showPrecip = hour.precipitationProbability != null && hour.precipitationProbability >= 20;
+  
+  // Safe time parsing
+  let parsedTime: Date;
+  let formattedTime = '--';
+  try {
+    parsedTime = parseISO(hour.time);
+    formattedTime = isNow ? 'Now' : format(parsedTime, 'h a');
+  } catch {
+    parsedTime = new Date();
+  }
   
   return (
     <div 
@@ -36,7 +45,7 @@ function HourlyItem({ hour, units, isNow }: HourlyItemProps) {
       }`}
     >
       <span className={`text-xs font-medium ${isNow ? 'text-primary' : 'text-muted-foreground'}`}>
-        {isNow ? 'Now' : format(time, 'h a')}
+        {formattedTime}
       </span>
       <Icon className={`h-5 w-5 ${hour.isDay ? 'text-amber-500' : 'text-slate-400'}`} />
       <span className="text-sm font-semibold">
@@ -66,13 +75,18 @@ export function HourlyForecast() {
         <h3 className="text-sm font-medium text-muted-foreground mb-3">Today's Forecast</h3>
         <ScrollArea className="w-full">
           <div className="flex gap-1">
-            {weather.hourlyForecast.map((hour, index) => {
-              const time = parseISO(hour.time);
-              const isNow = isThisHour(time);
+            {weather.hourlyForecast.map((hour) => {
+              let isNow = false;
+              try {
+                const time = parseISO(hour.time);
+                isNow = isThisHour(time);
+              } catch {
+                isNow = false;
+              }
               
               return (
                 <HourlyItem 
-                  key={hour.time} 
+                  key={hour.time || crypto.randomUUID()} 
                   hour={hour} 
                   units={units} 
                   isNow={isNow}

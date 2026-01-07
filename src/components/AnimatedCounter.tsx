@@ -21,25 +21,25 @@ const AnimatedCounter = ({
   const elementRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+    
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !isVisible) {
+        if (entry.isIntersecting) {
           setIsVisible(true);
+          observer.disconnect(); // Disconnect once visible - no need to observe further
         }
       },
       { threshold: 0.1 }
     );
 
-    if (elementRef.current) {
-      observer.observe(elementRef.current);
-    }
+    observer.observe(element);
 
     return () => {
-      if (elementRef.current) {
-        observer.unobserve(elementRef.current);
-      }
+      observer.disconnect();
     };
-  }, [isVisible]);
+  }, []); // Remove isVisible dependency - only run once on mount
 
   useEffect(() => {
     if (!isVisible) return;

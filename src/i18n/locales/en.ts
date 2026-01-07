@@ -98,6 +98,10 @@ export const en = {
       adminPanelDescription: "Manage users, content, and system settings",
       staffDashboard: "Dashboard",
       staffDashboardDescription: "Access your management tools",
+      tapHoldDetails: "Tap & hold for details",
+      healthOverview: "Health Overview",
+      upgradeToAddMore: "Upgrade your plan to add more water bodies",
+      cardLoadError: "Unable to load this card",
     },
     aquarium: {
       createNew: "Create New Water Body",
@@ -421,6 +425,7 @@ export const en = {
         volumePlaceholder: "e.g., 55",
         volumeRequired: "Please enter a valid volume (at least 1 gallon)",
         volumeTooLarge: "Volume seems too large",
+        volumeCalculatorHelp: "Not sure? Let Ally help you calculate →",
       },
       step3: {
         title: "Almost Done!",

@@ -56,12 +56,18 @@ export function TrendAlertsBanner() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: alerts = [], isLoading } = useQuery({
+  const { data: alerts = [], isLoading, isError, error } = useQuery({
     queryKey: queryKeys.waterTests.alerts(user?.id || ''),
     queryFn: () => fetchActiveAlerts(user!.id),
     enabled: !!user,
     staleTime: 30000,
   });
+
+  // Handle error state silently - this is a non-critical feature
+  if (isError) {
+    console.error('Failed to fetch trend alerts:', error);
+    return null;
+  }
 
   const dismissMutation = useMutation({
     mutationFn: dismissAlert,

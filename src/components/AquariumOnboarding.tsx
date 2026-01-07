@@ -369,11 +369,11 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                 )}
                 {(type === 'pool_chlorine' || type === 'pool_saltwater' || type === 'spa') && (
                   <Link
-                    to="/chat?message=Help me calculate how many gallons my pool holds"
+                    to="/ally?message=Help me calculate how many gallons my pool holds"
                     className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
                   >
                     <Calculator className="h-3.5 w-3.5" />
-                    Not sure? Let Ally help you calculate →
+                    {t('aquariumOnboarding.step2.volumeCalculatorHelp')}
                   </Link>
                 )}
               </div>
