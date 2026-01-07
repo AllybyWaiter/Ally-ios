@@ -21,6 +21,7 @@ import {
   TemperatureChart,
   AquaticInsights,
 } from '@/components/weather';
+import { SunMoonOrb } from '@/components/weather/SunMoonOrb';
 import { Loader2 } from 'lucide-react';
 
 // Simplified lazy load - removed Promise.race timeout to avoid conflicts with component's own error handling
@@ -316,9 +317,10 @@ export default function Weather() {
                   )}
                   <p className="text-lg text-muted-foreground mt-1">{conditionLabel}</p>
                 </div>
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                  <WeatherIcon className="h-10 w-10 text-primary" />
-                </div>
+                <SunMoonOrb 
+                  isDay={weather.isDay} 
+                  condition={weather.condition}
+                />
               </div>
 
               {/* Metrics Grid */}
