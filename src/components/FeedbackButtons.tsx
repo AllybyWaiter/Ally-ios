@@ -57,9 +57,7 @@ export const FeedbackButtons = ({
       } else {
         toast.success("Thanks! We'll work to improve.");
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to submit feedback";
-      console.error("Failed to submit feedback:", message);
+    } catch {
       toast.error("Failed to submit feedback");
     } finally {
       setIsSubmitting(false);

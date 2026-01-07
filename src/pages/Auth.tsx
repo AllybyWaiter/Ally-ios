@@ -255,12 +255,12 @@ export default function Auth() {
         // Track signup conversion
         if (typeof window !== 'undefined') {
           // GA4 signup event
-          if ((window as any).gtag) {
-            (window as any).gtag('event', 'sign_up', { method: 'email' });
+          if (window.gtag) {
+            window.gtag('event', 'sign_up', { method: 'email' });
           }
           // Meta Pixel registration event
-          if ((window as any).fbq) {
-            (window as any).fbq('track', 'CompleteRegistration');
+          if (window.fbq) {
+            window.fbq('track', 'CompleteRegistration');
           }
         }
       }

@@ -97,8 +97,8 @@ const SLA = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {uptimeCommitments.map((item, index) => (
-                    <TableRow key={index}>
+                  {uptimeCommitments.map((item) => (
+                    <TableRow key={item.service}>
                       <TableCell className="font-medium">{item.service}</TableCell>
                       <TableCell>
                         <span className="font-mono text-green-600">{item.target}</span>
@@ -153,8 +153,8 @@ const SLA = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {creditSchedule.map((item, index) => (
-                    <TableRow key={index}>
+                  {creditSchedule.map((item) => (
+                    <TableRow key={item.uptime}>
                       <TableCell className="font-medium">{item.uptime}</TableCell>
                       <TableCell className="text-primary font-semibold">{item.credit}</TableCell>
                     </TableRow>
@@ -190,8 +190,8 @@ const SLA = () => {
                 The following situations are excluded from uptime calculations and service credit eligibility:
               </p>
               <ul className="space-y-2">
-                {exclusions.map((exclusion, index) => (
-                  <li key={index} className="flex items-start gap-2 text-muted-foreground">
+                {exclusions.map((exclusion) => (
+                  <li key={exclusion.slice(0, 30)} className="flex items-start gap-2 text-muted-foreground">
                     <span className="text-muted-foreground/60">•</span>
                     {exclusion}
                   </li>

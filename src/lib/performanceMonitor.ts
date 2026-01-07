@@ -55,8 +55,8 @@ class PerformanceMonitor {
     try {
       const clsObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          const clsEntry = entry as any;
-          if (clsEntry.value > 0.1) {
+          const clsEntry = entry as PerformanceEntry & { value?: number; hadRecentInput?: boolean };
+          if (clsEntry.value && clsEntry.value > 0.1) {
             addBreadcrumb(
               `Layout shift detected: ${clsEntry.value.toFixed(4)}`,
               'performance',
@@ -81,18 +81,24 @@ class PerformanceMonitor {
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
-        const lcpEntry = lastEntry as any;
+        const lcpEntry = lastEntry as PerformanceEntry & { 
+          renderTime?: number; 
+          url?: string; 
+          element?: { tagName?: string }; 
+        };
 
-        addBreadcrumb(
-          `LCP: ${lcpEntry.renderTime.toFixed(2)}ms`,
-          'performance',
-          {
-            renderTime: lcpEntry.renderTime,
-            url: lcpEntry.url,
-            element: lcpEntry.element?.tagName,
-          },
-          FeatureArea.GENERAL
-        );
+        if (lcpEntry.renderTime) {
+          addBreadcrumb(
+            `LCP: ${lcpEntry.renderTime.toFixed(2)}ms`,
+            'performance',
+            {
+              renderTime: lcpEntry.renderTime,
+              url: lcpEntry.url,
+              element: lcpEntry.element?.tagName,
+            },
+            FeatureArea.GENERAL
+          );
+        }
 
       });
 
