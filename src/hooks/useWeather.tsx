@@ -177,8 +177,7 @@ export function useWeather() {
       }));
 
       return weatherData;
-    } catch (error) {
-      console.error('Failed to fetch weather:', error);
+    } catch {
       setState(prev => ({
         ...prev,
         loading: false,
@@ -211,8 +210,7 @@ export function useWeather() {
         
         await fetchWeather(latitude, longitude);
       },
-      async (error) => {
-        console.warn('GPS failed, falling back to saved location:', error.message);
+      async () => {
         // Fallback to saved profile location
         if (user?.id) {
           const { data: profile } = await supabase
@@ -255,7 +253,6 @@ export function useWeather() {
 
           // If moved significantly, update profile silently
           if (distance > LOCATION_CHANGE_THRESHOLD_KM) {
-            console.log(`Location changed by ${distance.toFixed(1)}km, updating...`);
             if (user?.id) {
               await supabase
                 .from('profiles')

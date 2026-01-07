@@ -624,6 +624,7 @@ export default function UserManagement() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditUser(user)}
+                        aria-label="Edit user"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -663,6 +664,7 @@ export default function UserManagement() {
                             size="sm"
                             onClick={() => handleDeleteUser(user)}
                             className="text-destructive hover:text-destructive"
+                            aria-label="Delete user"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
