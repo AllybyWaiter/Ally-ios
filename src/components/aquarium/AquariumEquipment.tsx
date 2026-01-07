@@ -62,7 +62,7 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
       // Optimistically remove from cache
       queryClient.setQueryData(
         queryKeys.equipment.list(aquariumId),
-        (old: any[] | undefined) => old?.filter((item) => item.id !== equipmentId) ?? []
+        (old: Equipment[] | undefined) => old?.filter((item) => item.id !== equipmentId) ?? []
       );
       
       return { previousEquipment };

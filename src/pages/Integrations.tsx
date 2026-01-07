@@ -133,8 +133,8 @@ const Integrations = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {integrations
                 .filter((i) => i.category === category)
-                .map((integration, index) => (
-                  <Card key={index} className="flex flex-col">
+                .map((integration) => (
+                  <Card key={integration.name} className="flex flex-col">
                     <CardHeader>
                       <div className="flex items-center justify-between mb-2">
                         <div className="p-2 rounded-lg bg-primary/10">
@@ -161,8 +161,8 @@ const Integrations = () => {
             with popular sensors and controllers. Stay tuned for announcements.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {["Neptune Systems", "GHL", "Seneye", "CoralVue"].map((partner, i) => (
-              <Card key={i} className="aspect-video flex items-center justify-center bg-muted/30">
+            {["Neptune Systems", "GHL", "Seneye", "CoralVue"].map((partner) => (
+              <Card key={partner} className="aspect-video flex items-center justify-center bg-muted/30">
                 <div className="text-center p-4">
                   <p className="text-muted-foreground text-sm font-medium">{partner}</p>
                   <Badge variant="secondary" className="mt-2 text-xs">Coming Soon</Badge>

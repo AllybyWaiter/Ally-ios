@@ -265,8 +265,8 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-1">
-                        {(template.parameters as any as Parameter[]).map((param, idx) => (
-                          <Badge key={idx} variant="secondary">
+                        {(template.parameters as unknown as Parameter[]).map((param) => (
+                          <Badge key={param.name} variant="secondary">
                             {param.name}
                           </Badge>
                         ))}
@@ -345,7 +345,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
               </div>
 
               {formData.parameters.map((param, index) => (
-                <Card key={index}>
+                <Card key={param.name || `param-${index}`}>
                   <CardContent className="pt-4">
                     <div className="grid gap-3">
                       <div className="grid grid-cols-2 gap-2">

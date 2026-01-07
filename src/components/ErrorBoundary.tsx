@@ -29,7 +29,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Error captured by componentDidCatch - handled by getDerivedStateFromError
     
     // Detect iOS PWA cold-start/stale cache errors and auto-recover
     // React #310 = "Minified React error #310" (invalid hook call due to stale modules)
@@ -52,11 +52,7 @@ class ErrorBoundary extends Component<Props, State> {
       errorMessage.includes('Importing a module script failed');
     
     if (isReact310Error || isDestructuringError || isModuleError) {
-      console.warn('🔄 Detected iOS PWA stale cache error, auto-recovering...', {
-        isReact310Error,
-        isDestructuringError,
-        isModuleError
-      });
+      // iOS PWA stale cache error detected, auto-recovering
       this.handleClearCacheAndReload();
       return;
     }
@@ -84,21 +80,18 @@ class ErrorBoundary extends Component<Props, State> {
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
-        console.log('🧹 Cleared', cacheNames.length, 'caches');
       }
       // Unregister service workers
       if ('serviceWorker' in navigator) {
         const registrations = await navigator.serviceWorker.getRegistrations();
         await Promise.all(registrations.map(reg => reg.unregister()));
-        console.log('🧹 Unregistered', registrations.length, 'service workers');
       }
       // Force bypass ALL cache layers (including iOS Safari HTTP cache) 
       // by using a cache-busting query parameter
       const url = new URL(window.location.href);
       url.searchParams.set('_cb', Date.now().toString());
       window.location.replace(url.toString());
-    } catch (e) {
-      console.error('Cache clear failed:', e);
+    } catch {
       // Fallback: force reload with cache bypass
       window.location.href = window.location.pathname + '?_cb=' + Date.now();
     }

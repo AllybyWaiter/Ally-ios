@@ -50,10 +50,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (error) {
-        console.error('🔴 Profile: Fetch error:', error.message);
         // Retry once before giving up - don't reset onboardingCompleted on temporary errors
         if (retryCount < 1) {
-          console.warn('⚠️ Profile: Retrying fetch...');
           return fetchUserProfile(userId, retryCount + 1);
         }
         // Don't set onboardingCompleted to false on errors - preserve existing state
@@ -75,14 +73,11 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         setUserContext(userId, undefined, data.name || undefined);
       } else {
         // No profile row exists - this is a genuinely new user who needs onboarding
-        console.warn('⚠️ Profile: No data for user - new user needs onboarding');
         setOnboardingCompleted(false);
       }
-    } catch (error: unknown) {
-      console.error('🔴 Profile: Exception:', error instanceof Error ? error.message : 'Unknown error');
+    } catch {
       // Retry once on exception
       if (retryCount < 1) {
-        console.warn('⚠️ Profile: Retrying after exception...');
         return fetchUserProfile(userId, retryCount + 1);
       }
       // Don't set onboardingCompleted to false on errors - preserve existing state
@@ -116,7 +111,6 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     setProfileLoading(true);
 
     const profileTimeout = setTimeout(() => {
-      console.warn('⚠️ Profile: Timeout, continuing...');
       // Don't default to false on timeout - preserve existing state or leave as null
       // Dashboard will handle null state appropriately
       setProfileLoading(false);

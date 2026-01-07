@@ -152,8 +152,7 @@ const AllySupportChat = () => {
           }
         }
       }
-    } catch (error) {
-      console.error("Chat error:", error);
+    } catch {
       setMessages((prev) => [
         ...prev,
         {
@@ -217,11 +216,10 @@ const AllySupportChat = () => {
             </Button>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <div
-                key={index}
+                key={`${message.role}-${message.content.substring(0, 20)}`}
                 className={cn(
                   "flex",
                   message.role === "user" ? "justify-end" : "justify-start"
@@ -249,12 +247,11 @@ const AllySupportChat = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Replies */}
           {messages.length <= 2 && !isLoading && (
             <div className="px-4 pb-2 flex flex-wrap gap-2">
-              {quickReplies.map((reply, index) => (
+              {quickReplies.map((reply) => (
                 <Button
-                  key={index}
+                  key={reply}
                   onClick={() => handleQuickReply(reply)}
                   variant="outline"
                   size="sm"
