@@ -199,7 +199,7 @@ describe('livestock DAL', () => {
 
   describe('updateLivestock', () => {
     it('should update livestock with partial data', async () => {
-      const mockLivestock = { id: 'ls-1', name: 'Updated Name', health_status: 'stressed' };
+      const mockLivestock = { id: 'ls-1', name: 'Updated Name', health_status: 'recovering' };
 
       const mockUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
@@ -210,9 +210,9 @@ describe('livestock DAL', () => {
       });
       vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      const result = await updateLivestock('ls-1', { name: 'Updated Name', health_status: 'stressed' });
+      const result = await updateLivestock('ls-1', { name: 'Updated Name', health_status: 'recovering' });
 
-      expect(mockUpdate).toHaveBeenCalledWith({ name: 'Updated Name', health_status: 'stressed' });
+      expect(mockUpdate).toHaveBeenCalledWith({ name: 'Updated Name', health_status: 'recovering' });
       expect(result).toEqual(mockLivestock);
     });
 

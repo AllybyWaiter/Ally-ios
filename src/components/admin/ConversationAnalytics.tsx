@@ -36,6 +36,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function ConversationAnalytics() {
+  // Default to 30 days for meaningful trend analysis
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   const daysBack = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
