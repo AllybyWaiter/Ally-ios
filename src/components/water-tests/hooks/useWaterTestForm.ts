@@ -84,7 +84,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
   // Auto-select template
   useEffect(() => {
     if (templates && templates.length > 0 && !selectedTemplate) {
-      const defaultTemplate = templates.find((t) => 'isDefault' in t && (t as any).isDefault);
+      const defaultTemplate = templates.find((t) => 'isDefault' in t && t.isDefault === true);
       const templateToSelect = defaultTemplate || templates[0];
       setSelectedTemplate(templateToSelect.id);
 

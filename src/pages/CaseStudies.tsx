@@ -158,8 +158,8 @@ const CaseStudies = () => {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {aggregateStats.map((stat, index) => (
-              <Card key={index} className="text-center">
+            {aggregateStats.map((stat) => (
+              <Card key={stat.label} className="text-center">
                 <CardContent className="pt-6">
                   <stat.icon className="h-6 w-6 text-primary mx-auto mb-2" />
                   <div className="text-2xl font-bold text-foreground">{stat.value}</div>
@@ -209,8 +209,8 @@ const CaseStudies = () => {
                     <div>
                       <h4 className="font-semibold text-foreground mb-3">Features Used</h4>
                       <div className="flex flex-wrap gap-2">
-                        {featuredStudy.featuresUsed.map((feature, index) => (
-                          <Badge key={index} variant="outline" className="gap-1 text-xs">
+                        {featuredStudy.featuresUsed.map((feature) => (
+                          <Badge key={feature} variant="outline" className="gap-1 text-xs">
                             <CheckCircle className="h-3 w-3" />
                             {feature}
                           </Badge>
@@ -220,8 +220,8 @@ const CaseStudies = () => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-8">
-                    {featuredStudy.results.map((result, index) => (
-                      <div key={index} className="text-center p-4 bg-primary/5 rounded-lg">
+                    {featuredStudy.results.map((result) => (
+                      <div key={result.metric} className="text-center p-4 bg-primary/5 rounded-lg">
                         <div className="text-xl font-bold text-primary">{result.value}</div>
                         <div className="text-xs text-muted-foreground">{result.metric}</div>
                       </div>
@@ -295,8 +295,8 @@ const CaseStudies = () => {
                     <div>
                       <h4 className="font-semibold text-foreground text-sm mb-2">Features Used</h4>
                       <div className="flex flex-wrap gap-1">
-                        {study.featuresUsed.slice(0, 3).map((feature, index) => (
-                          <Badge key={index} variant="outline" className="text-xs gap-1">
+                        {study.featuresUsed.slice(0, 3).map((feature) => (
+                          <Badge key={feature} variant="outline" className="text-xs gap-1">
                             <CheckCircle className="h-3 w-3" />
                             {feature.split('(')[0].trim()}
                           </Badge>
@@ -311,8 +311,8 @@ const CaseStudies = () => {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-2 mb-6">
-                    {study.results.map((result, index) => (
-                      <div key={index} className="text-center p-3 bg-primary/5 rounded-lg">
+                    {study.results.map((result) => (
+                      <div key={result.metric} className="text-center p-3 bg-primary/5 rounded-lg">
                         <div className="text-lg font-bold text-primary">{result.value}</div>
                         <div className="text-xs text-muted-foreground">{result.metric}</div>
                       </div>
