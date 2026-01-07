@@ -8,13 +8,13 @@ interface TestParameter {
   parameter_name: string;
   value: number;
   unit: string;
-  status?: string;
+  status?: string | null;
 }
 
 interface WaterTest {
   id: string;
   test_date: string;
-  test_parameters: TestParameter[];
+  test_parameters?: TestParameter[] | null;
 }
 
 interface ParameterInsightsGridProps {

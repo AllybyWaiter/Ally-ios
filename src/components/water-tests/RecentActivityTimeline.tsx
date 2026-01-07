@@ -10,21 +10,21 @@ import { formatParameter, UnitSystem } from '@/lib/unitConversions';
 import { formatRelativeTime } from '@/lib/formatters';
 
 interface TestParameter {
-  id: string;
+  id?: string;
   parameter_name: string;
   value: number;
   unit: string;
-  status?: string;
+  status?: string | null;
 }
 
 interface WaterTest {
   id: string;
   test_date: string;
-  confidence: string | null;
-  tags: string[] | null;
-  notes: string | null;
-  photo_url: string | null;
-  test_parameters: TestParameter[];
+  confidence?: number | string | null;
+  tags?: string[] | null;
+  notes?: string | null;
+  photo_url?: string | null;
+  test_parameters?: TestParameter[] | null;
 }
 
 interface RecentActivityTimelineProps {
