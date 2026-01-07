@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useWeather, WeatherCondition } from '@/hooks/useWeather';
 
+const VALID_WEATHER_CONDITIONS: WeatherCondition[] = ['clear', 'cloudy', 'rain', 'snow', 'storm', 'fog'];
+
+function isValidWeatherCondition(condition: unknown): condition is WeatherCondition {
+  return typeof condition === 'string' && VALID_WEATHER_CONDITIONS.includes(condition as WeatherCondition);
+}
+
 type TimeSlot = 'dawn' | 'morning' | 'afternoon' | 'evening' | 'night' | 'late-night';
 
 interface TimeOfDayInfo {
@@ -112,7 +118,10 @@ function getGreeting(slot: TimeSlot, weather: WeatherCondition | null, weatherEn
 
 export function useTimeOfDay(): TimeOfDayInfo {
   const { weather: weatherData, enabled: weatherEnabled } = useWeather();
-  const weatherCondition = weatherData?.condition || null;
+  // Type guard to ensure valid weather condition
+  const weatherCondition = isValidWeatherCondition(weatherData?.condition) 
+    ? weatherData.condition 
+    : null;
   
   const [timeInfo, setTimeInfo] = useState<TimeOfDayInfo>(() => {
     const hour = new Date().getHours();
