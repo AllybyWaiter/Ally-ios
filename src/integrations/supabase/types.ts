@@ -450,6 +450,9 @@ export type Database = {
           aquarium_id: string | null
           created_at: string
           id: string
+          is_pinned: boolean | null
+          last_message_preview: string | null
+          message_count: number | null
           title: string
           updated_at: string
           user_id: string
@@ -458,6 +461,9 @@ export type Database = {
           aquarium_id?: string | null
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
+          last_message_preview?: string | null
+          message_count?: number | null
           title?: string
           updated_at?: string
           user_id: string
@@ -466,6 +472,9 @@ export type Database = {
           aquarium_id?: string | null
           created_at?: string
           id?: string
+          is_pinned?: boolean | null
+          last_message_preview?: string | null
+          message_count?: number | null
           title?: string
           updated_at?: string
           user_id?: string
