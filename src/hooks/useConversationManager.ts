@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 interface Message {
   role: "user" | "assistant";
@@ -98,6 +99,63 @@ export function useConversationManager(userId: string | null) {
       await fetchConversations();
     }
   }, [userId, fetchConversations]);
+
+  const bulkDeleteConversations = useCallback(async (conversationIds: string[]) => {
+    if (!userId || conversationIds.length === 0) return;
+    
+    const { error } = await supabase
+      .from('chat_conversations')
+      .delete()
+      .in('id', conversationIds)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw error;
+    }
+
+    await fetchConversations();
+    
+    // Reset current conversation if it was deleted
+    if (currentConversationId && conversationIds.includes(currentConversationId)) {
+      setCurrentConversationId(null);
+    }
+  }, [userId, currentConversationId, fetchConversations]);
+
+  const exportConversation = useCallback(async (conversationId: string): Promise<string> => {
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      throw new Error('Conversation not found');
+    }
+
+    const { data: messages, error } = await supabase
+      .from('chat_messages')
+      .select('role, content, created_at')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      throw error;
+    }
+
+    // Format as Markdown
+    let markdown = `# ${conversation.title}\n\n`;
+    markdown += `*Exported on ${format(new Date(), 'MMMM d, yyyy h:mm a')}*\n\n`;
+    markdown += `---\n\n`;
+
+    if (messages && messages.length > 0) {
+      for (const msg of messages) {
+        const role = msg.role === 'user' ? '**You**' : '**Ally**';
+        const timestamp = format(new Date(msg.created_at), 'MMM d, h:mm a');
+        markdown += `### ${role} *${timestamp}*\n\n`;
+        markdown += `${msg.content}\n\n`;
+        markdown += `---\n\n`;
+      }
+    } else {
+      markdown += `*No messages in this conversation*\n`;
+    }
+
+    return markdown;
+  }, [conversations]);
 
   const loadConversation = useCallback(async (conversationId: string): Promise<Message[]> => {
     const { data: messagesData } = await supabase
@@ -286,5 +344,7 @@ export function useConversationManager(userId: string | null) {
     getAquariumIdForApi,
     pinConversation,
     renameConversation,
+    bulkDeleteConversations,
+    exportConversation,
   };
 }
