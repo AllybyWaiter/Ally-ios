@@ -1,10 +1,11 @@
-import { useState, useMemo, memo, useRef, useEffect } from "react";
+import { useState, useMemo, memo, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   MessageSquare, 
   Trash2, 
@@ -31,11 +39,18 @@ import {
   Check,
   X,
   Calendar,
-  Filter
+  Filter,
+  CheckSquare,
+  MoreHorizontal,
+  Download,
+  Archive,
+  ArchiveRestore,
+  Copy
 } from "lucide-react";
 import { format, isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 interface Aquarium {
   id: string;
@@ -61,6 +76,8 @@ interface ChatHistorySidebarProps {
   onNewChat: () => void;
   onPinConversation?: (id: string) => void;
   onRenameConversation?: (id: string, newTitle: string) => void;
+  onBulkDelete?: (ids: string[]) => Promise<void>;
+  onExportConversation?: (id: string) => Promise<string>;
   aquariums?: Aquarium[];
   isLoading?: boolean;
 }
@@ -228,8 +245,12 @@ const ConversationCard = memo(({
   onRequestDelete,
   onPin,
   onRename,
+  onExport,
   aquarium,
-  isDeleting = false
+  isDeleting = false,
+  isSelectionMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: { 
   conversation: Conversation; 
   isActive: boolean; 
@@ -237,8 +258,12 @@ const ConversationCard = memo(({
   onRequestDelete: () => void;
   onPin?: () => void;
   onRename?: (newTitle: string) => void;
+  onExport?: () => void;
   aquarium?: Aquarium | null;
   isDeleting?: boolean;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const AquariumIcon = aquarium ? getAquariumIcon(aquarium.type) : null;
@@ -252,9 +277,17 @@ const ConversationCard = memo(({
   };
 
   const handleDoubleClick = (e: React.MouseEvent) => {
-    if (onRename) {
+    if (onRename && !isSelectionMode) {
       e.stopPropagation();
       setIsEditing(true);
+    }
+  };
+
+  const handleClick = () => {
+    if (isSelectionMode && onToggleSelect) {
+      onToggleSelect();
+    } else {
+      onLoad();
     }
   };
   
@@ -268,20 +301,34 @@ const ConversationCard = memo(({
       className={cn(
         "group relative flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
         "hover:bg-accent/80",
-        isActive && "bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-sm shadow-primary/5",
+        isActive && !isSelectionMode && "bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 shadow-sm shadow-primary/5",
+        isSelected && "bg-primary/10 border border-primary/30",
         isDeleting && "opacity-50 pointer-events-none"
       )}
-      onClick={onLoad}
+      onClick={handleClick}
     >
+      {/* Selection checkbox */}
+      {isSelectionMode && (
+        <div className="flex items-center justify-center shrink-0" onClick={e => e.stopPropagation()}>
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect?.()}
+            className="h-5 w-5"
+          />
+        </div>
+      )}
+
       {/* Icon with gradient */}
-      <div className={cn(
-        "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0",
-        isActive 
-          ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/20" 
-          : "bg-gradient-to-br from-muted to-muted/50 group-hover:from-accent group-hover:to-accent/50"
-      )}>
-        <MessageSquare className="h-4.5 w-4.5" />
-      </div>
+      {!isSelectionMode && (
+        <div className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 shrink-0",
+          isActive 
+            ? "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/20" 
+            : "bg-gradient-to-br from-muted to-muted/50 group-hover:from-accent group-hover:to-accent/50"
+        )}>
+          <MessageSquare className="h-4.5 w-4.5" />
+        </div>
+      )}
       
       <div className="flex-1 min-w-0 space-y-1.5">
         {/* Title row with pin indicator */}
@@ -358,81 +405,64 @@ const ConversationCard = memo(({
         )}
       </div>
       
-      {/* Action buttons on hover */}
-      {!isEditing && (
+      {/* Action buttons on hover - hidden in selection mode */}
+      {!isEditing && !isSelectionMode && (
         <div className={cn(
           "absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
         )}>
-          {onRename && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsEditing(true);
-                  }}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Rename</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {onPin && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-7 w-7",
-                    "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10",
-                    conversation.is_pinned && "text-amber-500"
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPin();
-                  }}
-                >
-                  <Star className={cn("h-3.5 w-3.5", conversation.is_pinned && "fill-current")} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>{conversation.is_pinned ? 'Unpin' : 'Pin'}</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-          <Tooltip>
-            <TooltipTrigger asChild>
+          {/* More actions dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-7 w-7",
-                  "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                )}
-                disabled={isDeleting}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {onRename && (
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditing(true);
+                }}>
+                  <Pencil className="h-3.5 w-3.5 mr-2" />
+                  Rename
+                </DropdownMenuItem>
+              )}
+              {onPin && (
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  onPin();
+                }}>
+                  <Star className={cn("h-3.5 w-3.5 mr-2", conversation.is_pinned && "fill-current")} />
+                  {conversation.is_pinned ? 'Unpin' : 'Pin'}
+                </DropdownMenuItem>
+              )}
+              {onExport && (
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  onExport();
+                }}>
+                  <Download className="h-3.5 w-3.5 mr-2" />
+                  Export
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
                 onClick={(e) => {
                   e.stopPropagation();
                   onRequestDelete();
                 }}
+                className="text-destructive focus:text-destructive"
               >
-                {isDeleting ? (
-                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Delete</p>
-            </TooltipContent>
-          </Tooltip>
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
     </motion.div>
@@ -449,14 +479,23 @@ export function ChatHistorySidebar({
   onNewChat,
   onPinConversation,
   onRenameConversation,
+  onBulkDelete,
+  onExportConversation,
   aquariums = [],
   isLoading = false,
 }: ChatHistorySidebarProps) {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Bulk selection state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Create aquarium lookup map
   const aquariumMap = useMemo(() => {
@@ -534,6 +573,86 @@ export function ChatHistorySidebar({
     return groups;
   }, [filteredConversations]);
 
+  // Selection handlers
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredConversations.map(c => c.id)));
+  }, [filteredConversations]);
+
+  const deselectAll = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const exitSelectionMode = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0 || !onBulkDelete) return;
+    
+    setIsBulkDeleting(true);
+    try {
+      await onBulkDelete(Array.from(selectedIds));
+      toast({
+        title: "Deleted",
+        description: `${selectedIds.size} conversation${selectedIds.size > 1 ? 's' : ''} deleted`,
+      });
+      exitSelectionMode();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete conversations",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setBulkDeleteDialogOpen(false);
+    }
+  };
+
+  const handleExport = async (id: string) => {
+    if (!onExportConversation) return;
+    
+    try {
+      const content = await onExportConversation(id);
+      
+      // Create and download file
+      const blob = new Blob([content], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const conv = conversations.find(c => c.id === id);
+      a.href = url;
+      a.download = `${conv?.title || 'conversation'}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Exported",
+        description: "Conversation downloaded as Markdown",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export conversation",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleRequestDelete = (id: string) => {
     setConversationToDelete(id);
     setDeleteDialogOpen(true);
@@ -562,31 +681,89 @@ export function ChatHistorySidebar({
         {/* Subtle gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-lg shadow-primary/20">
-            <MessagesSquare className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-lg leading-tight">Chat History</h2>
-            <p className="text-xs text-muted-foreground">
-              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
+        {/* Selection mode header */}
+        {isSelectionMode ? (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={exitSelectionMode}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <span className="font-medium">
+                {selectedIds.size} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectedIds.size === filteredConversations.length ? deselectAll : selectAll}
+              >
+                {selectedIds.size === filteredConversations.length ? 'Deselect All' : 'Select All'}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={selectedIds.size === 0}
+                onClick={() => setBulkDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Delete
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <>
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground shadow-lg shadow-primary/20">
+                <MessagesSquare className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-semibold text-lg leading-tight">Chat History</h2>
+                <p className="text-xs text-muted-foreground">
+                  {conversations.length} conversation{conversations.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              {hasConversations && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={() => setIsSelectionMode(true)}
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Select multiple</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
 
-        {/* New Chat Button */}
-        <Button
-          onClick={onNewChat}
-          className="relative w-full gap-2 rounded-xl shadow-md shadow-primary/10 overflow-hidden group"
-          size="lg"
-        >
-          <span className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Plus className="h-4 w-4 relative z-10" />
-          <span className="relative z-10">New Chat</span>
-        </Button>
+            {/* New Chat Button */}
+            <Button
+              onClick={onNewChat}
+              className="relative w-full gap-2 rounded-xl shadow-md shadow-primary/10 overflow-hidden group"
+              size="lg"
+            >
+              <span className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <Plus className="h-4 w-4 relative z-10" />
+              <span className="relative z-10">New Chat</span>
+            </Button>
+          </>
+        )}
 
         {/* Search */}
-        {hasConversations && (
+        {hasConversations && !isSelectionMode && (
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -599,7 +776,7 @@ export function ChatHistorySidebar({
         )}
 
         {/* Quick Filters */}
-        {hasConversations && (
+        {hasConversations && !isSelectionMode && (
           <div className="flex gap-1.5 flex-wrap">
             {filterOptions.map((filter) => {
               const count = filterCounts[filter.id];
@@ -718,8 +895,12 @@ export function ChatHistorySidebar({
                         onRequestDelete={() => handleRequestDelete(conv.id)}
                         onPin={onPinConversation ? () => onPinConversation(conv.id) : undefined}
                         onRename={onRenameConversation ? (newTitle) => onRenameConversation(conv.id, newTitle) : undefined}
+                        onExport={onExportConversation ? () => handleExport(conv.id) : undefined}
                         aquarium={conv.aquarium_id ? aquariumMap.get(conv.aquarium_id) : null}
                         isDeleting={isDeleting && conversationToDelete === conv.id}
+                        isSelectionMode={isSelectionMode}
+                        isSelected={selectedIds.has(conv.id)}
+                        onToggleSelect={() => toggleSelection(conv.id)}
                       />
                     ))}
                   </motion.div>
@@ -747,6 +928,28 @@ export function ChatHistorySidebar({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} conversation{selectedIds.size > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the selected conversations and all their messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? 'Deleting...' : `Delete ${selectedIds.size}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
