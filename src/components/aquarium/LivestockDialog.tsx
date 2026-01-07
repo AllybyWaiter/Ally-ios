@@ -25,11 +25,14 @@ interface LivestockDialogProps {
   livestock?: Livestock;
 }
 
-const categoryIcons = {
-  fish: Fish,
-  invertebrate: Bug,
-  coral: Flower2,
-  other: HelpCircle,
+// Category icons for visual display in category selector
+const CategoryIcon = ({ category }: { category: string }) => {
+  switch (category) {
+    case 'fish': return <Fish className="h-4 w-4" />;
+    case 'invertebrate': return <Bug className="h-4 w-4" />;
+    case 'coral': return <Flower2 className="h-4 w-4" />;
+    default: return <HelpCircle className="h-4 w-4" />;
+  }
 };
 
 export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: LivestockDialogProps) {

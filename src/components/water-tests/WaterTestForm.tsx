@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -140,7 +141,13 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
               analysisResult={analysisResult}
               feedbackGiven={false}
               onPhotoSelect={handlePhotoSelect}
-              onAnalyzePhoto={handleAnalyzePhoto}
+              onAnalyzePhoto={() => {
+                // Validate photo file exists before analysis
+                if (!photoFile) {
+                  return;
+                }
+                handleAnalyzePhoto();
+              }}
               onRemovePhoto={handleRemovePhoto}
               onPhotoFeedback={handlePhotoFeedback}
             />
@@ -274,8 +281,13 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
               <p className="text-sm text-muted-foreground">{t('waterTests.goldDescription')}</p>
             </div>
             <p className="text-sm text-muted-foreground">
-              Visit the Pricing page to compare plans and upgrade.
+              {t('waterTests.visitPricingPage', { defaultValue: 'Visit the Pricing page to compare plans and upgrade.' })}
             </p>
+            <Button asChild className="w-full">
+              <Link to="/pricing" onClick={() => setShowUpgradeDialog(false)}>
+                {t('common.viewPricing', { defaultValue: 'View Pricing' })}
+              </Link>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
