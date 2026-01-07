@@ -46,7 +46,7 @@ export function useCalendarData({ currentMonth }: UseCalendarDataOptions) {
         .from('maintenance_tasks')
         .select(`
           *,
-          aquarium:aquariums(name, type)
+          aquarium:aquariums(id, name, type)
         `)
         .in('aquarium_id', aquariumIds)
         .gte('due_date', monthStart.toISOString().split('T')[0])
