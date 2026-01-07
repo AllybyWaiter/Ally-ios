@@ -6,6 +6,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Valid health status values for livestock
+export type LivestockHealthStatus = 'healthy' | 'sick' | 'recovering' | 'quarantine';
+
+const VALID_HEALTH_STATUSES: LivestockHealthStatus[] = ['healthy', 'sick', 'recovering', 'quarantine'];
+
+// Type guard for health status validation
+export function isValidHealthStatus(status: string): status is LivestockHealthStatus {
+  return VALID_HEALTH_STATUSES.includes(status as LivestockHealthStatus);
+}
+
 export interface Livestock {
   id: string;
   aquarium_id: string;
@@ -15,7 +25,7 @@ export interface Livestock {
   category: string;
   quantity: number;
   date_added: string;
-  health_status: string;
+  health_status: LivestockHealthStatus;
   notes: string | null;
   primary_photo_url: string | null;
   created_at: string;
@@ -66,9 +76,14 @@ export async function createLivestock(livestock: {
   category: string;
   quantity?: number;
   date_added?: string;
-  health_status?: string;
+  health_status?: LivestockHealthStatus;
   notes?: string;
 }) {
+  // Validate health status if provided
+  if (livestock.health_status && !isValidHealthStatus(livestock.health_status)) {
+    throw new Error(`Invalid health status: ${livestock.health_status}. Must be one of: ${VALID_HEALTH_STATUSES.join(', ')}`);
+  }
+
   const { data, error } = await supabase
     .from('livestock')
     .insert(livestock)
@@ -84,6 +99,11 @@ export async function updateLivestock(
   livestockId: string,
   updates: Partial<Omit<Livestock, 'id' | 'aquarium_id' | 'user_id' | 'created_at' | 'updated_at'>>
 ) {
+  // Validate health status if provided
+  if (updates.health_status && !isValidHealthStatus(updates.health_status)) {
+    throw new Error(`Invalid health status: ${updates.health_status}. Must be one of: ${VALID_HEALTH_STATUSES.join(', ')}`);
+  }
+
   const { data, error } = await supabase
     .from('livestock')
     .update(updates)

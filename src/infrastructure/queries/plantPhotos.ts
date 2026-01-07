@@ -44,7 +44,8 @@ export async function uploadPlantPhoto(
 ): Promise<PlantPhoto> {
   await ensureFreshSession();
   
-  const fileExt = file.name.split('.').pop();
+  // Get file extension with fallback to jpg
+  const fileExt = file.name.split('.').pop() || 'jpg';
   const fileName = `${userId}/${plantId}/${Date.now()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage

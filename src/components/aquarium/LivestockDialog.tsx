@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Fish, Bug, Flower2, HelpCircle, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { queryKeys } from '@/lib/queryKeys';
-import { createLivestock, updateLivestock, type Livestock } from '@/infrastructure/queries/livestock';
+import { createLivestock, updateLivestock, type Livestock, type LivestockHealthStatus, isValidHealthStatus } from '@/infrastructure/queries/livestock';
 import { fetchLivestock } from '@/infrastructure/queries/livestock';
 import { fetchAquarium } from '@/infrastructure/queries/aquariums';
 import { getFishSpeciesByNames } from '@/infrastructure/queries/fishSpecies';
@@ -104,6 +104,11 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
     mutationFn: async (data: typeof formData) => {
       if (!user) throw new Error('User not authenticated');
       
+      // Validate and cast health_status
+      const healthStatus: LivestockHealthStatus = isValidHealthStatus(data.health_status) 
+        ? data.health_status 
+        : 'healthy';
+      
       if (livestock) {
         return updateLivestock(livestock.id, {
           name: data.name,
@@ -111,7 +116,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
           category: data.category,
           quantity: data.quantity,
           date_added: data.date_added,
-          health_status: data.health_status,
+          health_status: healthStatus,
           notes: data.notes || null,
         });
       } else {
@@ -123,7 +128,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
           category: data.category,
           quantity: data.quantity,
           date_added: data.date_added,
-          health_status: data.health_status,
+          health_status: healthStatus,
           notes: data.notes || undefined,
         });
       }

@@ -453,15 +453,16 @@ export const RoleManager = () => {
                         <div key={`${user.user_id}-${role}`} className="flex items-center gap-1">
                           <RoleBadge role={role} />
                           {role !== 'user' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openRemoveDialog(user, role)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openRemoveDialog(user, role)}
+                            className="h-6 w-6 p-0"
+                            aria-label={`Remove ${role} role`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                         </div>
                       ))}
                     </div>
