@@ -37,7 +37,8 @@ export function useKeyboardVisibility(
     
     if (!viewport) return;
 
-    let initialHeight = viewport.height;
+    // Capture initial height at effect start for stable comparison
+    const initialHeight = viewport.height;
 
     const handleResize = () => {
       const currentHeight = viewport.height;
@@ -88,19 +89,13 @@ export function useKeyboardVisibility(
     document.addEventListener('focusin', handleFocus);
     document.addEventListener('focusout', handleBlur);
 
-    // Update initial height on orientation change
-    const handleOrientationChange = () => {
-      setTimeout(() => {
-        initialHeight = viewport.height;
-      }, 500);
-    };
-    window.addEventListener('orientationchange', handleOrientationChange);
+    // Note: orientation change will require remounting the component for new initial height
+    // This is acceptable since orientation changes typically cause layout reflows anyway
 
     return () => {
       viewport.removeEventListener('resize', handleResize);
       document.removeEventListener('focusin', handleFocus);
       document.removeEventListener('focusout', handleBlur);
-      window.removeEventListener('orientationchange', handleOrientationChange);
     };
   }, [isKeyboardVisible, onKeyboardShow, onKeyboardHide, scrollInputIntoView]);
 

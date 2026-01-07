@@ -55,9 +55,9 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
 
   // Load draft on mount
   useEffect(() => {
-    const draft = localStorage.getItem(`water-test-draft-${aquarium.id}`);
-    if (draft) {
-      try {
+    try {
+      const draft = localStorage.getItem(`water-test-draft-${aquarium.id}`);
+      if (draft) {
         const parsed = JSON.parse(draft);
         setParameters(parsed.parameters || {});
         setNotes(parsed.notes || '');
@@ -65,8 +65,14 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
         toast.success('Draft restored', {
           description: 'Your unsaved changes have been restored',
         });
-      } catch (error) {
-        console.error('Failed to parse draft:', error);
+      }
+    } catch (error) {
+      console.error('Failed to parse draft:', error);
+      // Clear corrupted draft
+      try {
+        localStorage.removeItem(`water-test-draft-${aquarium.id}`);
+      } catch {
+        // Ignore if localStorage is unavailable
       }
     }
   }, [aquarium.id]);

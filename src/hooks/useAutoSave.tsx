@@ -83,11 +83,12 @@ export const useAutoSave = <T,>({
     };
   }, [data, delay, enabled, saveNow]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - cancel any pending saves
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, []);
