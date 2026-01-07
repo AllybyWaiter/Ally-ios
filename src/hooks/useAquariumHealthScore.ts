@@ -51,7 +51,24 @@ function getHealthLabel(score: number): { label: string; color: string } {
   return { label: 'Critical', color: 'hsl(0, 84%, 60%)' };
 }
 
-function calculateWaterTestScore(tests: any[]): number {
+interface WaterTestWithParams {
+  test_date: string;
+  test_parameters?: Array<{
+    status?: string;
+  }>;
+}
+
+interface LivestockItem {
+  health_status: string;
+  quantity: number;
+}
+
+interface MaintenanceTask {
+  status: string;
+  due_date: string;
+}
+
+function calculateWaterTestScore(tests: WaterTestWithParams[]): number {
   if (!tests || tests.length === 0) return 30; // No tests = low score
   
   const recentTest = tests[0];
@@ -77,14 +94,14 @@ function calculateWaterTestScore(tests: any[]): number {
     'critical': 0,
   };
   
-  const paramScore = parameters.reduce((acc: number, param: any) => {
-    return acc + (statusScores[param.status] ?? 70);
+  const paramScore = parameters.reduce((acc: number, param) => {
+    return acc + (statusScores[param.status ?? ''] ?? 70);
   }, 0) / parameters.length;
   
   return (recencyScore * 0.4 + paramScore * 0.6);
 }
 
-function calculateLivestockScore(livestock: any[]): number {
+function calculateLivestockScore(livestock: LivestockItem[]): number {
   if (!livestock || livestock.length === 0) return 100; // No livestock = perfect
   
   const healthScores: Record<string, number> = {
@@ -104,7 +121,7 @@ function calculateLivestockScore(livestock: any[]): number {
   return totalCount > 0 ? totalScore / totalCount : 100;
 }
 
-function calculateMaintenanceScore(tasks: any[]): number {
+function calculateMaintenanceScore(tasks: MaintenanceTask[]): number {
   if (!tasks || tasks.length === 0) return 80; // No tasks = okay
   
   const now = new Date();
@@ -112,7 +129,6 @@ function calculateMaintenanceScore(tasks: any[]): number {
     t.status === 'pending' && new Date(t.due_date) < now
   ).length;
   
-  const pending = tasks.filter(t => t.status === 'pending').length;
   const completed = tasks.filter(t => t.status === 'completed').length;
   
   // Score based on completion rate and overdue tasks
@@ -122,7 +138,7 @@ function calculateMaintenanceScore(tasks: any[]): number {
   return Math.max(0, Math.min(100, completionRate - overduepenalty));
 }
 
-function calculateConsistencyScore(tests: any[], tasks: any[]): number {
+function calculateConsistencyScore(tests: WaterTestWithParams[], tasks: MaintenanceTask[]): number {
   // Check testing frequency
   const testCount = tests?.length || 0;
   let testingScore = 50;

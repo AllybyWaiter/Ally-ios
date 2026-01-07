@@ -355,7 +355,7 @@ export function ContactsManager() {
                     <div className="flex items-center justify-end gap-1">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" aria-label="Reply options">
                             <Mail className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -391,6 +391,7 @@ export function ContactsManager() {
                         variant="ghost"
                         size="sm"
                         onClick={() => deleteContact(contact.id)}
+                        aria-label="Delete contact"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
