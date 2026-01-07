@@ -54,6 +54,14 @@ async function fetchActivityData() {
       .limit(100),
   ]);
 
+  // Handle potential errors from parallel queries
+  if (activitiesResult.error) {
+    console.error('Failed to fetch activity logs:', activitiesResult.error);
+  }
+  if (loginsResult.error) {
+    console.error('Failed to fetch login history:', loginsResult.error);
+  }
+
   const activities = activitiesResult.data || [];
   const logins = loginsResult.data || [];
 

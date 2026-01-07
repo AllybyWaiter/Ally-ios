@@ -24,8 +24,10 @@ export interface MaintenanceTask {
 }
 
 // Helper to ensure session is fresh (iOS PWA fix)
+// Note: Only call this when absolutely needed to avoid redundant token refreshes
 async function ensureFreshSession() {
   const { data: sessionData } = await supabase.auth.getSession();
+  // Only refresh if session is missing - the SDK auto-refreshes expiring tokens
   if (!sessionData.session) {
     await supabase.auth.refreshSession();
   }

@@ -53,7 +53,9 @@ export function useTypewriterEffect(
       accumulatedTimeRef.current = 0;
       pauseRemainingRef.current = 0;
     }
-  }, [content.length === 0]);
+    // Intentionally only depend on content being empty to avoid resetting during streaming
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content === '']);
 
   // Check if we should pause after this character
   const getPauseForChar = (char: string, nextChar: string | undefined): number => {

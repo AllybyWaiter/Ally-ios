@@ -187,6 +187,8 @@ export function useStreamingResponse() {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setIsStreaming(false);
+    // Reset accumulated content to prevent stale data on next stream
+    assistantMessageRef.current = "";
   }, []);
 
   return {
