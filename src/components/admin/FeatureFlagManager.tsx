@@ -161,6 +161,9 @@ export default function FeatureFlagManager() {
   };
 
   const handleSubmit = () => {
+    // Validate rollout percentage is within valid range
+    const validatedPercentage = Math.min(100, Math.max(0, formData.rollout_percentage));
+    
     if (editingFlag) {
       updateMutation.mutate({
         id: editingFlag.id,
@@ -168,7 +171,7 @@ export default function FeatureFlagManager() {
           name: formData.name,
           description: formData.description || null,
           enabled: formData.enabled,
-          rollout_percentage: formData.rollout_percentage,
+          rollout_percentage: validatedPercentage,
           target_tiers: formData.target_tiers,
           target_roles: formData.target_roles,
         },
@@ -179,7 +182,7 @@ export default function FeatureFlagManager() {
         name: formData.name,
         description: formData.description || undefined,
         enabled: formData.enabled,
-        rollout_percentage: formData.rollout_percentage,
+        rollout_percentage: validatedPercentage,
         target_tiers: formData.target_tiers,
         target_roles: formData.target_roles,
       });

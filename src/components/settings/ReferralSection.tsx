@@ -31,6 +31,16 @@ export function ReferralSection() {
     const text = `Join me on Ally! Use my referral code ${referralCode} and we both get 1 month of Plus free. 🐠`;
     const url = shareUrl;
 
+    // Try native share API first for mobile
+    if (platform === 'native' && navigator.share) {
+      try {
+        await navigator.share({ title: 'Join me on Ally!', text, url });
+        return;
+      } catch {
+        // User cancelled or share failed, fall through to clipboard
+      }
+    }
+
     const shareUrls: Record<string, string> = {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`,
@@ -40,6 +50,14 @@ export function ReferralSection() {
 
     if (shareUrls[platform]) {
       window.open(shareUrls[platform], '_blank', 'noopener,noreferrer');
+    } else {
+      // Fallback: copy to clipboard for desktop
+      try {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        toast.success('Link copied to clipboard!');
+      } catch {
+        toast.error('Failed to copy link');
+      }
     }
   };
 

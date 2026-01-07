@@ -330,10 +330,26 @@ export const useSystemStatus = () => {
   useEffect(() => {
     refresh();
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(refresh, 30000);
+    // Only poll when tab is visible to save resources
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refresh();
+      }
+    };
 
-    return () => clearInterval(interval);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Auto-refresh every 30 seconds only when visible
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refresh();
+      }
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [refresh]);
 
   return {
