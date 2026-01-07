@@ -29,6 +29,14 @@ export const en = {
       remove: "Remove",
       showLess: "Show Less",
       viewPricing: "View Pricing",
+      goBack: "Go Back",
+      returnHome: "Return Home",
+    },
+    errors: {
+      pageNotFound: "Page not found",
+      pageNotFoundDescription: "The page you're looking for doesn't exist or has been moved.",
+      somethingWentWrong: "Something went wrong",
+      tryAgain: "Please try again later",
     },
     settings: {
       title: "Settings",

@@ -107,8 +107,14 @@ export function useReferralCode() {
     enabled: !!user?.id,
   });
 
-  // Validate a referral code
+  // Validate a referral code format and validity
   const validateCode = async (code: string, email?: string) => {
+    // Basic format validation: alphanumeric only, 6-12 characters
+    const codeRegex = /^[A-Z0-9]{6,12}$/i;
+    if (!codeRegex.test(code)) {
+      throw new Error('Invalid referral code format');
+    }
+    
     const { data, error } = await supabase.functions.invoke('validate-referral-code', {
       body: { code, referee_email: email },
     });

@@ -25,21 +25,29 @@ export default function Blog() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
+    const fetchPosts = async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, slug, excerpt, featured_image_url, published_at, view_count, tags')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+
+      if (mounted) {
+        if (!error && data) {
+          setPosts(data);
+        }
+        setLoading(false);
+      }
+    };
+    
     fetchPosts();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
-
-  const fetchPosts = async () => {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .select('id, title, slug, excerpt, featured_image_url, published_at, view_count, tags')
-      .eq('status', 'published')
-      .order('published_at', { ascending: false });
-
-    if (!error && data) {
-      setPosts(data);
-    }
-    setLoading(false);
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/20">

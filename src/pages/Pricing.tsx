@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Check, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -313,8 +313,8 @@ const Pricing = () => {
                 </thead>
                 <tbody>
                   {comparisonFeatures.map((section, sectionIndex) => (
-                    <>
-                      <tr key={`category-${sectionIndex}`} className="bg-muted/30">
+                    <React.Fragment key={`section-${sectionIndex}`}>
+                      <tr className="bg-muted/30">
                         <td colSpan={5} className="p-3 font-semibold text-sm uppercase tracking-wide">
                           {section.category}
                         </td>
@@ -346,7 +346,7 @@ const Pricing = () => {
                           </td>
                         </tr>
                       ))}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

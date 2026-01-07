@@ -54,7 +54,8 @@ export default function BlogManager() {
       if (error) throw error;
       return (data || []) as BlogPost[];
     },
-    refetchInterval: 60000, // Auto-refresh every minute for scheduled posts
+    // Reduce polling to 5 minutes - realtime DB trigger would be better but this avoids excessive polling
+    refetchInterval: 5 * 60 * 1000,
   });
 
   // Delete mutation
