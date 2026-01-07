@@ -1,4 +1,5 @@
 import { useState, useMemo, memo, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -85,11 +86,12 @@ interface ChatHistorySidebarProps {
 type DateGroup = "pinned" | "today" | "yesterday" | "week" | "older";
 type FilterType = "all" | "pinned" | "week" | "with-aquarium";
 
-const filterOptions: { id: FilterType; label: string; icon?: React.ReactNode }[] = [
-  { id: "all", label: "All" },
-  { id: "pinned", label: "Pinned", icon: <Star className="h-3 w-3" /> },
-  { id: "week", label: "This Week", icon: <Calendar className="h-3 w-3" /> },
-  { id: "with-aquarium", label: "With Tank", icon: <Fish className="h-3 w-3" /> },
+// Filter options with i18n-ready labels
+const getFilterOptions = (t: (key: string) => string): { id: FilterType; label: string; icon?: React.ReactNode }[] => [
+  { id: "all", label: t('chat.filters.all') },
+  { id: "pinned", label: t('chat.filters.pinned'), icon: <Star className="h-3 w-3" /> },
+  { id: "week", label: t('chat.filters.thisWeek'), icon: <Calendar className="h-3 w-3" /> },
+  { id: "with-aquarium", label: t('chat.filters.withTank'), icon: <Fish className="h-3 w-3" /> },
 ];
 
 function getDateGroup(conv: Conversation): DateGroup {
@@ -103,13 +105,14 @@ function getDateGroup(conv: Conversation): DateGroup {
   return "older";
 }
 
-const groupLabels: Record<DateGroup, string> = {
-  pinned: "Pinned",
-  today: "Today",
-  yesterday: "Yesterday",
-  week: "Last 7 Days",
-  older: "Older",
-};
+// Group labels with i18n-ready function
+const getGroupLabels = (t: (key: string) => string): Record<DateGroup, string> => ({
+  pinned: t('chat.groups.pinned'),
+  today: t('chat.groups.today'),
+  yesterday: t('chat.groups.yesterday'),
+  week: t('chat.groups.lastWeek'),
+  older: t('chat.groups.older'),
+});
 
 const groupIcons: Record<DateGroup, React.ReactNode> = {
   pinned: <Pin className="h-3 w-3" />,
@@ -490,6 +493,7 @@ export const ChatHistorySidebar = ({
   aquariums = [],
   isLoading = false,
 }: ChatHistorySidebarProps) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -766,7 +770,7 @@ export const ChatHistorySidebar = ({
         {/* Quick Filters */}
         {hasConversations && !isSelectionMode && (
           <div className="flex gap-1.5 flex-wrap">
-            {filterOptions.map((filter) => {
+            {getFilterOptions(t).map((filter) => {
               const count = filterCounts[filter.id];
               const isActive = activeFilter === filter.id;
               
@@ -868,7 +872,7 @@ export const ChatHistorySidebar = ({
                     <div className="flex items-center gap-2 px-1 py-2">
                       {groupIcons[group]}
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {groupLabels[group]}
+                        {getGroupLabels(t)[group]}
                       </p>
                       <span className="text-xs text-muted-foreground/60">
                         ({items.length})

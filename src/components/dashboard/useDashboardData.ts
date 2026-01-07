@@ -9,11 +9,9 @@ import {
 } from '@/infrastructure/queries/aquariums';
 import { isPoolType } from '@/lib/waterBodyUtils';
 
-interface DashboardAquarium extends Aquarium {
-  volume_gallons: number;
-  status: string;
-  setup_date: string;
-}
+// DashboardAquarium uses Aquarium base type - these fields are already optional in Aquarium
+// We just re-export the type for dashboard-specific use
+type DashboardAquarium = Aquarium;
 
 export function useDashboardData() {
   const { toast } = useToast();

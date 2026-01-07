@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,7 @@ export default function Auth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string; referralCode?: string }>({});
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
   
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
@@ -108,11 +109,19 @@ export default function Auth() {
     },
   });
 
-  // Redirect to dashboard if already logged in
+  // Cleanup subscription on unmount and redirect if logged in
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
     }
+    
+    return () => {
+      // Cleanup referral subscription on unmount
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
   }, [user, navigate]);
   
   // Timeout fallback for stuck authentication state
@@ -243,8 +252,8 @@ export default function Auth() {
             }
           });
           
-          // Cleanup subscription after timeout
-          setTimeout(() => subscription.unsubscribe(), 10000);
+          // Store subscription cleanup for unmount (moved to useEffect cleanup)
+          subscriptionRef.current = subscription;
         }
 
         toast({

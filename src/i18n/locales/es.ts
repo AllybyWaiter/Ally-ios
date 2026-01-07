@@ -407,5 +407,20 @@ export const es = {
       error: "Error",
       errorDescription: "Error al crear el espacio acuático. Por favor intenta de nuevo.",
     },
+    chat: {
+      filters: {
+        all: "Todos",
+        pinned: "Fijados",
+        thisWeek: "Esta Semana",
+        withTank: "Con Tanque",
+      },
+      groups: {
+        pinned: "Fijados",
+        today: "Hoy",
+        yesterday: "Ayer",
+        lastWeek: "Últimos 7 Días",
+        older: "Anteriores",
+      },
+    },
   },
 };

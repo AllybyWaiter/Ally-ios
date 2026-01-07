@@ -29,8 +29,9 @@ export function HealthRing({
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
 
-  // Use React's useId for stable, unique gradient IDs
-  const gradientId = useId();
+  // Use React's useId for stable, unique gradient IDs with semantic prefix
+  const baseId = useId();
+  const gradientId = `health-ring-gradient-${baseId}`;
 
   return (
     <div className="relative inline-flex items-center justify-center">
