@@ -89,10 +89,17 @@ export default function CheckoutSuccess() {
         return;
       }
 
-      setAttempts(prev => prev + 1);
-
-      if (attempts >= MAX_POLL_ATTEMPTS) {
-        setStatus('timeout');
+      // Use functional update to get current attempts value
+      setAttempts(prev => {
+        const nextAttempts = prev + 1;
+        if (nextAttempts >= MAX_POLL_ATTEMPTS) {
+          setStatus('timeout');
+        }
+        return nextAttempts;
+      });
+      
+      // Check if we should stop polling (use attempts + 1 since state hasn't updated yet)
+      if (attempts + 1 >= MAX_POLL_ATTEMPTS) {
         return;
       }
 

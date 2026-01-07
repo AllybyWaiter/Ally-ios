@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +54,7 @@ const SupportTickets = () => {
   const [replyMessage, setReplyMessage] = useState("");
   const [suggestedReplies, setSuggestedReplies] = useState<ReplyTemplate[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [lastSuggestionFetch, setLastSuggestionFetch] = useState<number>(0);
+  const lastSuggestionFetchRef = useRef<number>(0);
 
   // Fetch tickets with React Query
   const { data: tickets = [], isLoading: isLoadingTickets } = useQuery({
@@ -139,16 +139,16 @@ const SupportTickets = () => {
     },
   });
 
-  // Debounced fetch for suggested replies
+  // Debounced fetch for suggested replies using ref to avoid stale closure
   const fetchSuggestedReplies = useCallback(async (ticket: Ticket) => {
     const now = Date.now();
     const DEBOUNCE_MS = 2000; // 2 second cooldown between AI suggestion requests
     
-    if (now - lastSuggestionFetch < DEBOUNCE_MS) {
+    if (now - lastSuggestionFetchRef.current < DEBOUNCE_MS) {
       return;
     }
     
-    setLastSuggestionFetch(now);
+    lastSuggestionFetchRef.current = now;
     setIsLoadingSuggestions(true);
     setSuggestedReplies([]);
     
@@ -184,7 +184,7 @@ const SupportTickets = () => {
     } finally {
       setIsLoadingSuggestions(false);
     }
-  }, [lastSuggestionFetch]);
+  }, []); // Empty deps since we use ref for mutable timestamp
 
   const handleTicketSelect = useCallback((ticket: Ticket) => {
     setSelectedTicket(ticket);

@@ -310,7 +310,11 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   // Fix Leaflet default marker icon inside useEffect to prevent iOS PWA module-level crashes
   useEffect(() => {
     try {
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      // Check if _getIconUrl exists before deleting to avoid strict mode errors
+      const proto = L.Icon.Default.prototype as any;
+      if (proto._getIconUrl) {
+        delete proto._getIconUrl;
+      }
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
         iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -428,12 +432,32 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
     return () => clearInterval(refreshInterval);
   }, [latitude, longitude]);
 
-  // Animation loop
+  // Animation loop - pause when tab is hidden to save CPU
   useEffect(() => {
     if (isPlaying && frames.length > 0) {
+      const handleVisibilityChange = () => {
+        if (document.hidden && intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        } else if (!document.hidden && isPlaying) {
+          intervalRef.current = window.setInterval(() => {
+            setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
+          }, 500);
+        }
+      };
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      
       intervalRef.current = window.setInterval(() => {
         setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
       }, 500);
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     }
 
     return () => {
@@ -448,11 +472,13 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   }, []);
 
   const handlePrevFrame = useCallback(() => {
+    if (frames.length === 0) return;
     setIsPlaying(false);
     setCurrentFrameIndex((prev) => (prev - 1 + frames.length) % frames.length);
   }, [frames.length]);
 
   const handleNextFrame = useCallback(() => {
+    if (frames.length === 0) return;
     setIsPlaying(false);
     setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
   }, [frames.length]);

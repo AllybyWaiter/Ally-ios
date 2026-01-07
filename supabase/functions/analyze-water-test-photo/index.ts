@@ -130,6 +130,17 @@ serve(async (req) => {
       logger.warn('Validation failed', { errors });
       return validationErrorResponse(errors);
     }
+    
+    // Check base64 image size (limit to ~4MB encoded = ~3MB actual)
+    if (imageUrl?.startsWith('data:')) {
+      const base64Part = imageUrl.split(',')[1] || '';
+      const estimatedSize = (base64Part.length * 3) / 4;
+      const maxSize = 4 * 1024 * 1024; // 4MB
+      if (estimatedSize > maxSize) {
+        logger.warn('Base64 image too large', { estimatedSize });
+        return validationErrorResponse([{ field: 'imageUrl', message: 'Image is too large. Please use an image under 4MB.' }]);
+      }
+    }
 
     logger.info('Request validated', { 
       aquariumType: aquariumType || 'freshwater',

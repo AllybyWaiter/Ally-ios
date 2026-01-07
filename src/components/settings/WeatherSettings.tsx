@@ -51,13 +51,17 @@ export function WeatherSettings() {
 
       // Request location permission
       navigator.geolocation.getCurrentPosition(
-        async () => {
-          // Permission granted, enable weather
+        async (position) => {
+          // Permission granted, save coordinates and enable weather
           setWeatherEnabled(true);
           
           await supabase
             .from('profiles')
-            .update({ weather_enabled: true })
+            .update({ 
+              weather_enabled: true,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            })
             .eq('user_id', user.id);
 
           toast({

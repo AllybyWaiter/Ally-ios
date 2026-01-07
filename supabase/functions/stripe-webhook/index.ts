@@ -143,10 +143,10 @@ async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session,
   logger: Logger
 ) {
-  const subscriptionId = session.subscription as string;
+  const subscriptionId = session.subscription;
 
-  if (!subscriptionId) {
-    logger.warn('No subscription ID in checkout session');
+  if (!subscriptionId || typeof subscriptionId !== 'string') {
+    logger.warn('No subscription ID in checkout session', { subscription: session.subscription });
     return;
   }
 

@@ -123,10 +123,11 @@ export async function parseStreamForToolCalls(
   }
 
   // Convert map to sorted array
+  // Only require function.name for filtering (id may arrive late in stream)
   const toolCalls = Array.from(toolCallsMap.entries())
     .sort(([a], [b]) => a - b)
     .map(([, tc]) => tc)
-    .filter(tc => tc.id && tc.function.name); // Filter out incomplete tool calls
+    .filter(tc => tc.function.name); // Only require name, id may come late
 
   return {
     hasToolCalls: toolCalls.length > 0,

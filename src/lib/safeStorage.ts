@@ -16,7 +16,12 @@ export function safeGetJSON<T>(key: string, defaultValue: T): T {
     }
     return JSON.parse(item) as T;
   } catch {
-    // Invalid JSON or storage error, return default
+    // Invalid JSON or storage error - clear corrupted data and return default
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Ignore removal errors
+    }
     return defaultValue;
   }
 }

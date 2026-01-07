@@ -42,6 +42,12 @@ export async function executeToolCalls(
       functionArgs = JSON.parse(toolCall.function.arguments);
     } catch (e) {
       logger.error('Failed to parse tool arguments', { toolName: functionName, error: String(e) });
+      // Add error result instead of silently skipping
+      toolResults.push({
+        tool_call_id: toolCall.id,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'Failed to parse tool arguments' })
+      });
       continue;
     }
 
@@ -85,7 +91,12 @@ export async function executeToolCalls(
         break;
       default:
         logger.error('Unknown tool', { toolName: functionName });
-        continue;
+        // Add error result for unknown tool instead of silently skipping
+        result = {
+          tool_call_id: toolCall.id,
+          role: 'tool',
+          content: JSON.stringify({ success: false, error: `Unknown tool: ${functionName}` })
+        };
     }
     
     toolResults.push(result);
@@ -102,15 +113,18 @@ async function executeSaveMemory(
   logger: Logger
 ): Promise<ToolResult> {
   try {
+    // Use upsert to update existing memory instead of creating duplicates
     const { error } = await supabase
       .from('user_memories')
-      .insert({
+      .upsert({
         user_id: userId,
         memory_key: args.memory_key,
         memory_value: args.memory_value,
         water_type: args.water_type === 'universal' ? null : args.water_type,
         source: 'conversation',
         confidence: 'confirmed'
+      }, {
+        onConflict: 'user_id,memory_key'
       });
 
     if (error) {

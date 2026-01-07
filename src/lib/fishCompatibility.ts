@@ -351,8 +351,8 @@ export function checkCompatibility(
     // Don't reduce score, just informational
   }
 
-  // Ensure score doesn't go below 0
-  score = Math.max(0, score);
+  // Ensure score doesn't go below 0 or result in NaN (division by zero protection)
+  score = Math.max(0, Number.isFinite(score) ? score : 0);
 
   // Determine if user can proceed
   const hasCritical = warnings.some(w => w.severity === 'critical');
