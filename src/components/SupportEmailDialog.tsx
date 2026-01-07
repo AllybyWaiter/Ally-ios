@@ -30,6 +30,14 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
     message: "",
   });
 
+  // Reset form when dialog opens/closes
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setFormData({ name: userName || "", email: user?.email || "", message: "" });
+    }
+    onOpenChange(isOpen);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -122,7 +130,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Contact Support</DialogTitle>
@@ -171,7 +179,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={isSubmitting}
             >
               Cancel
