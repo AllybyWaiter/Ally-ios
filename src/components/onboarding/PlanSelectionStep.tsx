@@ -122,6 +122,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
         {plans.map((plan) => {
           const Icon = plan.icon;
           const price = isAnnual ? plan.yearlyPrice : plan.monthlyPrice;
+          const formattedPrice = typeof price === 'number' && !isNaN(price) ? price.toFixed(2) : '0.00';
           const isSelected = selectedPlan === plan.id;
 
           return (
@@ -148,7 +149,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="font-semibold text-lg">{plan.name}</span>
                     <span className="text-lg font-bold">
-                      ${price.toFixed(2)}
+                      ${formattedPrice}
                       <span className="text-sm text-muted-foreground font-normal">
                         /{isAnnual ? 'yr' : 'mo'}
                       </span>

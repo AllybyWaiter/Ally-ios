@@ -22,6 +22,12 @@ export const fr = {
       notes: "Notes",
       optional: "Facultatif",
       required: "Requis",
+      goBack: "Retour",
+      returnHome: "Retour à l'Accueil",
+    },
+    errors: {
+      pageNotFound: "Page Non Trouvée",
+      pageNotFoundDescription: "La page que vous recherchez n'existe pas ou a été déplacée.",
     },
     settings: {
       title: "Paramètres",

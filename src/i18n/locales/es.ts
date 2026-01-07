@@ -22,6 +22,12 @@ export const es = {
       notes: "Notas",
       optional: "Opcional",
       required: "Requerido",
+      goBack: "Volver",
+      returnHome: "Volver al Inicio",
+    },
+    errors: {
+      pageNotFound: "Página No Encontrada",
+      pageNotFoundDescription: "La página que buscas no existe o ha sido movida.",
     },
     settings: {
       title: "Configuración",

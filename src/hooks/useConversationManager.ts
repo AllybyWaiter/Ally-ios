@@ -257,8 +257,8 @@ export function useConversationManager(userId: string | null) {
       await fetchConversations();
     }
 
-    // Save messages
-    await supabase
+    // Save messages - check for errors to prevent silent failures
+    const { error: messagesError } = await supabase
       .from('chat_messages')
       .insert([
         {
@@ -273,10 +273,18 @@ export function useConversationManager(userId: string | null) {
         }
       ]);
 
-    // Update conversation timestamp
+    if (messagesError) {
+      console.error('Failed to save messages:', messagesError);
+    }
+
+    // Update conversation timestamp and preview
+    const preview = assistantMessage.content.slice(0, 100) + (assistantMessage.content.length > 100 ? '...' : '');
     await supabase
       .from('chat_conversations')
-      .update({ updated_at: new Date().toISOString() })
+      .update({ 
+        updated_at: new Date().toISOString(),
+        last_message_preview: preview
+      })
       .eq('id', conversationId);
 
     return conversationId;

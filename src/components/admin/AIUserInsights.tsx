@@ -65,10 +65,12 @@ export default function AIUserInsights() {
   const { data: userStats, isLoading } = useQuery({
     queryKey: ['ai-user-stats'],
     queryFn: async () => {
-      // Get all profiles with their basic info
+      // Get all profiles with their basic info - limit to prevent performance issues
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, email, name, subscription_tier, last_ai_interaction');
+        .select('user_id, email, name, subscription_tier, last_ai_interaction')
+        .order('last_ai_interaction', { ascending: false, nullsFirst: false })
+        .limit(500);
       
       if (profilesError) throw profilesError;
 

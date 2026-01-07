@@ -44,19 +44,29 @@ const CookieConsent = () => {
   }, []);
 
   const handleAccept = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
-    localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: true, analytics: true }));
-    setShowBanner(false);
-    // Re-initialize Sentry now that user has consented
-    updateSentryConsent();
+    try {
+      localStorage.setItem(COOKIE_CONSENT_KEY, "accepted");
+      localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: true, analytics: true }));
+      setShowBanner(false);
+      // Re-initialize Sentry now that user has consented
+      updateSentryConsent();
+    } catch {
+      // Silently handle localStorage errors (e.g., private browsing mode)
+      setShowBanner(false);
+    }
   };
 
   const handleDecline = () => {
-    localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
-    localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: false, analytics: false }));
-    setShowBanner(false);
-    // Update Sentry consent status
-    updateSentryConsent();
+    try {
+      localStorage.setItem(COOKIE_CONSENT_KEY, "declined");
+      localStorage.setItem(COOKIE_PREFERENCES_KEY, JSON.stringify({ essential: true, functional: false, analytics: false }));
+      setShowBanner(false);
+      // Update Sentry consent status
+      updateSentryConsent();
+    } catch {
+      // Silently handle localStorage errors (e.g., private browsing mode)
+      setShowBanner(false);
+    }
   };
 
   return (
