@@ -99,9 +99,8 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
             messagePreview: formData.message,
           },
         });
-      } catch (emailError) {
-        console.warn('Failed to send confirmation email:', emailError);
-        // Don't fail the ticket creation if email fails
+      } catch {
+        // Email sending failed - don't fail the ticket creation
       }
       
       toast({
@@ -111,8 +110,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
       
       onOpenChange(false);
       setFormData({ name: userName || "", email: user?.email || "", message: "" });
-    } catch (error) {
-      console.error("Error creating ticket:", error);
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create ticket. Please try again.",

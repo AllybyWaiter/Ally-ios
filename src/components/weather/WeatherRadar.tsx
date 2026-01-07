@@ -56,12 +56,11 @@ class MapErrorBoundary extends Component<{ children: ReactNode; onRetry: () => v
   }
 
   static getDerivedStateFromError(error: Error): MapErrorBoundaryState {
-    console.error('[Radar] MapErrorBoundary caught error:', error);
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('[Radar] MapErrorBoundary componentDidCatch:', error, errorInfo);
+  componentDidCatch() {
+    // Error already captured by getDerivedStateFromError
   }
 
   render() {
