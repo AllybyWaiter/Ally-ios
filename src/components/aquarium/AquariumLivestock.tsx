@@ -91,7 +91,7 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
       const previousData = queryClient.getQueryData(queryKey);
       
       // Optimistically remove from cache
-      queryClient.setQueryData(queryKey, (old: any[] | undefined) => 
+      queryClient.setQueryData(queryKey, (old: (Livestock | Plant)[] | undefined) => 
         old?.filter((item) => item.id !== id) ?? []
       );
       
@@ -103,12 +103,11 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
         description: `${type === 'livestock' ? 'Livestock' : 'Plant'} removed successfully` 
       });
     },
-    onError: (error: unknown, { type }, context) => {
+    onError: (_error: unknown, { type }, context) => {
       // Rollback on error
       if (context?.previousData && context?.queryKey) {
         queryClient.setQueryData(context.queryKey, context.previousData);
       }
-      console.error('Error deleting:', error);
       toast({
         title: 'Error',
         description: `Failed to remove ${type}`,

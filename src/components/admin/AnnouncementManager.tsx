@@ -333,6 +333,7 @@ export default function AnnouncementManager() {
                           size="sm"
                           onClick={() => handleSendNow(announcement.id)}
                           disabled={sending}
+                          aria-label="Send announcement now"
                         >
                           <Send className="h-4 w-4" />
                         </Button>
@@ -341,6 +342,7 @@ export default function AnnouncementManager() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(announcement.id)}
+                        aria-label="Delete announcement"
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

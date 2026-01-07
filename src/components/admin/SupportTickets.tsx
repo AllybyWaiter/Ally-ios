@@ -402,9 +402,9 @@ const SupportTickets = () => {
                     AI-Suggested Replies
                   </div>
                   <div className="grid gap-2">
-                    {suggestedReplies.map((template, index) => (
+                    {suggestedReplies.map((template) => (
                       <button
-                        key={index}
+                        key={template.title}
                         onClick={() => setReplyMessage(template.content)}
                         className="text-left p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                       >

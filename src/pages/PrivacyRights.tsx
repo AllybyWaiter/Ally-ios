@@ -119,8 +119,8 @@ const PrivacyRights = () => {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6 text-foreground">Your Rights Explained</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {rights.map((right, index) => (
-              <Card key={index}>
+            {rights.map((right) => (
+              <Card key={right.title}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10">
