@@ -42,7 +42,8 @@ export function DashboardStats({
   const volumeNumber = volumeMatch ? parseFloat(volumeMatch[1].replace(',', '')) : totalVolume;
   const volumeUnit = volumeMatch ? ` ${volumeMatch[2]}` : '';
 
-  let cardIndex = 0;
+  // Use fixed animation delays for consistent behavior
+  const getAnimationDelay = (index: number) => `${index * 100}ms`;
 
   return (
     <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -50,7 +51,7 @@ export function DashboardStats({
       {(hasOnlyAquariums || hasMixed) && (
         <Card 
           className="glass-card animate-fade-up opacity-0"
-          style={{ animationDelay: `${(cardIndex++) * 100}ms` }}
+          style={{ animationDelay: getAnimationDelay(0) }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -75,7 +76,7 @@ export function DashboardStats({
       {(hasOnlyPools || hasMixed) && (
         <Card 
           className="glass-card animate-fade-up opacity-0"
-          style={{ animationDelay: `${(cardIndex++) * 100}ms` }}
+          style={{ animationDelay: getAnimationDelay(hasOnlyAquariums || hasMixed ? 1 : 0) }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -98,7 +99,7 @@ export function DashboardStats({
 
       <Card 
         className="glass-card animate-fade-up opacity-0"
-        style={{ animationDelay: `${(cardIndex++) * 100}ms` }}
+        style={{ animationDelay: getAnimationDelay(hasMixed ? 2 : 1) }}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{t('dashboard.totalVolume')}</CardTitle>
@@ -116,7 +117,7 @@ export function DashboardStats({
 
       <Card 
         className="glass-card animate-fade-up opacity-0"
-        style={{ animationDelay: `${(cardIndex++) * 100}ms` }}
+        style={{ animationDelay: getAnimationDelay(hasMixed ? 3 : 2) }}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{t('dashboard.upcomingTasks')}</CardTitle>
@@ -135,7 +136,7 @@ export function DashboardStats({
       {hasStaffRole && (
         <Card 
           className="glass-card animate-fade-up opacity-0 cursor-pointer border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10" 
-          style={{ animationDelay: `${(cardIndex++) * 100}ms` }}
+          style={{ animationDelay: getAnimationDelay(hasMixed ? 4 : 3) }}
           onClick={() => navigate('/admin')}
         >
           <CardHeader>
@@ -143,10 +144,10 @@ export function DashboardStats({
               <div className="icon-glow">
                 <Shield className="h-5 w-5 text-primary" />
               </div>
-              {isAdmin ? 'Admin Panel' : 'Dashboard'}
+              {isAdmin ? t('dashboard.adminPanel') : t('dashboard.staffDashboard')}
             </CardTitle>
             <CardDescription>
-              {isAdmin ? 'Manage users, content, and system settings' : 'Access your management tools'}
+              {isAdmin ? t('dashboard.adminPanelDescription') : t('dashboard.staffDashboardDescription')}
             </CardDescription>
           </CardHeader>
         </Card>

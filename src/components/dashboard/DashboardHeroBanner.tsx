@@ -138,23 +138,27 @@ export function DashboardBackground() {
   );
 }
 
+// Safe personalization helper - handles special characters and edge cases
+function personalizeGreeting(greeting: string, firstName: string | undefined): string {
+  if (!firstName || !greeting) return greeting || '';
+  
+  // Check for common punctuation at end
+  const lastChar = greeting.slice(-1);
+  if (['?', '!', '.'].includes(lastChar)) {
+    return `${greeting.slice(0, -1)}, ${firstName}${lastChar}`;
+  }
+  return `${greeting}, ${firstName}`;
+}
+
 // Greeting overlay component (shows on top of content)
 export function DashboardGreeting() {
   const { greeting, weather, weatherEnabled } = useTimeOfDay();
   const { userName } = useAuth();
   
   const firstName = userName?.split(' ')[0];
-  const personalizedGreeting = firstName 
-    ? greeting.endsWith('?') 
-      ? `${greeting.slice(0, -1)}, ${firstName}?`
-      : greeting.endsWith('!')
-        ? `${greeting.slice(0, -1)}, ${firstName}!`
-        : greeting.endsWith('.')
-          ? `${greeting.slice(0, -1)}, ${firstName}.`
-          : `${greeting}, ${firstName}`
-    : greeting;
+  const personalizedGreeting = personalizeGreeting(greeting, firstName);
   
-  const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
+  const WeatherIcon = weather && WEATHER_ICONS[weather] ? WEATHER_ICONS[weather] : null;
 
   return (
     <div className="flex items-center gap-3 mb-6">
@@ -219,17 +223,9 @@ export function DashboardHeroBanner() {
   }, [imagePathWebP, imagePathJpg]);
 
   const firstName = userName?.split(' ')[0];
-  const personalizedGreeting = firstName 
-    ? greeting.endsWith('?') 
-      ? `${greeting.slice(0, -1)}, ${firstName}?`
-      : greeting.endsWith('!')
-        ? `${greeting.slice(0, -1)}, ${firstName}!`
-        : greeting.endsWith('.')
-          ? `${greeting.slice(0, -1)}, ${firstName}.`
-          : `${greeting}, ${firstName}`
-    : greeting;
+  const personalizedGreeting = personalizeGreeting(greeting, firstName);
   
-  const WeatherIcon = weather ? WEATHER_ICONS[weather] : null;
+  const WeatherIcon = weather && WEATHER_ICONS[weather] ? WEATHER_ICONS[weather] : null;
 
   return (
     <div className="relative w-full h-48 md:h-64 lg:h-72 overflow-hidden">

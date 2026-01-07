@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Plus, AlertCircle, MoreVertical, Pencil, Trash2, Lock, Activity } from 'lucide-react';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 import { formatDate } from '@/lib/formatters';
@@ -20,9 +21,9 @@ interface Aquarium {
   id: string;
   name: string;
   type: string;
-  volume_gallons: number;
+  volume_gallons: number | null;
   status: string;
-  setup_date: string;
+  setup_date: string | null;
   notes: string | null;
 }
 
@@ -190,6 +191,11 @@ const AquariumCard = memo(function AquariumCard({
                 <Activity className="w-5 h-5" />
                 Health Overview
               </SheetTitle>
+              <VisuallyHidden.Root>
+                <SheetDescription>
+                  View health details for {aquarium.name}
+                </SheetDescription>
+              </VisuallyHidden.Root>
             </SheetHeader>
             <QuickHealthView 
               aquariumId={aquarium.id} 

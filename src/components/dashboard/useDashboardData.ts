@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   fetchAquariumsWithTaskCounts, 
   fetchUpcomingTaskCount,
@@ -16,6 +17,7 @@ type DashboardAquarium = Aquarium;
 export function useDashboardData() {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [aquariums, setAquariums] = useState<DashboardAquarium[]>([]);
@@ -31,10 +33,12 @@ export function useDashboardData() {
     try {
       const data = await fetchAquariumsWithTaskCounts(userId);
       
-      // Calculate upcoming tasks (within 7 days)
+      // Calculate upcoming tasks (within 7 days) or reset to 0 if no aquariums
       if (data && data.length > 0) {
         const count = await fetchUpcomingTaskCount(data.map(a => a.id), 7);
         setUpcomingTaskCount(count);
+      } else {
+        setUpcomingTaskCount(0);
       }
       
       setAquariums((data || []) as DashboardAquarium[]);
@@ -66,6 +70,11 @@ export function useDashboardData() {
     try {
       await deleteAquariumApi(aquariumId);
       
+      // Invalidate related queries to ensure fresh data everywhere
+      queryClient.invalidateQueries({ queryKey: ['aquariums'] });
+      queryClient.invalidateQueries({ queryKey: ['aquarium', aquariumId] });
+      queryClient.invalidateQueries({ queryKey: ['maintenanceTasks'] });
+      
       toast({
         title: t('common.success'),
         description: t('dashboard.aquariumDeleted'),
@@ -81,7 +90,7 @@ export function useDashboardData() {
         variant: "destructive",
       });
     }
-  }, [toast, t, loadAquariums]);
+  }, [toast, t, loadAquariums, queryClient]);
 
   const totalVolume = aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0);
   const activeCount = aquariums.filter(a => a.status === 'active').length;
