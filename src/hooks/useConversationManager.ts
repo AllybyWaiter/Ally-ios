@@ -19,6 +19,9 @@ interface Conversation {
   title: string;
   updated_at: string;
   aquarium_id: string | null;
+  is_pinned?: boolean;
+  last_message_preview?: string | null;
+  message_count?: number;
 }
 
 const INITIAL_MESSAGE: Message = {
@@ -53,14 +56,34 @@ export function useConversationManager(userId: string | null) {
     
     const { data } = await supabase
       .from('chat_conversations')
-      .select('*')
+      .select('id, title, updated_at, aquarium_id, is_pinned, last_message_preview, message_count')
       .eq('user_id', userId)
+      .order('is_pinned', { ascending: false, nullsFirst: false })
       .order('updated_at', { ascending: false });
 
     if (data) {
-      setConversations(data);
+      setConversations(data as Conversation[]);
     }
   }, [userId]);
+
+  const pinConversation = useCallback(async (conversationId: string) => {
+    if (!userId) return;
+    
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) return;
+    
+    const newPinnedState = !conversation.is_pinned;
+    
+    const { error } = await supabase
+      .from('chat_conversations')
+      .update({ is_pinned: newPinnedState })
+      .eq('id', conversationId)
+      .eq('user_id', userId);
+
+    if (!error) {
+      await fetchConversations();
+    }
+  }, [userId, conversations, fetchConversations]);
 
   const loadConversation = useCallback(async (conversationId: string): Promise<Message[]> => {
     const { data: messagesData } = await supabase
@@ -247,5 +270,6 @@ export function useConversationManager(userId: string | null) {
     updateMessageInDb,
     getSelectedAquariumName,
     getAquariumIdForApi,
+    pinConversation,
   };
 }
