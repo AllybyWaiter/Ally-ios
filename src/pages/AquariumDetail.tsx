@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -29,16 +29,19 @@ import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
 import { isPoolType, getWaterBodyLabels } from "@/lib/waterBodyUtils";
 
-// Safe date formatter to prevent crashes
+// Safe date formatter to prevent crashes - returns empty string for invalid dates
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
   if (!dateValue) return '';
   try {
     const date = new Date(dateValue);
-    if (!isValid(date)) return 'Invalid date';
+    if (!isValid(date)) {
+      console.warn('Invalid date value:', dateValue);
+      return '';
+    }
     return format(date, formatStr);
   } catch (error) {
     console.error('Date formatting error:', error);
-    return 'Invalid date';
+    return '';
   }
 };
 
@@ -50,6 +53,7 @@ export default function AquariumDetail() {
   const urlAddNew = searchParams.get('addNew');
   const { user, loading: authLoading, units } = useAuth();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(urlTab || 'overview');
@@ -64,6 +68,10 @@ export default function AquariumDetail() {
   const handleDeleteConfirm = async () => {
     try {
       await deleteAquariumDAL(id!);
+
+      // Invalidate queries before navigation to ensure clean state
+      queryClient.invalidateQueries({ queryKey: ['aquariums'] });
+      queryClient.removeQueries({ queryKey: ['aquarium', id] });
 
       toast({
         title: t('common.success'),

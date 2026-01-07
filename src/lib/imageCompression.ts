@@ -116,13 +116,14 @@ export async function compressImage(
  * @returns Formatted string (e.g., "2.5 MB")
  */
 export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
+  if (!bytes || bytes <= 0) return '0 Bytes';
   
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const clampedIndex = Math.min(i, sizes.length - 1);
   
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${parseFloat((bytes / Math.pow(k, clampedIndex)).toFixed(2))} ${sizes[clampedIndex]}`;
 }
 
 /**
