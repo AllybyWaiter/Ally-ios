@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -165,7 +165,7 @@ const AllySupportChat = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -179,10 +179,13 @@ const AllySupportChat = () => {
     "Is there a mobile app?",
   ];
 
-  const handleQuickReply = (reply: string) => {
+  const handleQuickReply = useCallback((reply: string) => {
     setInput(reply);
-    setTimeout(() => sendMessage(), 100);
-  };
+    // Use requestAnimationFrame to ensure state is updated before sending
+    requestAnimationFrame(() => {
+      sendMessage();
+    });
+  }, [sendMessage]);
 
   return (
     <>
@@ -217,9 +220,9 @@ const AllySupportChat = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <div
-                key={`${message.role}-${message.content.substring(0, 20)}`}
+                key={`${message.role}-${index}`}
                 className={cn(
                   "flex",
                   message.role === "user" ? "justify-end" : "justify-start"
@@ -281,7 +284,7 @@ const AllySupportChat = () => {
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 placeholder="Ask a question..."
                 disabled={isLoading}
                 className="flex-1"

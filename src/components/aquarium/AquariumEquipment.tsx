@@ -183,7 +183,7 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteMutation.mutate(equipmentToDelete.id)}
+              onClick={() => equipmentToDelete?.id && deleteMutation.mutate(equipmentToDelete.id)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {t('common.delete')}

@@ -18,6 +18,7 @@ interface LazySyntaxHighlighterProps {
 export const LazySyntaxHighlighter = memo(({ language, children, className }: LazySyntaxHighlighterProps) => {
   const [Highlighter, setHighlighter] = useState<React.ComponentType<any> | null>(null);
   const [style, setStyle] = useState<Record<string, React.CSSProperties> | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -25,19 +26,27 @@ export const LazySyntaxHighlighter = memo(({ language, children, className }: La
     Promise.all([
       import("react-syntax-highlighter").then((mod) => mod.Prism),
       import("react-syntax-highlighter/dist/esm/styles/prism").then((mod) => mod.oneDark),
-    ]).then(([HighlighterComponent, styleObj]) => {
-      if (mounted) {
-        setHighlighter(() => HighlighterComponent);
-        setStyle(styleObj);
-      }
-    });
+    ])
+      .then(([HighlighterComponent, styleObj]) => {
+        if (mounted) {
+          setHighlighter(() => HighlighterComponent);
+          setStyle(styleObj);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load syntax highlighter:", err);
+        if (mounted) {
+          setLoadError(true);
+        }
+      });
 
     return () => {
       mounted = false;
     };
   }, []);
 
-  if (!Highlighter || !style) {
+  // Show fallback on error or while loading
+  if (loadError || !Highlighter || !style) {
     return <CodeFallback className={className}>{children}</CodeFallback>;
   }
 

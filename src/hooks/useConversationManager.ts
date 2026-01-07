@@ -55,17 +55,31 @@ export function useConversationManager(userId: string | null) {
   const fetchConversations = useCallback(async () => {
     if (!userId) return;
     
-    const { data } = await supabase
-      .from('chat_conversations')
-      .select('id, title, updated_at, aquarium_id, is_pinned, last_message_preview, message_count')
-      .eq('user_id', userId)
-      .order('is_pinned', { ascending: false, nullsFirst: false })
-      .order('updated_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .select('id, title, updated_at, aquarium_id, is_pinned, last_message_preview, message_count')
+        .eq('user_id', userId)
+        .order('is_pinned', { ascending: false, nullsFirst: false })
+        .order('updated_at', { ascending: false });
 
-    if (data) {
-      setConversations(data as Conversation[]);
+      if (error) {
+        console.error('Failed to fetch conversations:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load chat history',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (data) {
+        setConversations(data as Conversation[]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch conversations:', error);
     }
-  }, [userId]);
+  }, [userId, toast]);
 
   const pinConversation = useCallback(async (conversationId: string) => {
     if (!userId) return;
