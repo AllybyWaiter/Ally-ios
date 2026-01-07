@@ -206,7 +206,7 @@ const HowItWorksPage = () => {
             {steps.map((step, index) => {
               const Icon = step.icon;
               return (
-                <Card key={index} className="relative overflow-hidden">
+                <Card key={step.number} className="relative overflow-hidden">
                   <CardContent className="p-8 md:p-12">
                     <div className="grid md:grid-cols-2 gap-8 items-center">
                       <div className={index % 2 === 1 ? "md:order-2" : ""}>
@@ -261,10 +261,10 @@ const HowItWorksPage = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {aiFeatures.map((feature, index) => {
+            {aiFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm">
+                <Card key={feature.title} className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-glow bg-card/50 backdrop-blur-sm">
                   <CardContent className="p-6 text-center">
                     <div className="w-14 h-14 rounded-full bg-gradient-water flex items-center justify-center mx-auto mb-4">
                       <Icon className="w-7 h-7 text-primary-foreground" />
@@ -292,10 +292,10 @@ const HowItWorksPage = () => {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {features.map((feature, index) => {
+            {features.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Card key={index} className="border hover:border-primary/50 transition-colors">
+                <Card key={feature.title} className="border hover:border-primary/50 transition-colors">
                   <CardContent className="p-5">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
                       <Icon className="w-5 h-5 text-primary" />

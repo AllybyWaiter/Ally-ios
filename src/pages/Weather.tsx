@@ -25,15 +25,9 @@ import { Loader2 } from 'lucide-react';
 
 // Simplified lazy load - removed Promise.race timeout to avoid conflicts with component's own error handling
 const LazyWeatherRadar = React.lazy(() => {
-  console.log('[Radar] Starting lazy import...');
   return import('@/components/weather/WeatherRadar')
     .then((module) => {
-      console.log('[Radar] Import successful');
       return { default: module.WeatherRadar };
-    })
-    .catch((err) => {
-      console.error('[Radar] Import failed:', err);
-      throw err;
     });
 });
 
