@@ -21,7 +21,8 @@ import {
   ChevronDown,
   Lock,
   Brain,
-  Zap
+  Zap,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,6 +67,8 @@ const AllyChat = () => {
   const [wasVoiceInput, setWasVoiceInput] = useState(false);
   const [autoSendPending, setAutoSendPending] = useState(false);
   const [selectedModel, setSelectedModel] = useState<ModelType>('standard');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -412,9 +415,24 @@ const AllyChat = () => {
       <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
         {/* Minimal Header */}
         <header className="flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pt-safe">
-          {/* Left: History */}
-          <div className="flex items-center gap-2">
-            <Sheet>
+          {/* Left: Back + History */}
+          <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Sheet open={historyOpen} onOpenChange={async (open) => {
+              setHistoryOpen(open);
+              if (open) {
+                setIsLoadingConversations(true);
+                await conversationManager.fetchConversations();
+                setIsLoadingConversations(false);
+              }
+            }}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
                   <History className="h-5 w-5" />
@@ -424,14 +442,21 @@ const AllyChat = () => {
                 <ChatHistorySidebar
                   conversations={conversationManager.conversations}
                   currentConversationId={conversationManager.currentConversationId}
-                  onLoadConversation={handleLoadConversation}
+                  onLoadConversation={(id) => {
+                    handleLoadConversation(id);
+                    setHistoryOpen(false);
+                  }}
                   onDeleteConversation={handleDeleteConversation}
-                  onNewChat={handleStartNewConversation}
+                  onNewChat={() => {
+                    handleStartNewConversation();
+                    setHistoryOpen(false);
+                  }}
                   onPinConversation={conversationManager.pinConversation}
                   onRenameConversation={conversationManager.renameConversation}
                   onBulkDelete={conversationManager.bulkDeleteConversations}
                   onExportConversation={conversationManager.exportConversation}
                   aquariums={conversationManager.aquariums}
+                  isLoading={isLoadingConversations}
                 />
               </SheetContent>
             </Sheet>
