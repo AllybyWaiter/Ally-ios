@@ -13,15 +13,8 @@ interface RateLimitEntry {
 // Note: This works per-instance. For production scale, use Redis
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-// Clean up expired entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000); // Clean every minute
+// Clean up expired entries lazily during rate limit checks
+// (removed setInterval to prevent memory leak in edge functions)
 
 export interface RateLimitConfig {
   maxRequests: number;      // Max requests per window
@@ -40,6 +33,16 @@ export function checkRateLimit(config: RateLimitConfig, logger?: Logger): RateLi
   const { maxRequests, windowMs, identifier } = config;
   const now = Date.now();
   const key = identifier;
+  
+  // Lazy cleanup: remove expired entries on each check (max 10 to prevent slowdown)
+  let cleanupCount = 0;
+  for (const [k, e] of rateLimitStore.entries()) {
+    if (e.resetTime < now) {
+      rateLimitStore.delete(k);
+      cleanupCount++;
+      if (cleanupCount >= 10) break;
+    }
+  }
   
   const entry = rateLimitStore.get(key);
   
