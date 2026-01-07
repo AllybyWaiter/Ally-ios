@@ -65,8 +65,8 @@ export function StreakCounter({ className, showLongest = false }: StreakCounterP
             } : {}}
             transition={{ 
               duration: 0.5, 
-              repeat: streak >= 7 ? Infinity : 0,
-              repeatDelay: 2
+              repeat: streak >= 7 ? 3 : 0, // Changed from Infinity to 3 for performance
+              repeatDelay: streak >= 14 ? 5 : 3,
             }}
           >
             <Flame className={cn("w-4 h-4", tierColors[tier])} />

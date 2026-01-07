@@ -113,6 +113,7 @@ export function usePullToRefresh(
   useEffect(() => {
     if (!isTouchDevice || disabled) return;
     
+    // Capture container at effect start to ensure cleanup uses same reference
     const container = containerRef.current || document;
     
     // Use passive: false only for touchmove to allow preventDefault
@@ -120,6 +121,7 @@ export function usePullToRefresh(
     container.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
     container.addEventListener('touchend', handleTouchEnd as EventListener, { passive: true });
     
+    // Cleanup uses the captured container reference
     return () => {
       container.removeEventListener('touchstart', handleTouchStart as EventListener);
       container.removeEventListener('touchmove', handleTouchMove as EventListener);

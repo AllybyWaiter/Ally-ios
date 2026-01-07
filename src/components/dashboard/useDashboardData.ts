@@ -66,9 +66,12 @@ export function useDashboardData() {
     }
   }, [toast, t]);
 
-  const deleteAquarium = useCallback(async (aquariumId: string, userId?: string) => {
+  const deleteAquarium = useCallback(async (aquariumId: string, _userId?: string) => {
     try {
       await deleteAquariumApi(aquariumId);
+      
+      // Update local state directly - no need to refetch since React Query invalidation handles it
+      setAquariums(prev => prev.filter(a => a.id !== aquariumId));
       
       // Invalidate related queries to ensure fresh data everywhere
       queryClient.invalidateQueries({ queryKey: ['aquariums'] });
@@ -79,9 +82,6 @@ export function useDashboardData() {
         title: t('common.success'),
         description: t('dashboard.aquariumDeleted'),
       });
-
-      // Reload aquariums
-      await loadAquariums(userId);
     } catch (error) {
       console.error("Error deleting aquarium:", error);
       toast({
@@ -90,10 +90,18 @@ export function useDashboardData() {
         variant: "destructive",
       });
     }
-  }, [toast, t, loadAquariums, queryClient]);
+  }, [toast, t, queryClient]);
 
-  const totalVolume = aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0);
-  const activeCount = aquariums.filter(a => a.status === 'active').length;
+  const totalVolume = useMemo(() => 
+    aquariums.reduce((sum, a) => sum + (a.volume_gallons || 0), 0), 
+    [aquariums]
+  );
+  
+  // Count of active aquariums - used for dashboard stats display
+  const activeCount = useMemo(() => 
+    aquariums.filter(a => a.status === 'active').length, 
+    [aquariums]
+  );
 
   // Separate aquariums from pools/spas
   const aquariumsOnly = useMemo(() => aquariums.filter(a => !isPoolType(a.type)), [aquariums]);

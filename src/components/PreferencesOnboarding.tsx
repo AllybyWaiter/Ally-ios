@@ -230,7 +230,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-1 sm:gap-2">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((i) => (
               <div key={i} className="flex items-center">
                 <div
                   className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
