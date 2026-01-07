@@ -247,7 +247,7 @@ serve(async (req) => {
         else if (isTomorrow) timeText = 'tomorrow';
 
         try {
-          const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
+          const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
             body: {
               userId: userPref.user_id,
               title: `Task Reminder: ${task.task_name}`,
@@ -257,13 +257,19 @@ serve(async (req) => {
               notificationType: 'task_reminder',
               referenceId: task.id,
             },
+            headers: {
+              Authorization: `Bearer ${supabaseServiceKey}`,
+            },
           });
 
-          if (!sendError) {
+          if (sendError) {
+            console.error(JSON.stringify({ requestId, error: 'Task push invoke failed', message: sendError.message, taskId: task.id }));
+          } else {
             taskNotificationsSent++;
+            console.log(JSON.stringify({ requestId, message: 'Task notification sent', taskId: task.id }));
           }
         } catch (error) {
-          console.error(JSON.stringify({ requestId, error: 'Failed to send task notification', taskId: task.id }));
+          console.error(JSON.stringify({ requestId, error: 'Failed to send task notification', taskId: task.id, message: String(error) }));
         }
       }
     }
@@ -316,7 +322,7 @@ serve(async (req) => {
           const severityEmoji = alert.severity === 'critical' ? '🔴' : alert.severity === 'warning' ? '🟡' : 'ℹ️';
 
           try {
-            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
+            const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
               body: {
                 userId: userPref.user_id,
                 title: `${severityEmoji} Water Alert: ${alert.parameter_name}`,
@@ -327,13 +333,19 @@ serve(async (req) => {
                 referenceId: alert.id,
                 requireInteraction: alert.severity === 'critical',
               },
+              headers: {
+                Authorization: `Bearer ${supabaseServiceKey}`,
+              },
             });
 
-            if (!sendError) {
+            if (sendError) {
+              console.error(JSON.stringify({ requestId, error: 'Water alert push invoke failed', message: sendError.message, alertId: alert.id }));
+            } else {
               alertNotificationsSent++;
+              console.log(JSON.stringify({ requestId, message: 'Water alert notification sent', alertId: alert.id }));
             }
           } catch (error) {
-            console.error(JSON.stringify({ requestId, error: 'Failed to send alert notification', alertId: alert.id }));
+            console.error(JSON.stringify({ requestId, error: 'Failed to send alert notification', alertId: alert.id, message: String(error) }));
           }
         }
       }
@@ -437,7 +449,7 @@ serve(async (req) => {
             : `Health score dropped to ${healthScore}%. Check water parameters and maintenance.`;
 
           try {
-            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
+            const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
               body: {
                 userId: userPref.user_id,
                 title,
@@ -448,9 +460,19 @@ serve(async (req) => {
                 referenceId: notificationRefId,
                 requireInteraction: severity === 'critical',
               },
+              headers: {
+                Authorization: `Bearer ${supabaseServiceKey}`,
+              },
             });
 
-            if (!sendError) {
+            if (sendError) {
+              console.error(JSON.stringify({ 
+                requestId, 
+                error: 'Health push invoke failed', 
+                message: sendError.message,
+                aquariumId: aquarium.id 
+              }));
+            } else {
               healthNotificationsSent++;
               console.log(JSON.stringify({ 
                 requestId, 
@@ -464,7 +486,8 @@ serve(async (req) => {
             console.error(JSON.stringify({ 
               requestId, 
               error: 'Failed to send health notification', 
-              aquariumId: aquarium.id 
+              aquariumId: aquarium.id,
+              message: String(error)
             }));
           }
         }
@@ -517,7 +540,7 @@ serve(async (req) => {
 
           try {
             // Send push notification
-            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
+            const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
               body: {
                 userId: userPref.user_id,
                 title: `${severityEmoji} ${props.severity} Weather Alert`,
@@ -527,9 +550,14 @@ serve(async (req) => {
                 notificationType: 'weather_alert',
                 requireInteraction: true,
               },
+              headers: {
+                Authorization: `Bearer ${supabaseServiceKey}`,
+              },
             });
 
-            if (!sendError) {
+            if (sendError) {
+              console.error(JSON.stringify({ requestId, error: 'Weather push invoke failed', message: sendError.message, alertId }));
+            } else {
               // Record that we sent this alert
               await supabase.from('weather_alerts_notified').insert({
                 user_id: userPref.user_id,
@@ -540,9 +568,10 @@ serve(async (req) => {
               });
 
               weatherNotificationsSent++;
+              console.log(JSON.stringify({ requestId, message: 'Weather notification sent', alertId }));
             }
           } catch (error) {
-            console.error(JSON.stringify({ requestId, error: 'Failed to send weather notification', alertId }));
+            console.error(JSON.stringify({ requestId, error: 'Failed to send weather notification', alertId, message: String(error) }));
           }
         }
       }
