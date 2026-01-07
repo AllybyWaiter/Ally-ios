@@ -26,9 +26,9 @@ export default function BlogCalendar({ posts }: BlogCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
-  // Filter scheduled posts
+  // Filter scheduled posts - guard against invalid dates
   const scheduledPosts = posts.filter(
-    (post) => post.status === 'scheduled' && post.published_at
+    (post) => post.status === 'scheduled' && post.published_at && !isNaN(new Date(post.published_at).getTime())
   );
 
   // Navigate months
