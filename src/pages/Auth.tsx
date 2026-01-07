@@ -52,6 +52,12 @@ export default function Auth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string; referralCode?: string }>({});
+  
+  // Clear errors when switching views to prevent stale errors
+  const handleViewChange = (newView: AuthView) => {
+    setErrors({});
+    setView(newView);
+  };
   const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
   
   const { signIn, signUp, user } = useAuth();
@@ -376,7 +382,7 @@ export default function Auth() {
                   variant="outline" 
                   className="w-full"
                   onClick={() => {
-                    setView('login');
+                    handleViewChange('login');
                     setResetEmailSent(false);
                     setEmail('');
                   }}
@@ -413,7 +419,7 @@ export default function Auth() {
                 <div className="text-center">
                   <button
                     type="button"
-                    onClick={() => setView('login')}
+                    onClick={() => handleViewChange('login')}
                     className="text-sm text-primary hover:underline"
                   >
                     Back to Sign In
@@ -462,7 +468,7 @@ export default function Auth() {
                     {view === 'login' && (
                       <button
                         type="button"
-                        onClick={() => setView('forgotPassword')}
+                        onClick={() => handleViewChange('forgotPassword')}
                         className="text-xs text-primary hover:underline"
                       >
                         Forgot password?
@@ -594,7 +600,7 @@ export default function Auth() {
               </form>
               <div className="mt-4 text-center text-sm">
                 <button
-                  onClick={() => setView(view === 'login' ? 'signup' : 'login')}
+                  onClick={() => handleViewChange(view === 'login' ? 'signup' : 'login')}
                   className="text-primary hover:underline"
                   disabled={isLoading}
                 >

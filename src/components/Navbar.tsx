@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import { Link, useNavigate } from "react-router-dom";
@@ -9,6 +9,7 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -16,17 +17,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const solutionsLinks = [
-  { label: "Why Ally", path: "/best-aquatic-app" },
-  { label: "Best Aquarium App", path: "/best-aquarium-app" },
-  { label: "Best Pool App", path: "/best-pool-app" },
-  { label: "Best Spa App", path: "/best-spa-app" },
-  { label: "AI Water Testing", path: "/ai-water-testing" },
-  { label: "Compare Apps", path: "/compare" },
-];
-
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 const Navbar = () => {
+  // Memoize solutions links to prevent recreation on hot reload
+  const solutionsLinks = useMemo(() => [
+    { label: "Why Ally", path: "/best-aquatic-app" },
+    { label: "Best Aquarium App", path: "/best-aquarium-app" },
+    { label: "Best Pool App", path: "/best-pool-app" },
+    { label: "Best Spa App", path: "/best-spa-app" },
+    { label: "AI Water Testing", path: "/ai-water-testing" },
+    { label: "Compare Apps", path: "/compare" },
+  ], []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, userName, signOut } = useAuth();
   const navigate = useNavigate();
@@ -38,6 +39,9 @@ const Navbar = () => {
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
       setMobileMenuOpen(false);
+    } else {
+      // Section doesn't exist on current page - navigate to home first
+      console.warn(`Section #${sectionId} not found on current page`);
     }
   };
 
@@ -165,8 +169,8 @@ const Navbar = () => {
                   <Link to="/dashboard">Go to Dashboard</Link>
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => {
-                signOut();
+              <Button variant="ghost" size="sm" onClick={async () => {
+                await signOut();
                 if (domainType === 'app') {
                   window.location.href = getMarketingUrl('/');
                 } else {
@@ -207,7 +211,10 @@ const Navbar = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] overflow-hidden">
+            <SheetContent side="right" className="w-[300px]">
+              <VisuallyHidden>
+                <SheetTitle>Navigation Menu</SheetTitle>
+              </VisuallyHidden>
               <nav className="flex flex-col gap-3 mt-6 overflow-y-auto max-h-[calc(100vh-4rem)] pb-safe">
                 <Link 
                   to="/features" 
@@ -275,9 +282,9 @@ const Navbar = () => {
                           <Link to="/dashboard">Go to Dashboard</Link>
                         </Button>
                       )}
-                      <Button variant="ghost" onClick={() => {
+                      <Button variant="ghost" onClick={async () => {
                         setMobileMenuOpen(false);
-                        signOut();
+                        await signOut();
                         if (domainType === 'app') {
                           window.location.href = getMarketingUrl('/');
                         } else {
