@@ -48,7 +48,11 @@ export async function fetchWaterTests(
   aquariumId: string, 
   options?: { limit?: number; offset?: number }
 ) {
-  await ensureFreshSession();
+  // Only refresh session if needed (avoid redundant calls)
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    await supabase.auth.refreshSession();
+  }
   
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
@@ -68,7 +72,10 @@ export async function fetchWaterTests(
   };
 }
 
-// Fetch all water tests for an aquarium (legacy support)
+/**
+ * @deprecated Use fetchWaterTests with pagination instead
+ * Fetch all water tests for an aquarium (legacy support)
+ */
 export async function fetchAllWaterTests(aquariumId: string, limit?: number) {
   await ensureFreshSession();
   
@@ -218,7 +225,8 @@ export async function fetchMonthlyTestCount(userId: string) {
 
 // Upload photo for water test
 export async function uploadWaterTestPhoto(userId: string, file: File) {
-  const fileExt = file.name.split('.').pop();
+  const parts = file.name.split('.');
+  const fileExt = parts.length > 1 ? parts.pop() : 'jpg'; // Default to jpg if no extension
   const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
   const { error: uploadError } = await supabase.storage
