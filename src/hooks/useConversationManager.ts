@@ -25,11 +25,12 @@ interface Conversation {
   message_count?: number;
 }
 
-const INITIAL_MESSAGE: Message = {
+// Factory function to create initial message with fresh timestamp
+const createInitialMessage = (): Message => ({
   role: "assistant",
   content: "Hi! I'm Ally, your aquarium assistant. I can help you with water parameters, fish care, equipment, and everything aquarium-related. What would you like to know?",
   timestamp: new Date()
-};
+});
 
 export function useConversationManager(userId: string | null) {
   const { toast } = useToast();
@@ -196,12 +197,12 @@ export function useConversationManager(userId: string | null) {
       return messages;
     }
     
-    return [INITIAL_MESSAGE];
+    return [createInitialMessage()];
   }, [conversations]);
 
   const startNewConversation = useCallback((): Message[] => {
     setCurrentConversationId(null);
-    return [INITIAL_MESSAGE];
+    return [createInitialMessage()];
   }, []);
 
   const deleteConversation = useCallback(async (conversationId: string) => {

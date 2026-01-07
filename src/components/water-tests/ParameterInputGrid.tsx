@@ -43,13 +43,16 @@ export function ParameterInputGrid({
           }
 
           // For validation, we need to convert input value to storage unit
-          let validationValue = value ? parseFloat(value) : null;
-          if (validationValue && param.unit === '°F' && units === 'metric') {
+          // Guard against NaN from empty string or invalid input
+          const parsedValue = value ? parseFloat(value) : null;
+          let validationValue = (parsedValue !== null && !isNaN(parsedValue)) ? parsedValue : null;
+          
+          if (validationValue !== null && param.unit === '°F' && units === 'metric') {
             // Convert from Celsius input to Fahrenheit for validation
             validationValue = (validationValue * 9) / 5 + 32;
           }
 
-          const validation = validationValue
+          const validation = validationValue !== null
             ? validateParameter(param.name, validationValue, aquariumType)
             : null;
 

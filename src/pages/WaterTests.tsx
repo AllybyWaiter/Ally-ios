@@ -56,7 +56,7 @@ const WaterTests = () => {
         setSelectedAquariumId(aquariums[0].id);
       }
     }
-  }, [aquariums, urlAquariumId]);
+  }, [aquariums, urlAquariumId, selectedAquariumId]);
 
   const selectedAquarium = aquariums?.find((a) => a.id === selectedAquariumId);
 
@@ -89,9 +89,10 @@ const WaterTests = () => {
     setTrendsOpen(true);
   };
 
-  const handleTestClick = (testId: string) => {
-    // Could open detail view in future
-    console.log('Clicked test:', testId);
+  const handleTestClick = (_testId: string) => {
+    // TODO: Implement detail view in future iteration
+    // For now, clicking a test scrolls to trends section
+    setTrendsOpen(true);
   };
 
   if (aquariumsLoading) {

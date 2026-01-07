@@ -128,18 +128,35 @@ export default function Auth() {
   useEffect(() => {
     if (!isAuthenticating) return;
     
+    let mounted = true;
+    
     const timeout = setTimeout(async () => {
+      if (!mounted) return;
+      
       // Fallback: check session directly and force navigate
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        navigate('/dashboard');
-      } else {
-        setIsAuthenticating(false);
-        setIsLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+        
+        if (session?.user) {
+          navigate('/dashboard');
+        } else {
+          setIsAuthenticating(false);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth timeout check failed:', error);
+        if (mounted) {
+          setIsAuthenticating(false);
+          setIsLoading(false);
+        }
       }
     }, 3000);
     
-    return () => clearTimeout(timeout);
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+    };
   }, [isAuthenticating, navigate]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -468,6 +485,7 @@ export default function Auth() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       tabIndex={-1}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
