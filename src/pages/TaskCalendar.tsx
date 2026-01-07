@@ -308,7 +308,7 @@ export default function TaskCalendar() {
 
                   return (
                     <div
-                      key={day.toISOString()}
+                      key={format(day, 'yyyy-MM-dd')}
                       onClick={() => handleDayClick(day)}
                       className={`
                         min-h-[48px] md:min-h-[120px] p-1 md:p-2 border rounded-lg transition-all

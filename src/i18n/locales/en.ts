@@ -424,5 +424,20 @@ export const en = {
       error: "Error",
       errorDescription: "Failed to create water body. Please try again.",
     },
+    chat: {
+      filters: {
+        all: "All",
+        pinned: "Pinned",
+        thisWeek: "This Week",
+        withTank: "With Tank",
+      },
+      groups: {
+        pinned: "Pinned",
+        today: "Today",
+        yesterday: "Yesterday",
+        lastWeek: "Last 7 Days",
+        older: "Older",
+      },
+    },
   },
 };
