@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo, memo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,7 +26,12 @@ import {
   Waves,
   Droplets,
   Star,
-  Pin
+  Pin,
+  Pencil,
+  Check,
+  X,
+  Calendar,
+  Filter
 } from "lucide-react";
 import { format, isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -55,11 +60,20 @@ interface ChatHistorySidebarProps {
   onDeleteConversation: (id: string, e: React.MouseEvent) => void;
   onNewChat: () => void;
   onPinConversation?: (id: string) => void;
+  onRenameConversation?: (id: string, newTitle: string) => void;
   aquariums?: Aquarium[];
   isLoading?: boolean;
 }
 
 type DateGroup = "pinned" | "today" | "yesterday" | "week" | "older";
+type FilterType = "all" | "pinned" | "week" | "with-aquarium";
+
+const filterOptions: { id: FilterType; label: string; icon?: React.ReactNode }[] = [
+  { id: "all", label: "All" },
+  { id: "pinned", label: "Pinned", icon: <Star className="h-3 w-3" /> },
+  { id: "week", label: "This Week", icon: <Calendar className="h-3 w-3" /> },
+  { id: "with-aquarium", label: "With Tank", icon: <Fish className="h-3 w-3" /> },
+];
 
 function getDateGroup(conv: Conversation): DateGroup {
   if (conv.is_pinned) return "pinned";
@@ -139,12 +153,81 @@ const ConversationSkeleton = () => (
   </div>
 );
 
+// Inline edit component
+const InlineEdit = memo(({ 
+  value, 
+  onSave, 
+  onCancel 
+}: { 
+  value: string; 
+  onSave: (newValue: string) => void; 
+  onCancel: () => void;
+}) => {
+  const [editValue, setEditValue] = useState(value);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const handleSave = () => {
+    if (editValue.trim()) {
+      onSave(editValue.trim());
+    } else {
+      onCancel();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1 flex-1 min-w-0" onClick={e => e.stopPropagation()}>
+      <Input
+        ref={inputRef}
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSave}
+        className="h-7 text-sm px-2 py-1"
+        maxLength={50}
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 shrink-0 text-primary hover:text-primary hover:bg-primary/10"
+        onClick={handleSave}
+      >
+        <Check className="h-3.5 w-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+        onClick={onCancel}
+      >
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+});
+
+InlineEdit.displayName = "InlineEdit";
+
 const ConversationCard = memo(({ 
   conversation, 
   isActive, 
   onLoad, 
   onRequestDelete,
   onPin,
+  onRename,
   aquarium,
   isDeleting = false
 }: { 
@@ -153,11 +236,27 @@ const ConversationCard = memo(({
   onLoad: () => void; 
   onRequestDelete: () => void;
   onPin?: () => void;
+  onRename?: (newTitle: string) => void;
   aquarium?: Aquarium | null;
   isDeleting?: boolean;
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const AquariumIcon = aquarium ? getAquariumIcon(aquarium.type) : null;
   const aquariumColorClass = aquarium ? getAquariumColor(aquarium.type) : '';
+  
+  const handleSaveRename = (newTitle: string) => {
+    if (onRename && newTitle !== conversation.title) {
+      onRename(newTitle);
+    }
+    setIsEditing(false);
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (onRename) {
+      e.stopPropagation();
+      setIsEditing(true);
+    }
+  };
   
   return (
     <motion.div
@@ -187,67 +286,127 @@ const ConversationCard = memo(({
       <div className="flex-1 min-w-0 space-y-1.5">
         {/* Title row with pin indicator */}
         <div className="flex items-start gap-2">
-          <p className={cn(
-            "text-sm font-medium truncate leading-tight flex-1",
-            isActive && "text-primary"
-          )}>
-            {conversation.title}
-          </p>
-          {conversation.is_pinned && (
-            <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
+          {isEditing ? (
+            <InlineEdit
+              value={conversation.title}
+              onSave={handleSaveRename}
+              onCancel={() => setIsEditing(false)}
+            />
+          ) : (
+            <>
+              <p 
+                className={cn(
+                  "text-sm font-medium truncate leading-tight flex-1",
+                  isActive && "text-primary"
+                )}
+                onDoubleClick={handleDoubleClick}
+                title="Double click to rename"
+              >
+                {conversation.title}
+              </p>
+              {conversation.is_pinned && (
+                <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
+              )}
+            </>
           )}
         </div>
         
         {/* Message preview */}
-        {conversation.last_message_preview && (
+        {!isEditing && conversation.last_message_preview && (
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             {conversation.last_message_preview}
           </p>
         )}
         
         {/* Metadata row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Aquarium badge */}
-          {aquarium ? (
-            <Badge 
-              variant="outline" 
-              className={cn(
-                "text-[10px] px-1.5 py-0 h-5 gap-1 font-medium border",
-                aquariumColorClass
-              )}
-            >
-              {AquariumIcon && <AquariumIcon className="h-2.5 w-2.5" />}
-              <span className="truncate max-w-[80px]">{aquarium.name}</span>
-            </Badge>
-          ) : (
-            <Badge 
-              variant="outline" 
-              className="text-[10px] px-1.5 py-0 h-5 gap-1 font-medium bg-muted/50"
-            >
-              <Sparkles className="h-2.5 w-2.5" />
-              General
-            </Badge>
-          )}
-          
-          {/* Message count */}
-          {typeof conversation.message_count === 'number' && conversation.message_count > 0 && (
-            <span className="text-[10px] text-muted-foreground">
-              {conversation.message_count} msg{conversation.message_count !== 1 ? 's' : ''}
+        {!isEditing && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Aquarium badge */}
+            {aquarium ? (
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-[10px] px-1.5 py-0 h-5 gap-1 font-medium border",
+                  aquariumColorClass
+                )}
+              >
+                {AquariumIcon && <AquariumIcon className="h-2.5 w-2.5" />}
+                <span className="truncate max-w-[80px]">{aquarium.name}</span>
+              </Badge>
+            ) : (
+              <Badge 
+                variant="outline" 
+                className="text-[10px] px-1.5 py-0 h-5 gap-1 font-medium bg-muted/50"
+              >
+                <Sparkles className="h-2.5 w-2.5" />
+                General
+              </Badge>
+            )}
+            
+            {/* Message count */}
+            {typeof conversation.message_count === 'number' && conversation.message_count > 0 && (
+              <span className="text-[10px] text-muted-foreground">
+                {conversation.message_count} msg{conversation.message_count !== 1 ? 's' : ''}
+              </span>
+            )}
+            
+            {/* Time */}
+            <span className="text-[10px] text-muted-foreground ml-auto">
+              {format(new Date(conversation.updated_at), isToday(new Date(conversation.updated_at)) ? "h:mm a" : "MMM d")}
             </span>
-          )}
-          
-          {/* Time */}
-          <span className="text-[10px] text-muted-foreground ml-auto">
-            {format(new Date(conversation.updated_at), isToday(new Date(conversation.updated_at)) ? "h:mm a" : "MMM d")}
-          </span>
-        </div>
+          </div>
+        )}
       </div>
       
       {/* Action buttons on hover */}
-      <div className={cn(
-        "absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-      )}>
-        {onPin && (
+      {!isEditing && (
+        <div className={cn(
+          "absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
+        )}>
+          {onRename && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditing(true);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>Rename</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {onPin && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-7 w-7",
+                    "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10",
+                    conversation.is_pinned && "text-amber-500"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPin();
+                  }}
+                >
+                  <Star className={cn("h-3.5 w-3.5", conversation.is_pinned && "fill-current")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <p>{conversation.is_pinned ? 'Unpin' : 'Pin'}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -255,49 +414,27 @@ const ConversationCard = memo(({
                 size="icon"
                 className={cn(
                   "h-7 w-7",
-                  "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10",
-                  conversation.is_pinned && "text-amber-500"
+                  "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 )}
+                disabled={isDeleting}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onPin();
+                  onRequestDelete();
                 }}
               >
-                <Star className={cn("h-3.5 w-3.5", conversation.is_pinned && "fill-current")} />
+                {isDeleting ? (
+                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>{conversation.is_pinned ? 'Unpin' : 'Pin'}</p>
+              <p>Delete</p>
             </TooltipContent>
           </Tooltip>
-        )}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "h-7 w-7",
-                "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-              )}
-              disabled={isDeleting}
-              onClick={(e) => {
-                e.stopPropagation();
-                onRequestDelete();
-              }}
-            >
-              {isDeleting ? (
-                <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <p>Delete</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 });
@@ -311,10 +448,12 @@ export function ChatHistorySidebar({
   onDeleteConversation,
   onNewChat,
   onPinConversation,
+  onRenameConversation,
   aquariums = [],
   isLoading = false,
 }: ChatHistorySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -326,14 +465,57 @@ export function ChatHistorySidebar({
     return map;
   }, [aquariums]);
 
+  // Filter counts for badges
+  const filterCounts = useMemo(() => {
+    const now = new Date();
+    const weekAgo = subDays(now, 7);
+    
+    return {
+      all: conversations.length,
+      pinned: conversations.filter(c => c.is_pinned).length,
+      week: conversations.filter(c => {
+        const date = new Date(c.updated_at);
+        return isWithinInterval(date, { start: weekAgo, end: now });
+      }).length,
+      "with-aquarium": conversations.filter(c => c.aquarium_id).length,
+    };
+  }, [conversations]);
+
   const filteredConversations = useMemo(() => {
-    if (!searchQuery.trim()) return conversations;
-    const query = searchQuery.toLowerCase();
-    return conversations.filter(c => 
-      c.title.toLowerCase().includes(query) ||
-      c.last_message_preview?.toLowerCase().includes(query)
-    );
-  }, [conversations, searchQuery]);
+    let result = conversations;
+    
+    // Apply filter
+    if (activeFilter !== "all") {
+      const now = new Date();
+      const weekAgo = subDays(now, 7);
+      
+      switch (activeFilter) {
+        case "pinned":
+          result = result.filter(c => c.is_pinned);
+          break;
+        case "week":
+          result = result.filter(c => {
+            const date = new Date(c.updated_at);
+            return isWithinInterval(date, { start: weekAgo, end: now });
+          });
+          break;
+        case "with-aquarium":
+          result = result.filter(c => c.aquarium_id);
+          break;
+      }
+    }
+    
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(c => 
+        c.title.toLowerCase().includes(query) ||
+        c.last_message_preview?.toLowerCase().includes(query)
+      );
+    }
+    
+    return result;
+  }, [conversations, searchQuery, activeFilter]);
 
   const groupedConversations = useMemo(() => {
     const groups: Record<DateGroup, Conversation[]> = {
@@ -415,6 +597,45 @@ export function ChatHistorySidebar({
             />
           </div>
         )}
+
+        {/* Quick Filters */}
+        {hasConversations && (
+          <div className="flex gap-1.5 flex-wrap">
+            {filterOptions.map((filter) => {
+              const count = filterCounts[filter.id];
+              const isActive = activeFilter === filter.id;
+              
+              // Hide filters with 0 results (except "all")
+              if (filter.id !== "all" && count === 0) return null;
+              
+              return (
+                <Button
+                  key={filter.id}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "h-7 text-xs gap-1.5 rounded-full transition-all",
+                    isActive 
+                      ? "shadow-sm" 
+                      : "bg-transparent hover:bg-accent border-muted-foreground/20"
+                  )}
+                  onClick={() => setActiveFilter(filter.id)}
+                >
+                  {filter.icon}
+                  {filter.label}
+                  {filter.id !== "all" && (
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full",
+                      isActive ? "bg-primary-foreground/20" : "bg-muted"
+                    )}>
+                      {count}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Conversation List */}
@@ -439,14 +660,31 @@ export function ChatHistorySidebar({
         ) : !hasResults ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted/50 mb-4">
-              <Search className="h-6 w-6 text-muted-foreground/50" />
+              {activeFilter !== "all" ? (
+                <Filter className="h-6 w-6 text-muted-foreground/50" />
+              ) : (
+                <Search className="h-6 w-6 text-muted-foreground/50" />
+              )}
             </div>
             <p className="text-sm font-medium text-muted-foreground">
               No results found
             </p>
             <p className="text-xs text-muted-foreground/70 mt-1">
-              Try a different search term
+              {activeFilter !== "all" 
+                ? "Try a different filter" 
+                : "Try a different search term"
+              }
             </p>
+            {activeFilter !== "all" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-3 text-xs"
+                onClick={() => setActiveFilter("all")}
+              >
+                Clear filter
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-4 pb-6">
@@ -479,6 +717,7 @@ export function ChatHistorySidebar({
                         onLoad={() => onLoadConversation(conv.id)}
                         onRequestDelete={() => handleRequestDelete(conv.id)}
                         onPin={onPinConversation ? () => onPinConversation(conv.id) : undefined}
+                        onRename={onRenameConversation ? (newTitle) => onRenameConversation(conv.id, newTitle) : undefined}
                         aquarium={conv.aquarium_id ? aquariumMap.get(conv.aquarium_id) : null}
                         isDeleting={isDeleting && conversationToDelete === conv.id}
                       />
