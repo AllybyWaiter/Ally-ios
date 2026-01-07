@@ -41,22 +41,20 @@ if (!envValidation.isValid) {
         try {
           const registration = await navigator.serviceWorker.ready;
           await registration.update();
-          console.log('🔵 SW: Service worker update checked');
           
           navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data?.type === 'CACHES_CLEARED') {
-              console.log('🔵 SW: Caches cleared confirmation received');
+              // Caches cleared confirmation received
             }
           });
-        } catch (e) {
-          console.warn('⚠️ SW: Service worker ready check failed:', e);
+        } catch {
+          // Service worker ready check failed
         }
       }
     };
 
     // Cache-busting recovery for module-level errors (iOS PWA cold-start fix)
     const handleModuleError = async () => {
-      console.warn('🔄 Module error detected, clearing caches and reloading...');
       try {
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_ALL_CACHES' });
@@ -66,15 +64,13 @@ if (!envValidation.isValid) {
         if ('caches' in window) {
           const cacheNames = await caches.keys();
           await Promise.all(cacheNames.map(name => caches.delete(name)));
-          console.log('🧹 Cleared', cacheNames.length, 'caches');
         }
         if ('serviceWorker' in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();
           await Promise.all(registrations.map(reg => reg.unregister()));
-          console.log('🧹 Unregistered', registrations.length, 'service workers');
         }
-      } catch (e) {
-        console.error('Cache clear failed:', e);
+      } catch {
+        // Cache clear failed, proceed with reload anyway
       }
       const url = new URL(window.location.href);
       url.searchParams.set('_cb', Date.now().toString());
@@ -88,15 +84,12 @@ if (!envValidation.isValid) {
         window.matchMedia('(display-mode: standalone)').matches;
       
       if (isIOSPWA) {
-        console.log('🔵 Running in iOS PWA mode, performing startup validation...');
-        
         const crashMarker = sessionStorage.getItem('ally_crash_recovery');
         if (crashMarker) {
           const crashTime = parseInt(crashMarker, 10);
           const timeSinceCrash = Date.now() - crashTime;
           
           if (timeSinceCrash < 30000) {
-            console.warn('🔄 Detected recent crash, forcing full cache clear...');
             sessionStorage.removeItem('ally_crash_recovery');
             handleModuleError();
             return false;
@@ -124,7 +117,6 @@ if (!envValidation.isValid) {
         errorMessage.includes('error loading dynamically imported module');
         
       if (isRecoverableError) {
-        console.warn('🔄 Global error handler caught iOS PWA stale cache error');
         sessionStorage.setItem('ally_crash_recovery', Date.now().toString());
         event.preventDefault();
         handleModuleError();
@@ -132,7 +124,7 @@ if (!envValidation.isValid) {
     });
 
     if (!validateStartupIntegrity()) {
-      console.log('🔵 Startup validation triggered recovery, waiting...');
+      // Startup validation triggered recovery, waiting...
     } else {
       try {
         createRoot(document.getElementById("root")!).render(

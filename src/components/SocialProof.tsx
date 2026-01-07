@@ -175,8 +175,8 @@ const SocialProof = () => {
         {isMobile ? (
           <Carousel className="w-full mb-16" opts={{ loop: true, align: "start" }}>
             <CarouselContent className="-ml-2 md:-ml-4">
-              {testimonials.map((testimonial, index) => (
-                <CarouselItem key={index} className="pl-2 md:pl-4 basis-[85%]">
+              {testimonials.map((testimonial) => (
+                <CarouselItem key={testimonial.name} className="pl-2 md:pl-4 basis-[85%]">
                   <TestimonialCard testimonial={testimonial} />
                 </CarouselItem>
               ))}
@@ -194,8 +194,8 @@ const SocialProof = () => {
             whileInView="visible"
             viewport={{ once: true }}
           >
-            {testimonials.map((testimonial, index) => (
-              <motion.div key={index} variants={itemVariants}>
+            {testimonials.map((testimonial) => (
+              <motion.div key={testimonial.name} variants={itemVariants}>
                 <TestimonialCard testimonial={testimonial} />
               </motion.div>
             ))}
@@ -210,11 +210,11 @@ const SocialProof = () => {
           viewport={{ once: true }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          {trustBadges.map((badge, index) => {
+          {trustBadges.map((badge) => {
             const Icon = badge.icon;
             return (
               <div 
-                key={index}
+                key={badge.text}
                 className="flex items-center gap-2 text-muted-foreground"
               >
                 <Icon className="w-5 h-5 text-primary" />

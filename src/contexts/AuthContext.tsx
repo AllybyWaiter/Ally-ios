@@ -7,13 +7,18 @@ import { logActivity, logLoginHistory } from '@/lib/activityLogger';
 // Timeout constants for iOS PWA optimization
 const SAFETY_TIMEOUT_MS = 5000;
 
+interface AuthError {
+  message: string;
+  status?: number;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   isInitialAuthComplete: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -121,11 +126,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      return { error };
+      return { error: error ?? null };
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       addBreadcrumb('Sign in error', 'auth', { error: errorMessage }, FeatureArea.AUTH);
-      return { error };
+      return { error: { message: errorMessage } };
     }
   }, []);
 
@@ -154,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logActivity({ actionType: 'login', userId: data.user.id, actionDetails: { type: 'signup' } }).catch(console.error);
     }
 
-    return { error };
+    return { error: error ?? null };
   }, []);
 
   const signOut = useCallback(async () => {

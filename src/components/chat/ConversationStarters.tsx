@@ -54,15 +54,14 @@ export const ConversationStarters = React.memo(function ConversationStarters({
         </span>
       </div>
 
-      {/* Suggestion Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {suggestions.map((suggestion, index) => {
+        {suggestions.map((suggestion) => {
           const Icon = suggestion.icon || categoryIcons[suggestion.category];
           const colorClass = categoryColors[suggestion.category];
           
           return (
             <Card
-              key={index}
+              key={suggestion.text}
               className={cn(
                 "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md border",
                 colorClass
