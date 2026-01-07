@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { VirtualizedConversationList } from "@/components/chat/VirtualizedConversationList";
+import { ChatHistorySidebar } from "@/components/chat/ChatHistorySidebar";
 import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
 import { ConversationStarters } from "@/components/chat/ConversationStarters";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
@@ -420,25 +420,14 @@ const AllyChat = () => {
                   <History className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 pt-safe">
-                <SheetHeader>
-                  <SheetTitle>Chat History</SheetTitle>
-                </SheetHeader>
-                <div className="h-[calc(100vh-10rem)] mt-6">
-                  <Button
-                    onClick={handleStartNewConversation}
-                    className="w-full gap-2 mb-4"
-                  >
-                    <Plus className="h-4 w-4" />
-                    New Chat
-                  </Button>
-                  <VirtualizedConversationList
-                    conversations={conversationManager.conversations}
-                    currentConversationId={conversationManager.currentConversationId}
-                    onLoadConversation={handleLoadConversation}
-                    onDeleteConversation={handleDeleteConversation}
-                  />
-                </div>
+              <SheetContent side="left" className="w-80 p-0 pt-safe">
+                <ChatHistorySidebar
+                  conversations={conversationManager.conversations}
+                  currentConversationId={conversationManager.currentConversationId}
+                  onLoadConversation={handleLoadConversation}
+                  onDeleteConversation={handleDeleteConversation}
+                  onNewChat={handleStartNewConversation}
+                />
               </SheetContent>
             </Sheet>
           </div>
