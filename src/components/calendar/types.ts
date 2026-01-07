@@ -2,6 +2,8 @@
  * Calendar Type Definitions
  */
 
+import { Droplets, Filter, Wrench, TestTube, Fish, Sparkles, Circle, type LucideIcon } from 'lucide-react';
+
 export interface CalendarTask {
   id: string;
   task_name: string;
@@ -15,6 +17,7 @@ export interface CalendarTask {
   recurrence_days?: number | null;
   completed_date?: string | null;
   aquarium?: {
+    id: string;
     name: string;
     type?: string;
   };
@@ -23,7 +26,7 @@ export interface CalendarTask {
 export interface TaskTypeConfig {
   color: string;
   bgColor: string;
-  icon: string;
+  icon: LucideIcon;
   label: string;
 }
 
@@ -31,43 +34,43 @@ export const TASK_TYPE_CONFIGS: Record<string, TaskTypeConfig> = {
   water_change: {
     color: 'text-primary',
     bgColor: 'bg-primary',
-    icon: 'Droplets',
+    icon: Droplets,
     label: 'Water Change',
   },
   filter_maintenance: {
     color: 'text-purple-500',
     bgColor: 'bg-purple-500',
-    icon: 'Filter',
+    icon: Filter,
     label: 'Filter Maintenance',
   },
   equipment_maintenance: {
     color: 'text-orange-500',
     bgColor: 'bg-orange-500',
-    icon: 'Wrench',
+    icon: Wrench,
     label: 'Equipment',
   },
   testing: {
     color: 'text-green-500',
     bgColor: 'bg-green-500',
-    icon: 'TestTube',
+    icon: TestTube,
     label: 'Testing',
   },
   feeding: {
     color: 'text-yellow-500',
     bgColor: 'bg-yellow-500',
-    icon: 'Fish',
+    icon: Fish,
     label: 'Feeding',
   },
   cleaning: {
     color: 'text-secondary',
     bgColor: 'bg-secondary',
-    icon: 'Sparkles',
+    icon: Sparkles,
     label: 'Cleaning',
   },
   other: {
     color: 'text-muted-foreground',
     bgColor: 'bg-muted',
-    icon: 'Circle',
+    icon: Circle,
     label: 'Other',
   },
 };
