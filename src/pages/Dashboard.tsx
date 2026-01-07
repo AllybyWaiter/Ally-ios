@@ -23,9 +23,9 @@ interface Aquarium {
   id: string;
   name: string;
   type: string;
-  volume_gallons: number;
+  volume_gallons: number | null;
   status: string;
-  setup_date: string;
+  setup_date: string | null;
   notes: string | null;
 }
 
@@ -106,17 +106,25 @@ export default function Dashboard() {
     return () => clearTimeout(maxLoadingTimeout);
   }, [user, dataFetched, onboardingCompleted, loading, loadAquariums, setLoading]);
 
-  // iOS PWA wake-up recovery - soft refresh instead of hard reload
+  // iOS PWA wake-up recovery - soft refresh with cooldown
+  const lastFetchTime = useRef<number>(0);
+  const REFETCH_COOLDOWN = 60000; // 1 minute cooldown
+
   useEffect(() => {
     let stuckCheckTimeout: NodeJS.Timeout | null = null;
+    const controller = new AbortController();
     
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && !controller.signal.aborted) {
         if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
         
         stuckCheckTimeout = setTimeout(() => {
-          if (user) {
-            loadAquariums(user.id);
+          if (user && !controller.signal.aborted) {
+            // Only refetch if cooldown has passed
+            if (Date.now() - lastFetchTime.current > REFETCH_COOLDOWN) {
+              lastFetchTime.current = Date.now();
+              loadAquariums(user.id);
+            }
           }
         }, 1000);
       }
@@ -124,6 +132,7 @@ export default function Dashboard() {
     
     document.addEventListener('visibilitychange', handleVisibility);
     return () => {
+      controller.abort();
       document.removeEventListener('visibilitychange', handleVisibility);
       if (stuckCheckTimeout) clearTimeout(stuckCheckTimeout);
     };
@@ -193,13 +202,15 @@ export default function Dashboard() {
 
   // Memoized event handlers
   const handlePreferencesComplete = useCallback(async () => {
+    if (!user?.id) return;
     setShowPreferencesOnboarding(false);
-    await loadAquariums(user?.id);
+    await loadAquariums(user.id);
   }, [loadAquariums, user?.id]);
 
   const handleAquariumOnboardingComplete = useCallback(async () => {
+    if (!user?.id) return;
     setShowAquariumOnboarding(false);
-    await loadAquariums(user?.id);
+    await loadAquariums(user.id);
   }, [loadAquariums, user?.id]);
 
   const handleCreateAquarium = useCallback(() => {
@@ -324,7 +335,7 @@ export default function Dashboard() {
       <AquariumDialog
         open={aquariumDialogOpen}
         onOpenChange={setAquariumDialogOpen}
-        onSuccess={loadAquariums}
+        onSuccess={() => user?.id && loadAquariums(user.id)}
         aquarium={editingAquarium}
       />
 
