@@ -75,7 +75,7 @@ export const WaitlistDialog = ({ open, onOpenChange }: WaitlistDialogProps) => {
       
       resetRateLimit();
       setEmail("");
-      setTimeout(() => onOpenChange(false), 1500);
+      setTimeout(() => onOpenChange(false), 1000);
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors[0].message);

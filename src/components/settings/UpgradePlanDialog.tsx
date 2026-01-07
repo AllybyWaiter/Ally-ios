@@ -6,12 +6,14 @@ import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
@@ -19,6 +21,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PLAN_DEFINITIONS, getPaidPlans } from '@/lib/planConstants';
+
+// Currency formatter for locale-aware pricing
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
 interface UpgradePlanDialogProps {
   open: boolean;
@@ -148,7 +160,7 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="font-semibold text-lg">{plan.name}</span>
                     <span className="text-lg font-bold">
-                      ${price.toFixed(2)}
+                      {formatCurrency(price)}
                       <span className="text-sm text-muted-foreground font-normal">
                         /{isAnnual ? 'yr' : 'mo'}
                       </span>
@@ -211,6 +223,9 @@ export function UpgradePlanDialog({ open, onOpenChange, currentTier }: UpgradePl
               <Crown className="w-5 h-5 text-primary" />
               Upgrade Your Plan
             </DrawerTitle>
+            <DrawerDescription>
+              Choose a plan that fits your needs
+            </DrawerDescription>
           </DrawerHeader>
           <div className="px-4">
             <PlanContent currentTier={currentTier} onClose={() => onOpenChange(false)} />
@@ -228,6 +243,9 @@ export function UpgradePlanDialog({ open, onOpenChange, currentTier }: UpgradePl
             <Crown className="w-5 h-5 text-primary" />
             Upgrade Your Plan
           </DialogTitle>
+          <DialogDescription>
+            Choose a plan that fits your needs
+          </DialogDescription>
         </DialogHeader>
         <PlanContent currentTier={currentTier} onClose={() => onOpenChange(false)} />
       </DialogContent>
