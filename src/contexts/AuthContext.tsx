@@ -57,7 +57,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         addBreadcrumb(`Auth event: ${event}`, 'auth', { userId: session?.user?.id }, FeatureArea.AUTH);
 
-        if (!session) {
+        // Update Sentry context on auth events
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUserContext(session.user.id, session.user.email, undefined);
+        } else if (!session) {
           clearUserContext();
         }
       }

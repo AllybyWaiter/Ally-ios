@@ -16,12 +16,15 @@ import { queryKeys } from "@/lib/queryKeys";
 import { queryPresets } from "@/lib/queryConfig";
 import { fetchLatestWaterTest, fetchEquipmentCount, fetchUpcomingTasks } from "@/infrastructure/queries";
 
-// Safe date formatter to prevent crashes
+// Safe date formatter to prevent crashes - returns empty string for invalid dates
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "MMM d"): string => {
   if (!dateValue) return '';
   try {
     const date = new Date(dateValue);
-    if (!isValid(date)) return 'Invalid date';
+    if (!isValid(date)) {
+      console.warn('Invalid date value in AquariumOverview:', dateValue);
+      return '';
+    }
     return format(date, formatStr);
   } catch (error) {
     console.error('Date formatting error in AquariumOverview:', error);
@@ -73,7 +76,12 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
   });
 
   const getTaskDueDateStatus = (dueDate: string) => {
+    // Validate date before processing
     const due = new Date(dueDate);
+    if (!isValid(due)) {
+      return { label: t('overview.unknown'), variant: "outline" as const };
+    }
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     due.setHours(0, 0, 0, 0);

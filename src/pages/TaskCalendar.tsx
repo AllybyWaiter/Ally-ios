@@ -39,17 +39,8 @@ interface Task {
   };
 }
 
+// Consolidated task type colors - single source of truth
 const TASK_TYPE_COLORS: Record<string, string> = {
-  water_change: "bg-primary",
-  filter_maintenance: "bg-purple-500",
-  equipment_maintenance: "bg-orange-500",
-  testing: "bg-green-500",
-  feeding: "bg-yellow-500",
-  cleaning: "bg-secondary",
-  other: "bg-gray-500",
-};
-
-const TASK_TYPE_DOT_COLORS: Record<string, string> = {
   water_change: "bg-primary",
   filter_maintenance: "bg-purple-500",
   equipment_maintenance: "bg-orange-500",
@@ -338,7 +329,7 @@ export default function TaskCalendar() {
                           {dayTasks.slice(0, 3).map((task) => (
                             <div
                               key={task.id}
-                              className={`w-2 h-2 rounded-full ${TASK_TYPE_DOT_COLORS[task.task_type] || TASK_TYPE_DOT_COLORS.other}`}
+                              className={`w-2 h-2 rounded-full ${TASK_TYPE_COLORS[task.task_type] || TASK_TYPE_COLORS.other}`}
                             />
                           ))}
                           {dayTasks.length > 3 && (

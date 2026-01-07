@@ -3,7 +3,7 @@ import logo from "@/assets/logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
-import { Bell, Settings, LogOut } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +21,11 @@ const AppHeader = () => {
   const { t } = useTranslation();
 
   const getInitials = (name: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
+    if (!name || !name.trim()) return "U";
+    const trimmedName = name.trim();
+    const parts = trimmedName.split(" ").filter(n => n.length > 0);
+    if (parts.length === 0) return "U";
+    return parts
       .map((n) => n[0])
       .join("")
       .toUpperCase()
@@ -53,9 +55,9 @@ const AppHeader = () => {
               {t('navigation.dashboard')}
             </Button>
           </Link>
-          <Link to="/chat">
+          <Link to="/ally">
             <Button
-              variant={location.pathname === "/chat" ? "secondary" : "ghost"}
+              variant={location.pathname === "/ally" ? "secondary" : "ghost"}
               size="sm"
             >
               {t('navigation.chatWithAlly')}

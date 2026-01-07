@@ -46,6 +46,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   const [filter, setFilter] = useState<TaskFilter>("all");
   
   // Fallback timer to prevent auth loading from blocking indefinitely
+  // Also check for valid user to prevent bypassing auth
   const [authFallbackReady, setAuthFallbackReady] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -54,8 +55,8 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
     return () => clearTimeout(timer);
   }, []);
   
-  // Use fallback if auth loading takes too long
-  const effectiveAuthLoading = authLoading && !authFallbackReady;
+  // Use fallback if auth loading takes too long, but still require user
+  const effectiveAuthLoading = (authLoading && !authFallbackReady) || !user;
   
   const queryClient = useQueryClient();
   const { toast } = useToast();

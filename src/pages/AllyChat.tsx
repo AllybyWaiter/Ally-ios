@@ -143,7 +143,7 @@ const AllyChat = () => {
       // Auto-send after a brief delay
       setTimeout(() => setAutoSendPending(true), 300);
     }
-  }, [location.state]);
+  }, [location.state, input]);
 
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();

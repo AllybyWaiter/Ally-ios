@@ -164,7 +164,10 @@ export function useStreamingResponse() {
     }
 
     // Clear timeout on successful completion
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     
     // Final update to ensure all content is sent
     callbacks.onToken(assistantMessageRef.current);
@@ -177,8 +180,12 @@ export function useStreamingResponse() {
   }, [navigate, toast]);
 
   const abort = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     setIsStreaming(false);
   }, []);
 
