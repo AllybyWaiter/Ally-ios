@@ -17,9 +17,11 @@ import {
   CalendarHeroBanner,
   WeekAtGlance,
   CalendarGrid,
+  CalendarTimeline,
   DayDetailPanel,
   QuickAddTaskFAB,
   useCalendarData,
+  useCalendarKeyboard,
 } from '@/components/calendar';
 import { MaintenanceTaskDialog } from '@/components/aquarium/MaintenanceTaskDialog';
 
@@ -78,6 +80,16 @@ export default function TaskCalendar() {
     rescheduleTask({ taskId, newDate });
   }, [rescheduleTask]);
 
+  // Keyboard navigation
+  useCalendarKeyboard({
+    selectedDate,
+    onDateChange: setSelectedDate,
+    onOpenDay: () => selectedDate && setSelectedDate(selectedDate),
+    onAddTask: handleAddTask,
+    onGoToToday: () => setCurrentMonth(new Date()),
+    onClose: handleCloseDetail,
+  });
+
   const selectedDateTasks = selectedDate ? getTasksForDay(selectedDate) : [];
 
   if (isLoading) {
@@ -121,6 +133,12 @@ export default function TaskCalendar() {
             onMonthChange={setCurrentMonth}
             onDayClick={handleDayClick}
             onTaskReschedule={handleTaskReschedule}
+          />
+
+          {/* Today's Timeline */}
+          <CalendarTimeline
+            tasks={stats.todayTasks || []}
+            onCompleteTask={completeTask}
           />
         </SectionErrorBoundary>
       </main>
