@@ -21,6 +21,7 @@ export function useLazyLoad(options: UseLazyLoadOptions = {}) {
 
     if (timeoutRef.current != null) {
       window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
     timeoutRef.current = window.setTimeout(() => {
@@ -31,6 +32,7 @@ export function useLazyLoad(options: UseLazyLoadOptions = {}) {
     return () => {
       if (timeoutRef.current != null) {
         window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, [retryNonce, timeoutMs, onTimeout]);

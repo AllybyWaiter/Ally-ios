@@ -1,6 +1,6 @@
 /**
  * Calculate distance between two coordinates using the Haversine formula
- * @returns Distance in kilometers
+ * @returns Distance in kilometers, or 0 if inputs are invalid
  */
 export function getDistanceKm(
   lat1: number,
@@ -8,6 +8,18 @@ export function getDistanceKm(
   lat2: number,
   lon2: number
 ): number {
+  // Validate inputs
+  if (!Number.isFinite(lat1) || !Number.isFinite(lon1) || 
+      !Number.isFinite(lat2) || !Number.isFinite(lon2)) {
+    return 0;
+  }
+  
+  // Validate coordinate ranges
+  if (lat1 < -90 || lat1 > 90 || lat2 < -90 || lat2 > 90 ||
+      lon1 < -180 || lon1 > 180 || lon2 < -180 || lon2 > 180) {
+    return 0;
+  }
+  
   const R = 6371; // Earth's radius in km
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
