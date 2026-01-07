@@ -83,8 +83,8 @@ export default function MemoryManager() {
       if (!error && data?.subscription_tier) {
         setSubscriptionTier(data.subscription_tier);
       }
-    } catch (error) {
-      console.error("Error fetching subscription tier:", error);
+    } catch {
+      // Silently handle error - default tier will be used
     }
   };
 
@@ -436,12 +436,13 @@ export default function MemoryManager() {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => handleOpenDialog(memory)}
+                              aria-label="Edit memory"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label="Delete memory">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>

@@ -568,10 +568,10 @@ const HelpCenter = () => {
                       </CardHeader>
                       <CardContent>
                         <Accordion type="single" collapsible className="space-y-2">
-                          {category.articles.map((article, index) => (
+                          {category.articles.map((article) => (
                             <AccordionItem 
-                              key={index} 
-                              value={`${category.category}-${index}`}
+                              key={article.title} 
+                              value={`${category.category}-${article.title}`}
                               className="border rounded-lg px-4"
                             >
                               <AccordionTrigger className="hover:no-underline py-3">
