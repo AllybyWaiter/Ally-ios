@@ -314,7 +314,10 @@ const Contact = () => {
                     disabled={isLoading || isRateLimited}
                   >
                     {isLoading ? (
-                      "Sending..."
+                      <>
+                        <span className="animate-spin mr-2">⏳</span>
+                        Sending...
+                      </>
                     ) : (
                       <>
                         <Send className="h-4 w-4 mr-2" />
