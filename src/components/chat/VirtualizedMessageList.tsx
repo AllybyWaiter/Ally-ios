@@ -63,11 +63,17 @@ const markdownComponents = {
 };
 
 // Memoized markdown renderer component - only re-renders when content changes
-const MemoizedMarkdown = memo(({ content }: { content: string }) => (
-  <ReactMarkdown components={markdownComponents}>
-    {content}
-  </ReactMarkdown>
-));
+const MemoizedMarkdown = memo(({ content }: { content: string }) => {
+  // Guard against empty content which may cause issues in some ReactMarkdown versions
+  if (!content || content.trim() === '') {
+    return null;
+  }
+  return (
+    <ReactMarkdown components={markdownComponents}>
+      {content}
+    </ReactMarkdown>
+  );
+});
 
 MemoizedMarkdown.displayName = "MemoizedMarkdown";
 
@@ -445,11 +451,11 @@ export const VirtualizedMessageList = memo(({
         }}
       >
         {virtualizer.getVirtualItems().map((virtualItem) => {
-          // Loading indicator
+          // Loading indicator - use unique key based on message count to avoid reconciliation issues
           if (virtualItem.index === messages.length) {
             return (
               <div
-                key="loading"
+                key={`loading-${messages.length}`}
                 data-index={virtualItem.index}
                 ref={virtualizer.measureElement}
                 style={{
