@@ -161,8 +161,8 @@ const Careers = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Why Work at Ally?</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {benefits.map((benefit, index) => (
-              <Card key={index}>
+            {benefits.map((benefit) => (
+              <Card key={benefit.title}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10">
@@ -183,8 +183,8 @@ const Careers = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Our Culture & Values</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {values.map((value, index) => (
-              <div key={index} className="p-6 bg-muted/30 rounded-lg border flex gap-4">
+            {values.map((value) => (
+              <div key={value.title} className="p-6 bg-muted/30 rounded-lg border flex gap-4">
                 <div className="p-2 rounded-lg bg-primary/10 h-fit">
                   <value.icon className="h-5 w-5 text-primary" />
                 </div>
@@ -201,8 +201,8 @@ const Careers = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Open Positions</h2>
           <div className="space-y-4">
-            {openPositions.map((position, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
+            {openPositions.map((position) => (
+              <Card key={position.title} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
@@ -237,8 +237,8 @@ const Careers = () => {
         <section className="mb-16">
           <h2 className="text-3xl font-bold mb-8 text-foreground text-center">Our Hiring Process</h2>
           <div className="grid md:grid-cols-4 gap-6">
-            {hiringSteps.map((item, index) => (
-              <div key={index} className="text-center">
+            {hiringSteps.map((item) => (
+              <div key={item.step} className="text-center">
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
                   {item.step}
                 </div>

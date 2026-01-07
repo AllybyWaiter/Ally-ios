@@ -46,12 +46,24 @@ const equipmentSchema = z.object({
 
 type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
+interface EquipmentData {
+  id: string;
+  name: string;
+  equipment_type: string;
+  brand?: string | null;
+  model?: string | null;
+  install_date?: string | null;
+  maintenance_interval_days?: number | null;
+  last_maintenance_date?: string | null;
+  notes?: string | null;
+}
+
 interface EquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   aquariumId: string;
   aquariumType?: string;
-  equipment?: any;
+  equipment?: EquipmentData;
 }
 
 export const EquipmentDialog = ({
@@ -97,7 +109,7 @@ export const EquipmentDialog = ({
 
   const mutation = useMutation({
     mutationFn: async (values: EquipmentFormValues) => {
-      const data: any = {
+      const data = {
         aquarium_id: aquariumId,
         name: values.name,
         equipment_type: values.equipment_type,

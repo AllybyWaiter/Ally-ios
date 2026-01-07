@@ -28,7 +28,7 @@ export default function BlogAISidebar({ formData, onUpdate, generateSlug }: Blog
   const handleAiAction = async (action: 'generate' | 'improve' | 'seo') => {
     setLoading(true);
     try {
-      let body: any = { action };
+      const body: { action: string; input?: Record<string, string> } = { action };
 
       if (action === 'generate') {
         if (!topic.trim()) {

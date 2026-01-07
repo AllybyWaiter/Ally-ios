@@ -137,11 +137,11 @@ export function AquaticInsights({ weather }: AquaticInsightsProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {insights.slice(0, 4).map((insight, index) => {
+        {insights.slice(0, 4).map((insight) => {
           const Icon = insight.icon;
           return (
             <div 
-              key={index}
+              key={insight.title}
               className={`flex items-start gap-3 rounded-lg p-2 ${
                 insight.priority === 'high' ? 'bg-orange-500/10 border border-orange-500/20' :
                 insight.priority === 'medium' ? 'bg-yellow-500/10 border border-yellow-500/20' :

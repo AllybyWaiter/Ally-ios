@@ -232,13 +232,13 @@ const Partners = () => {
           </motion.div>
           
           <div className="grid md:grid-cols-2 gap-6">
-            {partnershipTypes.map((type, index) => (
+            {partnershipTypes.map((type, idx) => (
               <motion.div
-                key={index}
+                key={type.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
               >
                 <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
                   <CardHeader>
@@ -290,13 +290,13 @@ const Partners = () => {
             </motion.div>
             
             <div className="grid md:grid-cols-3 gap-6">
-              {whyPartner.map((item, index) => (
+              {whyPartner.map((item, idx) => (
                 <motion.div
-                  key={index}
+                  key={item.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
                   className="p-6 bg-background rounded-xl border text-center"
                 >
                   <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
@@ -327,13 +327,13 @@ const Partners = () => {
 
           {/* Steps */}
           <div className="grid md:grid-cols-4 gap-6 mb-16">
-            {affiliateSteps.map((item, index) => (
+            {affiliateSteps.map((item, idx) => (
               <motion.div
-                key={index}
+                key={item.step}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
                 className="text-center"
               >
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
