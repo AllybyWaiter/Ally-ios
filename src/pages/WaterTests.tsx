@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WaterTestForm } from "@/components/water-tests/WaterTestForm";
 import { WaterTestHistory } from "@/components/water-tests/WaterTestHistory";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
@@ -105,20 +106,24 @@ const WaterTests = () => {
           </p>
         </div>
 
-        {/* Aquarium Selector */}
+        {/* Aquarium Selector - Using shadcn Select for consistent styling */}
         <div className="mb-6">
           <label className="text-sm font-medium mb-2 block">{t('waterTests.selectAquarium')}</label>
-          <select
+          <Select
             value={selectedAquariumId || ""}
-            onChange={(e) => setSelectedAquariumId(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 bg-card border border-border rounded-lg"
+            onValueChange={(value) => setSelectedAquariumId(value)}
           >
-            {aquariums.map((aquarium) => (
-              <option key={aquarium.id} value={aquarium.id}>
-                {aquarium.name} ({aquarium.type})
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full md:w-64">
+              <SelectValue placeholder={t('waterTests.selectAquarium')} />
+            </SelectTrigger>
+            <SelectContent>
+              {aquariums.map((aquarium) => (
+                <SelectItem key={aquarium.id} value={aquarium.id}>
+                  {aquarium.name} ({aquarium.type})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

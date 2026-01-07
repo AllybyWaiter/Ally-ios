@@ -27,6 +27,8 @@ const DemoVideoModal = ({
               className="w-full h-full rounded-lg"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              sandbox="allow-scripts allow-same-origin allow-presentation"
+              title={title}
             />
           ) : (
             <div className="flex flex-col items-center gap-4 text-muted-foreground">

@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -438,7 +439,13 @@ const AllyChat = () => {
                   <History className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0 pt-safe">
+              <SheetContent side="left" className="w-80 p-0 pt-safe" aria-describedby="chat-history-description">
+                <VisuallyHidden>
+                  <SheetTitle>Chat History</SheetTitle>
+                  <SheetDescription id="chat-history-description">
+                    Browse and manage your previous conversations
+                  </SheetDescription>
+                </VisuallyHidden>
                 <ChatHistorySidebar
                   conversations={conversationManager.conversations}
                   currentConversationId={conversationManager.currentConversationId}
