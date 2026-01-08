@@ -184,11 +184,15 @@ export default function MemoryManager() {
   };
 
   const handleDeleteMemory = async (memoryId: string) => {
+    if (!user) return;
+    
     try {
+      // Add user_id check to ensure ownership verification
       const { error } = await supabase
         .from('user_memories')
         .delete()
-        .eq('id', memoryId);
+        .eq('id', memoryId)
+        .eq('user_id', user.id);
 
       if (error) throw error;
       

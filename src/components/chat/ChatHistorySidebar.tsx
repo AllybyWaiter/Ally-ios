@@ -317,6 +317,7 @@ const ConversationCard = memo(({
             checked={isSelected}
             onCheckedChange={() => onToggleSelect?.()}
             className="h-4 w-4"
+            aria-label={`Select conversation: ${conversation.title}`}
           />
         </div>
       )}

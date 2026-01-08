@@ -44,7 +44,7 @@ export function usePlanLimits() {
       
       return count || 0;
     },
-    enabled: !!user?.id && limits.maxTestLogsPerMonth !== null,
+    enabled: !!user?.id && limits.maxTestLogsPerMonth !== null && !isLoading,
   });
 
   const canCreateAquarium = (currentCount: number): boolean => {
