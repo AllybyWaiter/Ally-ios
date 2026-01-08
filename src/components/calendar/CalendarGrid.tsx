@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CalendarDayCell } from './CalendarDayCell';
+import { CalendarFilters, type CalendarFilterState } from './CalendarFilters';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { CalendarTask } from './types';
 
@@ -26,6 +27,9 @@ interface CalendarGridProps {
   onMonthChange: (date: Date) => void;
   onDayClick: (date: Date) => void;
   onTaskReschedule: (taskId: string, newDate: string) => void;
+  filters?: CalendarFilterState;
+  onFiltersChange?: (filters: CalendarFilterState) => void;
+  aquariums?: Array<{ id: string; name: string }>;
 }
 
 export function CalendarGrid({
@@ -36,6 +40,9 @@ export function CalendarGrid({
   onMonthChange,
   onDayClick,
   onTaskReschedule,
+  filters,
+  onFiltersChange,
+  aquariums,
 }: CalendarGridProps) {
   const isMobile = useIsMobile();
   const [draggedTask, setDraggedTask] = useState<CalendarTask | null>(null);
@@ -98,8 +105,15 @@ export function CalendarGrid({
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation & Filters */}
         <div className="flex items-center gap-2">
+          {filters && onFiltersChange && (
+            <CalendarFilters
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+              aquariums={aquariums}
+            />
+          )}
           <Button
             variant="ghost"
             size="sm"
