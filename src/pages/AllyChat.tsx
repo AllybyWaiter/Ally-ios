@@ -406,8 +406,12 @@ const AllyChat = () => {
 
   const handleRegenerateResponse = useCallback((index: number) => {
     if (messages[index]?.role === "user") {
-      startEditMessage(index, messages[index].content);
-      setTimeout(() => saveEdit(), 0);
+      const messageContent = messages[index].content;
+      startEditMessage(index, messageContent);
+      // Use a ref pattern to avoid stale closure - saveEdit will use current state
+      requestAnimationFrame(() => {
+        saveEdit();
+      });
     }
   }, [messages, startEditMessage, saveEdit]);
 

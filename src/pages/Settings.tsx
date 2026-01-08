@@ -118,18 +118,21 @@ const Settings = () => {
 
   const getInitials = (name: string | null) => {
     if (!name) return user?.email?.charAt(0).toUpperCase() || "U";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+    return name.split(" ").map(n => n?.[0] || "").filter(Boolean).join("").toUpperCase().slice(0, 2) || "U";
   };
 
   const handleUpdateProfile = async () => {
     if (!user) return;
+    // Sanitize input - trim and limit length
+    const sanitizedName = name?.trim().slice(0, 100) || null;
     setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ name, skill_level: skillLevel })
+        .update({ name: sanitizedName, skill_level: skillLevel })
         .eq('user_id', user.id);
       if (error) throw error;
+      setName(sanitizedName || "");
       await refreshProfile?.();
       toast({ title: "Profile updated", description: "Your profile has been updated successfully." });
     } catch (error: unknown) {
