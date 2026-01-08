@@ -129,6 +129,7 @@ const AllyChat = () => {
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     initializeChat();
   }, []);
@@ -408,10 +409,12 @@ const AllyChat = () => {
     if (messages[index]?.role === "user") {
       const messageContent = messages[index].content;
       startEditMessage(index, messageContent);
-      // Use a ref pattern to avoid stale closure - saveEdit will use current state
-      requestAnimationFrame(() => {
+      // Use setTimeout with 0ms to ensure state updates are processed before saveEdit
+      // This avoids the stale closure issue with requestAnimationFrame
+      setTimeout(() => {
+        // Trigger save by directly calling the edit flow
         saveEdit();
-      });
+      }, 0);
     }
   }, [messages, startEditMessage, saveEdit]);
 

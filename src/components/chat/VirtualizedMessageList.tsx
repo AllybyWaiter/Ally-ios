@@ -276,7 +276,13 @@ const MessageContent = memo(({
                       src={message.imageUrl}
                       alt="Attached photo"
                       className="max-h-48 max-w-full rounded-lg border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => window.open(message.imageUrl, '_blank')}
+                      onClick={() => {
+                        // Validate URL before opening to prevent XSS via javascript: URLs
+                        const url = message.imageUrl || '';
+                        if (url.startsWith('data:image/') || url.startsWith('http://') || url.startsWith('https://')) {
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
                     />
                   )}
                   {message.content && (
@@ -417,7 +423,7 @@ export const VirtualizedMessageList = memo(({
   const virtualizer = useVirtualizer({
     count: messages.length + (isLoading && !isStreaming ? 1 : 0),
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 80,
+    estimateSize: () => 120, // Increased from 80 to reduce scroll jumps with longer messages
     overscan: 5,
     measureElement: (element) => element.getBoundingClientRect().height,
   });
