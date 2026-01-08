@@ -534,9 +534,11 @@ serve(async (req) => {
         );
       }
 
+      // Check quiet hours
+      // NOTE: Quiet hours are evaluated in UTC. Consider user timezone for more accurate enforcement.
       if (prefs.quiet_hours_start && prefs.quiet_hours_end) {
         const now = new Date();
-        const currentTime = now.toTimeString().slice(0, 5);
+        const currentTime = now.toISOString().slice(11, 16); // Use UTC time HH:MM
         const start = prefs.quiet_hours_start.slice(0, 5);
         const end = prefs.quiet_hours_end.slice(0, 5);
 
@@ -545,7 +547,7 @@ serve(async (req) => {
           : currentTime >= start && currentTime < end;
 
         if (isQuietTime) {
-          console.log(JSON.stringify({ requestId, message: 'Quiet hours active', userId }));
+          console.log(JSON.stringify({ requestId, message: 'Quiet hours active (UTC)', userId, currentTime, start, end }));
           return new Response(
             JSON.stringify({ sent: false, reason: 'quiet_hours' }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -593,6 +595,10 @@ serve(async (req) => {
       } else if (notificationType === 'water_alert' && prefs.sound_water_alerts === false) {
         silent = true;
       } else if (notificationType === 'announcement' && prefs.sound_announcements === false) {
+        silent = true;
+      } else if (notificationType === 'weather_alert' && prefs.sound_weather_alerts === false) {
+        silent = true;
+      } else if (notificationType === 'health_alert' && prefs.sound_health_alerts === false) {
         silent = true;
       }
     }

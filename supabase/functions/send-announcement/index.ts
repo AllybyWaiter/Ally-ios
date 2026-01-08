@@ -155,6 +155,28 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
+    // Send push notifications if in-app notifications are enabled
+    if (announcement.send_in_app && targetUsers) {
+      for (const user of targetUsers) {
+        try {
+          await supabaseClient.functions.invoke('send-push-notification', {
+            body: {
+              userId: user.user_id,
+              title: `📢 ${announcement.title}`,
+              body: announcement.message.slice(0, 100) + (announcement.message.length > 100 ? '...' : ''),
+              tag: `announcement-${announcementId}`,
+              url: '/dashboard',
+              notificationType: 'announcement',
+              referenceId: `announcement-${announcementId}`,
+            },
+          });
+        } catch (pushError) {
+          // Don't fail the whole announcement for push errors - they're optional
+          logger.debug('Push notification failed for user', { userId: user.user_id, error: String(pushError) });
+        }
+      }
+    }
+
     // Update announcement status
     const { error: updateError } = await supabaseClient
       .from("announcements")
