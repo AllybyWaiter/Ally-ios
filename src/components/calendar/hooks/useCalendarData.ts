@@ -12,12 +12,14 @@ import { queryKeys } from '@/lib/queryKeys';
 import { queryPresets } from '@/lib/queryConfig';
 import { useToast } from '@/hooks/use-toast';
 import type { CalendarTask } from '../types';
+import type { CalendarFilterState } from '../CalendarFilters';
 
 interface UseCalendarDataOptions {
   currentMonth: Date;
+  filters?: CalendarFilterState;
 }
 
-export function useCalendarData({ currentMonth }: UseCalendarDataOptions) {
+export function useCalendarData({ currentMonth, filters }: UseCalendarDataOptions) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -68,10 +70,43 @@ export function useCalendarData({ currentMonth }: UseCalendarDataOptions) {
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentMonth]);
 
+  // Filter tasks based on filter state
+  const filteredTasks = useMemo(() => {
+    if (!filters) return tasks;
+    
+    return tasks.filter(task => {
+      // Task type filter
+      if (filters.taskTypes.length > 0 && !filters.taskTypes.includes(task.task_type)) {
+        return false;
+      }
+      
+      // Status filter (pending, completed, overdue)
+      if (filters.statuses.length > 0) {
+        const today = startOfDay(new Date());
+        const taskDate = new Date(task.due_date);
+        const isOverdue = task.status === 'pending' && isBefore(taskDate, today) && !isSameDay(taskDate, today);
+        
+        const matchesStatus = filters.statuses.some(status => {
+          if (status === 'overdue') return isOverdue;
+          return task.status === status;
+        });
+        
+        if (!matchesStatus) return false;
+      }
+      
+      // Aquarium filter
+      if (filters.aquariumIds.length > 0 && !filters.aquariumIds.includes(task.aquarium_id)) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [tasks, filters]);
+
   // Tasks grouped by date for O(1) lookup
   const tasksByDate = useMemo(() => {
     const map = new Map<string, CalendarTask[]>();
-    tasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
       const dateKey = task.due_date;
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
@@ -79,13 +114,27 @@ export function useCalendarData({ currentMonth }: UseCalendarDataOptions) {
       map.get(dateKey)!.push(task);
     });
     return map;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   // Get tasks for a specific day
   const getTasksForDay = useCallback((date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd');
     return tasksByDate.get(dateKey) || [];
   }, [tasksByDate]);
+
+  // Get unique aquariums from tasks
+  const aquariums = useMemo(() => {
+    const aquariumMap = new Map<string, { id: string; name: string }>();
+    tasks.forEach(task => {
+      if (task.aquarium && !aquariumMap.has(task.aquarium_id)) {
+        aquariumMap.set(task.aquarium_id, { 
+          id: task.aquarium.id, 
+          name: task.aquarium.name 
+        });
+      }
+    });
+    return Array.from(aquariumMap.values());
+  }, [tasks]);
 
   // Stats calculations
   const stats = useMemo(() => {
@@ -176,12 +225,14 @@ export function useCalendarData({ currentMonth }: UseCalendarDataOptions) {
 
   return {
     tasks,
+    filteredTasks,
     isLoading,
     error,
     calendarDays,
     tasksByDate,
     getTasksForDay,
     stats,
+    aquariums,
     completeTask: completeTaskMutation.mutate,
     rescheduleTask: rescheduleTaskMutation.mutate,
     isCompleting: completeTaskMutation.isPending,

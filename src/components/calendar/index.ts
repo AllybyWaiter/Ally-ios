@@ -14,6 +14,7 @@ export { TaskRow } from './TaskRow';
 export { SwipeableTaskRow } from './SwipeableTaskRow';
 export { CalendarEmptyState } from './CalendarEmptyState';
 export { QuickAddTaskFAB } from './QuickAddTaskFAB';
+export { CalendarFilters } from './CalendarFilters';
 
 // Hooks
 export { useCalendarData } from './hooks/useCalendarData';
@@ -22,3 +23,4 @@ export { useCalendarKeyboard } from './hooks/useCalendarKeyboard';
 
 // Types
 export type { CalendarTask, TaskTypeConfig } from './types';
+export type { CalendarFilterState } from './CalendarFilters';

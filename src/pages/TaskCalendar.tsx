@@ -22,13 +22,21 @@ import {
   QuickAddTaskFAB,
   useCalendarData,
   useCalendarKeyboard,
+  type CalendarFilterState,
 } from '@/components/calendar';
 import { MaintenanceTaskDialog } from '@/components/aquarium/MaintenanceTaskDialog';
+
+const DEFAULT_FILTERS: CalendarFilterState = {
+  taskTypes: [],
+  statuses: [],
+  aquariumIds: [],
+};
 
 export default function TaskCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [filters, setFilters] = useState<CalendarFilterState>(DEFAULT_FILTERS);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -37,10 +45,11 @@ export default function TaskCalendar() {
     calendarDays,
     getTasksForDay,
     stats,
+    aquariums,
     completeTask,
     rescheduleTask,
     isCompleting,
-  } = useCalendarData({ currentMonth });
+  } = useCalendarData({ currentMonth, filters });
 
   // Realtime subscription
   useEffect(() => {
@@ -133,6 +142,9 @@ export default function TaskCalendar() {
             onMonthChange={setCurrentMonth}
             onDayClick={handleDayClick}
             onTaskReschedule={handleTaskReschedule}
+            filters={filters}
+            onFiltersChange={setFilters}
+            aquariums={aquariums}
           />
 
           {/* Today's Timeline */}
