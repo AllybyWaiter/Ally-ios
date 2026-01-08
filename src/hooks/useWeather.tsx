@@ -97,7 +97,19 @@ const CACHE_KEY_PREFIX = 'ally_weather_cache_';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 function getCacheKey(userId: string | undefined): string {
-  return `${CACHE_KEY_PREFIX}${userId || 'anonymous'}`;
+  // Use a unique cache key per user, with a hash for anonymous users based on session
+  if (userId) {
+    return `${CACHE_KEY_PREFIX}${userId}`;
+  }
+  // For anonymous users, try to use a session-based key to avoid cache collision
+  const sessionKey = sessionStorage.getItem('ally_anon_session_key');
+  if (sessionKey) {
+    return `${CACHE_KEY_PREFIX}anon_${sessionKey}`;
+  }
+  // Generate a new session key for anonymous users
+  const newSessionKey = Math.random().toString(36).substring(2, 15);
+  sessionStorage.setItem('ally_anon_session_key', newSessionKey);
+  return `${CACHE_KEY_PREFIX}anon_${newSessionKey}`;
 }
 
 function isValidWeatherData(data: unknown): data is WeatherData {

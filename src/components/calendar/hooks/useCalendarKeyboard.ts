@@ -38,15 +38,15 @@ export function useCalendarKeyboard({
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
     const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
 
-    // Cmd/Ctrl + N: Add new task
-    if (cmdOrCtrl && e.key.toLowerCase() === 'n') {
+    // Cmd/Ctrl + Shift + N: Add new task (changed from Cmd+N to avoid browser conflict)
+    if (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 'n') {
       e.preventDefault();
       onAddTask?.();
       return;
     }
 
-    // Cmd/Ctrl + T: Go to today
-    if (cmdOrCtrl && e.key.toLowerCase() === 't') {
+    // Cmd/Ctrl + Shift + T: Go to today (changed from Cmd+T to avoid browser new tab conflict)
+    if (cmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 't') {
       e.preventDefault();
       onGoToToday?.();
       return;
@@ -98,8 +98,8 @@ export function useCalendarKeyboard({
     shortcuts: [
       { key: '←→↑↓', description: 'Navigate days' },
       { key: 'Enter', description: 'Open day details' },
-      { key: '⌘N', description: 'New task' },
-      { key: '⌘T', description: 'Go to today' },
+      { key: '⌘⇧N', description: 'New task' },
+      { key: '⌘⇧T', description: 'Go to today' },
       { key: 'Esc', description: 'Close panel' },
     ],
   };

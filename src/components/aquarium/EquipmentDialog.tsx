@@ -33,14 +33,31 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { getEquipmentTypes } from "@/lib/waterBodyUtils";
 
+// Valid equipment types for validation
+const VALID_EQUIPMENT_TYPES = [
+  "Filter", "Heater", "Light", "Pump", "Skimmer", "CO2 System", "Air Pump",
+  "Wavemaker", "UV Sterilizer", "Dosing Pump", "ATO System", "Chiller",
+  "Controller", "Test Equipment", "Other"
+] as const;
+
 const equipmentSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  equipment_type: z.string().min(1, "Equipment type is required"),
+  equipment_type: z.string().min(1, "Equipment type is required").refine(
+    (val) => VALID_EQUIPMENT_TYPES.includes(val as typeof VALID_EQUIPMENT_TYPES[number]) || val.length > 0,
+    { message: "Please select a valid equipment type" }
+  ),
   brand: z.string().max(100).optional(),
   model: z.string().max(100).optional(),
   install_date: z.string().optional(),
   maintenance_interval_days: z.coerce.number().min(1).max(365).optional(),
-  last_maintenance_date: z.string().optional(),
+  last_maintenance_date: z.string().optional().refine(
+    (val) => {
+      if (!val) return true;
+      const date = new Date(val);
+      return date <= new Date();
+    },
+    { message: "Last maintenance date cannot be in the future" }
+  ),
   notes: z.string().max(500).optional(),
 });
 
