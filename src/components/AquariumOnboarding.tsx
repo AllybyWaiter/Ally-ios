@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { Waves, ArrowRight, CheckCircle, Calendar, Droplets, TestTube2, Camera, MapPin, Check, X, Loader2, Calculator } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 import { useTranslation } from 'react-i18next';
 import { useLocationDetection } from '@/hooks/useLocationDetection';
@@ -39,6 +38,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   // Location detection
   const { latitude, longitude, locationName, loading: locationLoading, detectLocation, clearDetectedLocation } = useLocationDetection();
   const [locationConfirmed, setLocationConfirmed] = useState<boolean | null>(null);
+  const locationDetectionAttempted = useRef(false);
 
   // Form state
   const [name, setName] = useState('');
@@ -48,9 +48,12 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const [notes, setNotes] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Auto-detect location on mount
+  // Auto-detect location on mount (only once)
   useEffect(() => {
-    detectLocation();
+    if (!locationDetectionAttempted.current) {
+      locationDetectionAttempted.current = true;
+      detectLocation();
+    }
   }, [detectLocation]);
 
   const isPoolOrSpa = type === 'pool_chlorine' || type === 'pool_saltwater' || type === 'spa';
@@ -117,6 +120,16 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const handleSubmit = async () => {
     if (!validateStep()) return;
 
+    // Guard against missing user
+    if (!user?.id) {
+      toast({
+        title: t('common.error'),
+        description: t('auth.sessionExpired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -133,7 +146,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
       const { error: aquariumError } = await supabase
         .from('aquariums')
         .insert({
-          user_id: user?.id,
+          user_id: user.id,
           name: validated.name,
           type: validated.type,
           volume_gallons: validated.volume_gallons,
@@ -368,13 +381,15 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                   <p className="text-sm text-destructive">{errors.volume_gallons}</p>
                 )}
                 {(type === 'pool_chlorine' || type === 'pool_saltwater' || type === 'spa') && (
-                  <Link
-                    to="/ally?message=Help me calculate how many gallons my pool holds"
+                  <a
+                    href="/ally?message=Help me calculate how many gallons my pool holds"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
                   >
                     <Calculator className="h-3.5 w-3.5" />
                     {t('aquariumOnboarding.step2.volumeCalculatorHelp')}
-                  </Link>
+                  </a>
                 )}
               </div>
 
@@ -472,6 +487,9 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                   disabled={isLoading}
                   max={new Date().toISOString().split('T')[0]}
                 />
+                <p className="text-xs text-muted-foreground">
+                  {t('aquariumOnboarding.step3.setupDateHint')}
+                </p>
                 {errors.setup_date && (
                   <p className="text-sm text-destructive">{errors.setup_date}</p>
                 )}
