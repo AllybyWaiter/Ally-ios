@@ -282,6 +282,8 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "8px",
                 }}
+                wrapperStyle={{ zIndex: 1000 }}
+                allowEscapeViewBox={{ x: false, y: false }}
                 formatter={(value: number) => {
                   return [`${formatDecimal(value, 2)} ${parameterUnit}`, selectedParameter];
                 }}

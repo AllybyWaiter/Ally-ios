@@ -31,10 +31,10 @@ export function useTypewriterEffect(
   options: UseTypewriterEffectOptions
 ): UseTypewriterEffectReturn {
   const { 
-    charsPerSecond = 50, 
+    charsPerSecond = 80, // Increased from 50 for faster catch-up on fast networks
     isActive,
-    sentencePauseMs = 120,
-    clausePauseMs = 40,
+    sentencePauseMs = 100, // Reduced from 120 for less flicker
+    clausePauseMs = 30, // Reduced from 40
   } = options;
   
   const [displayedLength, setDisplayedLength] = useState(0);

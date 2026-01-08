@@ -40,8 +40,9 @@ const Navbar = () => {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
       setMobileMenuOpen(false);
     } else {
-      // Section doesn't exist on current page - navigate to home first
-      console.warn(`Section #${sectionId} not found on current page`);
+      // Section doesn't exist on current page - navigate to home with hash
+      setMobileMenuOpen(false);
+      navigate(`/#${sectionId}`);
     }
   };
 

@@ -223,21 +223,35 @@ export async function fetchMonthlyTestCount(userId: string) {
   return count || 0;
 }
 
-// Upload photo for water test
-export async function uploadWaterTestPhoto(userId: string, file: File) {
+// Upload photo for water test with retry logic
+export async function uploadWaterTestPhoto(userId: string, file: File, maxRetries = 2) {
   const parts = file.name.split('.');
   const fileExt = parts.length > 1 ? parts.pop() : 'jpg'; // Default to jpg if no extension
   const fileName = `${userId}/${Date.now()}.${fileExt}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from('water-test-photos')
-    .upload(fileName, file);
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('water-test-photos')
+        .upload(fileName, file);
 
-  if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError;
 
-  const { data } = supabase.storage
-    .from('water-test-photos')
-    .getPublicUrl(fileName);
+      const { data } = supabase.storage
+        .from('water-test-photos')
+        .getPublicUrl(fileName);
 
-  return data.publicUrl;
+      return data.publicUrl;
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries) {
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+    }
+  }
+
+  throw lastError || new Error('Failed to upload photo after retries');
 }
