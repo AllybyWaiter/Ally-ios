@@ -145,50 +145,54 @@ export default function NotificationBell() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative h-9 w-9 rounded-full hover:bg-foreground/5 transition-colors"
+        >
+          <Bell className="h-[18px] w-[18px]" />
           {totalUnread > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              className="absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center p-0 text-[10px] font-medium"
             >
-              {totalUnread}
+              {totalUnread > 9 ? '9+' : totalUnread}
             </Badge>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[380px] p-0">
+      <DropdownMenuContent align="end" className="w-[360px] p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-lg">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="font-semibold">Notifications</h3>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+            <h3 className="font-semibold text-sm">Notifications</h3>
             {activeTab === 'announcements' && unreadAnnouncementCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-7 text-xs">
+              <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-7 text-xs hover:bg-foreground/5">
                 <CheckCheck className="h-3 w-3 mr-1" />
                 Mark all read
               </Button>
             )}
           </div>
           
-          <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
+          <TabsList className="w-full justify-start rounded-none border-b border-border/40 bg-transparent h-auto p-0">
             <TabsTrigger 
               value="activity" 
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground transition-colors"
             >
               Activity
               {activityCount > 0 && (
-                <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
-                  {activityCount}
+                <Badge variant="secondary" className="ml-2 h-4 px-1.5 text-[10px] font-medium">
+                  {activityCount > 99 ? '99+' : activityCount}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger 
               value="announcements"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground data-[state=active]:text-foreground transition-colors"
             >
               Announcements
               {unreadAnnouncementCount > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-xs">
-                  {unreadAnnouncementCount}
+                <Badge variant="destructive" className="ml-2 h-4 px-1.5 text-[10px] font-medium">
+                  {unreadAnnouncementCount > 9 ? '9+' : unreadAnnouncementCount}
                 </Badge>
               )}
             </TabsTrigger>
@@ -198,16 +202,16 @@ export default function NotificationBell() {
             <ScrollArea className="h-[350px]">
               {notificationHistory.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
-                  <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <Bell className="h-7 w-7 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No notification history yet</p>
                   <p className="text-xs mt-1">Push notifications will appear here</p>
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-border/40">
                   {notificationHistory.map((notification) => (
                     <div
                       key={notification.id}
-                      className="flex gap-3 p-4 hover:bg-muted/50 transition-colors"
+                      className="flex gap-3 p-4 hover:bg-foreground/5 transition-colors"
                     >
                       <div className="flex-shrink-0 mt-0.5">
                         {getNotificationIcon(notification.notification_type)}
@@ -239,18 +243,18 @@ export default function NotificationBell() {
             <ScrollArea className="h-[350px]">
               {announcements.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
-                  <Megaphone className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <Megaphone className="h-7 w-7 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No announcements yet</p>
                   <p className="text-xs mt-1">System announcements will appear here</p>
                 </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-border/40">
                   {announcements.map((notification) => (
                     <div
                       key={notification.id}
                       className={cn(
-                        "flex flex-col p-4 cursor-pointer hover:bg-muted/50 transition-colors",
-                        !notification.read && "bg-muted/30"
+                        "flex flex-col p-4 cursor-pointer hover:bg-foreground/5 transition-colors",
+                        !notification.read && "bg-primary/5"
                       )}
                       onClick={() => !notification.read && markAsRead(notification.id)}
                     >
