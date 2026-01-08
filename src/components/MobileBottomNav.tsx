@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, MessageSquare, Droplets, Calendar } from "lucide-react";
+import { Home, MessageSquare, Droplets, Calendar, CloudSun } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useKeyboardVisibility } from "@/hooks/useKeyboardVisibility";
@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   { icon: Droplets, label: "Tests", path: "/water-tests" },
   { icon: MessageSquare, label: "Chat", path: "/chat", isSpecial: true },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
+  { icon: CloudSun, label: "Weather", path: "/weather" },
 ];
 
 export function MobileBottomNav() {
