@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +15,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+
+// Input validation schema for support form
+const supportFormSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  message: z.string().trim().min(1, "Message is required").max(5000, "Message must be less than 5000 characters"),
+});
 
 interface SupportEmailDialogProps {
   open: boolean;
@@ -41,15 +49,19 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.message) {
+    // Validate form data with zod schema
+    const validationResult = supportFormSchema.safeParse(formData);
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0];
       toast({
-        title: "Missing Information",
-        description: "Please fill in all fields.",
+        title: "Validation Error",
+        description: firstError?.message || "Please check your input.",
         variant: "destructive",
       });
       return;
     }
 
+    const validatedData = validationResult.data;
     setIsSubmitting(true);
 
     try {
@@ -62,7 +74,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ message: formData.message }),
+          body: JSON.stringify({ message: validatedData.message }),
         }
       );
 
@@ -73,8 +85,8 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
         .from('support_tickets')
         .insert({
           user_id: user?.id || null,
-          email: formData.email,
-          name: formData.name,
+          email: validatedData.email,
+          name: validatedData.name,
           subject: "Support Request",
           status: 'open',
           priority: priority || 'medium'
@@ -90,7 +102,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
         .insert({
           ticket_id: ticket.id,
           sender_type: 'user',
-          message: formData.message,
+          message: validatedData.message,
           sender_user_id: user?.id || null
         });
 
@@ -100,11 +112,11 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
       try {
         await supabase.functions.invoke('send-ticket-confirmation', {
           body: {
-            name: formData.name,
-            email: formData.email,
+            name: validatedData.name,
+            email: validatedData.email,
             ticketId: ticket.id,
             priority: priority || 'medium',
-            messagePreview: formData.message,
+            messagePreview: validatedData.message.slice(0, 500), // Limit preview length
           },
         });
       } catch {
@@ -113,7 +125,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
       
       toast({
         title: "Ticket Created!",
-        description: `We've sent a confirmation to ${formData.email}. Priority: ${(priority || 'medium').toUpperCase()}.`,
+        description: `We've sent a confirmation to ${validatedData.email}. Priority: ${(priority || 'medium').toUpperCase()}.`,
       });
       
       onOpenChange(false);

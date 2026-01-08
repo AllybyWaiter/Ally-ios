@@ -81,6 +81,19 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
     return units === 'metric' ? gallonsToLiters(gallons) : gallons;
   };
 
+  // Parse setup date safely to handle various formats
+  const parseSetupDate = (dateStr: string | null): Date | null => {
+    if (!dateStr) return null;
+    try {
+      const parsed = new Date(dateStr);
+      // Check if valid date
+      if (isNaN(parsed.getTime())) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
   const form = useForm<AquariumFormData>({
     resolver: zodResolver(aquariumSchema),
     defaultValues: {
@@ -88,10 +101,24 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
       type: aquarium?.type || "",
       volume_gallons: getDisplayVolume(aquarium?.volume_gallons || null),
       status: (aquarium?.status as "active" | "inactive" | "maintenance") || "active",
-      setup_date: aquarium?.setup_date ? new Date(aquarium.setup_date) : null,
+      setup_date: parseSetupDate(aquarium?.setup_date || null),
       notes: aquarium?.notes || "",
     },
   });
+
+  // Reset form when aquarium prop changes to prevent stale data
+  useEffect(() => {
+    if (open && aquarium) {
+      form.reset({
+        name: aquarium.name || "",
+        type: aquarium.type || "",
+        volume_gallons: getDisplayVolume(aquarium.volume_gallons || null),
+        status: (aquarium.status as "active" | "inactive" | "maintenance") || "active",
+        setup_date: parseSetupDate(aquarium.setup_date || null),
+        notes: aquarium.notes || "",
+      });
+    }
+  }, [open, aquarium, form, units]);
 
   const onSubmit = async (data: AquariumFormData) => {
     setIsSubmitting(true);

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 interface LocationState {
   latitude: number | null;
@@ -8,6 +8,9 @@ interface LocationState {
   error: string | null;
 }
 
+// Debounce delay in ms
+const DEBOUNCE_DELAY = 1000;
+
 export function useLocationDetection() {
   const [state, setState] = useState<LocationState>({
     latitude: null,
@@ -16,8 +19,21 @@ export function useLocationDetection() {
     loading: false,
     error: null,
   });
+  
+  // Debounce ref to prevent multiple rapid calls
+  const lastCallRef = useRef<number>(0);
+  const pendingPromiseRef = useRef<Promise<{ latitude: number; longitude: number; locationName: string } | null> | null>(null);
 
   const detectLocation = useCallback(async (): Promise<{ latitude: number; longitude: number; locationName: string } | null> => {
+    // Debounce: if called within DEBOUNCE_DELAY, return existing pending promise or null
+    const now = Date.now();
+    if (now - lastCallRef.current < DEBOUNCE_DELAY) {
+      if (pendingPromiseRef.current) {
+        return pendingPromiseRef.current;
+      }
+      return null;
+    }
+    lastCallRef.current = now;
     if (!navigator.geolocation) {
       setState(prev => ({ ...prev, error: 'Geolocation is not supported by your browser' }));
       return null;
@@ -25,7 +41,7 @@ export function useLocationDetection() {
 
     setState(prev => ({ ...prev, loading: true, error: null }));
 
-    return new Promise((resolve) => {
+    const promise = new Promise<{ latitude: number; longitude: number; locationName: string } | null>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
@@ -87,6 +103,11 @@ export function useLocationDetection() {
         }
       );
     });
+    
+    pendingPromiseRef.current = promise;
+    const result = await promise;
+    pendingPromiseRef.current = null;
+    return result;
   }, []);
 
   const clearDetectedLocation = useCallback(() => {
