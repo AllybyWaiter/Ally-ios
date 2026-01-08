@@ -69,10 +69,14 @@ export default function Auth() {
   useEffect(() => {
     const refCode = searchParams.get('ref');
     if (refCode) {
-      setReferralCode(refCode.toUpperCase());
-      setView('signup');
-      // Validate the code
-      validateReferralCode(refCode);
+      // Sanitize: only allow alphanumeric and hyphens, max 20 chars
+      const sanitizedCode = refCode.replace(/[^A-Za-z0-9-]/g, '').slice(0, 20).toUpperCase();
+      if (sanitizedCode) {
+        setReferralCode(sanitizedCode);
+        setView('signup');
+        // Validate the code
+        validateReferralCode(sanitizedCode);
+      }
     }
   }, [searchParams]);
 

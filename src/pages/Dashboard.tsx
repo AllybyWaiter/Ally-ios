@@ -238,8 +238,8 @@ export default function Dashboard() {
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
-    if (!deletingAquariumId) return;
-    await deleteAquarium(deletingAquariumId, user?.id);
+    if (!deletingAquariumId || !user?.id) return;
+    await deleteAquarium(deletingAquariumId, user.id);
     setDeleteDialogOpen(false);
     setDeletingAquariumId(null);
   }, [deletingAquariumId, deleteAquarium, user?.id]);
