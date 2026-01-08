@@ -384,6 +384,7 @@ export const fr = {
         description: "Quand avez-vous configuré ce plan d'eau?",
         setupDateLabel: "Date de Configuration",
         setupDateRequired: "La date de configuration est obligatoire",
+        setupDateHint: "Entrez la date à laquelle votre plan d'eau a été configuré ou rempli pour la première fois",
         notesLabel: "Notes (Optionnel)",
         notesPlaceholder: "Toute information supplémentaire sur votre plan d'eau...",
       },
