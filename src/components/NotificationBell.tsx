@@ -120,24 +120,34 @@ export default function NotificationBell() {
   const totalUnread = unreadAnnouncementCount;
 
   const markAsRead = async (notificationId: string) => {
-    await supabase
-      .from('user_notifications')
-      .update({ read: true, read_at: new Date().toISOString() })
-      .eq('id', notificationId);
-
-    queryClient.invalidateQueries({ queryKey: queryKeys.user.notifications(user?.id || '') });
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true, read_at: new Date().toISOString() })
+        .eq('id', notificationId);
+      
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.notifications(user?.id || '') });
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
   };
 
   const markAllAsRead = async () => {
     if (!user) return;
 
-    await supabase
-      .from('user_notifications')
-      .update({ read: true, read_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .eq('read', false);
-
-    queryClient.invalidateQueries({ queryKey: queryKeys.user.notifications(user?.id || '') });
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ read: true, read_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('read', false);
+      
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.notifications(user?.id || '') });
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
   };
 
   if (!user) return null;
