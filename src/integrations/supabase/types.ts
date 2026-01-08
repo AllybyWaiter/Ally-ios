@@ -1413,7 +1413,7 @@ export type Database = {
           longest_streak: number | null
           longitude: number | null
           name: string | null
-          onboarding_completed: boolean | null
+          onboarding_completed: boolean
           skill_level: string | null
           status: string
           subscription_tier: string | null
@@ -1438,7 +1438,7 @@ export type Database = {
           longest_streak?: number | null
           longitude?: number | null
           name?: string | null
-          onboarding_completed?: boolean | null
+          onboarding_completed?: boolean
           skill_level?: string | null
           status?: string
           subscription_tier?: string | null
@@ -1463,7 +1463,7 @@ export type Database = {
           longest_streak?: number | null
           longitude?: number | null
           name?: string | null
-          onboarding_completed?: boolean | null
+          onboarding_completed?: boolean
           skill_level?: string | null
           status?: string
           subscription_tier?: string | null
