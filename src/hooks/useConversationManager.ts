@@ -239,7 +239,11 @@ export function useConversationManager(userId: string | null) {
 
     // Create new conversation if needed
     if (!conversationId) {
-      const title = userMessage.content.slice(0, 50) + (userMessage.content.length > 50 ? "..." : "");
+      // Smart title generation: use first sentence or truncate at word boundary
+      const firstSentence = userMessage.content.split(/[.!?]/)[0]?.trim() || userMessage.content;
+      const title = firstSentence.length > 50 
+        ? firstSentence.slice(0, 47).replace(/\s+\S*$/, '') + "..." 
+        : firstSentence.slice(0, 50);
       const { data: newConv, error: convError } = await supabase
         .from('chat_conversations')
         .insert({
