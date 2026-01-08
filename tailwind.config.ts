@@ -50,6 +50,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Brand colors
+        sand: "#D2C9B2",
+        "desat-blue": "#34406A",
+        coal: "#333333",
+        nickel: "#666666",
+        silver: "#CCCCCC",
+        snow: "#F4F4F4",
       },
       backgroundImage: {
         'gradient-water': 'var(--gradient-water)',
