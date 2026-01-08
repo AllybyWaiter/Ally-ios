@@ -2,9 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const MAX_POLL_ATTEMPTS = 15; // 15 attempts * 2 seconds = 30 seconds max
 const POLL_INTERVAL = 2000; // 2 seconds
@@ -13,9 +14,11 @@ export default function CheckoutSuccess() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, refreshProfile } = useAuth();
+  const { toast } = useToast();
   const [status, setStatus] = useState<'polling' | 'success' | 'timeout'>('polling');
   const [attempts, setAttempts] = useState(0);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
+  const [onboardingError, setOnboardingError] = useState(false);
 
   const pollForSubscription = useCallback(async () => {
     if (!user) return null;
@@ -28,6 +31,58 @@ export default function CheckoutSuccess() {
 
     return profile?.subscription_tier ?? null;
   }, [user]);
+
+  const completeOnboarding = useCallback(async () => {
+    if (!user) return false;
+    
+    try {
+      // CRITICAL: Complete onboarding if user paid during onboarding flow
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (fetchError) {
+        console.error('Failed to fetch profile:', fetchError);
+        return false;
+      }
+        
+      if (profile && profile.onboarding_completed === false) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ onboarding_completed: true })
+          .eq('user_id', user.id);
+          
+        if (updateError) {
+          console.error('Failed to complete onboarding:', updateError);
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      return false;
+    }
+  }, [user]);
+
+  const handleRetryOnboarding = async () => {
+    const success = await completeOnboarding();
+    if (success) {
+      setOnboardingError(false);
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+      navigate('/dashboard?subscription=activated', { replace: true });
+    } else {
+      toast({
+        title: 'Still having trouble',
+        description: 'Please contact support if this continues.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -64,18 +119,11 @@ export default function CheckoutSuccess() {
           }
         }
         
-        // CRITICAL: Complete onboarding if user paid during onboarding flow
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          .eq('user_id', user.id)
-          .maybeSingle();
-          
-        if (profile && profile.onboarding_completed === false) {
-          await supabase
-            .from('profiles')
-            .update({ onboarding_completed: true })
-            .eq('user_id', user.id);
+        // Complete onboarding with error handling
+        const onboardingSuccess = await completeOnboarding();
+        if (!onboardingSuccess) {
+          setOnboardingError(true);
+          return; // Don't auto-redirect, show error state
         }
         
         // Refresh the auth context to update everywhere
@@ -112,7 +160,7 @@ export default function CheckoutSuccess() {
     return () => {
       if (pollTimeout) clearTimeout(pollTimeout);
     };
-  }, [user, navigate, pollForSubscription, attempts, refreshProfile]);
+  }, [user, navigate, pollForSubscription, attempts, refreshProfile, searchParams, completeOnboarding]);
 
   const handleContinueAnyway = () => {
     navigate('/dashboard?checkout=pending', { replace: true });
@@ -145,7 +193,7 @@ export default function CheckoutSuccess() {
             </div>
           )}
 
-          {status === 'success' && (
+          {status === 'success' && !onboardingError && (
             <div className="text-center space-y-4">
               <CheckCircle2 className="w-16 h-16 mx-auto text-green-500" />
               <h1 className="text-2xl font-bold">Subscription Activated!</h1>
@@ -153,6 +201,25 @@ export default function CheckoutSuccess() {
                 Welcome to Ally {subscriptionTier?.charAt(0).toUpperCase()}{subscriptionTier?.slice(1)}! 
                 Redirecting to your dashboard...
               </p>
+            </div>
+          )}
+
+          {status === 'success' && onboardingError && (
+            <div className="text-center space-y-4">
+              <CheckCircle2 className="w-16 h-16 mx-auto text-green-500" />
+              <h1 className="text-2xl font-bold">Subscription Activated!</h1>
+              <p className="text-muted-foreground">
+                Your subscription is active, but we had trouble completing setup.
+              </p>
+              <div className="flex flex-col gap-2 pt-4">
+                <Button onClick={handleRetryOnboarding} variant="default">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry Setup
+                </Button>
+                <Button onClick={handleContinueAnyway} variant="outline">
+                  Continue to Dashboard
+                </Button>
+              </div>
             </div>
           )}
 
