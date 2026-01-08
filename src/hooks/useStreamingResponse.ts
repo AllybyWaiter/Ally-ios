@@ -180,8 +180,8 @@ export function useStreamingResponse() {
   }, [navigate, toast]);
 
   const abort = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     abortControllerRef.current?.abort();
