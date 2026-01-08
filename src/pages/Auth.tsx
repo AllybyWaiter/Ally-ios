@@ -445,9 +445,11 @@ export default function Auth() {
                       onChange={(e) => setName(e.target.value)}
                       disabled={isLoading}
                       autoComplete="name"
+                      maxLength={100}
+                      aria-describedby={errors.name ? 'name-error' : undefined}
                     />
                     {errors.name && (
-                      <p className="text-sm text-destructive">{errors.name}</p>
+                      <p id="name-error" className="text-sm text-destructive">{errors.name}</p>
                     )}
                   </div>
                 )}

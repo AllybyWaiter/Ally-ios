@@ -11,8 +11,13 @@ const VISIBILITY_REFRESH_TIMEOUT = 2000; // Quick timeout for visibility change 
 export const useSessionMonitor = () => {
   const { toast } = useToast();
   const lastVisibilityCheck = useRef<number>(0);
+  const isCheckingRef = useRef<boolean>(false);
 
   const checkAndRefreshSession = useCallback(async (isVisibilityChange = false) => {
+    // Prevent concurrent checks
+    if (isCheckingRef.current) return;
+    isCheckingRef.current = true;
+    
     try {
       // Create a timeout promise for quick response
       const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) => {
@@ -94,6 +99,8 @@ export const useSessionMonitor = () => {
       }
     } catch (error) {
       console.error('Session monitor error:', error);
+    } finally {
+      isCheckingRef.current = false;
     }
   }, [toast]);
 

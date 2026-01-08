@@ -180,12 +180,99 @@ const AllySupportChat = () => {
   ];
 
   const handleQuickReply = useCallback((reply: string) => {
+    if (isLoading) return;
     setInput(reply);
-    // Use requestAnimationFrame to ensure state is updated before sending
-    requestAnimationFrame(() => {
-      sendMessage();
-    });
-  }, [sendMessage]);
+    // Use setTimeout to ensure state is updated before sending
+    setTimeout(() => {
+      const userMessage: Message = { role: "user", content: reply };
+      setMessages((prev) => [...prev, userMessage]);
+      setInput("");
+      setIsLoading(true);
+      
+      // Trigger fetch separately to avoid closure issues
+      (async () => {
+        try {
+          const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-support`;
+          
+          const response = await fetch(CHAT_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ 
+              messages: [...messages, userMessage],
+              userName: userName || undefined
+            }),
+          });
+
+          if (!response.ok || !response.body) {
+            throw new Error("Failed to get response");
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let assistantMessage = "";
+          let textBuffer = "";
+          let streamDone = false;
+
+          setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+          while (!streamDone) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            textBuffer += decoder.decode(value, { stream: true });
+
+            let newlineIndex: number;
+            while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+              let line = textBuffer.slice(0, newlineIndex);
+              textBuffer = textBuffer.slice(newlineIndex + 1);
+
+              if (line.endsWith("\r")) line = line.slice(0, -1);
+              if (line.startsWith(":") || line.trim() === "") continue;
+              if (!line.startsWith("data: ")) continue;
+
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr === "[DONE]") {
+                streamDone = true;
+                break;
+              }
+
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+                if (content) {
+                  assistantMessage += content;
+                  setMessages((prev) => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      role: "assistant",
+                      content: assistantMessage,
+                    };
+                    return newMessages;
+                  });
+                }
+              } catch {
+                textBuffer = line + "\n" + textBuffer;
+                break;
+              }
+            }
+          }
+        } catch {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "Sorry, I'm having trouble connecting right now. Please try again or use our contact form.",
+            },
+          ]);
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    }, 0);
+  }, [messages, userName, isLoading]);
 
   return (
     <>
