@@ -52,17 +52,19 @@ export function DashboardStats({
         <Card 
           className="glass-card animate-fade-up opacity-0"
           style={{ animationDelay: getAnimationDelay(0) }}
+          role="region"
+          aria-label={hasMixed ? t('dashboard.aquariums') : t('dashboard.totalAquariums')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               {hasMixed ? t('dashboard.aquariums') : t('dashboard.totalAquariums')}
             </CardTitle>
-            <div className="icon-glow">
+            <div className="icon-glow" aria-hidden="true">
               <Droplets className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="text-3xl font-bold" aria-live="polite">
               <AnimatedCounter end={aquariumsOnly.length} duration={1500} />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -77,17 +79,19 @@ export function DashboardStats({
         <Card 
           className="glass-card animate-fade-up opacity-0"
           style={{ animationDelay: getAnimationDelay(hasOnlyAquariums || hasMixed ? 1 : 0) }}
+          role="region"
+          aria-label={hasMixed ? t('dashboard.poolsAndSpas') : t('dashboard.totalPools')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               {hasMixed ? t('dashboard.poolsAndSpas') : t('dashboard.totalPools')}
             </CardTitle>
-            <div className="icon-glow">
+            <div className="icon-glow" aria-hidden="true">
               <Waves className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="text-3xl font-bold" aria-live="polite">
               <AnimatedCounter end={poolsOnly.length} duration={1500} />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -100,15 +104,17 @@ export function DashboardStats({
       <Card 
         className="glass-card animate-fade-up opacity-0"
         style={{ animationDelay: getAnimationDelay(hasMixed ? 2 : 1) }}
+        role="region"
+        aria-label={t('dashboard.totalVolume')}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{t('dashboard.totalVolume')}</CardTitle>
-          <div className="icon-glow">
+          <div className="icon-glow" aria-hidden="true">
             <Droplets className="h-5 w-5 text-primary" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">
+          <div className="text-3xl font-bold" aria-live="polite">
             <AnimatedCounter end={volumeNumber} duration={1500} suffix={volumeUnit} decimals={0} />
           </div>
           <p className="text-xs text-muted-foreground">{t('dashboard.combinedCapacity')}</p>
@@ -118,15 +124,17 @@ export function DashboardStats({
       <Card 
         className="glass-card animate-fade-up opacity-0"
         style={{ animationDelay: getAnimationDelay(hasMixed ? 3 : 2) }}
+        role="region"
+        aria-label={t('dashboard.upcomingTasks')}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{t('dashboard.upcomingTasks')}</CardTitle>
-          <div className="icon-glow">
+          <div className="icon-glow" aria-hidden="true">
             <Calendar className="h-5 w-5 text-primary" />
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">
+          <div className="text-3xl font-bold" aria-live="polite">
             <AnimatedCounter end={upcomingTaskCount} duration={1500} />
           </div>
           <p className="text-xs text-muted-foreground">{t('dashboard.tasksDueThisWeek')}</p>
@@ -138,10 +146,14 @@ export function DashboardStats({
           className="glass-card animate-fade-up opacity-0 cursor-pointer border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10" 
           style={{ animationDelay: getAnimationDelay(hasMixed ? 4 : 3) }}
           onClick={() => navigate('/admin')}
+          onKeyDown={(e) => e.key === 'Enter' && navigate('/admin')}
+          role="button"
+          tabIndex={0}
+          aria-label={isAdmin ? t('dashboard.adminPanel') : t('dashboard.staffDashboard')}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <div className="icon-glow">
+              <div className="icon-glow" aria-hidden="true">
                 <Shield className="h-5 w-5 text-primary" />
               </div>
               {isAdmin ? t('dashboard.adminPanel') : t('dashboard.staffDashboard')}

@@ -10,12 +10,17 @@ export function AllyCTA() {
   const { t } = useTranslation();
 
   return (
-    <Card className="mb-8 bg-gradient-primary border-none animate-fade-up opacity-0 hover:shadow-glow transition-shadow duration-300" style={{ animationDelay: '100ms' }}>
+    <Card 
+      className="mb-8 bg-gradient-primary border-none animate-fade-up opacity-0 hover:shadow-glow transition-shadow duration-300" 
+      style={{ animationDelay: '100ms' }}
+      role="region"
+      aria-label={t('dashboard.chatWithAlly')}
+    >
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-float overflow-hidden">
-              <img src={logo} alt="Ally" className="h-full w-full object-cover" />
+            <div className="h-12 w-12 rounded-full bg-primary-foreground/20 flex items-center justify-center animate-float overflow-hidden" aria-hidden="true">
+              <img src={logo} alt="" className="h-full w-full object-cover" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-primary-foreground mb-1">
@@ -30,8 +35,9 @@ export function AllyCTA() {
             onClick={() => navigate('/ally')}
             variant="secondary"
             className="gap-2"
+            aria-label={t('dashboard.startChat')}
           >
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4" aria-hidden="true" />
             {t('dashboard.startChat')}
           </Button>
         </div>
