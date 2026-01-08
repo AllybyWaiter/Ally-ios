@@ -443,6 +443,7 @@ export const en = {
         description: "When did you set up this water body?",
         setupDateLabel: "Setup Date",
         setupDateRequired: "Setup date is required",
+        setupDateHint: "Enter the date when your water body was first set up or filled",
         notesLabel: "Notes (Optional)",
         notesPlaceholder: "Any additional information about your water body...",
       },

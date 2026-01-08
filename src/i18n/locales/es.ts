@@ -384,6 +384,7 @@ export const es = {
         description: "¿Cuándo configuraste este cuerpo de agua?",
         setupDateLabel: "Fecha de Configuración",
         setupDateRequired: "La fecha de configuración es obligatoria",
+        setupDateHint: "Ingresa la fecha en que tu cuerpo de agua fue configurado o llenado por primera vez",
         notesLabel: "Notas (Opcional)",
         notesPlaceholder: "Cualquier información adicional sobre tu cuerpo de agua...",
       },
