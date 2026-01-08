@@ -115,9 +115,14 @@ export const getTemperatureUnit = (units: UnitSystem | null): string => {
   return units === 'metric' ? '°C' : '°F';
 };
 
-// Get volume unit label
+// Get volume unit label (consistent abbreviation)
 export const getVolumeUnit = (units: UnitSystem | null): string => {
   return units === 'metric' ? 'L' : 'gal';
+};
+
+// Get volume unit full label for display
+export const getVolumeUnitFull = (units: UnitSystem | null): string => {
+  return units === 'metric' ? 'liters' : 'gallons';
 };
 
 // Get length unit label
