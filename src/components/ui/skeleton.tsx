@@ -1,8 +1,16 @@
 import { cn } from "@/lib/utils";
 
-function Skeleton({ className, shimmer = true, ...props }: React.HTMLAttributes<HTMLDivElement> & { shimmer?: boolean }) {
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  shimmer?: boolean;
+  label?: string;
+}
+
+function Skeleton({ className, shimmer = true, label = "Loading...", ...props }: SkeletonProps) {
   return (
     <div 
+      role="status"
+      aria-label={label}
+      aria-busy="true"
       className={cn(
         "rounded-md bg-muted",
         shimmer 

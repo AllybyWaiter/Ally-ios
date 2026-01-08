@@ -169,9 +169,9 @@ export function DashboardGreeting() {
   const WeatherIcon = weather && WEATHER_ICONS[weather] ? WEATHER_ICONS[weather] : null;
 
   return (
-    <div className="flex items-center gap-3 mb-6">
+    <div className="flex items-center gap-3 mb-6" role="status" aria-live="polite">
       {weatherEnabled && WeatherIcon && (
-        <WeatherIcon className="h-7 w-7 md:h-8 md:w-8 text-foreground/80 drop-shadow-lg" />
+        <WeatherIcon className="h-7 w-7 md:h-8 md:w-8 text-foreground/80 drop-shadow-lg" aria-hidden="true" />
       )}
       <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground drop-shadow-lg">
         {personalizedGreeting}

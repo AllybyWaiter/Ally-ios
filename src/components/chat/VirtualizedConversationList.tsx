@@ -44,14 +44,19 @@ const ConversationItem = memo(({
   isDeleting?: boolean;
 }) => (
   <div
+    role="button"
+    tabIndex={0}
+    aria-selected={isActive}
+    aria-label={`Conversation: ${conversation.title}, last updated ${format(new Date(conversation.updated_at), "MMM d, h:mm a")}`}
     className={cn(
-      "relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors",
+      "relative flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
       isActive && "bg-accent",
       isDeleting && "opacity-50 pointer-events-none"
     )}
     onClick={onLoad}
+    onKeyDown={(e) => e.key === 'Enter' && onLoad()}
   >
-    <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" aria-hidden="true" />
     <div className="flex-1 min-w-0">
       <p className="text-sm font-medium truncate">{conversation.title}</p>
       <p className="text-xs text-muted-foreground">
@@ -65,15 +70,16 @@ const ConversationItem = memo(({
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
           disabled={isDeleting}
+          aria-label={`Delete conversation: ${conversation.title}`}
           onClick={(e) => {
             e.stopPropagation();
             onRequestDelete();
           }}
         >
           {isDeleting ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-label="Deleting..." />
           ) : (
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
           )}
         </Button>
       </TooltipTrigger>
@@ -139,6 +145,8 @@ export const VirtualizedConversationList = memo(({
       <div 
         ref={parentRef} 
         className="h-full overflow-auto"
+        role="listbox"
+        aria-label="Conversation history"
       >
         <div
           style={{
