@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCheck, ClipboardList, AlertTriangle, Megaphone } from 'lucide-react';
+import { Bell, CheckCheck, ClipboardList, AlertTriangle, Megaphone, HeartPulse, CloudLightning } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +41,10 @@ const getNotificationIcon = (type: string) => {
       return <ClipboardList className="h-4 w-4 text-primary" />;
     case 'water_alert':
       return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+    case 'health_alert':
+      return <HeartPulse className="h-4 w-4 text-rose-500" />;
+    case 'weather_alert':
+      return <CloudLightning className="h-4 w-4 text-red-500" />;
     case 'announcement':
       return <Megaphone className="h-4 w-4 text-blue-500" />;
     default:
@@ -54,6 +58,10 @@ const getNotificationTypeLabel = (type: string) => {
       return 'Task Reminder';
     case 'water_alert':
       return 'Water Alert';
+    case 'health_alert':
+      return 'Health Alert';
+    case 'weather_alert':
+      return 'Weather Alert';
     case 'announcement':
       return 'Announcement';
     default:

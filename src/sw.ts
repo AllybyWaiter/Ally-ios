@@ -154,6 +154,7 @@ const vibrationPatterns: Record<string, number[]> = {
   task_reminder: [100, 50, 100],              // Short gentle double pulse
   water_alert: [300, 100, 300, 100, 300],     // Urgent triple pulse
   weather_alert: [500, 200, 500, 200, 500],   // Very urgent extended pulse for severe weather
+  health_alert: [400, 100, 400, 100, 400],    // Distinct pattern for health score alerts
   announcement: [200, 100, 200],               // Standard double pulse
   default: [200, 100, 200],
 };

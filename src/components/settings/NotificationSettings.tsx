@@ -44,13 +44,16 @@ export default function NotificationSettings() {
     );
   }
 
-  const isIOSPWA = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                   (window.navigator as any).standalone !== true;
+  // Detect iOS and whether running as installed PWA
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = (window.navigator as any).standalone === true;
+  // Show notice only for iOS users who have NOT installed as PWA
+  const isIOSNotPWA = isIOS && !isStandalone;
 
   return (
     <div className="space-y-6">
-      {/* iOS PWA Notice */}
-      {isIOSPWA && (
+      {/* iOS PWA Notice - only show if iOS user hasn't installed as PWA */}
+      {isIOSNotPWA && (
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
