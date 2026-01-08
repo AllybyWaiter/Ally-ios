@@ -66,8 +66,9 @@ export default function AquariumDetail() {
   });
 
   const handleDeleteConfirm = async () => {
+    if (!id) return;
     try {
-      await deleteAquariumDAL(id!);
+      await deleteAquariumDAL(id);
 
       // Invalidate queries before navigation to ensure clean state
       queryClient.invalidateQueries({ queryKey: ['aquariums'] });
@@ -230,7 +231,7 @@ export default function AquariumDetail() {
 
           <TabsContent value="photos">
             <SectionErrorBoundary fallbackTitle="Failed to load photos" featureArea={FeatureArea.AQUARIUM}>
-              <AquariumPhotoGallery aquariumId={id!} aquariumName={aquarium.name} userId={user!.id} />
+              <AquariumPhotoGallery aquariumId={id!} aquariumName={aquarium.name} userId={user?.id ?? ''} />
             </SectionErrorBoundary>
           </TabsContent>
 

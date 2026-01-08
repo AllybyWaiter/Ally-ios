@@ -93,8 +93,12 @@ interface WeatherState {
   initializing: boolean;
 }
 
-const CACHE_KEY = 'ally_weather_cache';
+const CACHE_KEY_PREFIX = 'ally_weather_cache_';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function getCacheKey(userId: string | undefined): string {
+  return `${CACHE_KEY_PREFIX}${userId || 'anonymous'}`;
+}
 
 function isValidWeatherData(data: unknown): data is WeatherData {
   if (!data || typeof data !== 'object') return false;
@@ -106,16 +110,17 @@ function isValidWeatherData(data: unknown): data is WeatherData {
   );
 }
 
-function getCachedWeather(): WeatherData | null {
+function getCachedWeather(userId: string | undefined): WeatherData | null {
   try {
-    const cached = sessionStorage.getItem(CACHE_KEY);
+    const cacheKey = getCacheKey(userId);
+    const cached = sessionStorage.getItem(cacheKey);
     if (!cached) return null;
     
     const data = JSON.parse(cached);
     
     // Validate the parsed data has required structure
     if (!isValidWeatherData(data)) {
-      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(cacheKey);
       return null;
     }
     
@@ -123,20 +128,20 @@ function getCachedWeather(): WeatherData | null {
     const now = Date.now();
     
     if (now - fetchedAt > CACHE_TTL) {
-      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(cacheKey);
       return null;
     }
     
     return data;
   } catch {
-    sessionStorage.removeItem(CACHE_KEY);
+    sessionStorage.removeItem(getCacheKey(userId));
     return null;
   }
 }
 
-function setCachedWeather(weather: WeatherData): void {
+function setCachedWeather(weather: WeatherData, userId: string | undefined): void {
   try {
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(weather));
+    sessionStorage.setItem(getCacheKey(userId), JSON.stringify(weather));
   } catch {
     // Ignore storage errors
   }
@@ -144,13 +149,13 @@ function setCachedWeather(weather: WeatherData): void {
 
 export function useWeather() {
   const { user } = useAuth();
-  const [state, setState] = useState<WeatherState>({
-    weather: getCachedWeather(),
+  const [state, setState] = useState<WeatherState>(() => ({
+    weather: getCachedWeather(user?.id),
     loading: true,
     error: null,
     enabled: false,
     initializing: true,
-  });
+  }));
 
   const fetchWeather = useCallback(async (latitude: number, longitude: number) => {
     setState(prev => ({ ...prev, loading: true, error: null }));
@@ -168,7 +173,7 @@ export function useWeather() {
         latitude,
         longitude,
       };
-      setCachedWeather(weatherData);
+      setCachedWeather(weatherData, user?.id);
       
       setState(prev => ({
         ...prev,
@@ -296,7 +301,7 @@ export function useWeather() {
           setState(prev => ({ ...prev, enabled: true }));
           
           // Use cached weather if still valid
-          const cached = getCachedWeather();
+          const cached = getCachedWeather(user?.id);
           if (cached) {
             setState(prev => ({ ...prev, weather: cached, loading: false, initializing: false }));
             return;
@@ -321,9 +326,9 @@ export function useWeather() {
   }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation, checkAndUpdateLocation]);
 
   const refreshWeather = useCallback(async () => {
-    sessionStorage.removeItem(CACHE_KEY);
+    sessionStorage.removeItem(getCacheKey(user?.id));
     await fetchWeatherForCurrentLocation(true);
-  }, [fetchWeatherForCurrentLocation]);
+  }, [user?.id, fetchWeatherForCurrentLocation]);
 
   return {
     ...state,
