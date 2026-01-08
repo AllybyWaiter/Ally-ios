@@ -66,8 +66,10 @@ export function ParameterInputGrid({
               </Label>
               <Input
                 id={param.name}
+                aria-label={`${param.name} value`}
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 placeholder={`${formatDecimal(displayMin, 1)} - ${formatDecimal(displayMax, 1)}`}
                 value={value}
                 onChange={(e) => onParameterChange(param.name, e.target.value)}

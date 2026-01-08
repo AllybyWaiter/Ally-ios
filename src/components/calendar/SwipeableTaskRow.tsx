@@ -47,7 +47,7 @@ export function SwipeableTaskRow({
   const isCompleted = task.status === 'completed';
 
   const handleDragEnd = useCallback((
-    event: MouseEvent | TouchEvent | PointerEvent,
+    _event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
     const offset = info.offset.x;
@@ -57,26 +57,27 @@ export function SwipeableTaskRow({
     const shouldComplete = offset < -SWIPE_THRESHOLD || velocity < -500;
     const shouldReschedule = offset > SWIPE_THRESHOLD || velocity > 500;
 
-    if (shouldComplete && !isCompleted) {
+    if (shouldComplete && !isCompleted && !isCompleting) {
       medium();
       setIsReleased(true);
       setTimeout(() => {
         onComplete(task.id);
         setIsReleased(false);
       }, 200);
-    } else if (shouldReschedule && onReschedule) {
+    } else if (shouldReschedule && onReschedule && !isCompleting) {
       medium();
       onReschedule(task.id);
     }
-  }, [task.id, isCompleted, onComplete, onReschedule, medium]);
+  }, [task.id, isCompleted, isCompleting, onComplete, onReschedule, medium]);
 
   const handleDrag = useCallback((
-    event: MouseEvent | TouchEvent | PointerEvent,
+    _event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
     // Haptic feedback when crossing threshold
-    const offset = info.offset.x;
-    if (Math.abs(offset) === SWIPE_THRESHOLD) {
+    const offset = Math.abs(info.offset.x);
+    // Only trigger haptic when first crossing the threshold (not every frame)
+    if (offset >= SWIPE_THRESHOLD && offset < SWIPE_THRESHOLD + 5) {
       light();
     }
   }, [light]);

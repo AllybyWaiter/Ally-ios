@@ -117,15 +117,19 @@ export function useStreamingResponse() {
 
     // Update function - sends tokens immediately for smooth typewriter
     const updateContent = (content: string) => {
+      // Sanitize content to prevent XSS (remove script tags, event handlers)
+      const sanitized = content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                               .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+      
       const now = Date.now();
       // Throttle updates to ~60fps to avoid excessive re-renders
       if (now - lastUpdateRef.current >= UPDATE_INTERVAL) {
-        assistantMessageRef.current += content;
+        assistantMessageRef.current += sanitized;
         lastUpdateRef.current = now;
         callbacks.onToken(assistantMessageRef.current);
       } else {
         // Buffer very rapid tokens
-        assistantMessageRef.current += content;
+        assistantMessageRef.current += sanitized;
       }
     };
 

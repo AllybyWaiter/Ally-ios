@@ -113,7 +113,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signIn = useCallback(async (email: string, password: string) => {
     addBreadcrumb('User attempting sign in', 'auth', undefined, FeatureArea.AUTH);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      // Sanitize email input
+      const sanitizedEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: sanitizedEmail, 
+        password 
+      });
 
       if (data?.user) {
         addBreadcrumb(

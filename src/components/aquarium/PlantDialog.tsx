@@ -153,7 +153,10 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
                 type="number"
                 min="1"
                 value={formData.quantity}
-                onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setFormData({ ...formData, quantity: isNaN(val) || val < 1 ? 1 : val });
+                }}
                 required
               />
             </div>
