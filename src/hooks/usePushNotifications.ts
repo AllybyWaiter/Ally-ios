@@ -47,7 +47,10 @@ export function usePushNotifications() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>(defaultPreferences);
   const [loading, setLoading] = useState(true);
+  const [isSubscribing, setIsSubscribing] = useState(false);
   const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
+  const [vapidError, setVapidError] = useState<string | null>(null);
+  const [subscriptionMismatch, setSubscriptionMismatch] = useState(false);
 
   // Check browser support
   useEffect(() => {
@@ -61,21 +64,26 @@ export function usePushNotifications() {
     }
   }, []);
 
-  // Fetch VAPID public key
+  // Fetch VAPID public key with error handling
   useEffect(() => {
     async function fetchVapidKey() {
       try {
         const { data, error } = await supabase.functions.invoke(VAPID_PUBLIC_KEY_ENDPOINT);
         if (error) throw error;
-        setVapidPublicKey(data?.publicKey);
+        if (!data?.publicKey) {
+          throw new Error('VAPID key not returned');
+        }
+        setVapidPublicKey(data.publicKey);
+        setVapidError(null);
       } catch (error) {
         console.error('Failed to fetch VAPID key:', error);
+        setVapidError(error instanceof Error ? error.message : 'Failed to load notification settings');
       }
     }
     fetchVapidKey();
   }, []);
 
-  // Load user preferences and subscription status
+  // Load user preferences and subscription status with browser validation
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -110,14 +118,42 @@ export function usePushNotifications() {
           });
         }
 
-        // Check if subscribed
+        // Check if subscribed in database
         const { data: subs, error: subError } = await supabase
           .from('push_subscriptions')
-          .select('id')
+          .select('endpoint')
           .eq('user_id', user.id);
 
-        if (!subError && subs && subs.length > 0) {
-          setIsSubscribed(true);
+        const hasDbSubscription = !subError && subs && subs.length > 0;
+
+        // Validate against browser subscription
+        if (hasDbSubscription && 'serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const browserSubscription = await registration.pushManager.getSubscription();
+            
+            if (browserSubscription) {
+              // Check if browser endpoint matches any DB endpoint
+              const browserEndpoint = browserSubscription.endpoint;
+              const endpointMatch = subs.some(s => s.endpoint === browserEndpoint);
+              
+              if (!endpointMatch) {
+                // Browser has a subscription but it doesn't match DB - subscription mismatch
+                console.warn('Push subscription mismatch detected');
+                setSubscriptionMismatch(true);
+              }
+              setIsSubscribed(true);
+            } else {
+              // DB says subscribed but browser has no subscription - stale data
+              setIsSubscribed(false);
+              setSubscriptionMismatch(true);
+            }
+          } catch {
+            // Service worker not ready, trust DB
+            setIsSubscribed(hasDbSubscription);
+          }
+        } else {
+          setIsSubscribed(hasDbSubscription);
         }
       } catch (error) {
         console.error('Error loading notification data:', error);
@@ -148,11 +184,13 @@ export function usePushNotifications() {
     if (!user || !isSupported || !vapidPublicKey) {
       toast({
         title: 'Cannot subscribe',
-        description: 'Push notifications are not supported or not ready.',
+        description: vapidError || 'Push notifications are not supported or not ready.',
         variant: 'destructive',
       });
       return false;
     }
+
+    setIsSubscribing(true);
 
     try {
       // Request permission
@@ -165,6 +203,7 @@ export function usePushNotifications() {
           description: 'Please enable notifications in your browser settings.',
           variant: 'destructive',
         });
+        setIsSubscribing(false);
         return false;
       }
 
@@ -209,6 +248,7 @@ export function usePushNotifications() {
       await updatePreferences({ push_enabled: true });
 
       setIsSubscribed(true);
+      setSubscriptionMismatch(false);
       toast({
         title: 'Notifications enabled',
         description: 'You will now receive push notifications.',
@@ -223,16 +263,18 @@ export function usePushNotifications() {
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setIsSubscribing(false);
     }
-  }, [user, isSupported, vapidPublicKey, urlBase64ToUint8Array]);
+  }, [user, isSupported, vapidPublicKey, vapidError, urlBase64ToUint8Array]);
 
   // Unsubscribe from push notifications
   const unsubscribe = useCallback(async () => {
     if (!user) return false;
 
     try {
-      // Get service worker registration
-      const registration = await navigator.serviceWorker.getRegistration('/');
+      // Get service worker registration using navigator.serviceWorker.ready
+      const registration = await navigator.serviceWorker.ready;
       if (registration) {
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
@@ -252,6 +294,7 @@ export function usePushNotifications() {
       await updatePreferences({ push_enabled: false });
 
       setIsSubscribed(false);
+      setSubscriptionMismatch(false);
       toast({
         title: 'Notifications disabled',
         description: 'You will no longer receive push notifications.',
@@ -300,7 +343,23 @@ export function usePushNotifications() {
     }
   }, [user, preferences]);
 
-  // Send a test notification with specific type
+  // Retry fetching VAPID key
+  const retryVapidFetch = useCallback(async () => {
+    setVapidError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke(VAPID_PUBLIC_KEY_ENDPOINT);
+      if (error) throw error;
+      if (!data?.publicKey) {
+        throw new Error('VAPID key not returned');
+      }
+      setVapidPublicKey(data.publicKey);
+    } catch (error) {
+      console.error('Failed to fetch VAPID key:', error);
+      setVapidError(error instanceof Error ? error.message : 'Failed to load notification settings');
+    }
+  }, []);
+
+  // Send a test notification with specific type and unique referenceId
   const sendTestNotification = useCallback(async (notificationType: 'task_reminder' | 'water_alert' | 'announcement' | 'weather_alert' | 'health_alert' = 'task_reminder') => {
     if (!user || !isSubscribed) return false;
 
@@ -313,6 +372,8 @@ export function usePushNotifications() {
     };
 
     const message = testMessages[notificationType];
+    // Use unique referenceId for test notifications to prevent deduplication issues
+    const testReferenceId = `test-${notificationType}-${Date.now()}`;
 
     try {
       const { error } = await supabase.functions.invoke('send-push-notification', {
@@ -320,9 +381,10 @@ export function usePushNotifications() {
           userId: user.id,
           title: message.title,
           body: message.body,
-          tag: `test-${notificationType}`,
+          tag: `test-${notificationType}-${Date.now()}`,
           url: '/settings',
           notificationType,
+          referenceId: testReferenceId,
         },
       });
 
@@ -349,11 +411,15 @@ export function usePushNotifications() {
     isSupported,
     permission,
     isSubscribed,
+    isSubscribing,
     preferences,
     loading,
+    vapidError,
+    subscriptionMismatch,
     subscribe,
     unsubscribe,
     updatePreferences,
     sendTestNotification,
+    retryVapidFetch,
   };
 }
