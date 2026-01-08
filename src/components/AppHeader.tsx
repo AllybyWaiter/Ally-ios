@@ -33,24 +33,25 @@ const AppHeader = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border pt-safe">
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 flex items-center justify-center">
-            <img src={logo} alt="Ally Logo" className="w-10 h-10 object-contain" />
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/30 pt-safe supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 py-2.5 flex items-center justify-between">
+        <Link to="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+          <div className="w-9 h-9 flex items-center justify-center">
+            <img src={logo} alt="Ally Logo" className="w-9 h-9 object-contain" />
           </div>
           <div>
-            <div className="font-bold text-lg leading-none">Ally</div>
-            <div className="text-xs text-muted-foreground leading-none">by WA.I.TER</div>
+            <div className="font-semibold text-base leading-tight">Ally</div>
+            <div className="text-[10px] text-muted-foreground/70 leading-tight">by WA.I.TER</div>
           </div>
         </Link>
 
         {/* Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden md:flex items-center gap-0.5">
           <Link to="/dashboard">
             <Button
               variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
               size="sm"
+              className="h-8 px-3 text-sm font-medium"
             >
               {t('navigation.dashboard')}
             </Button>
@@ -59,6 +60,7 @@ const AppHeader = () => {
             <Button
               variant={location.pathname === "/ally" ? "secondary" : "ghost"}
               size="sm"
+              className="h-8 px-3 text-sm font-medium"
             >
               {t('navigation.chatWithAlly')}
             </Button>
@@ -67,6 +69,7 @@ const AppHeader = () => {
             <Button
               variant={location.pathname === "/water-tests" ? "secondary" : "ghost"}
               size="sm"
+              className="h-8 px-3 text-sm font-medium"
             >
               {t('navigation.waterTests')}
             </Button>
@@ -75,22 +78,23 @@ const AppHeader = () => {
             <Button
               variant={location.pathname === "/calendar" ? "secondary" : "ghost"}
               size="sm"
+              className="h-8 px-3 text-sm font-medium"
             >
               {t('navigation.calendar')}
             </Button>
           </Link>
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Notification Bell */}
           <NotificationBell />
 
           {/* User Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 h-10 px-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+              <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 hover:bg-foreground/5">
+                <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm">
+                  <AvatarFallback className="bg-[#34406A] text-white text-sm font-medium">
                     {getInitials(userName)}
                   </AvatarFallback>
                 </Avatar>
