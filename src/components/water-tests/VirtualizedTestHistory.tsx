@@ -51,6 +51,16 @@ export const VirtualizedTestHistory = ({ tests, units }: VirtualizedTestHistoryP
     overscan: 3,
   });
 
+  // Empty state when no tests exist
+  if (tests.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <p className="text-muted-foreground">No water tests logged yet</p>
+        <p className="text-sm text-muted-foreground mt-1">Log your first test to start tracking water quality</p>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={parentRef} 
