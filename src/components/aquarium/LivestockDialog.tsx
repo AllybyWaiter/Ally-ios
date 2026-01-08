@@ -353,7 +353,11 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
                   type="number"
                   min="1"
                   value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    // Ensure quantity is at least 1 to prevent ghost entries
+                    setFormData({ ...formData, quantity: Math.max(1, value) });
+                  }}
                   required
                 />
               </div>
