@@ -10,6 +10,7 @@ interface RateLimitResult {
   isRateLimited: boolean;
   attemptsRemaining: number;
   resetTime: number | null;
+  timeUntilReset: number | null;
   checkRateLimit: () => boolean;
   resetRateLimit: () => void;
 }
@@ -83,10 +84,14 @@ export const useRateLimit = ({
     maxAttempts - attempts.filter((t) => Date.now() - t < windowMs).length
   );
 
+  // Calculate time until reset in human-readable format
+  const timeUntilReset = resetTime ? Math.max(0, resetTime - Date.now()) : null;
+
   return {
     isRateLimited,
     attemptsRemaining,
     resetTime,
+    timeUntilReset,
     checkRateLimit,
     resetRateLimit,
   };

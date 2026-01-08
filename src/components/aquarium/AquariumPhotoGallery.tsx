@@ -101,7 +101,8 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
             >
               <img
                 src={photo.photo_url}
-                alt={photo.caption || 'Aquarium photo'}
+                alt={photo.caption || `Photo of ${aquariumName}`}
+                loading="lazy"
                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
               />
               {photo.is_primary && (

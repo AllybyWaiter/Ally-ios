@@ -165,11 +165,16 @@ export default function Dashboard() {
     }
   }, [dataFetched, aquariums.length, showPreferencesOnboarding]);
 
-  // Handle checkout success query parameters
+  // Handle checkout success query parameters (prevent double toast)
   useEffect(() => {
-    const checkoutStatus = searchParams.get('subscription') || searchParams.get('checkout');
+    const subscriptionStatus = searchParams.get('subscription');
+    const checkoutStatus = searchParams.get('checkout');
     
-    if (checkoutStatus === 'activated' || checkoutStatus === 'success') {
+    // Prioritize subscription param to avoid double toast
+    const status = subscriptionStatus || checkoutStatus;
+    const paramToClean = subscriptionStatus ? 'subscription' : 'checkout';
+    
+    if (status === 'activated' || status === 'success') {
       toast({
         title: 'Subscription Activated!',
         description: 'Welcome to your new plan. Enjoy your premium features!',

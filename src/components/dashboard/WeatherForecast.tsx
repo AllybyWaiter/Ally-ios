@@ -61,8 +61,8 @@ export function WeatherForecast() {
       </CardHeader>
       <CardContent className="px-4 pb-3">
         <div className="flex justify-between overflow-x-auto">
-          {weather.forecast.map((day) => (
-            <ForecastDayCard key={day.date} day={day} units={units} />
+          {weather.forecast.map((day, index) => (
+            <ForecastDayCard key={`${day.date}-${index}`} day={day} units={units} />
           ))}
         </div>
       </CardContent>

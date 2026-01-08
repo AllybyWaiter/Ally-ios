@@ -497,6 +497,7 @@ export const ChatHistorySidebar = ({
   const { t } = useTranslation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
@@ -505,6 +506,14 @@ export const ChatHistorySidebar = ({
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Debounce search query for performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Memoize aquarium lookup map
   const aquariumMap = useMemo(() => {
@@ -615,9 +624,9 @@ export const ChatHistorySidebar = ({
   const filteredConversations = useMemo(() => {
     let result = conversations;
     
-    // Apply search
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Apply search (using debounced query for performance)
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter(c => 
         c.title.toLowerCase().includes(query) ||
         c.last_message_preview?.toLowerCase().includes(query)
@@ -641,7 +650,7 @@ export const ChatHistorySidebar = ({
     }
     
     return result;
-  }, [conversations, searchQuery, activeFilter]);
+  }, [conversations, debouncedSearchQuery, activeFilter]);
 
   // Group conversations by date
   const groupedConversations = useMemo(() => {
