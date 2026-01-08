@@ -3,7 +3,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const DashboardSkeleton = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5"
+      role="status"
+      aria-label="Loading dashboard content"
+    >
       <div className="h-16 bg-card border-b" />
       
       <main className="container mx-auto px-4 py-8 pt-24">
@@ -72,7 +76,7 @@ export const DashboardSkeleton = () => {
 
 export const FormSkeleton = () => {
   return (
-    <Card>
+    <Card role="status" aria-label="Loading form content">
       <CardHeader>
         <Skeleton className="h-8 w-48" />
       </CardHeader>
@@ -91,7 +95,7 @@ export const FormSkeleton = () => {
 
 export const TableSkeleton = () => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="status" aria-label="Loading table content">
       <div className="border rounded-lg">
         <div className="p-4 border-b">
           <Skeleton className="h-4 w-full" />

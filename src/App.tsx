@@ -16,6 +16,7 @@ import CookieConsent from "@/components/CookieConsent";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { lazy, Suspense, ComponentType, useEffect } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
+import { SkipToContent } from "@/components/SkipToContent";
 import { FeatureArea } from "@/lib/sentry";
 
 // Force service worker update check on app load
@@ -151,6 +152,7 @@ const App = () => (
                 <Sonner />
                 <OfflineIndicator />
                 <BrowserRouter>
+                  <SkipToContent />
                   <ScrollToTop />
                   <CookieConsent />
                   <MobileBottomNav />
