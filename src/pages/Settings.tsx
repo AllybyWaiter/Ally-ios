@@ -65,7 +65,22 @@ const Settings = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [name, setName] = useState(userName || "");
   const [units, setUnits] = useState(unitPreference || "imperial");
-  const [hemisphere, setHemisphere] = useState(userHemisphere || "northern");
+  // Default hemisphere based on timezone if not set
+  const getDefaultHemisphere = () => {
+    if (userHemisphere) return userHemisphere;
+    // Use timezone to guess hemisphere - most southern timezones have negative UTC offsets in southern hemisphere
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const southernTimezones = ['Australia', 'Auckland', 'Antarctica', 'Argentina', 'Brazil', 'Chile', 'Africa/Johannesburg'];
+      if (southernTimezones.some(tz => timezone.includes(tz))) {
+        return 'southern';
+      }
+    } catch {
+      // Fall back to northern if timezone detection fails
+    }
+    return 'northern';
+  };
+  const [hemisphere, setHemisphere] = useState(getDefaultHemisphere());
   const [skillLevel, setSkillLevel] = useState<string>("beginner");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
