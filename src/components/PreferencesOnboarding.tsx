@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import logo from '@/assets/logo.png';
 import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
+import { useSearchParams } from 'react-router-dom';
 import { PlanSelectionStep } from '@/components/onboarding/PlanSelectionStep';
 
 interface PreferencesOnboardingProps {
@@ -16,9 +17,12 @@ interface PreferencesOnboardingProps {
 }
 
 export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboardingProps) {
-  const [step, setStep] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialStep = parseInt(searchParams.get('onboarding_step') || '1', 10);
+  const [step, setStep] = useState(initialStep >= 1 && initialStep <= 6 ? initialStep : 1);
   const [isLoading, setIsLoading] = useState(false);
   const [permissionLoading, setPermissionLoading] = useState(false);
+  const [vapidRetryCount, setVapidRetryCount] = useState(0);
   const { toast } = useToast();
   const { setTheme } = useTheme();
   const { i18n, t } = useTranslation();
@@ -30,8 +34,35 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const [languagePreference, setLanguagePreference] = useState<'en' | 'es' | 'fr'>('en');
   const [weatherEnabled, setWeatherEnabled] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [pendingWeatherData, setPendingWeatherData] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const totalSteps = 6;
+
+  // Apply theme immediately when user selects it
+  useEffect(() => {
+    setTheme(themePreference);
+  }, [themePreference, setTheme]);
+
+  // Clean up URL params after reading initial step
+  useEffect(() => {
+    if (searchParams.has('onboarding_step')) {
+      searchParams.delete('onboarding_step');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Warn user before leaving during onboarding
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (step > 1 && step < 6) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [step]);
 
   const handleNext = () => {
     setStep(step + 1);
@@ -51,24 +82,15 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        try {
-          // Update profile with weather enabled and location
-          await supabase
-            .from('profiles')
-            .update({ 
-              weather_enabled: true,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            })
-            .eq('user_id', userId);
-
-          setWeatherEnabled(true);
-          toast({
-            title: t('preferencesOnboarding.step4.enabled'),
-          });
-        } catch (error: unknown) {
-          console.error('Failed to save weather settings:', error);
-        }
+        // Store weather data to save atomically in handleSubmit
+        setPendingWeatherData({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setWeatherEnabled(true);
+        toast({
+          title: t('preferencesOnboarding.step4.enabled'),
+        });
         setPermissionLoading(false);
         handleNext();
       },
@@ -101,8 +123,24 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
       const permission = await Notification.requestPermission();
 
       if (permission === 'granted') {
-        // Get VAPID key and subscribe
-        const { data: vapidData } = await supabase.functions.invoke('get-vapid-key');
+        // Get VAPID key with retry logic
+        let vapidData = null;
+        let retries = 0;
+        const maxRetries = 2;
+        
+        while (!vapidData?.publicKey && retries <= maxRetries) {
+          const { data, error } = await supabase.functions.invoke('get-vapid-key');
+          if (error) {
+            console.error(`VAPID fetch attempt ${retries + 1} failed:`, error);
+            retries++;
+            setVapidRetryCount(retries);
+            if (retries <= maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+            }
+          } else {
+            vapidData = data;
+          }
+        }
         
         if (vapidData?.publicKey) {
           const registration = await navigator.serviceWorker.ready;
@@ -135,6 +173,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           toast({
             title: t('preferencesOnboarding.step5.enabled'),
           });
+        } else {
+          throw new Error('Failed to get VAPID key after retries');
         }
       } else {
         toast({
@@ -145,7 +185,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
     } catch (error: unknown) {
       console.error('Failed to enable notifications:', error);
       toast({
-        title: t('preferencesOnboarding.step5.permissionDenied'),
+        title: t('preferencesOnboarding.step5.error', 'Failed to enable notifications'),
         description: t('preferencesOnboarding.step5.enableLater'),
       });
     }
@@ -166,27 +206,36 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
     return outputArray.buffer as ArrayBuffer;
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     setIsLoading(true);
 
     try {
-      // Update profile with preferences AND mark onboarding as complete
+      // Build update object with all preferences atomically
+      const updateData: Record<string, unknown> = {
+        unit_preference: unitPreference,
+        theme_preference: themePreference,
+        language_preference: languagePreference,
+        onboarding_completed: true,
+      };
+
+      // Include weather data if enabled
+      if (pendingWeatherData) {
+        updateData.weather_enabled = true;
+        updateData.latitude = pendingWeatherData.latitude;
+        updateData.longitude = pendingWeatherData.longitude;
+      }
+
+      // Update profile with all preferences AND mark onboarding as complete
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
-          unit_preference: unitPreference,
-          theme_preference: themePreference,
-          language_preference: languagePreference,
-          onboarding_completed: true,
-        })
+        .update(updateData)
         .eq('user_id', userId);
 
       if (profileError) {
         throw profileError;
       }
 
-      // Apply preferences immediately
-      setTheme(themePreference);
+      // Apply preferences immediately (theme already applied via useEffect)
       i18n.changeLanguage(languagePreference);
 
       // CRITICAL: Refresh the auth profile to update onboarding_completed in context
@@ -208,6 +257,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
         description: error instanceof Error ? error.message : t('settings.saveError'),
         variant: 'destructive',
       });
+      throw error; // Re-throw so PlanSelectionStep knows it failed
     } finally {
       setIsLoading(false);
     }
@@ -228,22 +278,24 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             </div>
           </div>
 
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-1 sm:gap-2">
+          {/* Progress indicator - responsive for small screens */}
+          <div className="flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto px-2">
             {Array.from({ length: totalSteps }, (_, i) => i + 1).map((i) => (
-              <div key={i} className="flex items-center">
+              <div key={i} className="flex items-center flex-shrink-0">
                 <div
                   className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                     i <= step
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground'
                   }`}
+                  aria-label={`Step ${i} of ${totalSteps}`}
+                  aria-current={i === step ? 'step' : undefined}
                 >
                   {i}
                 </div>
                 {i < totalSteps && (
                   <div
-                    className={`w-4 sm:w-6 h-1 mx-0.5 transition-colors ${
+                    className={`w-4 sm:w-6 h-1 mx-0.5 transition-colors flex-shrink-0 ${
                       i < step ? 'bg-primary' : 'bg-muted'
                     }`}
                   />
@@ -251,6 +303,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               </div>
             ))}
           </div>
+          
+          {/* Mobile-friendly step indicator */}
+          <p className="text-center text-sm text-muted-foreground sm:hidden">
+            {t('preferencesOnboarding.stepOf', `Step ${step} of ${totalSteps}`).replace('${step}', step.toString()).replace('${total}', totalSteps.toString())}
+          </p>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -263,9 +320,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 <CardDescription>{t('preferencesOnboarding.step1.description')}</CardDescription>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-4" role="radiogroup" aria-label={t('preferencesOnboarding.step1.title')}>
                 <button
                   onClick={() => setUnitPreference('imperial')}
+                  role="radio"
+                  aria-checked={unitPreference === 'imperial'}
                   className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
                     unitPreference === 'imperial'
                       ? 'border-primary bg-primary/5'
@@ -280,6 +339,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 
                 <button
                   onClick={() => setUnitPreference('metric')}
+                  role="radio"
+                  aria-checked={unitPreference === 'metric'}
                   className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
                     unitPreference === 'metric'
                       ? 'border-primary bg-primary/5'
@@ -310,9 +371,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 <CardDescription>{t('preferencesOnboarding.step2.description')}</CardDescription>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-4" role="radiogroup" aria-label={t('preferencesOnboarding.step2.title')}>
                 <button
                   onClick={() => setThemePreference('light')}
+                  role="radio"
+                  aria-checked={themePreference === 'light'}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     themePreference === 'light'
                       ? 'border-primary bg-primary/5'
@@ -330,6 +393,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 
                 <button
                   onClick={() => setThemePreference('dark')}
+                  role="radio"
+                  aria-checked={themePreference === 'dark'}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     themePreference === 'dark'
                       ? 'border-primary bg-primary/5'
@@ -347,6 +412,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
                 <button
                   onClick={() => setThemePreference('system')}
+                  role="radio"
+                  aria-checked={themePreference === 'system'}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     themePreference === 'system'
                       ? 'border-primary bg-primary/5'
@@ -383,9 +450,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 <CardDescription>{t('preferencesOnboarding.step3.description')}</CardDescription>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-4" role="radiogroup" aria-label={t('preferencesOnboarding.step3.title')}>
                 <button
                   onClick={() => setLanguagePreference('en')}
+                  role="radio"
+                  aria-checked={languagePreference === 'en'}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     languagePreference === 'en'
                       ? 'border-primary bg-primary/5'
@@ -400,6 +469,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
                 
                 <button
                   onClick={() => setLanguagePreference('es')}
+                  role="radio"
+                  aria-checked={languagePreference === 'es'}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     languagePreference === 'es'
                       ? 'border-primary bg-primary/5'
@@ -414,6 +485,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
                 <button
                   onClick={() => setLanguagePreference('fr')}
+                  role="radio"
+                  aria-checked={languagePreference === 'fr'}
                   className={`p-6 rounded-lg border-2 transition-all text-left ${
                     languagePreference === 'fr'
                       ? 'border-primary bg-primary/5'
