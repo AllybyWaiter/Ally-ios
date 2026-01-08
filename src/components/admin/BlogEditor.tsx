@@ -79,11 +79,25 @@ export default function BlogEditor() {
   }, [id]);
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from('blog_categories')
-      .select('id, name')
-      .order('name');
-    setCategories(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('blog_categories')
+        .select('id, name')
+        .order('name');
+      
+      if (error) {
+        console.error('Failed to fetch categories:', error);
+        toast({
+          title: 'Warning',
+          description: 'Failed to load categories',
+          variant: 'destructive',
+        });
+      }
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    }
   };
 
   const fetchPost = async () => {
@@ -272,13 +286,18 @@ export default function BlogEditor() {
         postId = newPost.id;
       }
 
-      // Update categories
+      // Update categories - delete then insert (transaction-like behavior via error handling)
       if (postId) {
         // Delete existing categories
-        await supabase
+        const { error: deleteError } = await supabase
           .from('blog_post_categories')
           .delete()
           .eq('post_id', postId);
+
+        if (deleteError) {
+          console.error('Failed to delete existing categories:', deleteError);
+          throw new Error('Failed to update categories');
+        }
 
         // Insert new categories
         if (selectedCategories.length > 0) {
@@ -286,7 +305,11 @@ export default function BlogEditor() {
             post_id: postId,
             category_id: categoryId,
           }));
-          await supabase.from('blog_post_categories').insert(categoryData);
+          const { error: insertError } = await supabase.from('blog_post_categories').insert(categoryData);
+          if (insertError) {
+            console.error('Failed to insert categories:', insertError);
+            throw new Error('Failed to save categories');
+          }
         }
       }
 

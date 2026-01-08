@@ -100,7 +100,12 @@ export const useTTS = () => {
       audio.onerror = () => {
         toast.error('Failed to play audio');
         setIsSpeaking(false);
+        setIsGenerating(false);
         setSpeakingMessageId(null);
+        if (audioUrlRef.current) {
+          URL.revokeObjectURL(audioUrlRef.current);
+          audioUrlRef.current = null;
+        }
       };
 
       setIsGenerating(false);
@@ -110,6 +115,7 @@ export const useTTS = () => {
       console.error('TTS error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate speech');
       setIsGenerating(false);
+      setIsSpeaking(false);
       setSpeakingMessageId(null);
     }
   }, [speakingMessageId, isSpeaking, stop]);

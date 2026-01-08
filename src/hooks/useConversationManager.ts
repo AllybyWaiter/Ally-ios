@@ -90,14 +90,18 @@ export function useConversationManager(userId: string | null) {
     
     const newPinnedState = !conversation.is_pinned;
     
-    const { error } = await supabase
-      .from('chat_conversations')
-      .update({ is_pinned: newPinnedState })
-      .eq('id', conversationId)
-      .eq('user_id', userId);
+    try {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ is_pinned: newPinnedState })
+        .eq('id', conversationId)
+        .eq('user_id', userId);
 
-    if (!error) {
-      await fetchConversations();
+      if (!error) {
+        await fetchConversations();
+      }
+    } catch (error) {
+      console.error('Failed to pin conversation:', error);
     }
   }, [userId, conversations, fetchConversations]);
 
@@ -152,6 +156,12 @@ export function useConversationManager(userId: string | null) {
       throw error;
     }
 
+    // Sanitize conversation title for use as filename
+    const sanitizedTitle = conversation.title
+      .replace(/[/\\?%*:|"<>]/g, '-') // Replace invalid filename chars
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .slice(0, 100); // Limit length
+    
     // Format as Markdown
     let markdown = `# ${conversation.title}\n\n`;
     markdown += `*Exported on ${format(new Date(), 'MMMM d, yyyy h:mm a')}*\n\n`;
