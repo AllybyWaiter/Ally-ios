@@ -101,26 +101,38 @@ const AppHeader = () => {
                 <span className="hidden sm:inline text-sm font-medium">{userName || "User"}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{userName || "User"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+          <DropdownMenuContent align="end" className="w-64 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-lg">
+            <div className="px-4 py-3 border-b border-border/40">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
+                  <AvatarFallback className="bg-[#34406A] text-white text-sm font-semibold">
+                    {getInitials(userName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <p className="text-sm font-semibold truncate">{userName || "User"}</p>
+                  <p className="text-xs text-muted-foreground/80 truncate">{user?.email}</p>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  {t('navigation.settings')}
+              </div>
+            </div>
+            <div className="py-1.5">
+              <DropdownMenuItem asChild className="mx-1.5 rounded-md hover:bg-foreground/5 cursor-pointer">
+                <Link to="/settings" className="flex items-center px-2.5 py-2">
+                  <Settings className="mr-2.5 h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">{t('navigation.settings')}</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive">
-                <LogOut className="mr-2 h-4 w-4" />
-                {t('navigation.signOut')}
+            </div>
+            <div className="border-t border-border/40 py-1.5">
+              <DropdownMenuItem 
+                onClick={signOut} 
+                className="mx-1.5 rounded-md hover:bg-destructive/10 cursor-pointer text-destructive/90"
+              >
+                <LogOut className="mr-2.5 h-4 w-4" />
+                <span className="text-sm font-medium">{t('navigation.signOut')}</span>
               </DropdownMenuItem>
-            </DropdownMenuContent>
+            </div>
+          </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
