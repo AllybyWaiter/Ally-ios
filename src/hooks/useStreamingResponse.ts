@@ -101,7 +101,23 @@ export function useStreamingResponse() {
 
     if (!response.ok || !response.body) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      throw new Error("Failed to get response");
+      
+      // Parse error response for specific messages
+      let errorMessage = "Failed to get response";
+      try {
+        const errorData = await response.json();
+        if (response.status === 429) {
+          errorMessage = errorData.error || "Rate limit exceeded. Please wait a moment and try again.";
+        } else if (response.status === 402) {
+          errorMessage = errorData.error || "AI service temporarily unavailable. Please try again later.";
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // Use generic message if parsing fails
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const reader = response.body.getReader();

@@ -35,11 +35,21 @@ serve(async (req) => {
       errors.push(...collectErrors(
         validateString(input?.topic, 'input.topic', { minLength: 3, maxLength: 500 })
       ));
-    } else if (action === 'improve' || action === 'seo') {
+    } else if (action === 'improve') {
+      // Improve requires both title and content
       errors.push(...collectErrors(
         validateString(input?.title, 'input.title', { minLength: 1, maxLength: 500 }),
         validateString(input?.content, 'input.content', { minLength: 10, maxLength: 100000 })
       ));
+    } else if (action === 'seo') {
+      // SEO requires at least content (title is optional)
+      if (!input?.content) {
+        errors.push({ field: 'input.content', message: 'Content is required for SEO optimization' });
+      } else {
+        errors.push(...collectErrors(
+          validateString(input?.content, 'input.content', { minLength: 10, maxLength: 100000 })
+        ));
+      }
     }
 
     if (errors.length > 0) {
@@ -187,7 +197,7 @@ Create SEO title (max 60 chars), SEO description (max 160 chars), and 4-5 releva
     }
 
     const requestBody: Record<string, unknown> = {
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-3-flash-preview',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }

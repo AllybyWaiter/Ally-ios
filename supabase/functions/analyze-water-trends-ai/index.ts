@@ -328,7 +328,7 @@ Respond using the analyze_trends tool with your findings. Include:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           { role: 'system', content: 'You are an expert aquarist and water chemistry analyst. Analyze water quality trends and predict potential problems before they occur. Be specific about which inhabitants are affected and provide actionable recommendations.' },
           { role: 'user', content: analysisPrompt }

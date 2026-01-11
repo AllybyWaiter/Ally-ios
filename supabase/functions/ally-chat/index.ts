@@ -29,8 +29,8 @@ import { validateRequiredInputs } from './utils/inputGate.ts';
 
 // Model configuration
 const AI_MODELS = {
-  standard: "google/gemini-2.5-flash",  // Fast, balanced
-  thinking: "openai/gpt-5"              // Powerful reasoning for Gold users
+  standard: "google/gemini-3-flash-preview",  // Fast, balanced (latest)
+  thinking: "openai/gpt-5"                    // Powerful reasoning for Gold users
 };
 
 const GOLD_TIERS = ['gold', 'business', 'enterprise'];
@@ -40,7 +40,7 @@ const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const USES_COMPLETION_TOKENS = ['openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano'];
 
 // Only Gemini models support custom temperature (GPT-5 only supports default 1.0)
-const SUPPORTS_TEMPERATURE = ['google/gemini-2.5-flash', 'google/gemini-2.5-pro'];
+const SUPPORTS_TEMPERATURE = ['google/gemini-2.5-flash', 'google/gemini-2.5-pro', 'google/gemini-3-flash-preview', 'google/gemini-3-pro-preview'];
 
 serve(async (req) => {
   const corsResponse = handleCors(req);
