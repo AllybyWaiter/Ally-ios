@@ -23,7 +23,9 @@ import {
   Lock,
   Brain,
   Zap,
-  ArrowLeft
+  ArrowLeft,
+  RotateCcw,
+  StopCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,7 @@ import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { useTTS } from "@/hooks/useTTS";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { copyToClipboard } from "@/lib/clipboard";
+import { triggerHaptic } from "@/hooks/useHaptics";
 
 interface Message {
   role: "user" | "assistant";
@@ -51,6 +54,9 @@ interface Message {
 }
 
 import { MODEL_OPTIONS, type ModelType, type ModelOption } from '@/lib/constants';
+
+// Persist last conversation ID for session continuity
+const LAST_CONVERSATION_KEY = 'ally_last_conversation_id';
 
 const AllyChat = () => {
   const navigate = useNavigate();
@@ -70,10 +76,12 @@ const AllyChat = () => {
   const [selectedModel, setSelectedModel] = useState<ModelType>('standard');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [lastError, setLastError] = useState<{ message: string; userMessage: Message } | null>(null);
+  const [streamStartTime, setStreamStartTime] = useState<number | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { isStreaming, streamResponse } = useStreamingResponse();
+  const { isStreaming, streamResponse, abort } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
   const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
@@ -155,16 +163,28 @@ const AllyChat = () => {
     setUserId(user.id);
     await conversationManager.fetchAquariums();
     await conversationManager.fetchConversations();
-    setMessages(conversationManager.startNewConversation());
+    
+    // Restore last conversation if available
+    const lastConvoId = localStorage.getItem(LAST_CONVERSATION_KEY);
+    if (lastConvoId && conversationManager.conversations.some(c => c.id === lastConvoId)) {
+      const loadedMessages = await conversationManager.loadConversation(lastConvoId);
+      setMessages(loadedMessages);
+    } else {
+      setMessages(conversationManager.startNewConversation());
+    }
   };
 
   const handleLoadConversation = useCallback(async (id: string) => {
     const loadedMessages = await conversationManager.loadConversation(id);
     setMessages(loadedMessages);
+    // Persist for session continuity
+    localStorage.setItem(LAST_CONVERSATION_KEY, id);
   }, [conversationManager]);
 
   const handleStartNewConversation = useCallback(() => {
     setMessages(conversationManager.startNewConversation());
+    setLastError(null);
+    localStorage.removeItem(LAST_CONVERSATION_KEY);
   }, [conversationManager]);
 
   const handleDeleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
@@ -227,32 +247,39 @@ const AllyChat = () => {
     setPendingPhoto(null);
   };
 
-  const sendMessage = async () => {
-    if ((!input.trim() && !pendingPhoto) || isLoading) return;
+  // Stop generating handler
+  const handleStopGenerating = useCallback(() => {
+    abort();
+    setIsLoading(false);
+    setStreamStartTime(null);
+    toast({
+      title: "Stopped",
+      description: "Response generation was stopped.",
+    });
+  }, [abort, toast]);
 
-    const userMessage: Message = {
-      role: "user",
-      content: input || (pendingPhoto ? "Please analyze this photo" : ""),
-      timestamp: new Date(),
-      imageUrl: pendingPhoto?.preview,
-    };
-    const shouldAutoPlay = wasVoiceInput;
+  // Retry last failed message
+  const handleRetry = useCallback(async () => {
+    if (!lastError) return;
+    
+    const userMessage = lastError.userMessage;
+    setLastError(null);
+    
     setMessages(prev => [...prev, userMessage]);
-    setInput("");
-    setPendingPhoto(null);
-    setWasVoiceInput(false);
     setIsLoading(true);
+    setStreamStartTime(Date.now());
 
     const currentAquariumName = conversationManager.getSelectedAquariumName();
     const currentAquariumContext = conversationManager.selectedAquarium;
 
     try {
-      const fullContent = await streamResponse(
+      await streamResponse(
         [...messages, userMessage],
         conversationManager.getAquariumIdForApi(),
         selectedModel,
         {
           onStreamStart: () => {
+            triggerHaptic('light'); // Haptic on first token
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -275,12 +302,104 @@ const AllyChat = () => {
             });
           },
           onStreamEnd: async (content) => {
+            triggerHaptic('success'); // Haptic on completion
+            setStreamStartTime(null);
             const finalAssistantMessage = {
               role: "assistant" as const,
               content,
               timestamp: new Date()
             };
-            await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+            const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+            if (savedId) {
+              localStorage.setItem(LAST_CONVERSATION_KEY, savedId);
+            }
+          },
+          onError: (error) => {
+            console.error("Stream error:", error);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Retry error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+      setLastError({ message: errorMessage, userMessage });
+      setMessages(prev => prev.slice(0, -1));
+      triggerHaptic('error');
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setStreamStartTime(null);
+    }
+  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast]);
+
+  const sendMessage = async () => {
+    if ((!input.trim() && !pendingPhoto) || isLoading) return;
+
+    // Clear any previous error
+    setLastError(null);
+
+    const userMessage: Message = {
+      role: "user",
+      content: input || (pendingPhoto ? "Please analyze this photo" : ""),
+      timestamp: new Date(),
+      imageUrl: pendingPhoto?.preview,
+    };
+    const shouldAutoPlay = wasVoiceInput;
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    setPendingPhoto(null);
+    setWasVoiceInput(false);
+    setIsLoading(true);
+    setStreamStartTime(Date.now());
+
+    const currentAquariumName = conversationManager.getSelectedAquariumName();
+    const currentAquariumContext = conversationManager.selectedAquarium;
+
+    try {
+      const fullContent = await streamResponse(
+        [...messages, userMessage],
+        conversationManager.getAquariumIdForApi(),
+        selectedModel,
+        {
+          onStreamStart: () => {
+            triggerHaptic('light'); // Haptic on first token
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: "",
+              timestamp: new Date(),
+              aquariumContext: currentAquariumContext,
+              aquariumName: currentAquariumName
+            }]);
+          },
+          onToken: (content) => {
+            setMessages(prev => {
+              const newMessages = [...prev];
+              newMessages[newMessages.length - 1] = {
+                role: "assistant",
+                content,
+                timestamp: new Date(),
+                aquariumContext: currentAquariumContext,
+                aquariumName: currentAquariumName
+              };
+              return newMessages;
+            });
+          },
+          onStreamEnd: async (content) => {
+            triggerHaptic('success'); // Haptic on completion
+            setStreamStartTime(null);
+            const finalAssistantMessage = {
+              role: "assistant" as const,
+              content,
+              timestamp: new Date()
+            };
+            const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+            if (savedId) {
+              localStorage.setItem(LAST_CONVERSATION_KEY, savedId);
+            }
             
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
@@ -295,6 +414,10 @@ const AllyChat = () => {
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+      
+      // Store error for retry
+      setLastError({ message: errorMessage, userMessage });
+      triggerHaptic('error');
       
       // Show specific toast for rate limits or payment issues
       if (errorMessage.includes("rate limit") || errorMessage.includes("Rate limit")) {
@@ -317,6 +440,7 @@ const AllyChat = () => {
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
+      setStreamStartTime(null);
     }
   };
 
@@ -578,7 +702,6 @@ const AllyChat = () => {
             isGeneratingTTS={isGeneratingTTS}
             onSelectSuggestion={(template) => {
               setInput(template);
-              // Focus input so user can fill in the template blanks - don't auto-send
               inputRef.current?.focus();
             }}
             aquariumId={conversationManager.selectedAquarium === 'general' ? null : conversationManager.selectedAquarium}
@@ -752,19 +875,47 @@ const AllyChat = () => {
                 </div>
               </div>
 
-              <Button
-                onClick={sendMessage}
-                disabled={(!input.trim() && !pendingPhoto) || isLoading}
-                size="icon"
-                className="h-10 w-10 rounded-full"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
+              {/* Send / Stop Button */}
+              {isStreaming ? (
+                <Button
+                  onClick={handleStopGenerating}
+                  size="icon"
+                  variant="destructive"
+                  className="h-10 w-10 rounded-full"
+                >
+                  <StopCircle className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={sendMessage}
+                  disabled={(!input.trim() && !pendingPhoto) || isLoading}
+                  size="icon"
+                  className="h-10 w-10 rounded-full"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
             </div>
+            
+            {/* Retry Button on Error */}
+            {lastError && !isLoading && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/10 text-destructive text-sm">
+                <span className="flex-1">{lastError.message}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="gap-1 h-7"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Retry
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

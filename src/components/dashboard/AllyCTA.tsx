@@ -4,10 +4,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { useCallback } from 'react';
 
 export function AllyCTA() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Preload Ally Chat on hover for faster navigation
+  const handleMouseEnter = useCallback(() => {
+    import('@/pages/AllyChat');
+  }, []);
 
   return (
     <Card 
@@ -15,6 +21,7 @@ export function AllyCTA() {
       style={{ animationDelay: '100ms' }}
       role="region"
       aria-label={t('dashboard.chatWithAlly')}
+      onMouseEnter={handleMouseEnter}
     >
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
@@ -36,6 +43,7 @@ export function AllyCTA() {
             variant="secondary"
             className="gap-2"
             aria-label={t('dashboard.startChat')}
+            onMouseEnter={handleMouseEnter}
           >
             <MessageSquare className="h-4 w-4" aria-hidden="true" />
             {t('dashboard.startChat')}
