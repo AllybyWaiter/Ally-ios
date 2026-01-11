@@ -576,6 +576,16 @@ const Settings = () => {
               <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Preferences" description="Manage cookies" href="/legal/cookie-preferences" />
             </SettingsSection>
 
+            <SettingsSection title="Danger Zone">
+              <SettingsRow 
+                icon={Trash2} 
+                iconClassName="bg-destructive/10 text-destructive" 
+                label="Delete Account"
+                description="Permanently delete your account"
+                onClick={() => setActiveSection('delete-account')}
+              />
+            </SettingsSection>
+
             {/* App Info */}
             <div className="rounded-xl bg-background/80 backdrop-blur-lg border border-border/30 p-4">
               <div className="flex items-center justify-between">
@@ -678,7 +688,7 @@ const Settings = () => {
         </div>
       </DetailSheet>
 
-      <DetailSheet id="data" title="Data & Privacy" description="Export and manage your data">
+      <DetailSheet id="data" title="Data & Privacy" description="Export your data">
         <div className="space-y-4">
           <div className="p-4 rounded-lg bg-muted/50">
             <h4 className="font-medium mb-2">Download Your Data</h4>
@@ -688,15 +698,29 @@ const Settings = () => {
               {exportLoading ? "Exporting..." : "Download My Data"}
             </Button>
           </div>
-          <Separator />
+        </div>
+      </DetailSheet>
+
+      <DetailSheet id="delete-account" title="Delete Account" description="This action cannot be undone">
+        <div className="space-y-4">
           <div className="p-4 rounded-lg border-2 border-destructive/30 bg-destructive/5">
             <h4 className="font-medium text-destructive mb-2 flex items-center gap-2">
-              <Trash2 className="h-4 w-4" />Delete Account
+              <Trash2 className="h-4 w-4" />
+              Permanent Account Deletion
             </h4>
-            <p className="text-sm text-muted-foreground mb-3">Permanently delete your account and all data. This cannot be undone.</p>
+            <p className="text-sm text-muted-foreground mb-3">
+              This will permanently delete your account and all associated data including:
+            </p>
+            <ul className="text-sm text-muted-foreground list-disc list-inside mb-3 space-y-1">
+              <li>All water bodies and test history</li>
+              <li>Calendar events and tasks</li>
+              <li>AI conversation history</li>
+              <li>Profile and preferences</li>
+            </ul>
+            <p className="text-sm font-medium text-destructive mb-3">This cannot be undone.</p>
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">Delete Account</Button>
+                <Button variant="destructive" className="w-full">Delete My Account</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
