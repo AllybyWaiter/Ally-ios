@@ -7,6 +7,26 @@
 export type WaterBodyCategory = 'aquarium' | 'pool' | 'spa';
 
 /**
+ * Format a water body type for display using i18n translations
+ * Falls back to title case conversion if translation not found
+ */
+export function formatWaterBodyType(type: string, t: (key: string) => string): string {
+  const translationKey = `aquarium.types.${type}`;
+  const translated = t(translationKey);
+  
+  // If translation exists and isn't the key itself, use it
+  if (translated && translated !== translationKey) {
+    return translated;
+  }
+  
+  // Fallback: Convert snake_case to Title Case
+  return type
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
  * Check if a water body type is a pool or spa
  */
 export function isPoolType(type: string): boolean {

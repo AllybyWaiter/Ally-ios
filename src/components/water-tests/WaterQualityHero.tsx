@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { HealthRing } from '@/components/aquarium/HealthRing';
 import { formatRelativeTime } from '@/lib/formatters';
+import { formatWaterBodyType } from '@/lib/waterBodyUtils';
 
 interface WaterQualityHeroProps {
   aquariums: Array<{ id: string; name: string; type: string }>;
@@ -89,8 +90,8 @@ export function WaterQualityHero({
                     className={selectedAquarium?.id === aquarium.id ? 'bg-primary/10' : ''}
                   >
                     <span className="font-medium">{aquarium.name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground capitalize">
-                      {aquarium.type}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {formatWaterBodyType(aquarium.type, t)}
                     </span>
                   </DropdownMenuItem>
                 ))}
