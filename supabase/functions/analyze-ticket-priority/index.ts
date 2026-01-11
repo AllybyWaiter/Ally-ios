@@ -100,7 +100,7 @@ Return ONLY one word: urgent, high, medium, or low`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Analyze this support message and return only the priority level (urgent, high, medium, or low):\n\n${message}` }
