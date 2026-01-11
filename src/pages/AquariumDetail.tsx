@@ -27,7 +27,7 @@ import { queryPresets } from "@/lib/queryConfig";
 import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastructure/queries";
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
-import { isPoolType, getWaterBodyLabels } from "@/lib/waterBodyUtils";
+import { isPoolType, getWaterBodyLabels, formatWaterBodyType } from "@/lib/waterBodyUtils";
 
 // Safe date formatter to prevent crashes - returns empty string for invalid dates
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
@@ -153,7 +153,7 @@ export default function AquariumDetail() {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{aquarium.name}</h1>
-              <Badge variant="secondary">{aquarium.type}</Badge>
+              <Badge variant="secondary">{formatWaterBodyType(aquarium.type, t)}</Badge>
               <Badge variant="outline">{aquarium.status}</Badge>
             </div>
             <DropdownMenu>

@@ -16,6 +16,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useLongPress } from '@/hooks/useLongPress';
 import { QuickHealthView } from '@/components/aquarium/QuickHealthView';
 import { useAquariumHealthScore } from '@/hooks/useAquariumHealthScore';
+import { formatWaterBodyType } from '@/lib/waterBodyUtils';
 
 interface Aquarium {
   id: string;
@@ -134,8 +135,8 @@ const AquariumCard = memo(function AquariumCard({
             <CardTitle className="flex items-center gap-2">
               {aquarium.name}
             </CardTitle>
-            <CardDescription className="capitalize">
-              {aquarium.type} • {formatVolume(aquarium.volume_gallons, units)}
+            <CardDescription>
+              {formatWaterBodyType(aquarium.type, t)} • {formatVolume(aquarium.volume_gallons, units)}
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
