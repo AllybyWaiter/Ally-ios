@@ -294,11 +294,26 @@ const AllyChat = () => {
       );
     } catch (error) {
       console.error("Chat error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+      
+      // Show specific toast for rate limits or payment issues
+      if (errorMessage.includes("rate limit") || errorMessage.includes("Rate limit")) {
+        toast({
+          title: "Please slow down",
+          description: "You're sending messages too quickly. Please wait a moment.",
+        });
+      } else if (errorMessage.includes("402") || errorMessage.includes("temporarily unavailable")) {
+        toast({
+          title: "Service temporarily unavailable",
+          description: "Please try again later.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);

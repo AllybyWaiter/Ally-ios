@@ -48,13 +48,10 @@ const AllySupportChat = () => {
     }
   }, [isOpen]);
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: Message = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+  // Shared streaming response handler
+  const processStreamResponse = useCallback(async (userMessage: Message, currentMessages: Message[]) => {
     setIsLoading(true);
+    setMessages(prev => [...prev, userMessage, { role: "assistant", content: "" }]);
 
     try {
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-support`;
@@ -66,7 +63,7 @@ const AllySupportChat = () => {
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({ 
-          messages: [...messages, userMessage],
+          messages: [...currentMessages, userMessage],
           userName: userName || undefined
         }),
       });
@@ -80,9 +77,6 @@ const AllySupportChat = () => {
       let assistantMessage = "";
       let textBuffer = "";
       let streamDone = false;
-
-      // Add placeholder for assistant message
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       while (!streamDone) {
         const { done, value } = await reader.read();
@@ -110,7 +104,7 @@ const AllySupportChat = () => {
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               assistantMessage += content;
-              setMessages((prev) => {
+              setMessages(prev => {
                 const newMessages = [...prev];
                 newMessages[newMessages.length - 1] = {
                   role: "assistant",
@@ -120,7 +114,6 @@ const AllySupportChat = () => {
               });
             }
           } catch {
-            // Incomplete JSON, put it back
             textBuffer = line + "\n" + textBuffer;
             break;
           }
@@ -138,7 +131,7 @@ const AllySupportChat = () => {
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
             if (content) {
               assistantMessage += content;
-              setMessages((prev) => {
+              setMessages(prev => {
                 const newMessages = [...prev];
                 newMessages[newMessages.length - 1] = {
                   role: "assistant",
@@ -148,13 +141,14 @@ const AllySupportChat = () => {
               });
             }
           } catch {
-            // Ignore
+            // Ignore parsing errors in final flush
           }
         }
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
+      // Remove the empty assistant message and show error
+      setMessages(prev => [
+        ...prev.slice(0, -1),
         {
           role: "assistant",
           content: "Sorry, I'm having trouble connecting right now. Please try again or use our contact form.",
@@ -163,6 +157,17 @@ const AllySupportChat = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [userName]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = { role: "user", content: input };
+    const currentMessages = [...messages];
+    setMessages(prev => [...prev, userMessage]);
+    setInput("");
+    
+    await processStreamResponse(userMessage, currentMessages);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -181,98 +186,13 @@ const AllySupportChat = () => {
 
   const handleQuickReply = useCallback((reply: string) => {
     if (isLoading) return;
-    setInput(reply);
-    // Use setTimeout to ensure state is updated before sending
-    setTimeout(() => {
-      const userMessage: Message = { role: "user", content: reply };
-      setMessages((prev) => [...prev, userMessage]);
-      setInput("");
-      setIsLoading(true);
-      
-      // Trigger fetch separately to avoid closure issues
-      (async () => {
-        try {
-          const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-support`;
-          
-          const response = await fetch(CHAT_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
-            body: JSON.stringify({ 
-              messages: [...messages, userMessage],
-              userName: userName || undefined
-            }),
-          });
-
-          if (!response.ok || !response.body) {
-            throw new Error("Failed to get response");
-          }
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let assistantMessage = "";
-          let textBuffer = "";
-          let streamDone = false;
-
-          setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
-          while (!streamDone) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            textBuffer += decoder.decode(value, { stream: true });
-
-            let newlineIndex: number;
-            while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-              let line = textBuffer.slice(0, newlineIndex);
-              textBuffer = textBuffer.slice(newlineIndex + 1);
-
-              if (line.endsWith("\r")) line = line.slice(0, -1);
-              if (line.startsWith(":") || line.trim() === "") continue;
-              if (!line.startsWith("data: ")) continue;
-
-              const jsonStr = line.slice(6).trim();
-              if (jsonStr === "[DONE]") {
-                streamDone = true;
-                break;
-              }
-
-              try {
-                const parsed = JSON.parse(jsonStr);
-                const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-                if (content) {
-                  assistantMessage += content;
-                  setMessages((prev) => {
-                    const newMessages = [...prev];
-                    newMessages[newMessages.length - 1] = {
-                      role: "assistant",
-                      content: assistantMessage,
-                    };
-                    return newMessages;
-                  });
-                }
-              } catch {
-                textBuffer = line + "\n" + textBuffer;
-                break;
-              }
-            }
-          }
-        } catch {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: "Sorry, I'm having trouble connecting right now. Please try again or use our contact form.",
-            },
-          ]);
-        } finally {
-          setIsLoading(false);
-        }
-      })();
-    }, 0);
-  }, [messages, userName, isLoading]);
+    
+    const userMessage: Message = { role: "user", content: reply };
+    const currentMessages = [...messages];
+    setInput("");
+    
+    processStreamResponse(userMessage, currentMessages);
+  }, [messages, isLoading, processStreamResponse]);
 
   return (
     <>
