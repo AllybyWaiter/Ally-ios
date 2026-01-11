@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useWaterTestForm, usePhotoAnalysis } from "./hooks";
 import { PhotoUploadSection } from "./PhotoUploadSection";
 import { ParameterInputGrid } from "./ParameterInputGrid";
+import { formatWaterBodyType } from "@/lib/waterBodyUtils";
 
 interface WaterTestFormProps {
   aquarium: {
@@ -97,7 +98,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
             <div>
               <CardTitle className="text-2xl">{aquarium.name}</CardTitle>
               <Badge variant="secondary" className="mt-2">
-                {aquarium.type}
+                {formatWaterBodyType(aquarium.type, t)}
               </Badge>
             </div>
             {isAutoSaving && (
