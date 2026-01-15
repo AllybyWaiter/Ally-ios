@@ -10,7 +10,7 @@ import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
 import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
+import { formatTemperature, formatWindSpeed, getUVLevel, getCardinalDirection } from '@/lib/unitConversions';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import AppHeader from '@/components/AppHeader';
 import {
@@ -121,8 +121,11 @@ function ForecastCard({ day, units }: ForecastCardProps) {
           </div>
         )}
         <div className="flex items-center gap-1 text-muted-foreground">
-          <Wind className="h-4 w-4" />
-          {formatWindSpeed(day.windSpeed, units)}
+          <Wind 
+            className="h-4 w-4" 
+            style={{ transform: `rotate(${(day.windDirection ?? 0) + 180}deg)` }}
+          />
+          {getCardinalDirection(day.windDirection)} {formatWindSpeed(day.windSpeed, units)}
         </div>
         {day.uvIndexMax != null && day.uvIndexMax > 0 && (
           <div className="flex items-center gap-1">
@@ -326,8 +329,13 @@ export default function Weather() {
               {/* Metrics Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
-                  <Wind className="h-4 w-4 text-muted-foreground mb-1" />
-                  <span className="text-sm font-medium">{formatWindSpeed(weather.windSpeed, units)}</span>
+                  <Wind 
+                    className="h-4 w-4 text-muted-foreground mb-1" 
+                    style={{ transform: `rotate(${(weather.windDirection ?? 0) + 180}deg)` }}
+                  />
+                  <span className="text-sm font-medium">
+                    {getCardinalDirection(weather.windDirection)} {formatWindSpeed(weather.windSpeed, units)}
+                  </span>
                   <span className="text-xs text-muted-foreground">Wind</span>
                 </div>
                 <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">

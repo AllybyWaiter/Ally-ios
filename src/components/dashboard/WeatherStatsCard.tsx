@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useWeather } from '@/hooks/useWeather';
 import { useAuth } from '@/hooks/useAuth';
-import { formatTemperature } from '@/lib/unitConversions';
+import { formatTemperature, getCardinalDirection } from '@/lib/unitConversions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Sun, Cloud, CloudRain, CloudSnow, CloudLightning, CloudFog,
@@ -132,9 +132,12 @@ export function WeatherStatsCard() {
 
         {/* Wind */}
         <div className="bg-background/40 rounded-lg p-3 text-center">
-          <Wind className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
+          <Wind 
+            className="h-4 w-4 text-muted-foreground mx-auto mb-1" 
+            style={{ transform: `rotate(${(weather.windDirection ?? 0) + 180}deg)` }}
+          />
           <div className="text-sm font-medium text-foreground">
-            {formatWindSpeed(weather.windSpeed, units)}
+            {getCardinalDirection(weather.windDirection)} {formatWindSpeed(weather.windSpeed, units)}
           </div>
           <div className="text-xs text-muted-foreground">Wind</div>
         </div>
