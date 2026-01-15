@@ -124,6 +124,8 @@ Disallow: /calendar
 Disallow: /calendar/*
 Disallow: /chat
 Disallow: /chat/*
+Disallow: /ally
+Disallow: /ally/*
 Disallow: /aquarium/
 Disallow: /aquarium/*
 Disallow: /weather

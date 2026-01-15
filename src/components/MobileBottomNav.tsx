@@ -17,7 +17,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: Home, label: "Home", path: "/dashboard" },
   { icon: Droplets, label: "Tests", path: "/water-tests" },
-  { icon: MessageSquare, label: "Chat", path: "/chat", isSpecial: true },
+  { icon: MessageSquare, label: "Chat", path: "/ally", isSpecial: true },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: CloudSun, label: "Weather", path: "/weather" },
 ];
