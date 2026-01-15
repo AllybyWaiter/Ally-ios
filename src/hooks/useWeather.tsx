@@ -120,7 +120,8 @@ function isValidWeatherData(data: unknown): data is WeatherData {
   return (
     typeof d.temperature === 'number' &&
     typeof d.condition === 'string' &&
-    typeof d.fetchedAt === 'string'
+    typeof d.fetchedAt === 'string' &&
+    typeof d.windDirection === 'number'
   );
 }
 
