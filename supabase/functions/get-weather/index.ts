@@ -142,13 +142,13 @@ serve(async (req) => {
 
     logger.info('Fetching weather', { latitude, longitude });
 
-    // Enhanced Open-Meteo URL with precipitation, pressure, dew point, cloud cover, visibility
+    // Enhanced Open-Meteo URL with precipitation, pressure, dew point, cloud cover, visibility, wind direction
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
-      `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day,uv_index,` +
+      `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day,uv_index,` +
       `precipitation,surface_pressure,dew_point_2m,cloud_cover,visibility` +
       `&hourly=temperature_2m,weather_code,is_day,precipitation_probability,precipitation,surface_pressure` +
       `&forecast_hours=24` +
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,uv_index_max,sunrise,sunset,` +
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset,` +
       `precipitation_probability_max,precipitation_sum` +
       `&forecast_days=10&timezone=auto`;
     
@@ -183,7 +183,8 @@ serve(async (req) => {
       weather_code, 
       temperature_2m, 
       apparent_temperature, 
-      wind_speed_10m, 
+      wind_speed_10m,
+      wind_direction_10m,
       relative_humidity_2m, 
       is_day, 
       uv_index,
@@ -242,6 +243,7 @@ serve(async (req) => {
           tempMax: Math.round(data.daily.temperature_2m_max[i]),
           tempMin: Math.round(data.daily.temperature_2m_min[i]),
           windSpeed: Math.round(data.daily.wind_speed_10m_max[i]),
+          windDirection: Math.round(data.daily.wind_direction_10m_dominant?.[i] ?? 0),
           uvIndexMax: Math.round(data.daily.uv_index_max?.[i] ?? 0),
           precipitationProbabilityMax: Math.round(data.daily.precipitation_probability_max?.[i] ?? 0),
           precipitationSum: data.daily.precipitation_sum?.[i] ?? 0,
@@ -284,6 +286,7 @@ serve(async (req) => {
       feelsLike: Math.round(apparent_temperature),
       temperatureUnit: 'celsius',
       windSpeed: Math.round(wind_speed_10m),
+      windDirection: Math.round(wind_direction_10m ?? 0),
       humidity: Math.round(relative_humidity_2m),
       uvIndex: Math.round(uv_index ?? 0),
       isDay: is_day === 1,

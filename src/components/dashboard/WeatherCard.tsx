@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWeather, WeatherCondition } from '@/hooks/useWeather';
 import { useAuth } from '@/hooks/useAuth';
-import { formatTemperature, formatWindSpeed, getUVLevel } from '@/lib/unitConversions';
+import { formatTemperature, formatWindSpeed, getUVLevel, getCardinalDirection } from '@/lib/unitConversions';
 
 const weatherIcons: Record<WeatherCondition, React.ElementType> = {
   clear: Sun,
@@ -135,7 +135,11 @@ export function WeatherCard() {
               {/* Wind, Humidity, UV */}
               <div className="flex flex-wrap gap-3 mt-1 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Wind className="h-3 w-3" />
+                  <Wind 
+                    className="h-3 w-3" 
+                    style={{ transform: `rotate(${(weather.windDirection ?? 0) + 180}deg)` }}
+                  />
+                  {weather.windDirection != null && getCardinalDirection(weather.windDirection)}{' '}
                   {formatWindSpeed(weather.windSpeed, units)}
                 </span>
                 {weather.humidity != null && (
