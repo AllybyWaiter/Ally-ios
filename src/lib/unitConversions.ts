@@ -149,6 +149,31 @@ export const formatWindSpeed = (kmh: number | null | undefined, units: UnitSyste
   return `${Math.round(kmhToMph(kmh))} mph`;
 };
 
+// Wind direction helpers
+export const getCardinalDirection = (degrees: number | null | undefined): string => {
+  if (degrees == null || isNaN(degrees)) return '';
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const index = Math.round(((degrees % 360) / 45)) % 8;
+  return directions[index];
+};
+
+export const formatWindWithDirection = (
+  speedKmh: number | null | undefined,
+  directionDegrees: number | null | undefined,
+  units: UnitSystem | null
+): string => {
+  if (speedKmh == null || isNaN(speedKmh)) return '';
+  const speed = formatWindSpeed(speedKmh, units);
+  const direction = getCardinalDirection(directionDegrees);
+  return direction ? `${direction} ${speed}` : speed;
+};
+
+export const getWindRotation = (degrees: number | null | undefined): number => {
+  // Returns rotation for an arrow pointing in the direction wind is coming FROM
+  if (degrees == null || isNaN(degrees)) return 0;
+  return degrees;
+};
+
 // UV Index helpers
 export interface UVLevel {
   label: string;

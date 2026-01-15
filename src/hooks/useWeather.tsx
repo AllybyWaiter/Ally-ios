@@ -38,6 +38,7 @@ export interface ForecastDay {
   tempMax: number;
   tempMin: number;
   windSpeed: number;
+  windDirection: number;
   uvIndexMax: number;
   precipitationProbabilityMax: number;
   precipitationSum: number;
@@ -55,6 +56,7 @@ export interface WeatherData {
   feelsLike: number;
   temperatureUnit: string;
   windSpeed: number;
+  windDirection: number;
   humidity: number;
   uvIndex: number;
   isDay: boolean;
