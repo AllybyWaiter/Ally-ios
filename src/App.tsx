@@ -269,10 +269,22 @@ const App = () => (
                     } 
                   />
                   <Route 
+                    path="/ally" 
+                    element={
+                      <ProtectedRoute>
+                        <PageErrorBoundary pageName="Ally Chat" featureArea="chat">
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <AllyChat />
+                          </Suspense>
+                        </PageErrorBoundary>
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
                     path="/chat" 
                     element={
                       <ProtectedRoute>
-                        <PageErrorBoundary pageName="Chat" featureArea="chat">
+                        <PageErrorBoundary pageName="Ally Chat" featureArea="chat">
                           <Suspense fallback={<DashboardSkeleton />}>
                             <AllyChat />
                           </Suspense>
