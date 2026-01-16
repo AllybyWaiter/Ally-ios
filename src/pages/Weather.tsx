@@ -20,6 +20,7 @@ import {
   MoonPhaseWidget,
   TemperatureChart,
   AquaticInsights,
+  WindCompassWidget,
 } from '@/components/weather';
 import { SunMoonOrb } from '@/components/weather/SunMoonOrb';
 import { Loader2 } from 'lucide-react';
@@ -425,6 +426,15 @@ export default function Weather() {
 
             {/* Air Quality */}
             <AirQualityWidget airQuality={weather.airQuality ?? null} />
+
+            {/* Wind Compass */}
+            {weather.windDirection != null && (
+              <WindCompassWidget
+                windDirection={weather.windDirection}
+                windSpeed={weather.windSpeed}
+                units={units}
+              />
+            )}
 
             {/* Atmospheric Conditions */}
             <AtmosphericCard
