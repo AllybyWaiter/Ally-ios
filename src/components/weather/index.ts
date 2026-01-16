@@ -5,3 +5,4 @@ export { MoonPhaseWidget } from './MoonPhaseWidget';
 export { TemperatureChart } from './TemperatureChart';
 export { AquaticInsights } from './AquaticInsights';
 export { WeatherRadar } from './WeatherRadar';
+export { WindCompassWidget } from './WindCompassWidget';
