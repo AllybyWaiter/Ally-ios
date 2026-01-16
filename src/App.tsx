@@ -307,7 +307,7 @@ const App = () => (
                   <Route 
                     path="/admin"
                     element={
-                      <ProtectedRoute requireAdmin>
+                      <ProtectedRoute requireAnyRole={['admin', 'super_admin', 'content_creator']}>
                         <PageErrorBoundary pageName="Admin" featureArea="admin">
                           <Suspense fallback={<DashboardSkeleton />}>
                             <Admin />
@@ -319,7 +319,7 @@ const App = () => (
                   <Route 
                     path="/admin/blog/new"
                     element={
-                      <ProtectedRoute requireAdmin>
+                      <ProtectedRoute requireAnyRole={['admin', 'super_admin', 'content_creator']}>
                         <PageErrorBoundary pageName="Blog Editor" featureArea="admin">
                           <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-8">
                             <Suspense fallback={<FormSkeleton />}>
@@ -333,7 +333,7 @@ const App = () => (
                   <Route 
                     path="/admin/blog/edit/:id"
                     element={
-                      <ProtectedRoute requireAdmin>
+                      <ProtectedRoute requireAnyRole={['admin', 'super_admin', 'content_creator']}>
                         <PageErrorBoundary pageName="Blog Editor" featureArea="admin">
                           <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-8">
                             <Suspense fallback={<FormSkeleton />}>
