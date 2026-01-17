@@ -346,6 +346,98 @@ All colors MUST be HSL.
   padding: 0;
 }
 
+/* Blog table styles - responsive and styled */
+.blog-table-wrapper {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.blog-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+.blog-table th {
+  background: hsl(var(--muted));
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid hsl(var(--border));
+  white-space: nowrap;
+}
+
+.blog-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.blog-table tr:last-child td {
+  border-bottom: none;
+}
+
+.blog-table tr:hover td {
+  background: hsl(var(--muted) / 0.3);
+}
+
+/* Table alignment */
+.blog-table th[style*="text-align: center"],
+.blog-table td[style*="text-align: center"] {
+  text-align: center;
+}
+
+.blog-table th[style*="text-align: right"],
+.blog-table td[style*="text-align: right"] {
+  text-align: right;
+}
+
+/* Mobile table adjustments */
+@media (max-width: 640px) {
+  .blog-table-wrapper {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+  
+  .blog-table th,
+  .blog-table td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Prose table overrides for markdown tables */
+.prose table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.75rem 1rem;
+  min-width: 100px;
+}
+
+.prose th {
+  background: hsl(var(--muted));
+  font-weight: 600;
+  text-align: left;
+}
+
+.prose tr:hover td {
+  background: hsl(var(--muted) / 0.3);
+}
+
 /* Scrollbar hide utility */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
