@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock, Table } from 'lucide-react';
 import { z } from 'zod';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -50,6 +50,10 @@ export default function BlogEditor() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('content');
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
+  const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
+  const quillRef = useRef<ReactQuill>(null);
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -331,6 +335,27 @@ export default function BlogEditor() {
     }
   };
 
+  const insertTable = () => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    
+    const range = quill.getSelection(true);
+    
+    // Build HTML table
+    let tableHtml = '<table><tbody>';
+    for (let r = 0; r < tableRows; r++) {
+      tableHtml += '<tr>';
+      for (let c = 0; c < tableCols; c++) {
+        tableHtml += '<td>&nbsp;</td>';
+      }
+      tableHtml += '</tr>';
+    }
+    tableHtml += '</tbody></table><p><br></p>';
+    
+    quill.clipboard.dangerouslyPasteHTML(range.index, tableHtml);
+    setTablePopoverOpen(false);
+  };
+
   const modules = {
     toolbar: [
       [{ header: [1, 2, 3, false] }],
@@ -505,9 +530,49 @@ export default function BlogEditor() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Content *</Label>
+                      <div className="flex items-center justify-between">
+                        <Label>Content *</Label>
+                        <Popover open={tablePopoverOpen} onOpenChange={setTablePopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Table className="h-4 w-4 mr-2" />
+                              Insert Table
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48" align="end">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm">Rows</Label>
+                                <Input
+                                  type="number"
+                                  min={2}
+                                  max={10}
+                                  value={tableRows}
+                                  onChange={(e) => setTableRows(Math.min(10, Math.max(2, parseInt(e.target.value) || 2)))}
+                                  className="w-16 h-8"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm">Columns</Label>
+                                <Input
+                                  type="number"
+                                  min={2}
+                                  max={6}
+                                  value={tableCols}
+                                  onChange={(e) => setTableCols(Math.min(6, Math.max(2, parseInt(e.target.value) || 2)))}
+                                  className="w-16 h-8"
+                                />
+                              </div>
+                              <Button onClick={insertTable} className="w-full" size="sm">
+                                Insert
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                       <div className="border rounded-md">
                         <ReactQuill
+                          ref={quillRef}
                           theme="snow"
                           value={formData.content}
                           onChange={(content) => setFormData({ ...formData, content })}
