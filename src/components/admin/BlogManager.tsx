@@ -34,6 +34,7 @@ interface BlogPost {
   view_count: number;
   created_at: string;
   tags: string[] | null;
+  author_name: string | null;
 }
 
 export default function BlogManager() {
@@ -48,7 +49,7 @@ export default function BlogManager() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('blog_posts')
-        .select('id, title, slug, excerpt, status, published_at, view_count, created_at, tags')
+        .select('id, title, slug, excerpt, status, published_at, view_count, created_at, tags, author_name')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -197,6 +198,7 @@ export default function BlogManager() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
+                    <TableHead>Author</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Views</TableHead>
                     <TableHead>Date</TableHead>
@@ -216,6 +218,11 @@ export default function BlogManager() {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {post.author_name || 'Unknown'}
+                        </span>
                       </TableCell>
                       <TableCell>{getStatusBadge(post.status)}</TableCell>
                       <TableCell>
