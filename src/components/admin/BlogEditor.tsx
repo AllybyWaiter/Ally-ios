@@ -8,7 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock, Table } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock, Table, ChevronDown, LayoutTemplate, Grid3X3, Edit3 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { z } from 'zod';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -23,6 +30,8 @@ import BlogContentStats from './BlogContentStats';
 import BlogAISidebar from './BlogAISidebar';
 import BlogPreview from './BlogPreview';
 import TableEditorModal from './TableEditorModal';
+import TableQuickInsert from './TableQuickInsert';
+import { parseMarkdownTable, findTableAtPosition, TableData } from '@/lib/tableUtils';
 
 const blogPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
@@ -52,6 +61,9 @@ export default function BlogEditor() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('content');
   const [tableModalOpen, setTableModalOpen] = useState(false);
+  const [tableModalData, setTableModalData] = useState<{ rows: number; cols: number; initialData: TableData | null }>({ rows: 3, cols: 3, initialData: null });
+  const [quickInsertOpen, setQuickInsertOpen] = useState(false);
+  const [editableTable, setEditableTable] = useState<{ start: number; end: number; data: TableData } | null>(null);
   const quillRef = useRef<ReactQuill>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -345,6 +357,22 @@ export default function BlogEditor() {
       return;
     }
     
+    // If we're editing an existing table, replace it
+    if (editableTable) {
+      const content = formData.content;
+      const newContent = 
+        content.substring(0, editableTable.start) + 
+        '\n\n' + markdown + '\n\n' + 
+        content.substring(editableTable.end);
+      setFormData({ ...formData, content: newContent });
+      setEditableTable(null);
+      toast({
+        title: "Table updated",
+        description: "Your table has been updated.",
+      });
+      return;
+    }
+    
     // Get current selection or end of content
     const range = quill.getSelection();
     const insertIndex = range ? range.index : quill.getLength();
@@ -358,6 +386,49 @@ export default function BlogEditor() {
     toast({
       title: "Table inserted",
       description: "Markdown table has been added. It will render properly in preview and when published.",
+    });
+  };
+
+  const openTableModal = (rows: number = 3, cols: number = 3, initialData: TableData | null = null) => {
+    setTableModalData({ rows, cols, initialData });
+    setTableModalOpen(true);
+    setQuickInsertOpen(false);
+  };
+
+  const handleQuickInsert = (rows: number, cols: number) => {
+    openTableModal(rows, cols, null);
+  };
+
+  const detectAndEditTable = () => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    
+    const range = quill.getSelection();
+    if (!range) {
+      toast({
+        title: "Select table location",
+        description: "Place your cursor inside a markdown table to edit it.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const content = quill.getText();
+    const tableInfo = findTableAtPosition(content, range.index);
+    
+    if (tableInfo) {
+      const parsedData = parseMarkdownTable(tableInfo.markdown);
+      if (parsedData) {
+        setEditableTable({ start: tableInfo.start, end: tableInfo.end, data: parsedData });
+        openTableModal(parsedData.cells.length, parsedData.cells[0]?.length || 3, parsedData);
+        return;
+      }
+    }
+    
+    toast({
+      title: "No table found",
+      description: "Place your cursor inside a markdown table to edit it.",
+      variant: "destructive",
     });
   };
 
@@ -537,14 +608,34 @@ export default function BlogEditor() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Content *</Label>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setTableModalOpen(true)}
-                        >
-                          <Table className="h-4 w-4 mr-2" />
-                          Insert Table
-                        </Button>
+                        <DropdownMenu open={quickInsertOpen} onOpenChange={setQuickInsertOpen}>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Table className="h-4 w-4 mr-2" />
+                              Insert Table
+                              <ChevronDown className="h-3 w-3 ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <div className="px-2 py-1.5">
+                              <TableQuickInsert onSelect={handleQuickInsert} />
+                            </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => openTableModal(3, 3, null)}>
+                              <Grid3X3 className="h-4 w-4 mr-2" />
+                              Custom table...
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setQuickInsertOpen(false); setTableModalData({ rows: 3, cols: 3, initialData: null }); setActiveTab('content'); setTableModalOpen(true); setTimeout(() => document.querySelector<HTMLButtonElement>('[data-tab="templates"]')?.click(), 100); }}>
+                              <LayoutTemplate className="h-4 w-4 mr-2" />
+                              From template...
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={detectAndEditTable}>
+                              <Edit3 className="h-4 w-4 mr-2" />
+                              Edit existing table
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                       <div className="border rounded-md">
                         <ReactQuill
@@ -709,8 +800,11 @@ export default function BlogEditor() {
       {/* Table Editor Modal */}
       <TableEditorModal
         isOpen={tableModalOpen}
-        onClose={() => setTableModalOpen(false)}
+        onClose={() => { setTableModalOpen(false); setEditableTable(null); }}
         onInsert={insertMarkdownTable}
+        initialRows={tableModalData.rows}
+        initialCols={tableModalData.cols}
+        initialData={tableModalData.initialData}
       />
     </div>
   );
