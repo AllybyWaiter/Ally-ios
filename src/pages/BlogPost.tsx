@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { SEO, StructuredData, generateBreadcrumbData } from '@/components/SEO';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
+import { BlogContentRenderer } from '@/lib/blogContentRenderer';
 
 interface BlogPostData {
   id: string;
@@ -184,10 +184,7 @@ export default function BlogPost() {
 
           {/* Post Content */}
           <SectionErrorBoundary fallbackTitle="Failed to load blog content">
-            <div 
-              className="prose prose-lg dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
-            />
+            <BlogContentRenderer content={post.content} className="prose-lg dark:prose-invert" />
           </SectionErrorBoundary>
         </article>
       </main>

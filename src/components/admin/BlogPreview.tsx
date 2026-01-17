@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import DOMPurify from 'dompurify';
+import { BlogContentRenderer } from '@/lib/blogContentRenderer';
 
 interface BlogPreviewProps {
   title: string;
@@ -34,10 +34,7 @@ export default function BlogPreview({
             <span>•</span>
             <span>{new Date().toLocaleDateString()}</span>
           </div>
-          <div
-            className="prose prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content || '<p>No content yet...</p>') }}
-          />
+          <BlogContentRenderer content={content || 'No content yet...'} />
         </CardContent>
       </Card>
     </div>
