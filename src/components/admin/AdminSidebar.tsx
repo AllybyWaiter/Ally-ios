@@ -65,7 +65,7 @@ const menuGroups: MenuGroup[] = [
     id: 'dashboard',
     label: 'Dashboard',
     items: [
-      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+      { id: 'overview', label: 'Overview', icon: LayoutDashboard, roles: ['admin', 'super_admin'] },
     ],
   },
   {

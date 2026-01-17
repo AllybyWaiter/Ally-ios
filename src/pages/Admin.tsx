@@ -58,7 +58,15 @@ export default function Admin() {
   const [waitlistSearch, setWaitlistSearch] = useState('');
   const [contactsSearch, setContactsSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState('overview');
+  // Determine default section based on role - content creators go directly to blog
+  const getDefaultSection = () => {
+    if (hasPermission('manage_blog') && !hasAnyRole(['admin', 'super_admin'])) {
+      return 'blog';
+    }
+    return 'overview';
+  };
+  
+  const [activeSection, setActiveSection] = useState(getDefaultSection);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
@@ -200,7 +208,6 @@ export default function Admin() {
         if (!hasPermission('manage_blog') && !hasPermission('publish_blog')) return <AccessDenied />;
         return (
           <SectionErrorBoundary fallbackTitle="Failed to load blog manager" featureArea={FeatureArea.ADMIN}>
-            <BlogManager />
             <BlogManager />
           </SectionErrorBoundary>
         );
