@@ -438,6 +438,47 @@ All colors MUST be HSL.
   background: hsl(var(--muted) / 0.3);
 }
 
+/* Table style variants */
+.table-striped tbody tr:nth-child(even) {
+  background: hsl(var(--muted) / 0.3);
+}
+
+.table-compact th,
+.table-compact td {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.table-spacious th,
+.table-spacious td {
+  padding: 1rem 1.5rem;
+}
+
+.table-header-highlighted th {
+  background: hsl(var(--primary) / 0.1);
+  border-bottom: 2px solid hsl(var(--primary) / 0.3);
+}
+
+.table-header-bold-only th {
+  background: transparent;
+  font-weight: 700;
+}
+
+.table-border-none,
+.table-border-none th,
+.table-border-none td {
+  border: none;
+}
+
+.table-border-header-only th {
+  border-bottom: 2px solid hsl(var(--border));
+}
+
+.table-border-header-only td {
+  border: none;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+}
+
 /* Scrollbar hide utility */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
