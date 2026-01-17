@@ -336,6 +336,16 @@ export default function BlogEditor() {
   };
 
   const insertTable = () => {
+    const quill = quillRef.current?.getEditor();
+    if (!quill) {
+      toast({
+        title: "Error",
+        description: "Editor not ready. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Build HTML table with proper styling
     let tableHtml = '<table style="border-collapse: collapse; width: 100%; margin: 16px 0;"><tbody>';
     for (let r = 0; r < tableRows; r++) {
@@ -347,16 +357,21 @@ export default function BlogEditor() {
     }
     tableHtml += '</tbody></table><p><br></p>';
     
-    // Insert by appending to current content
-    setFormData(prev => ({
-      ...prev,
-      content: prev.content + tableHtml
-    }));
+    // Get current selection or end of content
+    const range = quill.getSelection();
+    const insertIndex = range ? range.index : quill.getLength();
+    
+    // Insert the table HTML directly using Quill's API
+    quill.clipboard.dangerouslyPasteHTML(insertIndex, tableHtml, 'user');
+    
+    // Move cursor after the table
+    quill.setSelection(insertIndex + 1, 0);
+    
     setTablePopoverOpen(false);
     
     toast({
       title: "Table inserted",
-      description: `A ${tableRows}x${tableCols} table has been added to the end of your content.`,
+      description: `A ${tableRows}x${tableCols} table has been added.`,
     });
   };
 
