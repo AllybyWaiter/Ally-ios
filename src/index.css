@@ -218,7 +218,7 @@ All colors MUST be HSL.
   border-color: hsl(var(--border));
 }
 
-/* Quill Table Styling */
+/* Quill Table Styling - for rendering existing table content */
 .ql-editor table {
   border-collapse: collapse;
   width: 100%;
@@ -239,29 +239,6 @@ All colors MUST be HSL.
 
 .ql-editor tr:hover td {
   background: hsl(var(--muted) / 0.3);
-}
-
-/* Table toolbar button icon */
-.ql-toolbar .ql-table::before {
-  content: '⊞';
-  font-size: 16px;
-}
-
-/* Better table context menu styling */
-.qlbt-operation-menu {
-  background: hsl(var(--popover)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  border-radius: 0.5rem !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
-}
-
-.qlbt-operation-menu .qlbt-operation-menu-item {
-  color: hsl(var(--popover-foreground)) !important;
-  padding: 0.5rem 1rem !important;
-}
-
-.qlbt-operation-menu .qlbt-operation-menu-item:hover {
-  background: hsl(var(--accent)) !important;
 }
 
 /* Blog post content styles */
