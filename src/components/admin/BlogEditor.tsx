@@ -336,24 +336,28 @@ export default function BlogEditor() {
   };
 
   const insertTable = () => {
-    const quill = quillRef.current?.getEditor();
-    if (!quill) return;
-    
-    const range = quill.getSelection(true);
-    
-    // Build HTML table
-    let tableHtml = '<table><tbody>';
+    // Build HTML table with proper styling
+    let tableHtml = '<table style="border-collapse: collapse; width: 100%; margin: 16px 0;"><tbody>';
     for (let r = 0; r < tableRows; r++) {
       tableHtml += '<tr>';
       for (let c = 0; c < tableCols; c++) {
-        tableHtml += '<td>&nbsp;</td>';
+        tableHtml += '<td style="border: 1px solid #ccc; padding: 8px; min-width: 50px;">&nbsp;</td>';
       }
       tableHtml += '</tr>';
     }
     tableHtml += '</tbody></table><p><br></p>';
     
-    quill.clipboard.dangerouslyPasteHTML(range.index, tableHtml);
+    // Insert by appending to current content
+    setFormData(prev => ({
+      ...prev,
+      content: prev.content + tableHtml
+    }));
     setTablePopoverOpen(false);
+    
+    toast({
+      title: "Table inserted",
+      description: `A ${tableRows}x${tableCols} table has been added to the end of your content.`,
+    });
   };
 
   const modules = {
