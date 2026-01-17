@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -10,15 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { z } from 'zod';
-import ReactQuill, { Quill } from 'react-quill';
+import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import QuillBetterTable from 'quill-better-table';
-import 'quill-better-table/dist/quill-better-table.css';
-
-// Register the better-table module with Quill
-Quill.register({
-  'modules/better-table': QuillBetterTable
-}, true);
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -338,48 +331,16 @@ export default function BlogEditor() {
     }
   };
 
-  const modules = useMemo(() => ({
-    table: false, // Disable default table module
-    'better-table': {
-      operationMenu: {
-        items: {
-          insertColumnRight: { text: 'Insert Column Right' },
-          insertColumnLeft: { text: 'Insert Column Left' },
-          insertRowUp: { text: 'Insert Row Above' },
-          insertRowDown: { text: 'Insert Row Below' },
-          mergeCells: { text: 'Merge Cells' },
-          unmergeCells: { text: 'Unmerge Cells' },
-          deleteColumn: { text: 'Delete Column' },
-          deleteRow: { text: 'Delete Row' },
-          deleteTable: { text: 'Delete Table' },
-        },
-        color: {
-          colors: ['#fff', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da'],
-          text: 'Background Colors:'
-        }
-      }
-    },
-    toolbar: {
-      container: [
-        [{ header: [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['blockquote', 'code-block'],
-        ['link', 'image'],
-        ['table'],
-        ['clean'],
-      ],
-      handlers: {
-        table: function(this: { quill: typeof Quill.prototype }) {
-          const tableModule = this.quill.getModule('better-table');
-          tableModule.insertTable(3, 3);
-        }
-      }
-    },
-    keyboard: {
-      bindings: QuillBetterTable.keyboardBindings
-    }
-  }), []);
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      ['blockquote', 'code-block'],
+      ['link', 'image'],
+      ['clean'],
+    ],
+  };
 
   if (loading) {
     return (
