@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import BlogContentStats from './BlogContentStats';
 import BlogAISidebar from './BlogAISidebar';
 import BlogPreview from './BlogPreview';
+import TableEditorModal from './TableEditorModal';
 
 const blogPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title must be less than 200 characters'),
@@ -50,9 +51,7 @@ export default function BlogEditor() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('content');
-  const [tableRows, setTableRows] = useState(3);
-  const [tableCols, setTableCols] = useState(3);
-  const [tablePopoverOpen, setTablePopoverOpen] = useState(false);
+  const [tableModalOpen, setTableModalOpen] = useState(false);
   const quillRef = useRef<ReactQuill>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -335,7 +334,7 @@ export default function BlogEditor() {
     }
   };
 
-  const insertTable = () => {
+  const insertMarkdownTable = (markdown: string) => {
     const quill = quillRef.current?.getEditor();
     if (!quill) {
       toast({
@@ -346,32 +345,19 @@ export default function BlogEditor() {
       return;
     }
     
-    // Build HTML table with proper styling
-    let tableHtml = '<table style="border-collapse: collapse; width: 100%; margin: 16px 0;"><tbody>';
-    for (let r = 0; r < tableRows; r++) {
-      tableHtml += '<tr>';
-      for (let c = 0; c < tableCols; c++) {
-        tableHtml += '<td style="border: 1px solid #ccc; padding: 8px; min-width: 50px;">&nbsp;</td>';
-      }
-      tableHtml += '</tr>';
-    }
-    tableHtml += '</tbody></table><p><br></p>';
-    
     // Get current selection or end of content
     const range = quill.getSelection();
     const insertIndex = range ? range.index : quill.getLength();
     
-    // Insert the table HTML directly using Quill's API
-    quill.clipboard.dangerouslyPasteHTML(insertIndex, tableHtml, 'user');
+    // Insert markdown table as plain text with line breaks
+    quill.insertText(insertIndex, '\n\n' + markdown + '\n\n', 'user');
     
     // Move cursor after the table
-    quill.setSelection(insertIndex + 1, 0);
-    
-    setTablePopoverOpen(false);
+    quill.setSelection(insertIndex + markdown.length + 4, 0);
     
     toast({
       title: "Table inserted",
-      description: `A ${tableRows}x${tableCols} table has been added.`,
+      description: "Markdown table has been added. It will render properly in preview and when published.",
     });
   };
 
@@ -551,43 +537,14 @@ export default function BlogEditor() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Content *</Label>
-                        <Popover open={tablePopoverOpen} onOpenChange={setTablePopoverOpen}>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Table className="h-4 w-4 mr-2" />
-                              Insert Table
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-48" align="end">
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <Label className="text-sm">Rows</Label>
-                                <Input
-                                  type="number"
-                                  min={2}
-                                  max={10}
-                                  value={tableRows}
-                                  onChange={(e) => setTableRows(Math.min(10, Math.max(2, parseInt(e.target.value) || 2)))}
-                                  className="w-16 h-8"
-                                />
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <Label className="text-sm">Columns</Label>
-                                <Input
-                                  type="number"
-                                  min={2}
-                                  max={6}
-                                  value={tableCols}
-                                  onChange={(e) => setTableCols(Math.min(6, Math.max(2, parseInt(e.target.value) || 2)))}
-                                  className="w-16 h-8"
-                                />
-                              </div>
-                              <Button onClick={insertTable} className="w-full" size="sm">
-                                Insert
-                              </Button>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setTableModalOpen(true)}
+                        >
+                          <Table className="h-4 w-4 mr-2" />
+                          Insert Table
+                        </Button>
                       </div>
                       <div className="border rounded-md">
                         <ReactQuill
@@ -748,6 +705,13 @@ export default function BlogEditor() {
           </div>
         </div>
       </div>
+      
+      {/* Table Editor Modal */}
+      <TableEditorModal
+        isOpen={tableModalOpen}
+        onClose={() => setTableModalOpen(false)}
+        onInsert={insertMarkdownTable}
+      />
     </div>
   );
 }
