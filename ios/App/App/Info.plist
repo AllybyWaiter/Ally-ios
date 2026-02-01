@@ -30,7 +30,7 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
@@ -51,5 +51,11 @@
 	<string>Ally needs your location to provide accurate weather data and water care recommendations for your area.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Ally uses your location to send weather alerts that may affect your pool or aquarium water quality.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Ally needs camera access to scan water test strips and capture photos of your pool or aquarium.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ally needs photo library access to save and upload images of your water tests and equipment.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ally needs microphone access for voice commands and video recording.</string>
 </dict>
 </plist>
