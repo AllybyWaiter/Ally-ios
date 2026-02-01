@@ -68,7 +68,7 @@ const lazyWithRetry = <T extends ComponentType<unknown>>(
 checkForServiceWorkerUpdate();
 
 // Eager load essential public pages only (critical path)
-import Index from "./pages/Index";
+import NativeRedirect from "./components/NativeRedirect";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -158,7 +158,7 @@ const App = () => (
                   <MobileBottomNav />
                   <main id="main-content">
                   <Routes>
-                  <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><Index /></PageErrorBoundary>} />
+                  <Route path="/" element={<PageErrorBoundary pageName="Home" featureArea="general"><NativeRedirect /></PageErrorBoundary>} />
                   <Route path="/about" element={<PageErrorBoundary pageName="About" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><About /></Suspense></PageErrorBoundary>} />
                   <Route path="/features" element={<PageErrorBoundary pageName="Features" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><Features /></Suspense></PageErrorBoundary>} />
                   <Route path="/how-it-works" element={<PageErrorBoundary pageName="How It Works" featureArea="general"><Suspense fallback={<DashboardSkeleton />}><HowItWorksPage /></Suspense></PageErrorBoundary>} />
