@@ -1,0 +1,228 @@
+import { useState, useEffect, useCallback } from 'react';
+import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from '@revenuecat/purchases-capacitor';
+import {
+  initializeRevenueCat,
+  loginUser,
+  logoutUser,
+  getCustomerInfo,
+  hasProAccess,
+  getSubscriptionTier,
+  getOfferings,
+  purchasePackage,
+  restorePurchases,
+  addCustomerInfoUpdateListener,
+  isNativePlatform,
+  presentPaywall,
+  presentCustomerCenter,
+  SubscriptionTier,
+} from '@/lib/revenuecat';
+import { useAuth } from '@/hooks/useAuth';
+
+interface UseRevenueCatReturn {
+  // State
+  isLoading: boolean;
+  isInitialized: boolean;
+  customerInfo: CustomerInfo | null;
+  currentOffering: PurchasesOffering | null;
+  isPro: boolean;
+  subscriptionTier: SubscriptionTier;
+  isNative: boolean;
+
+  // Actions
+  purchase: (pkg: PurchasesPackage) => Promise<boolean>;
+  restore: () => Promise<boolean>;
+  showPaywall: () => Promise<boolean>;
+  showCustomerCenter: () => Promise<void>;
+  refreshCustomerInfo: () => Promise<void>;
+}
+
+export function useRevenueCat(): UseRevenueCatReturn {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
+  const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
+  const [isPro, setIsPro] = useState(false);
+  const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('free');
+
+  const isNative = isNativePlatform();
+
+  // Initialize RevenueCat
+  useEffect(() => {
+    if (!isNative) {
+      setIsLoading(false);
+      return;
+    }
+
+    const init = async () => {
+      try {
+        await initializeRevenueCat(user?.id);
+        setIsInitialized(true);
+
+        // If user is logged in, sync with RevenueCat
+        if (user?.id) {
+          await loginUser(user.id);
+        }
+
+        // Get initial customer info
+        const info = await getCustomerInfo();
+        setCustomerInfo(info);
+
+        // Check entitlements
+        const hasPro = await hasProAccess();
+        setIsPro(hasPro);
+
+        const tier = await getSubscriptionTier();
+        setSubscriptionTier(tier);
+
+        // Get offerings
+        const offering = await getOfferings();
+        setCurrentOffering(offering);
+      } catch (error) {
+        console.error('Failed to initialize RevenueCat:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    init();
+  }, [isNative, user?.id]);
+
+  // Listen for customer info updates
+  useEffect(() => {
+    if (!isNative || !isInitialized) return;
+
+    const unsubscribe = addCustomerInfoUpdateListener(async (info) => {
+      setCustomerInfo(info);
+
+      // Update entitlement status
+      const hasPro = await hasProAccess();
+      setIsPro(hasPro);
+
+      const tier = await getSubscriptionTier();
+      setSubscriptionTier(tier);
+    });
+
+    return unsubscribe;
+  }, [isNative, isInitialized]);
+
+  // Handle user login/logout
+  useEffect(() => {
+    if (!isNative || !isInitialized) return;
+
+    const syncUser = async () => {
+      try {
+        if (user?.id) {
+          await loginUser(user.id);
+        } else {
+          await logoutUser();
+        }
+
+        // Refresh customer info
+        const info = await getCustomerInfo();
+        setCustomerInfo(info);
+
+        const hasPro = await hasProAccess();
+        setIsPro(hasPro);
+
+        const tier = await getSubscriptionTier();
+        setSubscriptionTier(tier);
+      } catch (error) {
+        console.error('Failed to sync user with RevenueCat:', error);
+      }
+    };
+
+    syncUser();
+  }, [isNative, isInitialized, user?.id]);
+
+  // Purchase a package
+  const purchase = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
+    if (!isNative) return false;
+
+    setIsLoading(true);
+    try {
+      const info = await purchasePackage(pkg);
+      setCustomerInfo(info);
+
+      const hasPro = await hasProAccess();
+      setIsPro(hasPro);
+
+      const tier = await getSubscriptionTier();
+      setSubscriptionTier(tier);
+
+      return hasPro;
+    } catch (error) {
+      if ((error as Error).message === 'Purchase cancelled') {
+        return false;
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isNative]);
+
+  // Restore purchases
+  const restore = useCallback(async (): Promise<boolean> => {
+    if (!isNative) return false;
+
+    setIsLoading(true);
+    try {
+      const info = await restorePurchases();
+      setCustomerInfo(info);
+
+      const hasPro = await hasProAccess();
+      setIsPro(hasPro);
+
+      const tier = await getSubscriptionTier();
+      setSubscriptionTier(tier);
+
+      return hasPro;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isNative]);
+
+  // Show paywall
+  const showPaywall = useCallback(async (): Promise<boolean> => {
+    if (!isNative) return false;
+    return await presentPaywall();
+  }, [isNative]);
+
+  // Show customer center
+  const showCustomerCenter = useCallback(async (): Promise<void> => {
+    await presentCustomerCenter();
+  }, []);
+
+  // Refresh customer info
+  const refreshCustomerInfo = useCallback(async (): Promise<void> => {
+    if (!isNative) return;
+
+    try {
+      const info = await getCustomerInfo();
+      setCustomerInfo(info);
+
+      const hasPro = await hasProAccess();
+      setIsPro(hasPro);
+
+      const tier = await getSubscriptionTier();
+      setSubscriptionTier(tier);
+    } catch (error) {
+      console.error('Failed to refresh customer info:', error);
+    }
+  }, [isNative]);
+
+  return {
+    isLoading,
+    isInitialized,
+    customerInfo,
+    currentOffering,
+    isPro,
+    subscriptionTier,
+    isNative,
+    purchase,
+    restore,
+    showPaywall,
+    showCustomerCenter,
+    refreshCustomerInfo,
+  };
+}
