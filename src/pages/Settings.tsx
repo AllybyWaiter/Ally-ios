@@ -42,6 +42,7 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SettingsRow } from "@/components/settings/SettingsRow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useRevenueCat } from "@/hooks/useRevenueCat";
 
 const APP_VERSION = "1.0.0";
 
@@ -60,6 +61,19 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const isMobile = useIsMobile();
+
+  // RevenueCat for native subscription management
+  const {
+    isNative: isNativePlatform,
+    isPro,
+    subscriptionTier: rcSubscriptionTier,
+    restore,
+    showCustomerCenter,
+    isLoading: rcLoading
+  } = useRevenueCat();
+
+  // Use RevenueCat tier on native, fallback to auth context tier
+  const effectiveSubscriptionTier = isNativePlatform ? rcSubscriptionTier : subscriptionTier;
   
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -304,9 +318,30 @@ const Settings = () => {
   };
 
   const handleManageSubscription = async () => {
+    setPortalLoading(true);
+
+    // Use RevenueCat Customer Center on native platforms
+    if (isNativePlatform) {
+      try {
+        await showCustomerCenter();
+      } catch (e) {
+        console.error('Customer center error:', e);
+        // Fallback to native subscription settings
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          window.location.href = 'https://apps.apple.com/account/subscriptions';
+        } else {
+          window.location.href = 'https://play.google.com/store/account/subscriptions';
+        }
+      } finally {
+        setPortalLoading(false);
+      }
+      return;
+    }
+
+    // Web: Use Stripe portal
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    setPortalLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session?.access_token) {
@@ -335,6 +370,28 @@ const Settings = () => {
     if (isIOS) window.location.href = 'https://apps.apple.com/account/subscriptions';
     else if (isAndroid) window.location.href = 'https://play.google.com/store/account/subscriptions';
     else { toast({ title: "No Active Subscription", description: "Upgrade to manage your subscription." }); navigate('/pricing'); }
+  };
+
+  const handleRestorePurchases = async () => {
+    if (!isNativePlatform) {
+      toast({ title: "Purchases Restored", description: "Your subscription status has been refreshed." });
+      return;
+    }
+
+    setPortalLoading(true);
+    try {
+      const restored = await restore();
+      if (restored) {
+        toast({ title: "Purchases Restored", description: "Your subscription has been restored successfully." });
+      } else {
+        toast({ title: "No Purchases Found", description: "No previous purchases were found to restore." });
+      }
+    } catch (e) {
+      console.error('Restore error:', e);
+      toast({ title: "Restore Failed", description: "Unable to restore purchases. Please try again.", variant: "destructive" });
+    } finally {
+      setPortalLoading(false);
+    }
   };
 
   const handleToggleWeather = async (enabled: boolean) => {
@@ -449,11 +506,11 @@ const Settings = () => {
                 description="Password and protection"
                 onClick={() => setActiveSection('security')}
               />
-              <SettingsRow 
-                icon={Crown} 
-                iconClassName="bg-amber-500/10 text-amber-500" 
+              <SettingsRow
+                icon={Crown}
+                iconClassName="bg-amber-500/10 text-amber-500"
                 label="Subscription"
-                value={<Badge variant="secondary" className="text-xs">{(subscriptionTier || 'FREE').toUpperCase()}</Badge>}
+                value={<Badge variant="secondary" className="text-xs">{(effectiveSubscriptionTier || 'FREE').toUpperCase()}</Badge>}
                 onClick={() => setActiveSection('subscription')}
               />
               <SettingsRow 
@@ -664,7 +721,7 @@ const Settings = () => {
       <DetailSheet id="subscription" title="Subscription" description="Manage your plan">
         <div className="space-y-4">
           <div className="space-y-2">
-            {(PLAN_FEATURES[subscriptionTier || 'free'] || PLAN_FEATURES.free).map((feature) => (
+            {(PLAN_FEATURES[effectiveSubscriptionTier || 'free'] || PLAN_FEATURES.free).map((feature) => (
               <div key={feature} className="flex items-center gap-2 text-sm">
                 <span className="text-green-600">✓</span>
                 <span>{feature}</span>
@@ -672,18 +729,20 @@ const Settings = () => {
             ))}
           </div>
           <div className="flex flex-col gap-2">
-            {(!subscriptionTier || subscriptionTier === 'free') ? (
+            {(!effectiveSubscriptionTier || effectiveSubscriptionTier === 'free') ? (
               <Button onClick={() => { setActiveSection(null); setShowUpgradeDialog(true); }} className="w-full">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Upgrade Plan
               </Button>
             ) : (
               <Button variant="outline" onClick={handleManageSubscription} disabled={portalLoading} className="w-full">
-                {portalLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Opening Portal...</> : <><ExternalLink className="h-4 w-4 mr-2" />Manage Subscription</>}
+                {portalLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Opening...</> : <><ExternalLink className="h-4 w-4 mr-2" />Manage Subscription</>}
               </Button>
             )}
             <Button variant="ghost" onClick={() => navigate('/pricing')} className="w-full text-muted-foreground">Compare All Plans</Button>
-            <Button variant="ghost" onClick={() => toast({ title: "Purchases Restored", description: "Your subscription status has been refreshed." })} className="w-full">Restore Purchases</Button>
+            <Button variant="ghost" onClick={handleRestorePurchases} disabled={portalLoading} className="w-full">
+              {portalLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Restoring...</> : 'Restore Purchases'}
+            </Button>
           </div>
         </div>
       </DetailSheet>

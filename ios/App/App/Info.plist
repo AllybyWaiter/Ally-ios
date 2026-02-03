@@ -52,9 +52,11 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Ally uses your location to send weather alerts that may affect your pool or aquarium water quality.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Ally needs camera access to scan water test strips and capture photos of your pool or aquarium.</string>
+	<string>Ally needs camera access to capture photos of your water test results for AI-powered analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Ally needs photo library access to save and upload images of your water tests and equipment.</string>
+	<string>Ally needs access to your photo library to select images of water tests, aquariums, and livestock for analysis.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Ally needs permission to save water test photos and aquarium images to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Ally needs microphone access for voice commands and video recording.</string>
 </dict>

@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PLAN_DEFINITIONS, getPaidPlans } from '@/lib/planConstants';
+import { useRevenueCat } from '@/hooks/useRevenueCat';
 
 // Currency formatter for locale-aware pricing
 const formatCurrency = (amount: number): string => {
@@ -62,6 +63,40 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // RevenueCat for native iOS/Android purchases
+  const { isNative, currentOffering, purchase, showPaywall, restore } = useRevenueCat();
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  const handleRestorePurchases = async () => {
+    if (!isNative) return;
+
+    setIsRestoring(true);
+    try {
+      const restored = await restore();
+      if (restored) {
+        toast({
+          title: 'Purchases restored!',
+          description: 'Your subscription has been restored successfully.',
+        });
+        onClose();
+      } else {
+        toast({
+          title: 'No purchases found',
+          description: 'No previous purchases were found to restore.',
+        });
+      }
+    } catch (error) {
+      console.error('Restore error:', error);
+      toast({
+        title: 'Restore failed',
+        description: 'Unable to restore purchases. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   const handleSelectPlan = async (planId: string) => {
     // Don't allow selecting current plan
     if (planId === currentTier?.toLowerCase()) {
@@ -75,6 +110,67 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
     setSelectedPlan(planId);
     setIsLoading(true);
 
+    // Use RevenueCat for native iOS/Android
+    if (isNative) {
+      try {
+        if (currentOffering) {
+          // Find the matching package based on plan tier and billing period
+          // Package identifiers are like: basic_monthly, plus_yearly, etc.
+          const packageIdentifier = `${planId}_${isAnnual ? 'yearly' : 'monthly'}`;
+          const pkg = currentOffering.availablePackages.find(
+            p => p.identifier.toLowerCase() === packageIdentifier ||
+                 p.identifier.toLowerCase().includes(planId) &&
+                 p.identifier.toLowerCase().includes(isAnnual ? 'year' : 'month')
+          );
+
+          if (pkg) {
+            const success = await purchase(pkg);
+            if (success) {
+              toast({
+                title: 'Subscription activated!',
+                description: `Welcome to Ally ${planId.charAt(0).toUpperCase() + planId.slice(1)}!`,
+              });
+              onClose();
+            }
+          } else {
+            // Fallback: show the RevenueCat paywall
+            const purchased = await showPaywall();
+            if (purchased) {
+              toast({
+                title: 'Subscription activated!',
+                description: 'Welcome to Ally Pro!',
+              });
+              onClose();
+            }
+          }
+        } else {
+          // No offerings available, show paywall as fallback
+          const purchased = await showPaywall();
+          if (purchased) {
+            toast({
+              title: 'Subscription activated!',
+              description: 'Welcome to Ally Pro!',
+            });
+            onClose();
+          }
+        }
+      } catch (error) {
+        console.error('Purchase error:', error);
+        if ((error as Error).message !== 'Purchase cancelled') {
+          toast({
+            title: 'Unable to complete purchase',
+            description: 'Please try again later.',
+            variant: 'destructive',
+          });
+        }
+      } finally {
+        setIsLoading(false);
+        setSelectedPlan(null);
+      }
+      return;
+    }
+
+    // Web fallback: Use Stripe
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
@@ -195,9 +291,9 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
 
       {/* Footer */}
       <div className="flex flex-col items-center gap-2 pt-2 border-t">
-        <a 
-          href="/pricing" 
-          target="_blank" 
+        <a
+          href="/pricing"
+          target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
         >
@@ -206,6 +302,15 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
         <p className="text-xs text-muted-foreground text-center">
           All plans include a 7-day free trial. Cancel anytime.
         </p>
+        {isNative && (
+          <button
+            onClick={handleRestorePurchases}
+            disabled={isRestoring}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -25,9 +25,15 @@ if (!envValidation.isValid) {
     import("./index.css"),
     import("./i18n/config"),
     import("./lib/sentry"),
-  ]).then(([{ ThemeProvider }, { default: App }, , , { initSentry }]) => {
+    import("./lib/revenuecat"),
+  ]).then(([{ ThemeProvider }, { default: App }, , , { initSentry }, { initializeRevenueCat }]) => {
     // Initialize Sentry before rendering the app
     initSentry();
+
+    // Initialize RevenueCat for native platforms (iOS/Android)
+    initializeRevenueCat().catch((error) => {
+      console.warn('RevenueCat initialization skipped or failed:', error);
+    });
 
     // Hide splash screen once React is ready
     const hideSplash = (window as unknown as { hideSplash?: () => void }).hideSplash;

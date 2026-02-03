@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Check, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Check, X, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -14,6 +14,8 @@ import { useDomainType, getAppUrl } from "@/hooks/useDomainType";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PLAN_DEFINITIONS, getPaidPlans } from "@/lib/planConstants";
+import { useRevenueCat } from "@/hooks/useRevenueCat";
+import { formatPrice, getSubscriptionPeriod } from "@/lib/revenuecat";
 
 const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -21,6 +23,17 @@ const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const domainType = useDomainType();
+
+  // RevenueCat for native iOS/Android
+  const {
+    isNative,
+    currentOffering,
+    isPro,
+    purchase,
+    restore,
+    showPaywall,
+    isLoading: rcLoading
+  } = useRevenueCat();
 
   // Build plans from constants
   const plans = getPaidPlans().map(({ tier, definition }) => ({
@@ -87,6 +100,42 @@ const Pricing = () => {
     }
 
     setIsLoading(plan.name);
+
+    // Use RevenueCat for native iOS/Android
+    if (isNative && currentOffering) {
+      try {
+        // Find the matching package from RevenueCat offerings
+        const packageId = isAnnual ? '$rc_annual' : '$rc_monthly';
+        const pkg = currentOffering.availablePackages.find(
+          p => p.identifier === packageId ||
+               p.identifier.toLowerCase().includes(isAnnual ? 'annual' : 'monthly') ||
+               p.identifier.toLowerCase().includes(isAnnual ? 'yearly' : 'monthly')
+        );
+
+        if (pkg) {
+          const success = await purchase(pkg);
+          if (success) {
+            toast.success('Subscription activated! Welcome to Ally Pro.');
+            navigate('/dashboard');
+          }
+        } else {
+          // Fallback: show the RevenueCat paywall
+          const purchased = await showPaywall();
+          if (purchased) {
+            toast.success('Subscription activated! Welcome to Ally Pro.');
+            navigate('/dashboard');
+          }
+        }
+      } catch (error) {
+        console.error('Purchase error:', error);
+        toast.error('Unable to complete purchase. Please try again.');
+      } finally {
+        setIsLoading(null);
+      }
+      return;
+    }
+
+    // Web fallback: Use Stripe (for web browser users)
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
@@ -99,30 +148,32 @@ const Pricing = () => {
 
       if (error) throw error;
       if (data?.url) {
-        // Track checkout initiated
-        if (typeof window !== 'undefined') {
-          // GA4 begin_checkout event
-          if (window.gtag) {
-            window.gtag('event', 'begin_checkout', {
-              currency: 'USD',
-              value: isAnnual ? plan.yearlyPrice : plan.monthlyPrice,
-              items: [{ item_name: plan.name, price: isAnnual ? plan.yearlyPrice : plan.monthlyPrice }]
-            });
-          }
-          // Meta Pixel InitiateCheckout event
-          if (window.fbq) {
-            window.fbq('track', 'InitiateCheckout', {
-              currency: 'USD',
-              value: isAnnual ? plan.yearlyPrice : plan.monthlyPrice,
-              content_name: plan.name
-            });
-          }
-        }
         window.location.href = data.url;
       }
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Unable to start checkout. Please try again.');
+    } finally {
+      setIsLoading(null);
+    }
+  };
+
+  // Handle restore purchases (iOS requirement)
+  const handleRestorePurchases = async () => {
+    if (!isNative) return;
+
+    setIsLoading('restore');
+    try {
+      const restored = await restore();
+      if (restored) {
+        toast.success('Purchases restored successfully!');
+        navigate('/dashboard');
+      } else {
+        toast.info('No previous purchases found.');
+      }
+    } catch (error) {
+      console.error('Restore error:', error);
+      toast.error('Unable to restore purchases. Please try again.');
     } finally {
       setIsLoading(null);
     }
@@ -164,6 +215,22 @@ const Pricing = () => {
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-4 md:mb-8">
               Start your 7-day free trial. Cancel anytime.
             </p>
+
+            {/* Restore Purchases - Required for iOS */}
+            {isNative && (
+              <Button
+                variant="link"
+                className="text-sm text-muted-foreground mb-4"
+                onClick={handleRestorePurchases}
+                disabled={isLoading === 'restore'}
+              >
+                {isLoading === 'restore' ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Restoring...</>
+                ) : (
+                  'Restore Purchases'
+                )}
+              </Button>
+            )}
 
             {/* Billing Toggle */}
             <div className="flex items-center justify-center gap-4 mb-4 md:mb-12">
