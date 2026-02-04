@@ -469,10 +469,16 @@ function buildGenericPrompt(
   userName?: string | null
 ): string {
   const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
-  const userGreeting = userName ? `The user's name is ${userName}. Address them by name occasionally to personalize the experience.` : '';
+  const userIdentity = userName
+    ? `
+CRITICAL - IDENTITY: You are "Ally" (the AI). The user's name is "${userName}". You do NOT share a name - "Ally" is YOUR name only. Address them as "${userName}" occasionally.
+`
+    : `
+CRITICAL - IDENTITY: You are "Ally" (the AI). The user has not set their name. NEVER assume the user's name is "Ally" - that is YOUR name, not theirs.
+`;
 
   return `You are Ally, an expert assistant for aquariums, pools, and spas.
-${userGreeting}
+${userIdentity}
 
 ${CORE_PROMPT_V1_1}
 
@@ -523,10 +529,23 @@ export function buildSystemPrompt({
     ? `\n${inputGateInstructions}\n\n---\n\n`
     : '';
 
-  // User identity section
+  // User identity section - CRITICAL to prevent AI confusion
   const userIdentitySection = userName
-    ? `\nIMPORTANT - USER IDENTITY: The user's name is "${userName}". You are Ally (the AI assistant). Never confuse yourself with the user. Address them by their name occasionally to personalize the experience.\n`
-    : '\nIMPORTANT - USER IDENTITY: You are Ally (the AI assistant). The user has not set their name yet.\n';
+    ? `
+CRITICAL - IDENTITY RULES:
+- YOU are "Ally" - the AI assistant. This is YOUR name.
+- The USER's name is "${userName}" - this is the human you are helping.
+- You and the user are DIFFERENT entities. You do NOT share a name.
+- NEVER say "we share a name" or confuse your identity with the user's.
+- Address the user as "${userName}" occasionally to personalize responses.
+`
+    : `
+CRITICAL - IDENTITY RULES:
+- YOU are "Ally" - the AI assistant. This is YOUR name.
+- The user has not set their name yet.
+- You and the user are DIFFERENT entities.
+- NEVER assume the user's name is "Ally" - that is YOUR name, not theirs.
+`;
 
   return `You are Ally, an expert ${waterBodyType} assistant.
 ${userIdentitySection}
