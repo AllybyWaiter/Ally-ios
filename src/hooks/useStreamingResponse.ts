@@ -1,5 +1,6 @@
 import { useRef, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,11 +14,18 @@ interface Message {
   imageUrl?: string;
 }
 
+export interface ToolExecution {
+  toolName: string;
+  success: boolean;
+  message: string;
+}
+
 interface StreamingCallbacks {
   onStreamStart: () => void;
   onToken: (fullContent: string) => void;
   onStreamEnd: (fullContent: string) => void;
   onError: (error: Error) => void;
+  onToolExecution?: (executions: ToolExecution[]) => void;
 }
 
 type ModelType = 'standard' | 'thinking';
@@ -65,7 +73,17 @@ export function useStreamingResponse() {
     abortControllerRef.current = new AbortController();
 
     // Format messages for API - convert imageUrl to proper format
-    const formattedMessages = messages.map(msg => {
+    // Filter out initial greeting to prevent AI confusion about identity
+    const filteredMessages = messages.filter((msg, index) => {
+      // Skip the first assistant message if it's the default greeting
+      // This prevents the AI from seeing "Hi! I'm Ally" and getting confused about roles
+      if (index === 0 && msg.role === 'assistant' && msg.content.includes("I'm Ally")) {
+        return false;
+      }
+      return true;
+    });
+
+    const formattedMessages = filteredMessages.map(msg => {
       if (msg.imageUrl && msg.imageUrl.startsWith('data:image')) {
         return {
           role: msg.role,
@@ -133,10 +151,12 @@ export function useStreamingResponse() {
 
     // Update function - sends tokens immediately for smooth typewriter
     const updateContent = (content: string) => {
-      // Sanitize content to prevent XSS (remove script tags, event handlers)
-      const sanitized = content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-                               .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-      
+      // Sanitize content to prevent XSS using DOMPurify
+      const sanitized = DOMPurify.sanitize(content, {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+        ALLOWED_ATTR: ['href'],
+      });
+
       const now = Date.now();
       // Throttle updates to ~60fps to avoid excessive re-renders
       if (now - lastUpdateRef.current >= UPDATE_INTERVAL) {
@@ -172,6 +192,13 @@ export function useStreamingResponse() {
 
         try {
           const parsed = JSON.parse(jsonStr);
+
+          // Handle tool execution feedback events
+          if (parsed.type === 'tool_executions' && parsed.executions) {
+            callbacks.onToolExecution?.(parsed.executions as ToolExecution[]);
+            continue;
+          }
+
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;
           if (content) {
             updateContent(content);
