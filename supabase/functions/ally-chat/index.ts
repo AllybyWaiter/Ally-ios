@@ -24,7 +24,7 @@ import { executeToolCalls } from './tools/executor.ts';
 import { buildAquariumContext } from './context/aquarium.ts';
 import { buildMemoryContext } from './context/memory.ts';
 import { buildSystemPrompt } from './prompts/system.ts';
-import { parseStreamForToolCalls, createContentStream } from './utils/streamParser.ts';
+import { parseStreamForToolCalls, createContentStream, createToolExecutionStream } from './utils/streamParser.ts';
 import { validateRequiredInputs } from './utils/inputGate.ts';
 
 // Model configuration
@@ -126,7 +126,7 @@ serve(async (req) => {
     // Fetch profile and context in parallel for better performance
     const profilePromise = supabase
       .from('profiles')
-      .select('skill_level, subscription_tier')
+      .select('skill_level, subscription_tier, name')
       .eq('user_id', authUser.id)
       .single();
     
@@ -140,6 +140,7 @@ serve(async (req) => {
     
     const skillLevel = profile?.skill_level || 'beginner';
     const subscriptionTier = profile?.subscription_tier || 'free';
+    const userName = profile?.name || null;
     const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
     
     // Validate model selection - server-side check for Gold access
@@ -192,6 +193,7 @@ serve(async (req) => {
       waterType: aquariumResult.waterType as 'freshwater' | 'saltwater' | 'brackish' | 'pool' | 'spa' | null,
       aquariumType: aquariumResult.aquariumData?.type,
       inputGateInstructions: inputValidation.gateInstructions,
+      userName,
     });
 
     logger.info('Processing chat request', { 
@@ -373,8 +375,33 @@ serve(async (req) => {
         return createErrorResponse('Failed to process follow-up request', logger, { status: 502 });
       }
 
-      logger.info('Streaming follow-up response');
-      return createStreamResponse(followUpResponse.body);
+      // Extract tool execution feedback from results
+      const toolExecutions = toolResults.map((result, index) => {
+        const toolCall = toolCallsForExecutor[index];
+        try {
+          const parsed = JSON.parse(result.content);
+          return {
+            toolName: toolCall.function.name,
+            success: parsed.success ?? true,
+            message: parsed.message || `${toolCall.function.name} completed`,
+          };
+        } catch {
+          return {
+            toolName: toolCall.function.name,
+            success: true,
+            message: `${toolCall.function.name} completed`,
+          };
+        }
+      });
+
+      logger.info('Streaming follow-up response with tool feedback', {
+        toolCount: toolExecutions.length
+      });
+
+      // Stream tool execution feedback first, then the AI response
+      return createStreamResponse(
+        createToolExecutionStream(toolExecutions, followUpResponse.body)
+      );
     }
 
     // No tool calls - return buffered content as SSE stream

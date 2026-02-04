@@ -197,6 +197,42 @@ All colors MUST be HSL.
   body:not([data-scroll-locked]) {
     pointer-events: auto !important;
   }
+
+  /* iOS Safari fix for Radix UI Select/Popover in modals */
+  [data-radix-popper-content-wrapper] {
+    z-index: 200 !important;
+    /* Ensure touch events work on iOS */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* Ensure Select trigger is tappable on iOS */
+  [data-radix-select-trigger] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Disable text selection on mobile to prevent highlighting on long-press */
+  /* This creates a native app feel while still allowing selection in inputs */
+  @media (pointer: coarse) {
+    body {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      user-select: none;
+    }
+
+    /* Re-enable selection for inputs and text areas */
+    input,
+    textarea,
+    [contenteditable="true"],
+    .ql-editor,
+    .prose,
+    .selectable {
+      -webkit-user-select: text;
+      -webkit-touch-callout: default;
+      user-select: text;
+    }
+  }
 }
 
 /* Custom styles for the rich text editor */

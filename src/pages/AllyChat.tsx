@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { MentionInput, parseMentions, type MentionItem, type MentionInputRef } from "@/components/chat/MentionInput";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChatHistorySidebar } from "@/components/chat/ChatHistorySidebar";
 import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
 import { ConversationStarters } from "@/components/chat/ConversationStarters";
-import { useStreamingResponse } from "@/hooks/useStreamingResponse";
+import { useStreamingResponse, type ToolExecution } from "@/hooks/useStreamingResponse";
 import { useConversationManager } from "@/hooks/useConversationManager";
 import { useSuggestedQuestions } from "@/hooks/useSuggestedQuestions";
 import { compressImage, validateImageFile } from "@/lib/imageCompression";
@@ -51,6 +51,7 @@ interface Message {
   aquariumContext?: string | null;
   aquariumName?: string;
   imageUrl?: string;
+  toolExecutions?: ToolExecution[];
 }
 
 import { MODEL_OPTIONS, type ModelType, type ModelOption } from '@/lib/constants';
@@ -78,11 +79,22 @@ const AllyChat = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [lastError, setLastError] = useState<{ message: string; userMessage: Message } | null>(null);
   const [streamStartTime, setStreamStartTime] = useState<number | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<MentionInputRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingToolExecutionsRef = useRef<ToolExecution[]>([]);
 
   const { isStreaming, streamResponse, abort } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
+
+  // Convert aquariums to mention items (must be after conversationManager is declared)
+  const mentionItems: MentionItem[] = conversationManager.aquariums.map(aq => ({
+    id: aq.id,
+    name: aq.name,
+    type: "aquarium" as const,
+    subtitle: `${aq.volume_gallons ? `${aq.volume_gallons} gal` : ''} ${aq.type || ''}`.trim(),
+    icon: aq.type?.includes('pool') || aq.type?.includes('spa') ? 'waves' as const :
+          aq.type?.includes('salt') || aq.type?.includes('reef') ? 'water' as const : 'fish' as const,
+  }));
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
   const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
   const { limits } = usePlanLimits();
@@ -127,6 +139,8 @@ const AllyChat = () => {
       setAutoSendPending(false);
       sendMessage();
     }
+    // Deps: sendMessage is intentionally excluded to prevent re-running when it changes.
+    // We only want to trigger send when autoSendPending becomes true with valid input.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSendPending, input, isLoading]);
 
@@ -137,6 +151,8 @@ const AllyChat = () => {
     };
   }, []);
 
+  // Deps: initializeChat contains navigation and state setup that should only run once on mount.
+  // Adding it as a dependency would cause infinite loops as it updates state it depends on.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     initializeChat();
@@ -280,6 +296,7 @@ const AllyChat = () => {
         {
           onStreamStart: () => {
             triggerHaptic('light'); // Haptic on first token
+            pendingToolExecutionsRef.current = []; // Reset tool executions
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -296,7 +313,10 @@ const AllyChat = () => {
                 content,
                 timestamp: new Date(),
                 aquariumContext: currentAquariumContext,
-                aquariumName: currentAquariumName
+                aquariumName: currentAquariumName,
+                toolExecutions: pendingToolExecutionsRef.current.length > 0
+                  ? [...pendingToolExecutionsRef.current]
+                  : undefined
               };
               return newMessages;
             });
@@ -316,6 +336,20 @@ const AllyChat = () => {
           },
           onError: (error) => {
             console.error("Stream error:", error);
+          },
+          onToolExecution: (executions) => {
+            pendingToolExecutionsRef.current = executions;
+            triggerHaptic('light');
+            setMessages(prev => {
+              const newMessages = [...prev];
+              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  toolExecutions: executions
+                };
+              }
+              return newMessages;
+            });
           }
         }
       );
@@ -342,6 +376,16 @@ const AllyChat = () => {
     // Clear any previous error
     setLastError(null);
 
+    // Parse @mentions to auto-select tank context
+    const mentions = parseMentions(input);
+    if (mentions.length > 0) {
+      // Use the first mentioned tank as context
+      const mentionedTank = mentionItems.find(item => item.id === mentions[0].id);
+      if (mentionedTank) {
+        conversationManager.setSelectedAquarium(mentionedTank.id);
+      }
+    }
+
     const userMessage: Message = {
       role: "user",
       content: input || (pendingPhoto ? "Please analyze this photo" : ""),
@@ -351,6 +395,8 @@ const AllyChat = () => {
     const shouldAutoPlay = wasVoiceInput;
     setMessages(prev => [...prev, userMessage]);
     setInput("");
+    // Reset input height after clearing
+    inputRef.current?.resetHeight();
     setPendingPhoto(null);
     setWasVoiceInput(false);
     setIsLoading(true);
@@ -367,6 +413,7 @@ const AllyChat = () => {
         {
           onStreamStart: () => {
             triggerHaptic('light'); // Haptic on first token
+            pendingToolExecutionsRef.current = []; // Reset tool executions
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -383,7 +430,10 @@ const AllyChat = () => {
                 content,
                 timestamp: new Date(),
                 aquariumContext: currentAquariumContext,
-                aquariumName: currentAquariumName
+                aquariumName: currentAquariumName,
+                toolExecutions: pendingToolExecutionsRef.current.length > 0
+                  ? [...pendingToolExecutionsRef.current]
+                  : undefined
               };
               return newMessages;
             });
@@ -400,7 +450,7 @@ const AllyChat = () => {
             if (savedId) {
               localStorage.setItem(LAST_CONVERSATION_KEY, savedId);
             }
-            
+
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
               speak(content, messageId);
@@ -408,6 +458,21 @@ const AllyChat = () => {
           },
           onError: (error) => {
             console.error("Stream error:", error);
+          },
+          onToolExecution: (executions) => {
+            // Store tool executions and update the current message
+            pendingToolExecutionsRef.current = executions;
+            triggerHaptic('light'); // Haptic feedback for tool execution
+            setMessages(prev => {
+              const newMessages = [...prev];
+              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  toolExecutions: executions
+                };
+              }
+              return newMessages;
+            });
           }
         }
       );
@@ -499,6 +564,7 @@ const AllyChat = () => {
         selectedModel,
         {
           onStreamStart: () => {
+            pendingToolExecutionsRef.current = [];
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -510,7 +576,10 @@ const AllyChat = () => {
               const updated = [...prev];
               updated[updated.length - 1] = {
                 ...updated[updated.length - 1],
-                content
+                content,
+                toolExecutions: pendingToolExecutionsRef.current.length > 0
+                  ? [...pendingToolExecutionsRef.current]
+                  : undefined
               };
               return updated;
             });
@@ -529,6 +598,19 @@ const AllyChat = () => {
           },
           onError: (error) => {
             console.error("Regeneration error:", error);
+          },
+          onToolExecution: (executions) => {
+            pendingToolExecutionsRef.current = executions;
+            setMessages(prev => {
+              const updated = [...prev];
+              if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  toolExecutions: executions
+                };
+              }
+              return updated;
+            });
           }
         }
       );
@@ -759,7 +841,7 @@ const AllyChat = () => {
               <div className="relative inline-block">
                 <img
                   src={pendingPhoto.preview}
-                  alt="Pending upload"
+                  alt="Photo to send"
                   className="h-20 w-20 object-cover rounded-lg border border-border"
                 />
                 <Button
@@ -773,33 +855,38 @@ const AllyChat = () => {
               </div>
             )}
 
-            {/* Aquarium Context Chip */}
+            {/* Aquarium Context Chip + @ Hint */}
             {conversationManager.aquariums.length > 0 && (
-              <Select
-                value={conversationManager.selectedAquarium}
-                onValueChange={conversationManager.setSelectedAquarium}
-              >
-                <SelectTrigger className="w-fit h-8 text-xs gap-2 bg-muted/50 border-0">
-                  <Fish className="h-3 w-3" />
-                  <SelectValue placeholder="Context" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">
-                    <span className="flex items-center gap-2">
-                      <Sparkles className="h-3 w-3" />
-                      General Advice
-                    </span>
-                  </SelectItem>
-                  {conversationManager.aquariums.map((aq) => (
-                    <SelectItem key={aq.id} value={aq.id}>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={conversationManager.selectedAquarium}
+                  onValueChange={conversationManager.setSelectedAquarium}
+                >
+                  <SelectTrigger className="w-fit h-8 text-xs gap-2 bg-muted/50 border-0">
+                    <Fish className="h-3 w-3" />
+                    <SelectValue placeholder="Context" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">
                       <span className="flex items-center gap-2">
-                        <Fish className="h-3 w-3" />
-                        {aq.name}
+                        <Sparkles className="h-3 w-3" />
+                        General Advice
                       </span>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {conversationManager.aquariums.map((aq) => (
+                      <SelectItem key={aq.id} value={aq.id}>
+                        <span className="flex items-center gap-2">
+                          <Fish className="h-3 w-3" />
+                          {aq.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">
+                  or type <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">@</kbd>
+                </span>
+              </div>
             )}
             
             {/* Input Row */}
@@ -814,18 +901,22 @@ const AllyChat = () => {
               />
               
               <div className="flex-1 flex items-end gap-2 bg-muted/50 rounded-2xl p-2 pl-4">
-                <Textarea
+                <MentionInput
                   ref={inputRef}
                   value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value);
+                  onChange={(value) => {
+                    setInput(value);
                     if (wasVoiceInput) setWasVoiceInput(false);
                   }}
                   onKeyDown={handleKeyPress}
-                  placeholder="Message Ally..."
+                  placeholder="Message Ally... (type @ to mention a tank)"
                   disabled={isLoading}
-                  className="flex-1 min-h-[24px] max-h-[120px] resize-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
-                  rows={1}
+                  mentionItems={mentionItems}
+                  onMentionSelect={(item) => {
+                    // Auto-select the mentioned tank as context
+                    conversationManager.setSelectedAquarium(item.id);
+                    triggerHaptic('light');
+                  }}
                 />
                 
                 {/* Inline Actions */}
