@@ -67,12 +67,18 @@ export default function AnimatedCounter({
   // Guard against NaN in display
   const safeDisplayValue = Number.isNaN(displayValue) ? 0 : displayValue;
 
-  const formattedValue = formatValue
+  const rawFormattedValue = formatValue
     ? formatValue(safeDisplayValue)
     : safeDisplayValue.toLocaleString(undefined, {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals
       });
+
+  // Guard against NaN in formatted output (e.g., if custom formatValue returns NaN)
+  const formattedValue = rawFormattedValue === 'NaN' ||
+    (typeof rawFormattedValue === 'number' && Number.isNaN(rawFormattedValue))
+      ? '0'
+      : rawFormattedValue;
 
   return (
     <span className={className}>
