@@ -344,18 +344,31 @@ export function useConversationManager(userId: string | null) {
   const saveAssistantMessage = useCallback(async (content: string) => {
     if (!currentConversationId) return;
 
-    await supabase
-      .from('chat_messages')
-      .insert({
-        conversation_id: currentConversationId,
-        role: "assistant",
-        content
-      });
+    try {
+      const { error: messageError } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: currentConversationId,
+          role: "assistant",
+          content
+        });
 
-    await supabase
-      .from('chat_conversations')
-      .update({ updated_at: new Date().toISOString() })
-      .eq('id', currentConversationId);
+      if (messageError) {
+        logger.error('Failed to save assistant message:', messageError);
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('chat_conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', currentConversationId);
+
+      if (updateError) {
+        logger.error('Failed to update conversation timestamp:', updateError);
+      }
+    } catch (error) {
+      logger.error('Error in saveAssistantMessage:', error);
+    }
   }, [currentConversationId]);
 
   const updateMessageInDb = useCallback(async (

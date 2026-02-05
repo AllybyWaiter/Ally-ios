@@ -8,12 +8,12 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
-  Send, 
-  Loader2, 
-  Sparkles, 
-  Plus, 
-  History, 
+import {
+  Send,
+  Loader2,
+  Sparkles,
+  Plus,
+  History,
   Fish,
   Camera,
   X,
@@ -25,7 +25,8 @@ import {
   Zap,
   ArrowLeft,
   RotateCcw,
-  StopCircle
+  StopCircle,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,7 +80,11 @@ const AllyChat = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [lastError, setLastError] = useState<{ message: string; userMessage: Message } | null>(null);
   const [streamStartTime, setStreamStartTime] = useState<number | null>(null);
+  const [conversationMode, setConversationMode] = useState(false);
   const inputRef = useRef<MentionInputRef>(null);
+  const conversationModeRef = useRef(false);
+  const isRecordingRef = useRef(false);
+  const isProcessingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingToolExecutionsRef = useRef<ToolExecution[]>([]);
   const isSubmittingRef = useRef(false); // Prevent double submission
@@ -135,14 +140,15 @@ const AllyChat = () => {
     }
   };
 
+  // Use ref to avoid stale closure when auto-sending after voice input
+  const sendMessageRef = useRef<() => void>(() => {});
+
   useEffect(() => {
     if (autoSendPending && input.trim() && !isLoading) {
       setAutoSendPending(false);
-      sendMessage();
+      // Use ref to get latest sendMessage function, avoiding stale closure
+      sendMessageRef.current();
     }
-    // Deps: sendMessage is intentionally excluded to prevent re-running when it changes.
-    // We only want to trigger send when autoSendPending becomes true with valid input.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSendPending, input, isLoading]);
 
   // Cleanup auto-send pending state on unmount
@@ -151,6 +157,19 @@ const AllyChat = () => {
       setAutoSendPending(false);
     };
   }, []);
+
+  // Keep refs in sync with state for use in callbacks
+  useEffect(() => {
+    conversationModeRef.current = conversationMode;
+  }, [conversationMode]);
+
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
+  useEffect(() => {
+    isProcessingRef.current = isProcessing;
+  }, [isProcessing]);
 
   // Deps: initializeChat contains navigation and state setup that should only run once on mount.
   // Adding it as a dependency would cause infinite loops as it updates state it depends on.
@@ -277,11 +296,14 @@ const AllyChat = () => {
     abort();
     setIsLoading(false);
     setStreamStartTime(null);
+    if (conversationMode) {
+      setConversationMode(false);
+    }
     toast({
       title: "Stopped",
       description: "Response generation was stopped.",
     });
-  }, [abort, toast]);
+  }, [abort, toast, conversationMode]);
 
   // Retry last failed message
   const handleRetry = useCallback(async () => {
@@ -347,6 +369,9 @@ const AllyChat = () => {
             console.error("Stream error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to get response";
             setLastError({ message: errorMessage, userMessage });
+            if (conversationModeRef.current) {
+              setConversationMode(false);
+            }
             toast({
               title: "Error",
               description: errorMessage,
@@ -425,7 +450,7 @@ const AllyChat = () => {
       timestamp: new Date(),
       imageUrl: pendingPhoto?.preview,
     };
-    const shouldAutoPlay = wasVoiceInput;
+    const shouldAutoPlay = wasVoiceInput || conversationMode;
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     // Reset input height after clearing
@@ -486,13 +511,21 @@ const AllyChat = () => {
 
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
-              speak(content, messageId);
+              speak(content, messageId, () => {
+                // After TTS finishes, auto-start recording if still in conversation mode
+                if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
+                  startRecording();
+                }
+              });
             }
           },
           onError: (error) => {
             console.error("Stream error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to get response";
             setLastError({ message: errorMessage, userMessage });
+            if (conversationModeRef.current) {
+              setConversationMode(false);
+            }
             toast({
               title: "Error",
               description: errorMessage,
@@ -549,6 +582,11 @@ const AllyChat = () => {
       isSubmittingRef.current = false; // Reset double-submission guard
     }
   };
+
+  // Keep sendMessage ref up to date to avoid stale closures in auto-send
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  });
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -902,18 +940,39 @@ const AllyChat = () => {
         {/* Input Area */}
         <div className="border-t bg-background p-4 pb-safe">
           <div className="max-w-3xl mx-auto space-y-3">
+            {/* Conversation Mode Banner */}
+            {conversationMode && !isRecording && !isProcessing && (
+              <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 animate-pulse" />
+                  Hands-free conversation active
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => {
+                    setConversationMode(false);
+                    stopSpeaking();
+                  }}
+                >
+                  Exit
+                </Button>
+              </div>
+            )}
+
             {/* Recording Status */}
             {(isRecording || isProcessing) && (
               <div className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
-                isRecording 
-                  ? "bg-destructive/10 text-destructive" 
+                isRecording
+                  ? "bg-destructive/10 text-destructive"
                   : "bg-primary/10 text-primary"
               )}>
                 {isRecording ? (
                   <>
                     <div className="h-2 w-2 rounded-full bg-destructive recording-pulse" />
-                    Recording... Tap mic to stop
+                    {conversationMode ? "Listening... Tap mic to pause" : "Recording... Tap mic to stop"}
                   </>
                 ) : (
                   <>
@@ -1050,6 +1109,39 @@ const AllyChat = () => {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent><p>{isRecording ? "Stop" : "Voice"}</p></TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={conversationMode ? "default" : "ghost"}
+                        size="icon"
+                        className={cn(
+                          "h-8 w-8 rounded-full",
+                          conversationMode && "bg-primary text-primary-foreground"
+                        )}
+                        onClick={() => {
+                          if (conversationMode) {
+                            setConversationMode(false);
+                            stopSpeaking();
+                            if (isRecording) stopRecording();
+                          } else {
+                            setConversationMode(true);
+                            setWasVoiceInput(true);
+                            startRecording();
+                          }
+                        }}
+                        disabled={isLoading || isProcessing}
+                      >
+                        <MessageSquare className={cn(
+                          "h-4 w-4",
+                          conversationMode && "animate-pulse"
+                        )} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{conversationMode ? "Exit hands-free" : "Hands-free mode"}</p>
+                    </TooltipContent>
                   </Tooltip>
                 </div>
               </div>
