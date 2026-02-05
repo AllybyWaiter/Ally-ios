@@ -143,7 +143,7 @@ export async function parseStreamForToolCalls(
  */
 export function createContentStream(content: string): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
-  
+
   return new ReadableStream({
     start(controller) {
       // Send content in a single chunk formatted as SSE
@@ -155,7 +155,7 @@ export function createContentStream(content: string): ReadableStream<Uint8Array>
         }]
       };
       controller.enqueue(encoder.encode(`data: ${JSON.stringify(sseData)}\n\n`));
-      
+
       // Send finish marker
       const finishData = {
         choices: [{
@@ -168,5 +168,52 @@ export function createContentStream(content: string): ReadableStream<Uint8Array>
       controller.enqueue(encoder.encode('data: [DONE]\n\n'));
       controller.close();
     }
+  });
+}
+
+/**
+ * Tool execution feedback interface for streaming to client
+ */
+export interface ToolExecutionFeedback {
+  toolName: string;
+  success: boolean;
+  message: string;
+}
+
+/**
+ * Create a stream that first emits tool execution feedback, then pipes the AI response.
+ * The tool_executions event allows the UI to show confirmations before the AI response.
+ */
+export function createToolExecutionStream(
+  toolExecutions: ToolExecutionFeedback[],
+  aiResponseStream: ReadableStream<Uint8Array> | null
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      // First, send tool execution feedback as a custom SSE event
+      const toolEvent = {
+        type: 'tool_executions',
+        executions: toolExecutions,
+      };
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(toolEvent)}\n\n`));
+
+      // Then pipe through the AI response
+      if (aiResponseStream) {
+        const reader = aiResponseStream.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      }
+
+      controller.close();
+    },
   });
 }

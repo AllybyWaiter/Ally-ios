@@ -638,12 +638,15 @@ export const ChatHistorySidebar = ({
       case "pinned":
         result = result.filter(c => c.is_pinned);
         break;
-      case "week":
+      case "week": {
+        const now = new Date();
+        const weekAgo = subDays(now, 7);
         result = result.filter(c => {
           const date = new Date(c.updated_at);
-          return isWithinInterval(date, { start: subDays(new Date(), 7), end: new Date() });
+          return isWithinInterval(date, { start: weekAgo, end: now });
         });
         break;
+      }
       case "with-aquarium":
         result = result.filter(c => c.aquarium_id !== null);
         break;
@@ -671,15 +674,19 @@ export const ChatHistorySidebar = ({
   }, [filteredConversations]);
 
   // Filter counts for badges
-  const filterCounts = useMemo(() => ({
-    all: conversations.length,
-    pinned: conversations.filter(c => c.is_pinned).length,
-    week: conversations.filter(c => {
-      const date = new Date(c.updated_at);
-      return isWithinInterval(date, { start: subDays(new Date(), 7), end: new Date() });
-    }).length,
-    "with-aquarium": conversations.filter(c => c.aquarium_id !== null).length,
-  }), [conversations]);
+  const filterCounts = useMemo(() => {
+    const now = new Date();
+    const weekAgo = subDays(now, 7);
+    return {
+      all: conversations.length,
+      pinned: conversations.filter(c => c.is_pinned).length,
+      week: conversations.filter(c => {
+        const date = new Date(c.updated_at);
+        return isWithinInterval(date, { start: weekAgo, end: now });
+      }).length,
+      "with-aquarium": conversations.filter(c => c.aquarium_id !== null).length,
+    };
+  }, [conversations]);
 
   const hasConversations = conversations.length > 0;
   const hasResults = filteredConversations.length > 0;

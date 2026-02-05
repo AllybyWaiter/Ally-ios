@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { queryKeys } from '@/lib/queryKeys';
 import {
   fetchFeatureFlags,
@@ -37,6 +38,7 @@ export default function FeatureFlagManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingFlag, setEditingFlag] = useState<FeatureFlag | null>(null);
   const [selectedFlagForOverrides, setSelectedFlagForOverrides] = useState<FeatureFlag | null>(null);
@@ -124,16 +126,16 @@ export default function FeatureFlagManager() {
     },
   });
 
-  // Filtered flags
+  // Filtered flags with debounced search
   const filteredFlags = useMemo(() => {
-    if (!search) return flags;
-    const searchLower = search.toLowerCase();
-    return flags.filter(f => 
+    if (!debouncedSearch) return flags;
+    const searchLower = debouncedSearch.toLowerCase();
+    return flags.filter(f =>
       f.key.toLowerCase().includes(searchLower) ||
       f.name.toLowerCase().includes(searchLower) ||
       f.description?.toLowerCase().includes(searchLower)
     );
-  }, [flags, search]);
+  }, [flags, debouncedSearch]);
 
   const resetForm = () => {
     setFormData({

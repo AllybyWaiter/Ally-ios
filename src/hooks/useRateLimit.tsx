@@ -32,41 +32,46 @@ export const useRateLimit = ({
 
   const checkRateLimit = useCallback((): boolean => {
     const now = Date.now();
-    
-    // Remove attempts outside the current window
-    const recentAttempts = attempts.filter(
-      (timestamp) => now - timestamp < windowMs
-    );
+    let isLimited = false;
 
-    if (recentAttempts.length >= maxAttempts) {
-      const oldestAttempt = Math.min(...recentAttempts);
-      const timeUntilReset = windowMs - (now - oldestAttempt);
-      
-      setIsRateLimited(true);
-      setResetTime(now + timeUntilReset);
-      
-      if (onLimitExceeded) {
-        onLimitExceeded();
+    setAttempts(prevAttempts => {
+      // Remove attempts outside the current window
+      const recentAttempts = prevAttempts.filter(
+        (timestamp) => now - timestamp < windowMs
+      );
+
+      if (recentAttempts.length >= maxAttempts) {
+        const oldestAttempt = Math.min(...recentAttempts);
+        const timeUntilReset = windowMs - (now - oldestAttempt);
+
+        setIsRateLimited(true);
+        setResetTime(now + timeUntilReset);
+
+        if (onLimitExceeded) {
+          onLimitExceeded();
+        }
+
+        // Auto-reset after window expires
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          setIsRateLimited(false);
+          setResetTime(null);
+          setAttempts([]);
+        }, timeUntilReset);
+
+        isLimited = true;
+        return recentAttempts; // Don't add new attempt when limited
       }
 
-      // Auto-reset after window expires
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      timeoutRef.current = setTimeout(() => {
-        setIsRateLimited(false);
-        setResetTime(null);
-        setAttempts([]);
-      }, timeUntilReset);
+      // Add current attempt
+      return [...recentAttempts, now];
+    });
 
-      return false;
-    }
-
-    // Add current attempt
-    setAttempts([...recentAttempts, now]);
-    return true;
-  }, [attempts, maxAttempts, windowMs, onLimitExceeded]);
+    return !isLimited;
+  }, [maxAttempts, windowMs, onLimitExceeded]);
 
   const resetRateLimit = useCallback(() => {
     setAttempts([]);

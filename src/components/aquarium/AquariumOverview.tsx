@@ -15,6 +15,7 @@ import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { queryKeys } from "@/lib/queryKeys";
 import { queryPresets } from "@/lib/queryConfig";
 import { fetchLatestWaterTest, fetchEquipmentCount, fetchUpcomingTasks } from "@/infrastructure/queries";
+import { getTaskTypeConfig } from "@/components/calendar/types";
 
 // Safe date formatter to prevent crashes - returns empty string for invalid dates
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "MMM d"): string => {
@@ -236,16 +237,23 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
             <div className="space-y-3">
               {(upcomingTasks || []).map((task) => {
                 if (!task?.id) return null;
+                const taskTypeConfig = getTaskTypeConfig(task.task_type || 'other');
+                const TaskIcon = taskTypeConfig.icon;
                 return (
                   <div
                     key={task.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                   >
-                    <div>
-                      <p className="font-medium">{task.task_name || 'Unnamed task'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {task.task_type || ''}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full bg-muted ${taskTypeConfig.color}`}>
+                        <TaskIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{task.task_name || 'Unnamed task'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {taskTypeConfig.label}
+                        </p>
+                      </div>
                     </div>
                     <Badge variant="outline">
                       {safeFormatDate(task.due_date, "MMM d")}

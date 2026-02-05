@@ -1,11 +1,14 @@
 /**
  * Water Tests Data Access Layer
- * 
+ *
  * Centralized Supabase queries for water test-related data.
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { format, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
+import { ensureFreshSession } from '@/lib/sessionUtils';
+import { createWaterTestSchema, testParameterSchema, validateOrThrow } from '@/lib/validationSchemas';
+import { z } from 'zod';
 
 export interface WaterTest {
   id: string;
@@ -35,25 +38,14 @@ export interface WaterTestWithParameters extends WaterTest {
   test_parameters: TestParameter[];
 }
 
-// Helper to ensure session is fresh (iOS PWA fix)
-async function ensureFreshSession() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-}
 
 // Fetch water tests for an aquarium with optional pagination
 export async function fetchWaterTests(
-  aquariumId: string, 
+  aquariumId: string,
   options?: { limit?: number; offset?: number }
 ) {
-  // Only refresh session if needed (avoid redundant calls)
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-  
+  await ensureFreshSession();
+
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
   
@@ -72,24 +64,26 @@ export async function fetchWaterTests(
   };
 }
 
+/** Maximum number of water tests to return in a single query */
+const MAX_WATER_TESTS_LIMIT = 1000;
+
 /**
  * @deprecated Use fetchWaterTests with pagination instead
  * Fetch all water tests for an aquarium (legacy support)
  */
 export async function fetchAllWaterTests(aquariumId: string, limit?: number) {
   await ensureFreshSession();
-  
-  let query = supabase
+
+  // Apply max limit to prevent unbounded results
+  const effectiveLimit = limit ? Math.min(limit, MAX_WATER_TESTS_LIMIT) : MAX_WATER_TESTS_LIMIT;
+
+  const { data, error } = await supabase
     .from('water_tests')
     .select('*, test_parameters(*)')
     .eq('aquarium_id', aquariumId)
-    .order('test_date', { ascending: false });
+    .order('test_date', { ascending: false })
+    .limit(effectiveLimit);
 
-  if (limit) {
-    query = query.limit(limit);
-  }
-
-  const { data, error } = await query;
   if (error) throw error;
   return data as WaterTestWithParameters[];
 }
@@ -136,12 +130,13 @@ export async function fetchWaterTestsForChart(
   return data;
 }
 
-// Fetch a single water test
-export async function fetchWaterTest(testId: string) {
+// Fetch a single water test (with ownership verification)
+export async function fetchWaterTest(testId: string, userId: string) {
   const { data, error } = await supabase
     .from('water_tests')
     .select('*, test_parameters(*)')
     .eq('id', testId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (error) throw error;
@@ -168,12 +163,19 @@ export async function createWaterTest(
     status?: string;
   }>
 ) {
+  // Validate test input
+  const validatedTest = validateOrThrow(createWaterTestSchema, test, 'water test');
+
+  // Validate parameters
+  const parametersSchema = z.array(testParameterSchema).max(50, 'Maximum 50 parameters allowed');
+  const validatedParams = validateOrThrow(parametersSchema, parameters, 'test parameters');
+
   // Create the water test
   const { data: testData, error: testError } = await supabase
     .from('water_tests')
     .insert({
-      ...test,
-      test_date: test.test_date || new Date().toISOString(),
+      ...validatedTest,
+      test_date: validatedTest.test_date || new Date().toISOString(),
     })
     .select()
     .single();
@@ -181,11 +183,11 @@ export async function createWaterTest(
   if (testError) throw testError;
 
   // Create parameters if any
-  if (parameters.length > 0) {
+  if (validatedParams.length > 0) {
     const { error: paramsError } = await supabase
       .from('test_parameters')
       .insert(
-        parameters.map((p) => ({
+        validatedParams.map((p) => ({
           test_id: testData.id,
           ...p,
         }))
@@ -197,12 +199,13 @@ export async function createWaterTest(
   return testData as WaterTest;
 }
 
-// Delete a water test
-export async function deleteWaterTest(testId: string) {
+// Delete a water test (with ownership verification)
+export async function deleteWaterTest(testId: string, userId: string) {
   const { error } = await supabase
     .from('water_tests')
     .delete()
-    .eq('id', testId);
+    .eq('id', testId)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }

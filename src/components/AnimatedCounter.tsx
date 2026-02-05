@@ -1,78 +1,68 @@
-import { useEffect, useRef, useState } from 'react';
-import { formatDecimal } from '@/lib/formatters';
+import { useEffect, useState, useRef } from 'react';
 
 interface AnimatedCounterProps {
-  end: number;
+  value: number;
   duration?: number;
+  formatValue?: (value: number) => string;
   suffix?: string;
-  prefix?: string;
-  decimals?: number;
+  className?: string;
 }
 
-const AnimatedCounter = ({
-  end,
-  duration = 2000,
-  suffix = "",
-  prefix = "",
-  decimals = 0,
-}: AnimatedCounterProps) => {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const elementRef = useRef<HTMLSpanElement>(null);
+export default function AnimatedCounter({
+  value,
+  duration = 1000,
+  formatValue,
+  suffix = '',
+  className = '',
+}: AnimatedCounterProps) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const startTimeRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const element = elementRef.current;
-    if (!element) return;
-    
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect(); // Disconnect once visible - no need to observe further
-        }
-      },
-      { threshold: 0.1 }
-    );
+    const startValue = displayValue;
+    const endValue = value;
+    const diff = endValue - startValue;
 
-    observer.observe(element);
+    if (diff === 0) return;
 
-    return () => {
-      observer.disconnect();
-    };
-  }, []); // Remove isVisible dependency - only run once on mount
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) {
+        startTimeRef.current = timestamp;
+      }
 
-  useEffect(() => {
-    if (!isVisible) return;
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
 
-    let startTime: number | null = null;
-    const startValue = 0;
+      // Ease out cubic
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const currentValue = startValue + diff * easeOut;
 
-    const animate = (currentTime: number) => {
-      if (!startTime) startTime = currentTime;
-      const progress = Math.min((currentTime - startTime) / duration, 1);
-
-      const easeOutQuad = (t: number) => t * (2 - t);
-      const easedProgress = easeOutQuad(progress);
-
-      setCount(startValue + (end - startValue) * easedProgress);
+      setDisplayValue(Math.round(currentValue * 100) / 100);
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setCount(end);
+        animationFrameRef.current = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
-  }, [isVisible, end, duration]);
+    startTimeRef.current = null;
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [value, duration]);
+
+  const formattedValue = formatValue
+    ? formatValue(displayValue)
+    : displayValue.toLocaleString();
 
   return (
-    <span ref={elementRef}>
-      {prefix}
-      {formatDecimal(count, decimals)}
+    <span className={className}>
+      {formattedValue}
       {suffix}
     </span>
   );
-};
-
-export default AnimatedCounter;
+}

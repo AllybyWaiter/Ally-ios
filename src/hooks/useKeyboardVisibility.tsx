@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, RefObject } from 'react';
+import { useState, useEffect, useCallback, useRef, RefObject } from 'react';
 
 interface UseKeyboardVisibilityOptions {
   inputRef?: RefObject<HTMLElement>;
@@ -19,34 +19,63 @@ export function useKeyboardVisibility(
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  // Track all active timeouts for cleanup
+  const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  // Helper to create tracked timeouts
+  const createTimeout = useCallback((callback: () => void, delay: number) => {
+    const timeoutId = setTimeout(() => {
+      timeoutsRef.current.delete(timeoutId);
+      callback();
+    }, delay);
+    timeoutsRef.current.add(timeoutId);
+    return timeoutId;
+  }, []);
+
   // Scroll input into view when keyboard opens
   const scrollInputIntoView = useCallback(() => {
     if (inputRef?.current) {
-      setTimeout(() => {
-        inputRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
+      createTimeout(() => {
+        inputRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
         });
       }, 100);
     }
-  }, [inputRef]);
+  }, [inputRef, createTimeout]);
 
   useEffect(() => {
     // Use visualViewport API for accurate keyboard detection on mobile
     const viewport = window.visualViewport;
-    
+
     if (!viewport) return;
 
-    // Capture initial height at effect start for stable comparison
-    const initialHeight = viewport.height;
+    // Track reference height that updates on orientation change
+    let referenceHeight = viewport.height;
+    let lastOrientation = window.screen?.orientation?.angle ?? 0;
 
     const handleResize = () => {
       const currentHeight = viewport.height;
-      const heightDiff = initialHeight - currentHeight;
-      
+      const currentOrientation = window.screen?.orientation?.angle ?? 0;
+
+      // Detect orientation change - reset reference height
+      if (currentOrientation !== lastOrientation) {
+        lastOrientation = currentOrientation;
+        // On orientation change, reset keyboard state and reference
+        setIsKeyboardVisible(false);
+        setKeyboardHeight(0);
+        // Wait for viewport to stabilize, then update reference height
+        createTimeout(() => {
+          referenceHeight = window.visualViewport?.height ?? currentHeight;
+        }, 300);
+        return;
+      }
+
+      const heightDiff = referenceHeight - currentHeight;
+
       // Keyboard is visible if height decreased significantly (more than 150px)
       const keyboardShowing = heightDiff > 150;
-      
+
       if (keyboardShowing && !isKeyboardVisible) {
         setIsKeyboardVisible(true);
         setKeyboardHeight(heightDiff);
@@ -57,17 +86,22 @@ export function useKeyboardVisibility(
         setKeyboardHeight(0);
         onKeyboardHide?.();
       }
+
+      // If viewport grew larger than reference (e.g., after orientation change settled), update reference
+      if (currentHeight > referenceHeight && !keyboardShowing) {
+        referenceHeight = currentHeight;
+      }
     };
 
     // Also handle focus events as a backup
     const handleFocus = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.getAttribute('contenteditable') === 'true') {
         // Small delay to let keyboard animation start
-        setTimeout(() => {
-          if (viewport.height < initialHeight - 150) {
+        createTimeout(() => {
+          if (viewport.height < referenceHeight - 150) {
             setIsKeyboardVisible(true);
-            setKeyboardHeight(initialHeight - viewport.height);
+            setKeyboardHeight(referenceHeight - viewport.height);
             onKeyboardShow?.();
           }
         }, 300);
@@ -76,8 +110,8 @@ export function useKeyboardVisibility(
 
     const handleBlur = () => {
       // Small delay to check if another input was focused
-      setTimeout(() => {
-        if (viewport.height >= initialHeight - 50) {
+      createTimeout(() => {
+        if (viewport.height >= referenceHeight - 50) {
           setIsKeyboardVisible(false);
           setKeyboardHeight(0);
           onKeyboardHide?.();
@@ -85,19 +119,32 @@ export function useKeyboardVisibility(
       }, 100);
     };
 
+    // Handle orientation change event directly
+    const handleOrientationChange = () => {
+      // Reset keyboard state on orientation change
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+      // Update reference height after orientation settles
+      createTimeout(() => {
+        referenceHeight = window.visualViewport?.height ?? window.innerHeight;
+      }, 500);
+    };
+
     viewport.addEventListener('resize', handleResize);
     document.addEventListener('focusin', handleFocus);
     document.addEventListener('focusout', handleBlur);
-
-    // Note: orientation change will require remounting the component for new initial height
-    // This is acceptable since orientation changes typically cause layout reflows anyway
+    window.addEventListener('orientationchange', handleOrientationChange);
 
     return () => {
       viewport.removeEventListener('resize', handleResize);
       document.removeEventListener('focusin', handleFocus);
       document.removeEventListener('focusout', handleBlur);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      // Clear all pending timeouts
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current.clear();
     };
-  }, [isKeyboardVisible, onKeyboardShow, onKeyboardHide, scrollInputIntoView]);
+  }, [isKeyboardVisible, onKeyboardShow, onKeyboardHide, scrollInputIntoView, createTimeout]);
 
   return {
     isKeyboardVisible,

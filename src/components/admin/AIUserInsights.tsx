@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -57,6 +58,7 @@ interface UserMessage {
 
 export default function AIUserInsights() {
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<UserAIStats | null>(null);
   const [detailTab, setDetailTab] = useState('memories');
@@ -194,14 +196,18 @@ export default function AIUserInsights() {
     enabled: !!selectedUser,
   });
 
-  // Filter users
-  const filteredUsers = userStats?.filter(user => {
-    const matchesSearch = !searchQuery || 
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTier = tierFilter === 'all' || user.subscription_tier === tierFilter;
-    return matchesSearch && matchesTier;
-  });
+  // Filter users with debounced search
+  const filteredUsers = useMemo(() => {
+    if (!userStats) return [];
+    const searchLower = debouncedSearchQuery.toLowerCase();
+    return userStats.filter(user => {
+      const matchesSearch = !debouncedSearchQuery ||
+        user.email.toLowerCase().includes(searchLower) ||
+        user.name?.toLowerCase().includes(searchLower);
+      const matchesTier = tierFilter === 'all' || user.subscription_tier === tierFilter;
+      return matchesSearch && matchesTier;
+    });
+  }, [userStats, debouncedSearchQuery, tierFilter]);
 
   const getEngagementLevel = (user: UserAIStats): { label: string; color: string } => {
     const total = user.total_memories + user.positive_feedback + user.negative_feedback;

@@ -35,17 +35,20 @@ export async function fetchTasks(aquariumId: string) {
   return data as MaintenanceTask[];
 }
 
-// Fetch a single task
-export async function fetchTask(taskId: string) {
+// Fetch a single task (with ownership verification via aquarium)
+export async function fetchTask(taskId: string, userId: string) {
   const { data, error } = await supabase
     .from('maintenance_tasks')
-    .select('*')
+    .select('*, aquariums!inner(user_id)')
     .eq('id', taskId)
+    .eq('aquariums.user_id', userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) throw new Error('Task not found');
-  return data as MaintenanceTask;
+  // Remove the joined aquariums data before returning
+  const { aquariums: _, ...task } = data;
+  return task as MaintenanceTask;
 }
 
 // Create a new task
@@ -74,11 +77,23 @@ export async function createTask(task: {
   return data as MaintenanceTask;
 }
 
-// Update a task
+// Update a task (with ownership verification via aquarium)
 export async function updateTask(
   taskId: string,
+  userId: string,
   updates: Partial<Omit<MaintenanceTask, 'id' | 'aquarium_id' | 'created_at' | 'updated_at'>>
 ) {
+  // First verify ownership via aquarium relationship
+  const { data: existing, error: fetchError } = await supabase
+    .from('maintenance_tasks')
+    .select('id, aquariums!inner(user_id)')
+    .eq('id', taskId)
+    .eq('aquariums.user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('Task not found');
+
   const { data, error } = await supabase
     .from('maintenance_tasks')
     .update(updates)
@@ -90,8 +105,19 @@ export async function updateTask(
   return data as MaintenanceTask;
 }
 
-// Complete a task
-export async function completeTask(taskId: string) {
+// Complete a task (with ownership verification via aquarium)
+export async function completeTask(taskId: string, userId: string) {
+  // First verify ownership via aquarium relationship
+  const { data: existing, error: fetchError } = await supabase
+    .from('maintenance_tasks')
+    .select('id, aquariums!inner(user_id)')
+    .eq('id', taskId)
+    .eq('aquariums.user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('Task not found');
+
   const { data, error } = await supabase
     .from('maintenance_tasks')
     .update({
@@ -106,8 +132,19 @@ export async function completeTask(taskId: string) {
   return data as MaintenanceTask;
 }
 
-// Delete a task
-export async function deleteTask(taskId: string) {
+// Delete a task (with ownership verification via aquarium)
+export async function deleteTask(taskId: string, userId: string) {
+  // First verify ownership via aquarium relationship
+  const { data: existing, error: fetchError } = await supabase
+    .from('maintenance_tasks')
+    .select('id, aquariums!inner(user_id)')
+    .eq('id', taskId)
+    .eq('aquariums.user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('Task not found');
+
   const { error } = await supabase
     .from('maintenance_tasks')
     .delete()

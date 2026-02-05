@@ -17,6 +17,7 @@ import {
   SubscriptionTier,
 } from '@/lib/revenuecat';
 import { useAuth } from '@/hooks/useAuth';
+import { logger } from '@/lib/logger';
 
 interface UseRevenueCatReturn {
   // State
@@ -79,7 +80,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
         const offering = await getOfferings();
         setCurrentOffering(offering);
       } catch (error) {
-        console.error('Failed to initialize RevenueCat:', error);
+        logger.error('Failed to initialize RevenueCat:', error);
       } finally {
         setIsLoading(false);
       }
@@ -128,7 +129,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
         const tier = await getSubscriptionTier();
         setSubscriptionTier(tier);
       } catch (error) {
-        console.error('Failed to sync user with RevenueCat:', error);
+        logger.error('Failed to sync user with RevenueCat:', error);
       }
     };
 
@@ -207,7 +208,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const tier = await getSubscriptionTier();
       setSubscriptionTier(tier);
     } catch (error) {
-      console.error('Failed to refresh customer info:', error);
+      logger.error('Failed to refresh customer info:', error);
     }
   }, [isNative]);
 

@@ -32,7 +32,7 @@ interface SystemStatus {
 }
 
 export function SystemHealth() {
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tableStats, setTableStats] = useState<TableStats[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({
@@ -103,7 +103,7 @@ export function SystemHealth() {
         database: 'degraded',
       }));
     } finally {
-      setLoading(false);
+      setIsLoading(false);
       setRefreshing(false);
     }
   };
@@ -129,7 +129,7 @@ export function SystemHealth() {
   const totalRows = tableStats.reduce((sum, t) => sum + t.rowCount, 0);
   const totalFiles = storageUsage.reduce((sum, b) => sum + b.count, 0);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

@@ -144,7 +144,7 @@ export default function PlantPhotoUpload({
             <div className="relative">
               <img
                 src={preview}
-                alt="Preview"
+                alt="Plant photo preview"
                 className="w-full rounded-lg max-h-64 object-contain bg-muted"
               />
               <Button

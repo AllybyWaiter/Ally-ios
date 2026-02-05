@@ -95,7 +95,7 @@ export const MaintenanceTaskDialog = ({
   mode = "create",
 }: MaintenanceTaskDialogProps) => {
   const taskTypes = getTaskTypes(aquariumType);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [equipment, setEquipment] = useState<Array<{ id: string; name: string; equipment_type: string }>>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -204,7 +204,7 @@ export const MaintenanceTaskDialog = ({
   }, [isRecurring, form]);
 
   const onSubmit = async (values: FormValues) => {
-    setLoading(true);
+    setIsLoading(true);
     try {
       // iOS PWA fix: Try to get session first, refresh if stale
       const { data: sessionData } = await supabase.auth.getSession();
@@ -253,6 +253,17 @@ export const MaintenanceTaskDialog = ({
             : "Task created successfully",
         });
       } else if (mode === "edit" && taskId) {
+        // Verify ownership via aquarium relationship before updating
+        const { data: existing, error: verifyError } = await supabase
+          .from("maintenance_tasks")
+          .select("id, aquariums!inner(user_id)")
+          .eq("id", taskId)
+          .eq("aquariums.user_id", currentUser.id)
+          .maybeSingle();
+
+        if (verifyError) throw verifyError;
+        if (!existing) throw new Error("Task not found");
+
         const { error } = await supabase
           .from("maintenance_tasks")
           .update(taskData)
@@ -279,7 +290,7 @@ export const MaintenanceTaskDialog = ({
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -452,7 +463,7 @@ export const MaintenanceTaskDialog = ({
                               placeholder="e.g., 3"
                               {...field}
                               value={field.value ?? ''}
-                              onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                              onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                             />
                           </FormControl>
                           <FormMessage />
@@ -514,12 +525,12 @@ export const MaintenanceTaskDialog = ({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={loading}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {mode === "create" ? "Create Task" : "Save Changes"}
               </Button>
             </DialogFooter>

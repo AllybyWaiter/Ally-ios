@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,11 +88,11 @@ const partnershipTypeColors: Record<string, string> = {
 export function PartnerApplicationsManager() {
   const { toast } = useToast();
   const [applications, setApplications] = useState<PartnerApplication[]>([]);
-  const [filteredApplications, setFilteredApplications] = useState<PartnerApplication[]>([]);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState<PartnerApplication | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
 
@@ -99,11 +100,11 @@ export function PartnerApplicationsManager() {
     fetchApplications();
   }, []);
 
-  useEffect(() => {
+  const filteredApplications = useMemo(() => {
     let filtered = applications;
-    
-    if (search) {
-      const searchLower = search.toLowerCase();
+
+    if (debouncedSearch) {
+      const searchLower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(a =>
         a.full_name.toLowerCase().includes(searchLower) ||
         a.email.toLowerCase().includes(searchLower) ||
@@ -111,20 +112,20 @@ export function PartnerApplicationsManager() {
         a.primary_channel_link.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (statusFilter !== 'all') {
       filtered = filtered.filter(a => a.status === statusFilter);
     }
-    
+
     if (typeFilter !== 'all') {
       filtered = filtered.filter(a => a.partnership_type === typeFilter);
     }
-    
-    setFilteredApplications(filtered);
-  }, [search, statusFilter, typeFilter, applications]);
+
+    return filtered;
+  }, [debouncedSearch, statusFilter, typeFilter, applications]);
 
   const fetchApplications = async () => {
-    setLoading(true);
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('partner_applications')
       .select('*')
@@ -139,7 +140,7 @@ export function PartnerApplicationsManager() {
     } else {
       setApplications(data || []);
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -209,7 +210,7 @@ export function PartnerApplicationsManager() {
     rejected: applications.filter(a => a.status === 'rejected').length,
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

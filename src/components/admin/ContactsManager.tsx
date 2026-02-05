@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,10 +69,10 @@ const statusColors: Record<string, string> = {
 export function ContactsManager() {
   const { toast } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
@@ -82,27 +83,28 @@ export function ContactsManager() {
     fetchContacts();
   }, []);
 
-  useEffect(() => {
+  const filteredContacts = useMemo(() => {
     let filtered = contacts;
-    
-    if (search) {
+
+    if (debouncedSearch) {
+      const searchLower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.email.toLowerCase().includes(search.toLowerCase()) ||
-        c.message.toLowerCase().includes(search.toLowerCase()) ||
-        c.subject?.toLowerCase().includes(search.toLowerCase())
+        c.name.toLowerCase().includes(searchLower) ||
+        c.email.toLowerCase().includes(searchLower) ||
+        c.message.toLowerCase().includes(searchLower) ||
+        c.subject?.toLowerCase().includes(searchLower)
       );
     }
-    
+
     if (statusFilter !== 'all') {
       filtered = filtered.filter(c => c.status === statusFilter);
     }
-    
-    setFilteredContacts(filtered);
-  }, [search, statusFilter, contacts]);
+
+    return filtered;
+  }, [debouncedSearch, statusFilter, contacts]);
 
   const fetchContacts = async () => {
-    setLoading(true);
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('contacts')
       .select('*')
@@ -117,7 +119,7 @@ export function ContactsManager() {
     } else {
       setContacts(data || []);
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -222,7 +224,7 @@ export function ContactsManager() {
     resolved: contacts.filter(c => c.status === 'resolved').length,
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

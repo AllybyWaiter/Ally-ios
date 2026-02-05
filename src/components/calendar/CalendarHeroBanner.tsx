@@ -18,6 +18,17 @@ interface CalendarHeroBannerProps {
   thisWeekCount: number;
 }
 
+function personalizeGreeting(greeting: string, firstName: string | undefined): string {
+  if (!firstName || !greeting) return greeting || '';
+
+  // Check for common punctuation at end
+  const lastChar = greeting.slice(-1);
+  if (['?', '!', '.'].includes(lastChar)) {
+    return `${greeting.slice(0, -1)}, ${firstName}${lastChar}`;
+  }
+  return `${greeting}, ${firstName}`;
+}
+
 export function CalendarHeroBanner({
   todayCount,
   overdueCount,
@@ -28,6 +39,7 @@ export function CalendarHeroBanner({
   const { userName } = useAuth();
 
   const firstName = userName?.split(' ')[0];
+  const personalizedGreeting = personalizeGreeting(greeting, firstName);
 
   // Contextual message based on task status
   const { message, subMessage, icon: Icon, mood } = useMemo(() => {
@@ -114,7 +126,7 @@ export function CalendarHeroBanner({
               transition={{ delay: 0.1 }}
               className="text-sm text-muted-foreground mb-1"
             >
-              {greeting}{firstName ? `, ${firstName}` : ''}
+              {personalizedGreeting}
             </motion.p>
 
             {/* Main message */}

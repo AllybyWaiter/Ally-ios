@@ -1,6 +1,7 @@
 import { useState, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,10 +43,16 @@ interface AquariumGridProps {
   onDeleteAquarium: (aquariumId: string) => void;
 }
 
-// Health indicator badge component
-function HealthIndicator({ aquariumId, t }: { aquariumId: string; t: (key: string) => string }) {
+// Health indicator badge component - memoized to prevent unnecessary re-renders
+const HealthIndicator = memo(function HealthIndicator({
+  aquariumId,
+  t
+}: {
+  aquariumId: string;
+  t: (key: string) => string;
+}) {
   const health = useAquariumHealthScore(aquariumId);
-  
+
   if (health.isLoading) {
     return (
       <div className="w-3 h-3 rounded-full bg-muted animate-pulse" />
@@ -53,11 +60,11 @@ function HealthIndicator({ aquariumId, t }: { aquariumId: string; t: (key: strin
   }
 
   const hasAlerts = health.alerts > 0 || health.overdueTasks > 0;
-  
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div 
+        <div
           className={`w-3 h-3 rounded-full transition-all ${hasAlerts ? 'animate-pulse' : ''}`}
           style={{ backgroundColor: health.color }}
           role="status"
@@ -70,7 +77,7 @@ function HealthIndicator({ aquariumId, t }: { aquariumId: string; t: (key: strin
       </TooltipContent>
     </Tooltip>
   );
-}
+});
 
 // Individual aquarium card with hover/long-press health view
 interface AquariumCardProps {
@@ -114,7 +121,7 @@ const AquariumCard = memo(function AquariumCard({
       style={{ animationDelay: `${(index + 3) * 100}ms` }}
       onMouseEnter={() => {
         import('@/pages/AquariumDetail').catch((error) => {
-          console.debug('Failed to preload AquariumDetail:', error);
+          logger.debug('Failed to preload AquariumDetail:', error);
         });
       }}
       {...(isMobile ? longPressHandlers : {})}

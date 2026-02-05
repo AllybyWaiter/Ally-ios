@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type ActivityType = 
+export type ActivityType =
   | 'login'
   | 'logout'
   | 'aquarium_created'
@@ -15,9 +15,24 @@ export type ActivityType =
   | 'support_ticket_created'
   | 'chat_conversation_started';
 
+// Typed action details for activity logging
+export interface ActionDetails {
+  aquarium_id?: string;
+  aquarium_name?: string;
+  water_test_id?: string;
+  equipment_id?: string;
+  task_id?: string;
+  ticket_id?: string;
+  conversation_id?: string;
+  setting_name?: string;
+  old_value?: string | number | boolean;
+  new_value?: string | number | boolean;
+  [key: string]: string | number | boolean | undefined;
+}
+
 interface LogActivityParams {
   actionType: ActivityType;
-  actionDetails?: Record<string, any>;
+  actionDetails?: ActionDetails;
   userId?: string;
 }
 
@@ -28,7 +43,7 @@ const MAX_QUEUE_SIZE = 100;
 let activityQueue: Array<{
   user_id: string;
   action_type: ActivityType;
-  action_details: Record<string, any>;
+  action_details: ActionDetails;
   user_agent: string | null;
 }> = [];
 

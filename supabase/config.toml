@@ -1,7 +1,4 @@
-project_id = "pomvsimhphgbqxreyhfp"
-
-[functions.generate-sitemap]
-verify_jwt = false
+project_id = "liockvmkogevyqtfhkee"
 
 [functions.chat-support]
 verify_jwt = false
@@ -14,12 +11,6 @@ verify_jwt = false
 
 [functions.ally-chat]
 verify_jwt = true
-
-[functions.blog-ai-assistant]
-verify_jwt = true
-
-[functions.publish-scheduled-posts]
-verify_jwt = false
 
 [functions.suggest-maintenance-tasks]
 verify_jwt = true
@@ -40,7 +31,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.get-weather]
-verify_jwt = true
+verify_jwt = false
 
 [functions.get-vapid-key]
 verify_jwt = false
@@ -64,21 +55,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.purge-old-pii]
-verify_jwt = false
-
-[functions.create-checkout-session]
-verify_jwt = true
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.create-portal-session]
-verify_jwt = true
-
-[functions.setup-stripe-products]
-verify_jwt = true
-
-[functions.get-stripe-prices]
 verify_jwt = false
 
 [functions.validate-referral-code]

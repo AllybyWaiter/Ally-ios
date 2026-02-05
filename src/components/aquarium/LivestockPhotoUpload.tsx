@@ -145,7 +145,7 @@ export default function LivestockPhotoUpload({
             <div className="relative">
               <img
                 src={preview}
-                alt="Preview"
+                alt="Livestock photo preview"
                 className="w-full rounded-lg max-h-64 object-contain bg-muted"
               />
               <Button

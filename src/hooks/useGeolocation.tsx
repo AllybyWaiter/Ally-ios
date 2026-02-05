@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,16 @@ export function useGeolocation() {
     error: null,
     permissionState: null,
   });
+
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const checkPermission = useCallback(async () => {
     if (!navigator.permissions) return null;
@@ -50,8 +60,14 @@ export function useGeolocation() {
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) {
+            resolve(false);
+            return;
+          }
+
           const { latitude, longitude } = position.coords;
-          
+
           setState(prev => ({
             ...prev,
             latitude,
@@ -71,6 +87,12 @@ export function useGeolocation() {
               })
               .eq('user_id', user.id);
 
+            // Check mounted before showing toast
+            if (!isMountedRef.current) {
+              resolve(true);
+              return;
+            }
+
             if (error) {
               console.error('Failed to save location:', error);
               toast({
@@ -89,8 +111,14 @@ export function useGeolocation() {
           resolve(true);
         },
         (error) => {
+          // Check if component is still mounted before updating state
+          if (!isMountedRef.current) {
+            resolve(false);
+            return;
+          }
+
           let errorMessage = 'Failed to get location';
-          
+
           switch (error.code) {
             case error.PERMISSION_DENIED:
               errorMessage = 'Location permission was denied';

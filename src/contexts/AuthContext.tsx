@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { setUserContext, clearUserContext, addBreadcrumb, FeatureArea } from '@/lib/sentry';
 import { logActivity, logLoginHistory } from '@/lib/activityLogger';
+import { logger } from '@/lib/logger';
 
 // Timeout constants for iOS PWA optimization
 const SAFETY_TIMEOUT_MS = 5000;
@@ -36,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const safetyTimeout = setTimeout(() => {
       if (mounted && !safetyTimeoutCleared) {
-        console.warn('⚠️ Auth: Safety timeout triggered');
+        logger.warn('⚠️ Auth: Safety timeout triggered');
         setLoading(false);
         setIsInitialAuthComplete(true);
       }
@@ -74,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!mounted) return;
 
         if (error) {
-          console.error('🔴 Auth: Error getting session:', error);
+          logger.error('🔴 Auth: Error getting session:', error);
           setLoading(false);
           setIsInitialAuthComplete(true);
           clearSafetyTimeout();
@@ -92,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsInitialAuthComplete(true);
         clearSafetyTimeout();
       } catch (error) {
-        console.error('🔴 Auth: Exception in initializeAuth:', error);
+        logger.error('🔴 Auth: Exception in initializeAuth:', error);
         if (mounted) {
           setLoading(false);
           setIsInitialAuthComplete(true);

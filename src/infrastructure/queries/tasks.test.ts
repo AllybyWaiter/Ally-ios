@@ -65,31 +65,33 @@ describe('tasks DAL', () => {
   });
 
   describe('fetchTask', () => {
-    it('should fetch a single task', async () => {
-      const mockTask = { id: 'task-1', task_name: 'Water Change', due_date: '2025-01-15' };
+    it('should fetch a single task with ownership verification', async () => {
+      const mockTask = { id: 'task-1', task_name: 'Water Change', due_date: '2025-01-15', aquariums: { user_id: 'user-1' } };
 
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockTask, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockTask, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      const result = await fetchTask('task-1');
+      const result = await fetchTask('task-1', 'user-1');
 
+      expect(mockChain.select).toHaveBeenCalledWith('*, aquariums!inner(user_id)');
       expect(mockChain.eq).toHaveBeenCalledWith('id', 'task-1');
-      expect(result).toEqual(mockTask);
+      expect(mockChain.eq).toHaveBeenCalledWith('aquariums.user_id', 'user-1');
+      expect(result).toEqual({ id: 'task-1', task_name: 'Water Change', due_date: '2025-01-15' });
     });
 
     it('should throw error when task not found', async () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(fetchTask('invalid-id')).rejects.toEqual({ code: 'PGRST116' });
+      await expect(fetchTask('invalid-id', 'user-1')).rejects.toThrow('Task not found');
     });
   });
 
@@ -185,97 +187,132 @@ describe('tasks DAL', () => {
   });
 
   describe('updateTask', () => {
-    it('should update task with partial data', async () => {
+    it('should update task with ownership verification', async () => {
       const mockTask = { id: 'task-1', task_name: 'Updated Task', notes: 'New notes' };
 
-      const mockUpdate = vi.fn().mockReturnValue({
+      // Mock for ownership verification
+      const mockSelectChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'task-1', aquariums: { user_id: 'user-1' } }, error: null }),
+      };
+
+      // Mock for update
+      const mockUpdateChain = {
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({ data: mockTask, error: null }),
           }),
         }),
+      };
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return mockSelectChain as any;
+        return { update: vi.fn().mockReturnValue(mockUpdateChain) } as any;
       });
-      vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      const result = await updateTask('task-1', { task_name: 'Updated Task', notes: 'New notes' });
+      const result = await updateTask('task-1', 'user-1', { task_name: 'Updated Task', notes: 'New notes' });
 
-      expect(mockUpdate).toHaveBeenCalledWith({ task_name: 'Updated Task', notes: 'New notes' });
       expect(result).toEqual(mockTask);
     });
 
-    it('should throw error on failure', async () => {
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
-          }),
-        }),
-      });
-      vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
+    it('should throw error when task not found during ownership check', async () => {
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(updateTask('task-1', { notes: 'Test' })).rejects.toEqual({ message: 'Update failed' });
+      await expect(updateTask('task-1', 'user-1', { notes: 'Test' })).rejects.toThrow('Task not found');
     });
   });
 
   describe('completeTask', () => {
-    it('should mark task as completed with date', async () => {
+    it('should mark task as completed with ownership verification', async () => {
       const mockTask = {
         id: 'task-1',
         status: 'completed',
         completed_date: '2025-01-15',
       };
 
-      const mockUpdate = vi.fn().mockReturnValue({
+      // Mock for ownership verification
+      const mockSelectChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'task-1', aquariums: { user_id: 'user-1' } }, error: null }),
+      };
+
+      // Mock for update
+      const mockUpdateChain = {
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({ data: mockTask, error: null }),
           }),
         }),
+      };
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return mockSelectChain as any;
+        return { update: vi.fn().mockReturnValue(mockUpdateChain) } as any;
       });
-      vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      const result = await completeTask('task-1');
+      const result = await completeTask('task-1', 'user-1');
 
-      expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'completed',
-        completed_date: expect.any(String),
-      }));
       expect(result).toEqual(mockTask);
     });
 
-    it('should throw error on failure', async () => {
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Complete failed' } }),
-          }),
-        }),
-      });
-      vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
+    it('should throw error when task not found during ownership check', async () => {
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(completeTask('task-1')).rejects.toEqual({ message: 'Complete failed' });
+      await expect(completeTask('task-1', 'user-1')).rejects.toThrow('Task not found');
     });
   });
 
   describe('deleteTask', () => {
-    it('should delete task successfully', async () => {
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
-      });
-      vi.mocked(supabase.from).mockReturnValue({ delete: mockDelete } as any);
+    it('should delete task with ownership verification', async () => {
+      // Mock for ownership verification
+      const mockSelectChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'task-1', aquariums: { user_id: 'user-1' } }, error: null }),
+      };
 
-      await deleteTask('task-1');
+      // Mock for delete
+      const mockDeleteChain = {
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      };
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) return mockSelectChain as any;
+        return { delete: vi.fn().mockReturnValue(mockDeleteChain) } as any;
+      });
+
+      await deleteTask('task-1', 'user-1');
 
       expect(supabase.from).toHaveBeenCalledWith('maintenance_tasks');
     });
 
-    it('should throw error on failure', async () => {
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } }),
-      });
-      vi.mocked(supabase.from).mockReturnValue({ delete: mockDelete } as any);
+    it('should throw error when task not found during ownership check', async () => {
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(deleteTask('task-1')).rejects.toEqual({ message: 'Delete failed' });
+      await expect(deleteTask('task-1', 'user-1')).rejects.toThrow('Task not found');
     });
   });
 

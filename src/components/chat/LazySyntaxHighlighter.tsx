@@ -1,5 +1,6 @@
 import { useState, useEffect, memo, Suspense } from "react";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 // Simple fallback for code blocks while loading
 const CodeFallback = ({ children, className }: { children: string; className?: string }) => (
@@ -14,9 +15,19 @@ interface LazySyntaxHighlighterProps {
   className?: string;
 }
 
+// Props interface for the dynamically loaded syntax highlighter
+interface SyntaxHighlighterProps {
+  style: Record<string, React.CSSProperties>;
+  language: string;
+  PreTag: string;
+  className?: string;
+  customStyle?: React.CSSProperties;
+  children: string;
+}
+
 // Component that handles the lazy loading of syntax highlighter
 export const LazySyntaxHighlighter = memo(({ language, children, className }: LazySyntaxHighlighterProps) => {
-  const [Highlighter, setHighlighter] = useState<React.ComponentType<any> | null>(null);
+  const [Highlighter, setHighlighter] = useState<React.ComponentType<SyntaxHighlighterProps> | null>(null);
   const [style, setStyle] = useState<Record<string, React.CSSProperties> | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -34,7 +45,7 @@ export const LazySyntaxHighlighter = memo(({ language, children, className }: La
         }
       })
       .catch((err) => {
-        console.error("Failed to load syntax highlighter:", err);
+        logger.error("Failed to load syntax highlighter:", err);
         if (mounted) {
           setLoadError(true);
         }

@@ -82,11 +82,8 @@ const menuGroups: MenuGroup[] = [
     id: 'content',
     label: 'Content & Communications',
     items: [
-      { id: 'blog', label: 'Blog', icon: FileText, permission: 'manage_blog' },
       { id: 'announcements', label: 'Announcements', icon: Megaphone, permission: 'manage_announcements' },
       { id: 'contacts', label: 'Contacts', icon: Mail, roles: ['admin'], badgeKey: 'pendingContacts' },
-      { id: 'partners', label: 'Partner Applications', icon: Handshake, roles: ['admin'], badgeKey: 'pendingPartners' },
-      { id: 'waitlist', label: 'Waitlist', icon: ClipboardList, roles: ['admin'], badgeKey: 'pendingWaitlist' },
       { id: 'tickets', label: 'Support Tickets', icon: Ticket, permission: 'moderate_support', badgeKey: 'openTickets' },
     ],
   },

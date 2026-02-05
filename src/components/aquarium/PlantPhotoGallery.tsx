@@ -37,7 +37,7 @@ export default function PlantPhotoGallery({ plantId, plantName, userId }: PlantP
   });
 
   const setPrimaryMutation = useMutation({
-    mutationFn: (photoId: string) => setAsPrimaryPlantPhoto(photoId, plantId),
+    mutationFn: (photoId: string) => setAsPrimaryPlantPhoto(photoId, plantId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.plants.photos(plantId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.plants.all });
@@ -47,7 +47,7 @@ export default function PlantPhotoGallery({ plantId, plantName, userId }: PlantP
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (photoId: string) => deletePlantPhoto(photoId, plantId),
+    mutationFn: (photoId: string) => deletePlantPhoto(photoId, plantId, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.plants.photos(plantId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.plants.all });

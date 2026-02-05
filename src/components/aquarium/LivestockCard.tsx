@@ -56,7 +56,7 @@ export const LivestockCard = memo(function LivestockCard({
                 <div className="relative">
                   <img
                     src={livestock.primary_photo_url}
-                    alt={livestock.name}
+                    alt={livestock.name || 'Livestock photo'}
                     className="h-10 w-10 rounded-lg object-cover"
                   />
                   {photoCount > 0 && (

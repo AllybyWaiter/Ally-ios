@@ -1,13 +1,21 @@
 -- Phase 1: Fix cron job to use service role key instead of anon key
-SELECT cron.unschedule('check-scheduled-notifications');
+-- Safely unschedule if exists
+DO $$
+BEGIN
+  PERFORM cron.unschedule('check-scheduled-notifications');
+EXCEPTION WHEN OTHERS THEN
+  -- Job doesn't exist, that's fine
+  NULL;
+END;
+$$;
 
 SELECT cron.schedule(
   'check-scheduled-notifications',
   '*/15 * * * *',
   $$
   SELECT net.http_post(
-    url := 'https://pomvsimhphgbqxreyhfp.supabase.co/functions/v1/scheduled-notifications',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer ' || current_setting('app.settings.service_role_key', true) || '"}'::jsonb,
+    url := 'https://liockvmkogevyqtfhkee.supabase.co/functions/v1/scheduled-notifications',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpb2Nrdm1rb2dldnlxdGZoa2VlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MDIxMDExMSwiZXhwIjoyMDg1Nzg2MTExfQ.g3SQtgrfAlL0TmTqIvhDQ5sxucvHXUPSNueNu2WO8sM"}'::jsonb,
     body := '{}'::jsonb
   ) AS request_id;
   $$

@@ -1,8 +1,5 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createLogger } from "../_shared/logger.ts";
-import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,14 +24,14 @@ function getMoonPhase(date: Date) {
   const LUNAR_CYCLE = 29.53059;
   const KNOWN_NEW_MOON = new Date('2000-01-06T18:14:00Z').getTime();
   const msPerDay = 24 * 60 * 60 * 1000;
-  
+
   const daysSinceKnown = (date.getTime() - KNOWN_NEW_MOON) / msPerDay;
   const phase = ((daysSinceKnown % LUNAR_CYCLE) + LUNAR_CYCLE) % LUNAR_CYCLE;
   const illumination = Math.round((1 - Math.cos(2 * Math.PI * phase / LUNAR_CYCLE)) / 2 * 100);
-  
+
   let phaseName: string;
   let emoji: string;
-  
+
   if (phase < 1.85) { phaseName = 'New Moon'; emoji = '🌑'; }
   else if (phase < 7.38) { phaseName = 'Waxing Crescent'; emoji = '🌒'; }
   else if (phase < 9.23) { phaseName = 'First Quarter'; emoji = '🌓'; }
@@ -43,14 +40,13 @@ function getMoonPhase(date: Date) {
   else if (phase < 22.15) { phaseName = 'Waning Gibbous'; emoji = '🌖'; }
   else if (phase < 24.00) { phaseName = 'Last Quarter'; emoji = '🌗'; }
   else { phaseName = 'Waning Crescent'; emoji = '🌘'; }
-  
-  // Calculate days until next full and new moon
+
   const daysUntilFull = phase < 14.77 ? 14.77 - phase : LUNAR_CYCLE - phase + 14.77;
   const daysUntilNew = phase < 1.85 ? 1.85 - phase : LUNAR_CYCLE - phase + 1.85;
-  
-  return { 
-    phase: phaseName, 
-    illumination, 
+
+  return {
+    phase: phaseName,
+    illumination,
     emoji,
     dayInCycle: Math.round(phase),
     daysUntilFull: Math.round(daysUntilFull),
@@ -58,7 +54,6 @@ function getMoonPhase(date: Date) {
   };
 }
 
-// Get AQI category from US AQI value
 function getAQICategory(aqi: number): string {
   if (aqi <= 50) return 'Good';
   if (aqi <= 100) return 'Moderate';
@@ -68,81 +63,36 @@ function getAQICategory(aqi: number): string {
   return 'Hazardous';
 }
 
-// Determine pressure trend from hourly data
 function getPressureTrend(hourlyPressure: number[]): 'rising' | 'falling' | 'steady' {
   if (!hourlyPressure || hourlyPressure.length < 6) return 'steady';
-  
   const recent = hourlyPressure.slice(0, 6);
-  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
   const latest = recent[0];
   const oldest = recent[recent.length - 1];
   const diff = latest - oldest;
-  
   if (diff > 2) return 'rising';
   if (diff < -2) return 'falling';
   return 'steady';
 }
 
 serve(async (req) => {
-  const logger = createLogger('get-weather');
-  
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Require authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      logger.warn('Missing authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Verify user token
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      logger.warn('Invalid auth token', { error: authError?.message });
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    logger.setUserId(user.id);
-
-    // Apply rate limiting: 100 requests per hour per user
-    const rateLimitResult = checkRateLimit({
-      maxRequests: 100,
-      windowMs: 60 * 60 * 1000, // 1 hour
-      identifier: extractIdentifier(req, user.id),
-    }, logger);
-
-    if (!rateLimitResult.allowed) {
-      return rateLimitExceededResponse(rateLimitResult);
-    }
-
     const { latitude, longitude } = await req.json();
-    
+
     if (!latitude || !longitude) {
-      logger.warn('Missing coordinates', { latitude, longitude });
       return new Response(
         JSON.stringify({ error: 'Latitude and longitude are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.info('Fetching weather', { latitude, longitude });
+    console.log('Fetching weather for:', latitude, longitude);
 
-    // Enhanced Open-Meteo URL with precipitation, pressure, dew point, cloud cover, visibility, wind direction
+    // Fetch weather data from Open-Meteo
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
       `&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day,uv_index,` +
       `precipitation,surface_pressure,dew_point_2m,cloud_cover,visibility` +
@@ -151,13 +101,12 @@ serve(async (req) => {
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset,` +
       `precipitation_probability_max,precipitation_sum` +
       `&forecast_days=10&timezone=auto`;
-    
-    // Air Quality API (separate endpoint)
+
     const airQualityUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}` +
-      `&current=us_aqi,pm10,pm2_5&hourly=us_aqi`;
-    
+      `&current=us_aqi,pm10,pm2_5`;
+
     const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`;
-    
+
     // Fetch all data in parallel
     const [weatherResponse, airQualityResponse, nominatimResponse] = await Promise.all([
       fetch(weatherUrl),
@@ -166,27 +115,27 @@ serve(async (req) => {
         headers: { 'User-Agent': 'Ally/1.0 (https://allybywaiter.com)' }
       }).catch(() => null)
     ]);
-    
+
     if (!weatherResponse.ok) {
-      logger.error('Open-Meteo API error', { status: weatherResponse.status });
+      console.error('Weather API error:', weatherResponse.status);
       throw new Error(`Weather API returned ${weatherResponse.status}`);
     }
 
     const data = await weatherResponse.json();
-    
+
     if (!data.current) {
-      logger.error('No current weather in response', data);
+      console.error('No current weather data');
       throw new Error('Invalid weather data received');
     }
 
-    const { 
-      weather_code, 
-      temperature_2m, 
-      apparent_temperature, 
+    const {
+      weather_code,
+      temperature_2m,
+      apparent_temperature,
       wind_speed_10m,
       wind_direction_10m,
-      relative_humidity_2m, 
-      is_day, 
+      relative_humidity_2m,
+      is_day,
       uv_index,
       precipitation: currentPrecipitation,
       surface_pressure,
@@ -194,10 +143,10 @@ serve(async (req) => {
       cloud_cover,
       visibility
     } = data.current;
-    
+
     const condition = mapWeatherCode(weather_code);
 
-    // Parse air quality data
+    // Parse air quality
     let airQuality = null;
     if (airQualityResponse && airQualityResponse.ok) {
       try {
@@ -211,16 +160,15 @@ serve(async (req) => {
           };
         }
       } catch (e) {
-        logger.warn('Failed to parse air quality data', e);
+        console.warn('Failed to parse air quality:', e);
       }
     }
 
-    // Calculate pressure trend from hourly data
     const pressureTrend = getPressureTrend(data.hourly?.surface_pressure ?? []);
 
-    // Build hourly forecast array with precipitation
+    // Build hourly forecast
     const hourlyForecast = [];
-    if (data.hourly && data.hourly.time) {
+    if (data.hourly?.time) {
       for (let i = 0; i < Math.min(data.hourly.time.length, 24); i++) {
         hourlyForecast.push({
           time: data.hourly.time[i],
@@ -233,9 +181,9 @@ serve(async (req) => {
       }
     }
 
-    // Build 10-day forecast array with precipitation
+    // Build daily forecast
     const forecast = [];
-    if (data.daily && data.daily.time) {
+    if (data.daily?.time) {
       for (let i = 0; i < data.daily.time.length; i++) {
         forecast.push({
           date: data.daily.time[i],
@@ -251,23 +199,19 @@ serve(async (req) => {
       }
     }
 
-    // Extract today's sunrise/sunset
     const sunrise = data.daily?.sunrise?.[0] ?? null;
     const sunset = data.daily?.sunset?.[0] ?? null;
-
-    // Calculate moon phase
     const moonPhase = getMoonPhase(new Date());
 
-    // Parse location name from Nominatim response
+    // Parse location name
     let locationName: string | null = null;
     if (nominatimResponse && nominatimResponse.ok) {
       try {
         const geoData = await nominatimResponse.json();
         const address = geoData.address || {};
-        const city = address.city || address.town || address.village || address.county || address.municipality;
+        const city = address.city || address.town || address.village || address.county;
         const state = address.state;
         const countryCode = address.country_code?.toUpperCase();
-        
         if (city) {
           const parts = [city];
           if (state) parts.push(state);
@@ -275,7 +219,7 @@ serve(async (req) => {
           locationName = parts.join(', ');
         }
       } catch (e) {
-        logger.warn('Failed to parse Nominatim response', e);
+        console.warn('Failed to parse location:', e);
       }
     }
 
@@ -296,39 +240,27 @@ serve(async (req) => {
       locationName,
       hourlyForecast,
       forecast,
-      
       precipitationProbability: hourlyForecast[0]?.precipitationProbability ?? 0,
       precipitationAmount: currentPrecipitation ?? 0,
-      
       airQuality,
-      
       pressure: Math.round(surface_pressure ?? 0),
       pressureTrend,
       dewPoint: Math.round(dew_point_2m ?? 0),
       cloudCover: Math.round(cloud_cover ?? 0),
-      visibility: Math.round((visibility ?? 10000) / 1000), // Convert m to km
-      
+      visibility: Math.round((visibility ?? 10000) / 1000),
       moonPhase,
     };
 
-    logger.info('Weather fetched successfully', { 
-      condition, 
-      temperature: temperature_2m, 
-      hourlyCount: hourlyForecast.length, 
-      forecastDays: forecast.length, 
-      locationName,
-      hasAirQuality: !!airQuality,
-      moonPhase: moonPhase.phase
-    });
+    console.log('Weather fetched successfully');
 
     return new Response(
       JSON.stringify(weatherData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    logger.error('Error fetching weather', error);
+    console.error('Error fetching weather:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch weather data' }),
+      JSON.stringify({ error: 'Failed to fetch weather data', details: String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

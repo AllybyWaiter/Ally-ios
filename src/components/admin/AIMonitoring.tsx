@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -129,13 +129,41 @@ export default function AIMonitoring() {
     },
   });
 
-  // Calculate stats
-  const stats = {
-    activeAlerts: alerts?.filter(a => !a.is_resolved).length || 0,
-    criticalAlerts: alerts?.filter(a => !a.is_resolved && a.severity === 'critical').length || 0,
-    messagesLastHour: hourlyData?.slice(-1)[0]?.messages || 0,
-    totalMessages24h: hourlyData?.reduce((sum, h) => sum + h.messages, 0) || 0,
-  };
+  // Calculate stats and filter active alerts with single-pass iteration for performance
+  const { stats, unresolvedAlerts } = useMemo(() => {
+    let activeAlerts = 0;
+    let criticalAlerts = 0;
+    const unresolved: typeof alerts = [];
+
+    if (alerts) {
+      for (const alert of alerts) {
+        if (!alert.is_resolved) {
+          activeAlerts++;
+          unresolved.push(alert);
+          if (alert.severity === 'critical') {
+            criticalAlerts++;
+          }
+        }
+      }
+    }
+
+    let totalMessages24h = 0;
+    if (hourlyData) {
+      for (const h of hourlyData) {
+        totalMessages24h += h.messages;
+      }
+    }
+
+    return {
+      stats: {
+        activeAlerts,
+        criticalAlerts,
+        messagesLastHour: hourlyData?.slice(-1)[0]?.messages || 0,
+        totalMessages24h,
+      },
+      unresolvedAlerts: unresolved,
+    };
+  }, [alerts, hourlyData]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -337,7 +365,7 @@ export default function AIMonitoring() {
           <CardContent>
             <ScrollArea className="h-64">
               <div className="space-y-3">
-                {alerts?.filter(a => !a.is_resolved).slice(0, 5).map(alert => (
+                {unresolvedAlerts.slice(0, 5).map(alert => (
                   <div 
                     key={alert.id}
                     className="flex items-start justify-between p-3 bg-muted/50 rounded-lg"

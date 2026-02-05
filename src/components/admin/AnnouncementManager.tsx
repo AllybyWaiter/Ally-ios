@@ -44,7 +44,7 @@ interface Announcement {
 export default function AnnouncementManager() {
   const { toast } = useToast();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
@@ -62,7 +62,7 @@ export default function AnnouncementManager() {
   }, []);
 
   const fetchAnnouncements = async () => {
-    setLoading(true);
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('announcements')
       .select('*')
@@ -77,7 +77,7 @@ export default function AnnouncementManager() {
     } else {
       setAnnouncements(data || []);
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
   const handleSubmit = async () => {
@@ -221,7 +221,7 @@ export default function AnnouncementManager() {
     </Card>
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react";
+import { logger } from "@/lib/logger";
 
 // Feature areas for error categorization
 export const FeatureArea = {
@@ -46,7 +47,7 @@ let sentryInitialized = false;
 export const initSentry = () => {
   // Only initialize if user has explicitly consented to analytics cookies
   if (!hasAnalyticsConsent()) {
-    console.log('[Sentry] Skipped initialization - no analytics consent');
+    logger.log('[Sentry] Skipped initialization - no analytics consent');
     return;
   }
 
@@ -54,15 +55,22 @@ export const initSentry = () => {
     return;
   }
 
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+
+  if (!dsn) {
+    logger.warn('[Sentry] No DSN configured - error tracking disabled');
+    return;
+  }
+
   Sentry.init({
-    dsn: "https://b599641cc30d93761d7f7b7aeea5d9d9@o4510286001799168.ingest.us.sentry.io/4510332441329664",
+    dsn,
     // Only send PII if user has explicitly consented
     sendDefaultPii: hasAnalyticsConsent(),
     environment: import.meta.env.MODE,
   });
 
   sentryInitialized = true;
-  console.log('[Sentry] Initialized with user consent');
+  logger.log('[Sentry] Initialized with user consent');
 };
 
 // Re-initialize Sentry when consent changes (call after user updates preferences)
@@ -72,14 +80,34 @@ export const updateSentryConsent = () => {
   } else if (!hasAnalyticsConsent() && sentryInitialized) {
     // Sentry doesn't have a built-in "disable" - we just stop sending new events
     Sentry.setUser(null);
-    console.log('[Sentry] User revoked consent - stopped tracking');
+    logger.log('[Sentry] User revoked consent - stopped tracking');
   }
 };
 
+// Typed context for error logging
+export interface ErrorContext {
+  component?: string;
+  action?: string;
+  user_id?: string;
+  aquarium_id?: string;
+  request_id?: string;
+  url?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
+// Typed context for breadcrumbs
+export interface BreadcrumbData {
+  page?: string;
+  action?: string;
+  target?: string;
+  value?: string | number;
+  [key: string]: string | number | boolean | undefined;
+}
+
 // Helper function to log custom errors - only if Sentry is initialized
 export const logError = (
-  error: Error, 
-  context?: Record<string, any>,
+  error: Error,
+  context?: ErrorContext,
   featureArea?: FeatureAreaType,
   severity?: ErrorSeverityType
 ) => {
@@ -92,7 +120,7 @@ export const logError = (
       },
     });
   }
-  console.error('Error:', error, context);
+  logger.error('Error:', error, context);
 };
 
 // Helper function to log custom messages
@@ -109,7 +137,7 @@ export const logMessage = (
       },
     });
   }
-  console[level === 'warning' ? 'warn' : level === 'error' ? 'error' : 'log'](message);
+  logger[level === 'warning' ? 'warn' : level === 'error' ? 'error' : 'log'](message);
 };
 
 // Helper to set user context
@@ -130,9 +158,9 @@ export const clearUserContext = () => {
 
 // Helper to add breadcrumb
 export const addBreadcrumb = (
-  message: string, 
-  category?: string, 
-  data?: Record<string, any>,
+  message: string,
+  category?: string,
+  data?: BreadcrumbData,
   featureArea?: FeatureAreaType
 ) => {
   if (sentryInitialized && hasAnalyticsConsent()) {
@@ -146,4 +174,139 @@ export const addBreadcrumb = (
       level: 'info',
     });
   }
+};
+
+// ==================== Specialized Breadcrumb Helpers ====================
+
+/**
+ * Track navigation events
+ */
+export const trackNavigation = (from: string, to: string) => {
+  addBreadcrumb(`Navigated from ${from} to ${to}`, 'navigation', { from, to });
+};
+
+/**
+ * Track user actions (clicks, form submissions, etc.)
+ */
+export const trackUserAction = (
+  action: string,
+  target?: string,
+  featureArea?: FeatureAreaType,
+  additionalData?: Record<string, string | number | boolean>
+) => {
+  addBreadcrumb(
+    `User action: ${action}`,
+    'user',
+    { action, target, ...additionalData },
+    featureArea
+  );
+};
+
+/**
+ * Track form submissions
+ */
+export const trackFormSubmission = (
+  formName: string,
+  success: boolean,
+  featureArea?: FeatureAreaType
+) => {
+  addBreadcrumb(
+    `Form ${success ? 'submitted' : 'submission failed'}: ${formName}`,
+    'form',
+    { form_name: formName, success: success ? 'true' : 'false' },
+    featureArea
+  );
+};
+
+/**
+ * Track API/data operations
+ */
+export const trackDataOperation = (
+  operation: 'fetch' | 'create' | 'update' | 'delete',
+  entity: string,
+  success: boolean,
+  count?: number
+) => {
+  addBreadcrumb(
+    `${operation} ${entity} ${success ? 'succeeded' : 'failed'}`,
+    'data',
+    { operation, entity, success: success ? 'true' : 'false', count }
+  );
+};
+
+/**
+ * Track aquarium-related actions
+ */
+export const trackAquariumAction = (
+  action: 'view' | 'create' | 'update' | 'delete' | 'add_test' | 'add_task',
+  aquariumId?: string,
+  aquariumName?: string
+) => {
+  addBreadcrumb(
+    `Aquarium ${action}${aquariumName ? `: ${aquariumName}` : ''}`,
+    'aquarium',
+    { action, aquarium_id: aquariumId, aquarium_name: aquariumName },
+    FeatureArea.AQUARIUM
+  );
+};
+
+/**
+ * Track water test actions
+ */
+export const trackWaterTestAction = (
+  action: 'view' | 'create' | 'delete' | 'photo_upload',
+  aquariumId?: string,
+  testId?: string
+) => {
+  addBreadcrumb(
+    `Water test ${action}`,
+    'water_test',
+    { action, aquarium_id: aquariumId, test_id: testId },
+    FeatureArea.WATER_TESTS
+  );
+};
+
+/**
+ * Track chat/AI interactions
+ */
+export const trackChatAction = (
+  action: 'send_message' | 'receive_response' | 'feedback' | 'new_conversation',
+  conversationId?: string,
+  messageLength?: number
+) => {
+  addBreadcrumb(
+    `Chat ${action}`,
+    'chat',
+    { action, conversation_id: conversationId, message_length: messageLength },
+    FeatureArea.CHAT
+  );
+};
+
+/**
+ * Track subscription/billing events
+ */
+export const trackSubscriptionEvent = (
+  event: 'view_plans' | 'start_checkout' | 'complete_purchase' | 'cancel',
+  plan?: string
+) => {
+  addBreadcrumb(
+    `Subscription ${event}${plan ? `: ${plan}` : ''}`,
+    'subscription',
+    { event, plan }
+  );
+};
+
+/**
+ * Track authentication events
+ */
+export const trackAuthEvent = (
+  event: 'login' | 'logout' | 'signup' | 'password_reset' | 'session_refresh',
+  method?: string
+) => {
+  addBreadcrumb(
+    `Auth ${event}${method ? ` via ${method}` : ''}`,
+    'auth',
+    { event, method },
+    FeatureArea.AUTH
+  );
 };

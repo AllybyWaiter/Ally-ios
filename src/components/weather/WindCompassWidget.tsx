@@ -93,19 +93,19 @@ export function WindCompassWidget({ windDirection, windSpeed, units }: WindCompa
                 );
               })}
               
-              {/* Cardinal direction labels */}
-              <text x="100" y="25" textAnchor="middle" className="fill-foreground text-sm font-semibold">N</text>
-              <text x="175" y="105" textAnchor="middle" className="fill-foreground text-sm font-semibold">E</text>
-              <text x="100" y="185" textAnchor="middle" className="fill-foreground text-sm font-semibold">S</text>
-              <text x="25" y="105" textAnchor="middle" className="fill-foreground text-sm font-semibold">W</text>
+              {/* Cardinal direction labels - positioned inside the tick marks */}
+              <text x="100" y="32" textAnchor="middle" className="fill-foreground text-sm font-semibold">N</text>
+              <text x="168" y="105" textAnchor="middle" className="fill-foreground text-sm font-semibold">E</text>
+              <text x="100" y="178" textAnchor="middle" className="fill-foreground text-sm font-semibold">S</text>
+              <text x="32" y="105" textAnchor="middle" className="fill-foreground text-sm font-semibold">W</text>
+
+              {/* Ordinal direction labels (smaller) - positioned inside the tick marks */}
+              <text x="145" y="60" textAnchor="middle" className="fill-muted-foreground text-xs">NE</text>
+              <text x="145" y="150" textAnchor="middle" className="fill-muted-foreground text-xs">SE</text>
+              <text x="55" y="150" textAnchor="middle" className="fill-muted-foreground text-xs">SW</text>
+              <text x="55" y="60" textAnchor="middle" className="fill-muted-foreground text-xs">NW</text>
               
-              {/* Ordinal direction labels (smaller) */}
-              <text x="150" y="55" textAnchor="middle" className="fill-muted-foreground text-xs">NE</text>
-              <text x="150" y="155" textAnchor="middle" className="fill-muted-foreground text-xs">SE</text>
-              <text x="50" y="155" textAnchor="middle" className="fill-muted-foreground text-xs">SW</text>
-              <text x="50" y="55" textAnchor="middle" className="fill-muted-foreground text-xs">NW</text>
-              
-              {/* Wind direction arrow - rotates to point where wind comes FROM */}
+              {/* Wind direction arrow - points in direction wind is flowing TO */}
               <g
                 style={{
                   transform: `rotate(${windDirection}deg)`,
@@ -113,31 +113,31 @@ export function WindCompassWidget({ windDirection, windSpeed, units }: WindCompa
                   transition: 'transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               >
-                {/* Arrow head pointing down (south in default position, wind from north) */}
-                <polygon
-                  points="100,35 92,55 100,50 108,55"
-                  className="fill-primary"
-                />
-                {/* Arrow shaft */}
+                {/* Tail (where wind comes from) */}
                 <line
                   x1="100"
-                  y1="50"
+                  y1="35"
                   x2="100"
                   y2="100"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-                {/* Tail */}
-                <line
-                  x1="100"
-                  y1="100"
-                  x2="100"
-                  y2="145"
                   stroke="hsl(var(--muted-foreground))"
                   strokeWidth="2"
                   strokeLinecap="round"
                   opacity="0.6"
+                />
+                {/* Arrow shaft */}
+                <line
+                  x1="100"
+                  y1="100"
+                  x2="100"
+                  y2="150"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+                {/* Arrow head pointing down (direction wind flows TO) */}
+                <polygon
+                  points="100,165 92,145 100,150 108,145"
+                  className="fill-primary"
                 />
               </g>
               

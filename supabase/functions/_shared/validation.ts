@@ -1,7 +1,7 @@
 // Input validation utilities using Zod-like validation
 // Note: Using manual validation to avoid Deno import issues with Zod
 
-import { corsHeaders } from './cors.ts';
+import { corsHeaders, getCorsHeaders } from './cors.ts';
 
 export interface ValidationError {
   field: string;
@@ -145,7 +145,8 @@ export function validateEnum<T extends string>(value: unknown, field: string, al
 }
 
 // Create validation error response
-export function validationErrorResponse(errors: ValidationError[]): Response {
+export function validationErrorResponse(errors: ValidationError[], request?: Request): Response {
+  const cors = request ? getCorsHeaders(request) : corsHeaders;
   return new Response(
     JSON.stringify({
       error: 'Validation failed',
@@ -153,7 +154,7 @@ export function validationErrorResponse(errors: ValidationError[]): Response {
     }),
     {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...cors, 'Content-Type': 'application/json' },
     }
   );
 }

@@ -24,6 +24,7 @@ import ReactMarkdown from "react-markdown";
 import { LazySyntaxHighlighter } from "./LazySyntaxHighlighter";
 import { parseFollowUpSuggestions, FollowUpSuggestions, type FollowUpItem } from "./FollowUpSuggestions";
 import { QuickActionChips, detectQuickActions, type QuickAction } from "./QuickActionChips";
+import { ToolExecutionFeedback, type ToolExecution } from "./ToolExecutionFeedback";
 
 // Typed props for markdown components
 interface CodeProps {
@@ -85,6 +86,7 @@ interface Message {
   aquariumContext?: string | null;
   aquariumName?: string;
   imageUrl?: string;
+  toolExecutions?: ToolExecution[];
 }
 
 interface VirtualizedMessageListProps {
@@ -223,6 +225,10 @@ const MessageContent = memo(({
         )}>
           {message.role === "assistant" ? (
             <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
+              {/* Tool execution feedback shown before content */}
+              {message.toolExecutions && message.toolExecutions.length > 0 && (
+                <ToolExecutionFeedback executions={message.toolExecutions} />
+              )}
               {isTypewriterActive ? (
                 <p className="whitespace-pre-wrap leading-relaxed">
                   {stableContent}
@@ -234,15 +240,15 @@ const MessageContent = memo(({
               )}
               {/* Follow-up suggestions for assistant messages */}
               {!isStreaming && suggestions.length > 0 && onSelectSuggestion && (
-                <FollowUpSuggestions 
-                  suggestions={suggestions} 
-                  onSelectSuggestion={onSelectSuggestion} 
+                <FollowUpSuggestions
+                  suggestions={suggestions}
+                  onSelectSuggestion={onSelectSuggestion}
                 />
               )}
               {/* Quick action buttons for assistant messages */}
               {!isStreaming && quickActions.length > 0 && (
-                <QuickActionChips 
-                  actions={quickActions} 
+                <QuickActionChips
+                  actions={quickActions}
                   aquariumId={aquariumId}
                   onAction={onQuickAction}
                 />

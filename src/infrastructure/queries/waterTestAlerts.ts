@@ -1,18 +1,20 @@
 /**
  * Water Test Alerts Data Access Layer
- * 
+ *
  * Handles CRUD operations for water test trend alerts.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+import type { AlertType, AlertSeverity, AnalysisModel } from '@/types/enums';
 
 export interface WaterTestAlert {
   id: string;
   user_id: string;
   aquarium_id: string;
   parameter_name: string;
-  alert_type: 'rising' | 'falling' | 'unstable' | 'approaching_threshold' | 'predictive' | 'seasonal' | 'stocking' | 'correlation';
-  severity: 'info' | 'warning' | 'critical';
+  alert_type: AlertType;
+  severity: AlertSeverity;
   message: string;
   details: {
     values?: number[];
@@ -32,7 +34,7 @@ export interface WaterTestAlert {
   timeframe: string | null;
   affected_inhabitants: string[] | null;
   confidence: number | null;
-  analysis_model: 'rule' | 'ai' | null;
+  analysis_model: AnalysisModel | null;
   predicted_impact: string | null;
 }
 
@@ -48,7 +50,7 @@ export async function fetchActiveAlerts(userId: string): Promise<WaterTestAlert[
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching active alerts:', error);
+    logger.error('Error fetching active alerts:', error);
     throw error;
   }
 
@@ -67,7 +69,7 @@ export async function fetchAquariumAlerts(aquariumId: string): Promise<WaterTest
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching aquarium alerts:', error);
+    logger.error('Error fetching aquarium alerts:', error);
     throw error;
   }
 
@@ -87,7 +89,7 @@ export async function dismissAlert(alertId: string): Promise<void> {
     .eq('id', alertId);
 
   if (error) {
-    console.error('Error dismissing alert:', error);
+    logger.error('Error dismissing alert:', error);
     throw error;
   }
 }
@@ -106,7 +108,7 @@ export async function dismissAquariumAlerts(aquariumId: string): Promise<void> {
     .eq('is_dismissed', false);
 
   if (error) {
-    console.error('Error dismissing aquarium alerts:', error);
+    logger.error('Error dismissing aquarium alerts:', error);
     throw error;
   }
 }
@@ -127,7 +129,7 @@ export async function triggerTrendAnalysis(
   });
 
   if (error) {
-    console.error(`Error triggering trend analysis (${functionName}):`, error);
+    logger.error(`Error triggering trend analysis (${functionName}):`, error);
     // Don't throw - trend analysis is non-critical
   }
 }
@@ -143,7 +145,7 @@ export async function getAlertCountsBySeverity(userId: string): Promise<{ critic
     .eq('is_dismissed', false);
 
   if (error) {
-    console.error('Error fetching alert counts:', error);
+    logger.error('Error fetching alert counts:', error);
     return { critical: 0, warning: 0, info: 0 };
   }
 

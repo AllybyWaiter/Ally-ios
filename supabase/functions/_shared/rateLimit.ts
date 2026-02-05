@@ -1,7 +1,7 @@
 // Server-side rate limiting using in-memory store
 // Note: In production, use Redis or Supabase for distributed rate limiting
 
-import { corsHeaders } from './cors.ts';
+import { corsHeaders, getCorsHeaders } from './cors.ts';
 import type { Logger } from './logger.ts';
 
 interface RateLimitEntry {
@@ -101,7 +101,8 @@ export function checkRateLimit(config: RateLimitConfig, logger?: Logger): RateLi
 }
 
 // Create rate limit exceeded response
-export function rateLimitExceededResponse(result: RateLimitResult): Response {
+export function rateLimitExceededResponse(result: RateLimitResult, request?: Request): Response {
+  const cors = request ? getCorsHeaders(request) : corsHeaders;
   return new Response(
     JSON.stringify({
       error: 'Rate limit exceeded',
@@ -111,7 +112,7 @@ export function rateLimitExceededResponse(result: RateLimitResult): Response {
     {
       status: 429,
       headers: {
-        ...corsHeaders,
+        ...cors,
         'Content-Type': 'application/json',
         'Retry-After': String(result.retryAfterSeconds || 60),
         'X-RateLimit-Remaining': String(result.remaining),

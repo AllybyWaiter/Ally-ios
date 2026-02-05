@@ -3,6 +3,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFreshSession } from '@/lib/sessionUtils';
 
 export interface LivestockPhoto {
   id: string;
@@ -15,13 +16,6 @@ export interface LivestockPhoto {
   created_at: string;
 }
 
-// Helper to ensure session is fresh (iOS PWA fix)
-async function ensureFreshSession() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-}
 
 // Fetch all photos for a livestock
 export async function fetchLivestockPhotos(livestockId: string) {
@@ -78,15 +72,17 @@ export async function uploadLivestockPhoto(
   return data as LivestockPhoto;
 }
 
-// Update photo (caption, date, primary status)
+// Update photo (caption, date, primary status) with ownership verification
 export async function updateLivestockPhoto(
   photoId: string,
+  userId: string,
   updates: Partial<Pick<LivestockPhoto, 'caption' | 'taken_at' | 'is_primary'>>
 ) {
   const { data, error } = await supabase
     .from('livestock_photos')
     .update(updates)
     .eq('id', photoId)
+    .eq('user_id', userId)
     .select()
     .maybeSingle();
 
@@ -95,37 +91,41 @@ export async function updateLivestockPhoto(
   return data as LivestockPhoto;
 }
 
-// Set as primary photo (also updates livestock.primary_photo_url)
+// Set as primary photo (also updates livestock.primary_photo_url) with ownership verification
 export async function setAsPrimaryPhoto(
   photoId: string,
   livestockId: string,
+  userId: string,
   photoUrl: string
 ) {
-  // Clear existing primary
+  // Clear existing primary (only for this user's photos)
   await supabase
     .from('livestock_photos')
     .update({ is_primary: false })
-    .eq('livestock_id', livestockId);
+    .eq('livestock_id', livestockId)
+    .eq('user_id', userId);
 
-  // Set new primary
+  // Set new primary (with ownership verification)
   const { error: photoError } = await supabase
     .from('livestock_photos')
     .update({ is_primary: true })
-    .eq('id', photoId);
+    .eq('id', photoId)
+    .eq('user_id', userId);
 
   if (photoError) throw photoError;
 
-  // Update livestock primary_photo_url
+  // Update livestock primary_photo_url (with ownership verification)
   const { error: livestockError } = await supabase
     .from('livestock')
     .update({ primary_photo_url: photoUrl })
-    .eq('id', livestockId);
+    .eq('id', livestockId)
+    .eq('user_id', userId);
 
   if (livestockError) throw livestockError;
 }
 
-// Delete photo
-export async function deleteLivestockPhoto(photoId: string, photoUrl: string) {
+// Delete photo (with ownership verification)
+export async function deleteLivestockPhoto(photoId: string, userId: string, photoUrl: string) {
   // Extract file path from URL
   const urlParts = photoUrl.split('/livestock-photos/');
   if (urlParts[1]) {
@@ -137,7 +137,8 @@ export async function deleteLivestockPhoto(photoId: string, photoUrl: string) {
   const { error } = await supabase
     .from('livestock_photos')
     .delete()
-    .eq('id', photoId);
+    .eq('id', photoId)
+    .eq('user_id', userId);
 
   if (error) throw error;
 }

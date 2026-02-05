@@ -1,10 +1,17 @@
 /**
  * Livestock Data Access Layer
- * 
+ *
  * Centralized Supabase queries for livestock-related data.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFreshSession } from '@/lib/sessionUtils';
+import {
+  createLivestockSchema,
+  validateOrThrow,
+  livestockResponseSchema,
+} from '@/lib/validationSchemas';
+import { logger } from '@/lib/logger';
 
 // Valid health status values for livestock
 export type LivestockHealthStatus = 'healthy' | 'sick' | 'recovering' | 'quarantine';
@@ -32,13 +39,6 @@ export interface Livestock {
   updated_at: string;
 }
 
-// Helper to ensure session is fresh (iOS PWA fix)
-async function ensureFreshSession() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-}
 
 // Fetch all livestock for an aquarium
 export async function fetchLivestock(aquariumId: string) {
@@ -54,16 +54,24 @@ export async function fetchLivestock(aquariumId: string) {
   return data as Livestock[];
 }
 
-// Fetch a single livestock item
-export async function fetchLivestockItem(livestockId: string) {
+// Fetch a single livestock item (with ownership verification)
+export async function fetchLivestockItem(livestockId: string, userId: string) {
   const { data, error } = await supabase
     .from('livestock')
     .select('*')
     .eq('id', livestockId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) throw new Error('Livestock not found');
+
+  // Validate response shape (logs warning if unexpected shape, doesn't throw)
+  const parseResult = livestockResponseSchema.safeParse(data);
+  if (!parseResult.success) {
+    logger.warn('Livestock response validation warning:', parseResult.error.flatten());
+  }
+
   return data as Livestock;
 }
 
@@ -79,14 +87,12 @@ export async function createLivestock(livestock: {
   health_status?: LivestockHealthStatus;
   notes?: string;
 }) {
-  // Validate health status if provided
-  if (livestock.health_status && !isValidHealthStatus(livestock.health_status)) {
-    throw new Error(`Invalid health status: ${livestock.health_status}. Must be one of: ${VALID_HEALTH_STATUSES.join(', ')}`);
-  }
+  // Validate input before sending to database
+  const validatedData = validateOrThrow(createLivestockSchema, livestock, 'livestock');
 
   const { data, error } = await supabase
     .from('livestock')
-    .insert(livestock)
+    .insert(validatedData)
     .select()
     .single();
 
@@ -94,9 +100,10 @@ export async function createLivestock(livestock: {
   return data as Livestock;
 }
 
-// Update livestock
+// Update livestock (with ownership verification)
 export async function updateLivestock(
   livestockId: string,
+  userId: string,
   updates: Partial<Omit<Livestock, 'id' | 'aquarium_id' | 'user_id' | 'created_at' | 'updated_at'>>
 ) {
   // Validate health status if provided
@@ -108,6 +115,7 @@ export async function updateLivestock(
     .from('livestock')
     .update(updates)
     .eq('id', livestockId)
+    .eq('user_id', userId)
     .select()
     .single();
 

@@ -1,10 +1,12 @@
 /**
  * Equipment Data Access Layer
- * 
+ *
  * Centralized Supabase queries for equipment-related data.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFreshSession } from '@/lib/sessionUtils';
+import { createEquipmentSchema, validateOrThrow } from '@/lib/validationSchemas';
 
 export interface Equipment {
   id: string;
@@ -21,15 +23,6 @@ export interface Equipment {
   updated_at: string;
 }
 
-// Helper to ensure session is fresh (iOS PWA fix)
-// Note: Only call this when absolutely needed to avoid redundant token refreshes
-async function ensureFreshSession() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  // Only refresh if session is missing - the SDK auto-refreshes expiring tokens
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-}
 
 // Fetch all equipment for an aquarium
 export async function fetchEquipment(aquariumId: string) {
@@ -56,17 +49,20 @@ export async function fetchEquipmentCount(aquariumId: string) {
   return count || 0;
 }
 
-// Fetch a single equipment item
-export async function fetchEquipmentItem(equipmentId: string) {
+// Fetch a single equipment item (with ownership verification via aquarium)
+export async function fetchEquipmentItem(equipmentId: string, userId: string) {
   const { data, error } = await supabase
     .from('equipment')
-    .select('*')
+    .select('*, aquariums!inner(user_id)')
     .eq('id', equipmentId)
+    .eq('aquariums.user_id', userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) throw new Error('Equipment not found');
-  return data as Equipment;
+  // Remove the joined aquariums data before returning
+  const { aquariums: _, ...equipment } = data;
+  return equipment as Equipment;
 }
 
 // Create equipment
@@ -80,9 +76,12 @@ export async function createEquipment(equipment: {
   maintenance_interval_days?: number;
   notes?: string;
 }) {
+  // Validate input before sending to database
+  const validatedData = validateOrThrow(createEquipmentSchema, equipment, 'equipment');
+
   const { data, error } = await supabase
     .from('equipment')
-    .insert(equipment)
+    .insert(validatedData)
     .select()
     .single();
 
@@ -90,11 +89,23 @@ export async function createEquipment(equipment: {
   return data as Equipment;
 }
 
-// Update equipment
+// Update equipment (with ownership verification via aquarium)
 export async function updateEquipment(
   equipmentId: string,
+  userId: string,
   updates: Partial<Omit<Equipment, 'id' | 'aquarium_id' | 'created_at' | 'updated_at'>>
 ) {
+  // First verify ownership via aquarium relationship
+  const { data: existing, error: fetchError } = await supabase
+    .from('equipment')
+    .select('id, aquariums!inner(user_id)')
+    .eq('id', equipmentId)
+    .eq('aquariums.user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('Equipment not found');
+
   const { data, error } = await supabase
     .from('equipment')
     .update(updates)
@@ -106,8 +117,19 @@ export async function updateEquipment(
   return data as Equipment;
 }
 
-// Delete equipment
-export async function deleteEquipment(equipmentId: string) {
+// Delete equipment (with ownership verification via aquarium)
+export async function deleteEquipment(equipmentId: string, userId: string) {
+  // First verify ownership via aquarium relationship
+  const { data: existing, error: fetchError } = await supabase
+    .from('equipment')
+    .select('id, aquariums!inner(user_id)')
+    .eq('id', equipmentId)
+    .eq('aquariums.user_id', userId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!existing) throw new Error('Equipment not found');
+
   const { error } = await supabase
     .from('equipment')
     .delete()

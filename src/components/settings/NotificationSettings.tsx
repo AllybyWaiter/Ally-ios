@@ -46,7 +46,8 @@ export default function NotificationSettings() {
 
   // Detect iOS and whether running as installed PWA
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isStandalone = (window.navigator as any).standalone === true;
+  const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
+  const isStandalone = navigatorWithStandalone.standalone === true;
   // Show notice only for iOS users who have NOT installed as PWA
   const isIOSNotPWA = isIOS && !isStandalone;
 
@@ -359,7 +360,7 @@ export default function NotificationSettings() {
             <Label htmlFor="reminder-hours">Remind me before tasks are due</Label>
             <Select
               value={preferences.reminder_hours_before.toString()}
-              onValueChange={(value) => updatePreferences({ reminder_hours_before: parseInt(value) })}
+              onValueChange={(value) => updatePreferences({ reminder_hours_before: parseInt(value, 10) })}
               disabled={!isSubscribed}
             >
               <SelectTrigger id="reminder-hours" className="w-full sm:w-[200px]">

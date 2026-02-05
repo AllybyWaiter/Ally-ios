@@ -1,0 +1,228 @@
+{
+  "identifier" : "Products",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6739494881",
+    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "ally_subscriptions",
+      "localizations" : [
+
+      ],
+      "name" : "Ally Subscriptions",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "basic_monthly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "1 water body, 10 test logs/month, AI recommendations, Basic smart scheduling",
+              "displayName" : "Basic Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "ally_basic_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Basic Monthly",
+          "subscriptionGroupID" : "ally_subscriptions",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "99.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "basic_yearly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "1 water body, 10 test logs/month, AI recommendations, Basic smart scheduling",
+              "displayName" : "Basic Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "ally_basic_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Basic Yearly",
+          "subscriptionGroupID" : "ally_subscriptions",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "14.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "plus_monthly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "3 water bodies, Unlimited test logs, Smart scheduling, Equipment tracking",
+              "displayName" : "Plus Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "ally_plus_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Plus Monthly",
+          "subscriptionGroupID" : "ally_subscriptions",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "149.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "plus_yearly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "3 water bodies, Unlimited test logs, Smart scheduling, Equipment tracking",
+              "displayName" : "Plus Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "ally_plus_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Plus Yearly",
+          "subscriptionGroupID" : "ally_subscriptions",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "gold_monthly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "10 water bodies, Unlimited logs, AI habit learning, Export history",
+              "displayName" : "Gold Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "ally_gold_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Gold Monthly",
+          "subscriptionGroupID" : "ally_subscriptions",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "199.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "gold_yearly",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "10 water bodies, Unlimited logs, AI habit learning, Export history",
+              "displayName" : "Gold Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "ally_gold_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Gold Yearly",
+          "subscriptionGroupID" : "ally_subscriptions",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
