@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { z } from 'zod';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 // Password validation schema
 const passwordSchema = z.string()
@@ -58,7 +59,7 @@ const Settings = () => {
   const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { i18n } = useTranslation();
   const isMobile = useIsMobile();
 
@@ -69,13 +70,14 @@ const Settings = () => {
     subscriptionTier: rcSubscriptionTier,
     restore,
     showCustomerCenter,
+    showPaywall,
     isLoading: rcLoading
   } = useRevenueCat();
 
   // Use RevenueCat tier on native, fallback to auth context tier
   const effectiveSubscriptionTier = isNativePlatform ? rcSubscriptionTier : subscriptionTier;
   
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [name, setName] = useState(userName || "");
   const [units, setUnits] = useState(unitPreference || "imperial");
@@ -109,6 +111,9 @@ const Settings = () => {
   // Active detail section for sheets/dialogs
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
+  // Local theme state for immediate UI feedback
+  const [selectedTheme, setSelectedTheme] = useState<string>(theme || themePreference || 'system');
+
   useEffect(() => {
     if (!user) navigate("/auth");
   }, [user, navigate]);
@@ -135,9 +140,17 @@ const Settings = () => {
     let mounted = true;
     if (themePreference && theme !== themePreference && mounted) {
       setTheme(themePreference);
+      setSelectedTheme(themePreference);
     }
     return () => { mounted = false; };
   }, [themePreference, theme, setTheme]);
+
+  // Sync local theme state when theme changes externally
+  useEffect(() => {
+    if (theme && theme !== selectedTheme) {
+      setSelectedTheme(theme);
+    }
+  }, [theme]);
 
   useEffect(() => {
     if (languagePreference && i18n.language !== languagePreference) {
@@ -154,7 +167,7 @@ const Settings = () => {
     if (!user) return;
     // Sanitize input - trim and limit length
     const sanitizedName = name?.trim().slice(0, 100) || null;
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -168,13 +181,17 @@ const Settings = () => {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleThemeChange = async (newTheme: string) => {
     if (!user) return;
+    // Update local state immediately for instant UI feedback
+    setSelectedTheme(newTheme);
+    // Apply theme to next-themes
     setTheme(newTheme);
+    // Persist to database
     try {
       await supabase.from('profiles').update({ theme_preference: newTheme }).eq('user_id', user.id);
     } catch (error: unknown) {
@@ -237,7 +254,7 @@ const Settings = () => {
       toast({ title: "Invalid password", description: passwordValidation.error.errors[0].message, variant: "destructive" });
       return;
     }
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
@@ -249,7 +266,7 @@ const Settings = () => {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -257,8 +274,11 @@ const Settings = () => {
     setExportLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) {
+        throw new Error('No active session');
+      }
       const response = await supabase.functions.invoke('export-user-data', {
-        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` }
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` }
       });
       if (response.error) throw response.error;
       const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
@@ -281,7 +301,7 @@ const Settings = () => {
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") return;
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session?.access_token) throw new Error('No active session');
@@ -298,15 +318,15 @@ const Settings = () => {
       const message = error instanceof Error ? error.message : 'Failed to delete account';
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleRateApp = () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    const APP_STORE_ID = "";
-    const PLAY_STORE_ID = "com.allybywaiter.ally";
+    const APP_STORE_ID = import.meta.env.VITE_APP_STORE_ID || "";
+    const PLAY_STORE_ID = import.meta.env.VITE_PLAY_STORE_ID || "com.allybywaiter.ally";
     if (isIOS && APP_STORE_ID) {
       window.open(`https://apps.apple.com/app/id${APP_STORE_ID}?action=write-review`, '_blank');
     } else if (isAndroid && PLAY_STORE_ID) {
@@ -357,19 +377,30 @@ const Settings = () => {
         window.location.href = data.url;
         return;
       }
-      if (data?.error === 'no_subscription') setPortalLoading(false);
-      else throw new Error('Failed to get portal URL');
+      if (data?.error === 'no_subscription') {
+        setPortalLoading(false);
+        if (isIOS) {
+          window.location.href = 'https://apps.apple.com/account/subscriptions';
+        } else if (isAndroid) {
+          window.location.href = 'https://play.google.com/store/account/subscriptions';
+        } else {
+          toast({ title: "No Active Subscription", description: "Upgrade to manage your subscription." });
+          navigate('/pricing');
+        }
+        return;
+      }
+      throw new Error('Failed to get portal URL');
     } catch (e) {
-      console.error('Subscription management error:', e);
+      logger.error('Subscription management error:', e);
       setPortalLoading(false);
-      if (isIOS) { window.location.href = 'https://apps.apple.com/account/subscriptions'; return; }
-      else if (isAndroid) { window.location.href = 'https://play.google.com/store/account/subscriptions'; return; }
-      toast({ title: "Unable to Open Portal", description: "Please try again.", variant: "destructive" });
-      return;
+      if (isIOS) {
+        window.location.href = 'https://apps.apple.com/account/subscriptions';
+      } else if (isAndroid) {
+        window.location.href = 'https://play.google.com/store/account/subscriptions';
+      } else {
+        toast({ title: "Unable to Open Portal", description: "Please try again.", variant: "destructive" });
+      }
     }
-    if (isIOS) window.location.href = 'https://apps.apple.com/account/subscriptions';
-    else if (isAndroid) window.location.href = 'https://play.google.com/store/account/subscriptions';
-    else { toast({ title: "No Active Subscription", description: "Upgrade to manage your subscription." }); navigate('/pricing'); }
   };
 
   const handleRestorePurchases = async () => {
@@ -392,6 +423,30 @@ const Settings = () => {
     } finally {
       setPortalLoading(false);
     }
+  };
+
+  const handleUpgradePlan = async () => {
+    // On native platforms, show RevenueCat paywall directly
+    if (isNativePlatform) {
+      setActiveSection(null); // Close the subscription sheet
+      setPortalLoading(true);
+      try {
+        const purchased = await showPaywall();
+        if (purchased) {
+          toast({ title: "Subscription Activated!", description: "Welcome to Ally Pro!" });
+        }
+      } catch (e) {
+        console.error('Paywall error:', e);
+        toast({ title: "Unable to Load Paywall", description: "Please try again.", variant: "destructive" });
+      } finally {
+        setPortalLoading(false);
+      }
+      return;
+    }
+
+    // On web, show the upgrade dialog
+    setActiveSection(null);
+    setShowUpgradeDialog(true);
   };
 
   const handleToggleWeather = async (enabled: boolean) => {
@@ -541,7 +596,7 @@ const Settings = () => {
                       onClick={() => handleThemeChange(t)}
                       className={cn(
                         "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
-                        theme === t ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"
+                        selectedTheme === t ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"
                       )}
                     >
                       {t === 'light' && <Sun className="h-3.5 w-3.5" />}
@@ -696,8 +751,8 @@ const Settings = () => {
               ))}
             </div>
           </div>
-          <Button onClick={handleUpdateProfile} disabled={loading} className="w-full">
-            {loading ? "Saving..." : "Save Profile"}
+          <Button onClick={handleUpdateProfile} disabled={isLoading} className="w-full">
+            {isLoading ? "Saving..." : "Save Profile"}
           </Button>
         </div>
       </DetailSheet>
@@ -712,8 +767,8 @@ const Settings = () => {
             <Label className="text-sm font-medium">Confirm Password</Label>
             <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
           </div>
-          <Button onClick={handleUpdatePassword} disabled={loading} className="w-full">
-            {loading ? "Updating..." : "Update Password"}
+          <Button onClick={handleUpdatePassword} disabled={isLoading} className="w-full">
+            {isLoading ? "Updating..." : "Update Password"}
           </Button>
         </div>
       </DetailSheet>
@@ -730,9 +785,8 @@ const Settings = () => {
           </div>
           <div className="flex flex-col gap-2">
             {(!effectiveSubscriptionTier || effectiveSubscriptionTier === 'free') ? (
-              <Button onClick={() => { setActiveSection(null); setShowUpgradeDialog(true); }} className="w-full">
-                <Sparkles className="h-4 w-4 mr-2" />
-                Upgrade Plan
+              <Button onClick={handleUpgradePlan} disabled={portalLoading} className="w-full">
+                {portalLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Loading...</> : <><Sparkles className="h-4 w-4 mr-2" />Upgrade Plan</>}
               </Button>
             ) : (
               <Button variant="outline" onClick={handleManageSubscription} disabled={portalLoading} className="w-full">
@@ -792,8 +846,8 @@ const Settings = () => {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteAccount} disabled={deleteConfirmText !== "DELETE" || loading} className="bg-destructive hover:bg-destructive/90">
-                    {loading ? "Deleting..." : "Delete Account"}
+                  <AlertDialogAction onClick={handleDeleteAccount} disabled={deleteConfirmText !== "DELETE" || isLoading} className="bg-destructive hover:bg-destructive/90">
+                    {isLoading ? "Deleting..." : "Delete Account"}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
