@@ -1,16 +1,21 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, X, Send, Loader2, Mail } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Mail, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { SupportEmailDialog } from "./SupportEmailDialog";
 
 interface Message {
+  id: string;
   role: "user" | "assistant";
   content: string;
 }
+
+// Generate unique message ID
+let messageIdCounter = 0;
+const generateMessageId = () => `msg-${Date.now()}-${++messageIdCounter}`;
 
 const AllySupportChat = () => {
   const { userName } = useAuth();
@@ -19,16 +24,18 @@ const AllySupportChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Set initial greeting based on user name
   useEffect(() => {
-    const greeting = userName 
+    const greeting = userName
       ? `Hi ${userName}! I'm Ally Support. How can I help you today?`
       : "Hi! I'm Ally Support. How can I help you learn about our aquarium management platform today?";
-    
+
     setMessages([{
+      id: generateMessageId(),
       role: "assistant",
       content: greeting,
     }]);
@@ -51,18 +58,19 @@ const AllySupportChat = () => {
   // Shared streaming response handler
   const processStreamResponse = useCallback(async (userMessage: Message, currentMessages: Message[]) => {
     setIsLoading(true);
-    setMessages(prev => [...prev, userMessage, { role: "assistant", content: "" }]);
+    const assistantMsgId = generateMessageId();
+    setMessages(prev => [...prev, userMessage, { id: assistantMsgId, role: "assistant", content: "" }]);
 
     try {
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-support`;
-      
+
+      // Support chat is public-facing, no auth required
       const response = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           messages: [...currentMessages, userMessage],
           userName: userName || undefined
         }),
@@ -122,7 +130,7 @@ const AllySupportChat = () => {
 
       // Final flush
       if (textBuffer.trim()) {
-        for (let raw of textBuffer.split("\n")) {
+        for (const raw of textBuffer.split("\n")) {
           if (!raw || raw.startsWith(":") || !raw.startsWith("data: ")) continue;
           const jsonStr = raw.slice(6).trim();
           if (jsonStr === "[DONE]") continue;
@@ -147,9 +155,11 @@ const AllySupportChat = () => {
       }
     } catch {
       // Remove the empty assistant message and show error
+      setError("Failed to get response. Please try again.");
       setMessages(prev => [
         ...prev.slice(0, -1),
         {
+          id: generateMessageId(),
           role: "assistant",
           content: "Sorry, I'm having trouble connecting right now. Please try again or use our contact form.",
         },
@@ -162,11 +172,12 @@ const AllySupportChat = () => {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: "user", content: input };
+    setError(null); // Clear any previous error
+    const userMessage: Message = { id: generateMessageId(), role: "user", content: input };
     const currentMessages = [...messages];
     setMessages(prev => [...prev, userMessage]);
     setInput("");
-    
+
     await processStreamResponse(userMessage, currentMessages);
   };
 
@@ -177,20 +188,21 @@ const AllySupportChat = () => {
     }
   };
 
-  const quickReplies = [
+  // Memoize quick replies to avoid recreating on every render
+  const quickReplies = useMemo(() => [
     "What is Ally?",
     "How does water testing work?",
     "What features are included?",
     "Is there a mobile app?",
-  ];
+  ], []);
 
   const handleQuickReply = useCallback((reply: string) => {
     if (isLoading) return;
-    
-    const userMessage: Message = { role: "user", content: reply };
+
+    const userMessage: Message = { id: generateMessageId(), role: "user", content: reply };
     const currentMessages = [...messages];
     setInput("");
-    
+
     processStreamResponse(userMessage, currentMessages);
   }, [messages, isLoading, processStreamResponse]);
 
@@ -227,9 +239,9 @@ const AllySupportChat = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <div
-                key={`${message.role}-${index}`}
+                key={message.id}
                 className={cn(
                   "flex",
                   message.role === "user" ? "justify-end" : "justify-start"
@@ -270,6 +282,22 @@ const AllySupportChat = () => {
                   {reply}
                 </Button>
               ))}
+            </div>
+          )}
+
+          {/* Error retry banner */}
+          {error && !isLoading && (
+            <div className="px-4 py-2 bg-destructive/10 text-destructive text-sm flex items-center justify-between">
+              <span>{error}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setError(null)}
+                className="h-7 gap-1"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Dismiss
+              </Button>
             </div>
           )}
 

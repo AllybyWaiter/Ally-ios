@@ -71,13 +71,33 @@ export const useVoiceRecording = () => {
         setIsRecording(false);
         setIsProcessing(true);
 
+        // Track if the operation was aborted (component unmounted)
+        let isAborted = false;
+
         try {
           const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-          
+
           // Convert blob to base64
           const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
+
+          reader.onerror = () => {
+            console.error('FileReader error:', reader.error);
+            if (!isAborted) {
+              setIsProcessing(false);
+              resolve(null);
+            }
+          };
+
+          reader.onabort = () => {
+            if (!isAborted) {
+              setIsProcessing(false);
+              resolve(null);
+            }
+          };
+
           reader.onloadend = async () => {
+            if (isAborted) return;
+
             const base64Audio = (reader.result as string).split(',')[1];
 
             try {
@@ -85,19 +105,24 @@ export const useVoiceRecording = () => {
                 body: { audio: base64Audio }
               });
 
+              if (isAborted) return;
               if (error) throw error;
 
               setIsProcessing(false);
               toast.success('Transcription complete');
               resolve(data.text);
             } catch (error) {
+              if (isAborted) return;
               console.error('Transcription error:', error);
               toast.error('Failed to transcribe audio');
               setIsProcessing(false);
               resolve(null);
             }
           };
+
+          reader.readAsDataURL(audioBlob);
         } catch (error) {
+          if (isAborted) return;
           console.error('Error processing audio:', error);
           toast.error('Failed to process audio');
           setIsProcessing(false);

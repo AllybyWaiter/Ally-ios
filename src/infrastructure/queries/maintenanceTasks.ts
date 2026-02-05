@@ -1,10 +1,11 @@
 /**
  * Maintenance Tasks Data Access Layer
- * 
+ *
  * Centralized Supabase queries for maintenance task operations with iOS PWA session handling.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFreshSession } from '@/lib/sessionUtils';
 
 export interface MaintenanceTask {
   id: string;
@@ -23,15 +24,6 @@ export interface MaintenanceTask {
   updated_at: string;
 }
 
-// Helper to ensure session is fresh (iOS PWA fix)
-// Note: Only call this when absolutely needed to avoid redundant token refreshes
-async function ensureFreshSession() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  // Only refresh if session is missing - the SDK auto-refreshes expiring tokens
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-}
 
 // Create maintenance task
 export async function createMaintenanceTask(task: {
@@ -68,6 +60,7 @@ export async function fetchUpcomingTasks(userId: string) {
   // Get tasks due within the next 7 days or overdue
   const today = new Date();
   const weekFromNow = new Date();
+  // Include tasks due up to and including 7 days from now
   weekFromNow.setDate(today.getDate() + 7);
   
   const { data, error } = await supabase

@@ -10,9 +10,10 @@ import type {
   CustomerInfo,
   PurchasesError,
 } from '@revenuecat/purchases-capacitor';
+import { logger } from '@/lib/logger';
 
 // RevenueCat Configuration
-const REVENUECAT_API_KEY = 'appl_rBcdScKXYjPpwKNeuFECTHfACgV';
+const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_API_KEY;
 const ENTITLEMENT_ID = 'pro'; // Your entitlement identifier in RevenueCat
 
 // Product identifiers (must match what you set up in App Store Connect & RevenueCat)
@@ -39,18 +40,25 @@ let isInitialized = false;
  */
 export async function initializeRevenueCat(userId?: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) {
-    console.log('RevenueCat: Skipping initialization on web platform');
+    logger.log('RevenueCat: Skipping initialization on web platform');
     return;
   }
 
   if (isInitialized) {
-    console.log('RevenueCat: Already initialized');
+    logger.log('RevenueCat: Already initialized');
     return;
   }
 
+  if (!REVENUECAT_API_KEY) {
+    const error = new Error('RevenueCat: API key not configured. Set VITE_REVENUECAT_API_KEY in .env');
+    logger.error(error.message);
+    throw error;
+  }
+
   try {
-    // Set log level for debugging (change to WARN or ERROR in production)
-    await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
+    // Set log level - use ERROR in production to reduce noise
+    const logLevel = import.meta.env.PROD ? LOG_LEVEL.ERROR : LOG_LEVEL.DEBUG;
+    await Purchases.setLogLevel({ level: logLevel });
 
     // Configure with API key
     await Purchases.configure({
@@ -59,9 +67,9 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
     });
 
     isInitialized = true;
-    console.log('RevenueCat: Initialized successfully');
+    logger.log('RevenueCat: Initialized successfully');
   } catch (error) {
-    console.error('RevenueCat: Failed to initialize', error);
+    logger.error('RevenueCat: Failed to initialize', error);
     throw error;
   }
 }
@@ -76,10 +84,10 @@ export async function loginUser(userId: string): Promise<CustomerInfo> {
 
   try {
     const { customerInfo } = await Purchases.logIn({ appUserID: userId });
-    console.log('RevenueCat: User logged in', userId);
+    logger.log('RevenueCat: User logged in', userId);
     return customerInfo;
   } catch (error) {
-    console.error('RevenueCat: Login failed', error);
+    logger.error('RevenueCat: Login failed', error);
     throw error;
   }
 }
@@ -94,10 +102,10 @@ export async function logoutUser(): Promise<CustomerInfo> {
 
   try {
     const { customerInfo } = await Purchases.logOut();
-    console.log('RevenueCat: User logged out');
+    logger.log('RevenueCat: User logged out');
     return customerInfo;
   } catch (error) {
-    console.error('RevenueCat: Logout failed', error);
+    logger.error('RevenueCat: Logout failed', error);
     throw error;
   }
 }
@@ -114,7 +122,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo> {
     const { customerInfo } = await Purchases.getCustomerInfo();
     return customerInfo;
   } catch (error) {
-    console.error('RevenueCat: Failed to get customer info', error);
+    logger.error('RevenueCat: Failed to get customer info', error);
     throw error;
   }
 }
@@ -131,7 +139,7 @@ export async function hasProAccess(): Promise<boolean> {
     const customerInfo = await getCustomerInfo();
     return customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
   } catch (error) {
-    console.error('RevenueCat: Failed to check entitlement', error);
+    logger.error('RevenueCat: Failed to check entitlement', error);
     return false;
   }
 }
@@ -165,7 +173,7 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
 
     return 'basic'; // Default for any pro subscription
   } catch (error) {
-    console.error('RevenueCat: Failed to get subscription tier', error);
+    logger.error('RevenueCat: Failed to get subscription tier', error);
     return 'free';
   }
 }
@@ -182,13 +190,13 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
     const { offerings } = await Purchases.getOfferings();
 
     if (!offerings.current) {
-      console.warn('RevenueCat: No current offering available');
+      logger.warn('RevenueCat: No current offering available');
       return null;
     }
 
     return offerings.current;
   } catch (error) {
-    console.error('RevenueCat: Failed to get offerings', error);
+    logger.error('RevenueCat: Failed to get offerings', error);
     throw error;
   }
 }
@@ -203,25 +211,25 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<CustomerIn
 
   try {
     const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
-    console.log('RevenueCat: Purchase successful');
+    logger.log('RevenueCat: Purchase successful');
     return customerInfo;
   } catch (error) {
     const purchaseError = error as PurchasesError;
 
     // Handle user cancellation gracefully
     if (purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-      console.log('RevenueCat: Purchase cancelled by user');
+      logger.log('RevenueCat: Purchase cancelled by user');
       throw new Error('Purchase cancelled');
     }
 
     // Handle already purchased
     if (purchaseError.code === PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR) {
-      console.log('RevenueCat: Product already purchased');
+      logger.log('RevenueCat: Product already purchased');
       // Get updated customer info
       return await getCustomerInfo();
     }
 
-    console.error('RevenueCat: Purchase failed', error);
+    logger.error('RevenueCat: Purchase failed', error);
     throw error;
   }
 }
@@ -236,10 +244,10 @@ export async function restorePurchases(): Promise<CustomerInfo> {
 
   try {
     const { customerInfo } = await Purchases.restorePurchases();
-    console.log('RevenueCat: Purchases restored');
+    logger.log('RevenueCat: Purchases restored');
     return customerInfo;
   } catch (error) {
-    console.error('RevenueCat: Restore failed', error);
+    logger.error('RevenueCat: Restore failed', error);
     throw error;
   }
 }
@@ -307,7 +315,7 @@ export async function presentPaywall(): Promise<boolean> {
     const result = await RevenueCatUI.presentPaywall();
     return result.paywallResult === 'PURCHASED' || result.paywallResult === 'RESTORED';
   } catch (error) {
-    console.error('RevenueCat: Failed to present paywall', error);
+    logger.error('RevenueCat: Failed to present paywall', error);
     return false;
   }
 }
@@ -327,7 +335,7 @@ export async function presentPaywallForOffering(offeringIdentifier: string): Pro
     });
     return result.paywallResult === 'PURCHASED' || result.paywallResult === 'RESTORED';
   } catch (error) {
-    console.error('RevenueCat: Failed to present paywall', error);
+    logger.error('RevenueCat: Failed to present paywall', error);
     return false;
   }
 }
@@ -347,7 +355,7 @@ export async function presentCustomerCenter(): Promise<void> {
     const { RevenueCatUI } = await import('@revenuecat/purchases-capacitor-ui');
     await RevenueCatUI.presentCustomerCenter();
   } catch (error) {
-    console.error('RevenueCat: Failed to present customer center', error);
+    logger.error('RevenueCat: Failed to present customer center', error);
     // Fallback to native subscription settings
     window.open('https://apps.apple.com/account/subscriptions', '_blank');
   }

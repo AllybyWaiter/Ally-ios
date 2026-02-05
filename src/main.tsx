@@ -2,6 +2,7 @@
 import { validateEnv, logEnvWarnings } from "./lib/envValidation";
 import { EnvErrorScreen } from "./components/EnvErrorScreen";
 import { createRoot } from "react-dom/client";
+import { logger } from "./lib/logger";
 
 // Validate environment variables immediately
 const envValidation = validateEnv();
@@ -32,14 +33,17 @@ if (!envValidation.isValid) {
 
     // Initialize RevenueCat for native platforms (iOS/Android)
     initializeRevenueCat().catch((error) => {
-      console.warn('RevenueCat initialization skipped or failed:', error);
+      logger.warn('RevenueCat initialization skipped or failed:', error);
     });
 
     // Hide splash screen once React is ready
-    const hideSplash = (window as unknown as { hideSplash?: () => void }).hideSplash;
-    if (hideSplash) {
-      hideSplash();
+    const windowWithSplash = window as Window & { hideSplash?: () => void };
+    if (windowWithSplash.hideSplash) {
+      windowWithSplash.hideSplash();
     }
+
+    // Track if service worker message listener has been added
+    let swMessageListenerAdded = false;
 
     // Force service worker update on app start to prevent stale cache issues on iOS PWA
     const ensureServiceWorkerFresh = async () => {
@@ -47,14 +51,17 @@ if (!envValidation.isValid) {
         try {
           const registration = await navigator.serviceWorker.ready;
           await registration.update();
-          
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            if (event.data?.type === 'CACHES_CLEARED') {
-              // Caches cleared confirmation received
-            }
-          });
-        } catch {
-          // Service worker ready check failed
+
+          if (!swMessageListenerAdded) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+              if (event.data?.type === 'CACHES_CLEARED') {
+                // Caches cleared confirmation received
+              }
+            });
+            swMessageListenerAdded = true;
+          }
+        } catch (error) {
+          logger.debug('Service worker ready check failed:', error);
         }
       }
     };
@@ -75,8 +82,8 @@ if (!envValidation.isValid) {
           const registrations = await navigator.serviceWorker.getRegistrations();
           await Promise.all(registrations.map(reg => reg.unregister()));
         }
-      } catch {
-        // Cache clear failed, proceed with reload anyway
+      } catch (error) {
+        logger.debug('Cache clear failed, proceeding with reload:', error);
       }
       const url = new URL(window.location.href);
       url.searchParams.set('_cb', Date.now().toString());
@@ -85,8 +92,9 @@ if (!envValidation.isValid) {
 
     // Proactive iOS PWA startup validation
     const validateStartupIntegrity = () => {
-      const isIOSPWA = 
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
+      const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
+      const isIOSPWA =
+        navigatorWithStandalone.standalone === true ||
         window.matchMedia('(display-mode: standalone)').matches;
       
       if (isIOSPWA) {
