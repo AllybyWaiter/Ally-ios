@@ -115,7 +115,9 @@ export default function NotificationBell() {
     enabled: !!user,
   });
 
-  const unreadAnnouncementCount = announcements.filter(n => !n.read).length;
+  // Filter out any announcements with null nested data (can happen with broken joins)
+  const validAnnouncements = announcements.filter(n => n.announcements != null);
+  const unreadAnnouncementCount = validAnnouncements.filter(n => !n.read).length;
   const activityCount = notificationHistory.length;
   const totalUnread = unreadAnnouncementCount;
 
@@ -251,7 +253,7 @@ export default function NotificationBell() {
 
           <TabsContent value="announcements" className="m-0">
             <ScrollArea className="h-[350px]">
-              {announcements.length === 0 ? (
+              {validAnnouncements.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">
                   <Megaphone className="h-7 w-7 mx-auto mb-2 opacity-40" />
                   <p className="text-sm">No announcements yet</p>
@@ -259,7 +261,7 @@ export default function NotificationBell() {
                 </div>
               ) : (
                 <div className="divide-y divide-border/40">
-                  {announcements.map((notification) => (
+                  {validAnnouncements.map((notification) => (
                     <div
                       key={notification.id}
                       className={cn(
@@ -270,14 +272,14 @@ export default function NotificationBell() {
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <span className="font-medium text-sm">
-                          {notification.announcements.title}
+                          {notification.announcements?.title ?? 'Untitled'}
                         </span>
                         {!notification.read && (
                           <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0 mt-1.5" />
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                        {notification.announcements.message}
+                        {notification.announcements?.message ?? ''}
                       </p>
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
