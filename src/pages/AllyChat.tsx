@@ -997,7 +997,7 @@ const AllyChat = () => {
                     if (wasVoiceInput) setWasVoiceInput(false);
                   }}
                   onKeyDown={handleKeyPress}
-                  placeholder="Message Ally... (type @ to mention a tank)"
+                  placeholder="Message Ally... (type @ to mention an aquatic space)"
                   disabled={isLoading}
                   mentionItems={mentionItems}
                   onMentionSelect={(item) => {

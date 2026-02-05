@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -82,6 +82,15 @@ export function useConversationManager(userId: string | null) {
       logger.error('Failed to fetch conversations:', error);
     }
   }, [userId, toast]);
+
+  // Auto-fetch aquariums and conversations when userId changes
+  // This ensures data is loaded even with React's async state updates
+  useEffect(() => {
+    if (userId) {
+      fetchAquariums();
+      fetchConversations();
+    }
+  }, [userId, fetchAquariums, fetchConversations]);
 
   const pinConversation = useCallback(async (conversationId: string) => {
     if (!userId) return;
