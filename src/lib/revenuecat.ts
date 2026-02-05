@@ -14,7 +14,7 @@ import { logger } from '@/lib/logger';
 
 // RevenueCat Configuration
 const REVENUECAT_API_KEY = import.meta.env.VITE_REVENUECAT_API_KEY;
-const ENTITLEMENT_ID = 'pro'; // Your entitlement identifier in RevenueCat
+const ENTITLEMENT_ID = 'Ally by Waiter AI, Inc. Pro'; // Your entitlement identifier in RevenueCat
 
 // Product identifiers (must match what you set up in App Store Connect & RevenueCat)
 export const PRODUCT_IDS = {
@@ -164,11 +164,12 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
 
     if (!proEntitlement) {
       // Fallback: Check if there are any active subscriptions even without entitlement
-      const activeSubscriptions = customerInfo.activeSubscriptions || {};
-      if (Object.keys(activeSubscriptions).length > 0) {
+      // Note: activeSubscriptions is an array of product IDs, not an object
+      const activeSubscriptions = customerInfo.activeSubscriptions || [];
+      if (Array.isArray(activeSubscriptions) && activeSubscriptions.length > 0) {
         logger.log('RevenueCat: Found active subscriptions but no entitlement. Subscriptions:', activeSubscriptions);
         // Try to determine tier from subscription product ID
-        const firstSubId = Object.keys(activeSubscriptions)[0];
+        const firstSubId = activeSubscriptions[0];
         if (firstSubId.includes('gold')) return 'gold';
         if (firstSubId.includes('plus')) return 'plus';
         if (firstSubId.includes('basic')) return 'basic';

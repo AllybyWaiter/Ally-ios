@@ -35,7 +35,12 @@ export const useAutoSave = <T,>({
 
   const saveNow = useCallback(async () => {
     if (!enabled) return;
-    
+
+    // Don't attempt auto-save when offline to avoid error spam
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
@@ -45,9 +50,12 @@ export const useAutoSave = <T,>({
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Auto-save failed');
       setError(error);
-      toast.error('Auto-save failed', {
-        description: error.message,
-      });
+      // Only show toast if online (avoid spam on offline)
+      if (typeof navigator === 'undefined' || navigator.onLine) {
+        toast.error('Auto-save failed', {
+          description: error.message,
+        });
+      }
     } finally {
       setIsSaving(false);
     }

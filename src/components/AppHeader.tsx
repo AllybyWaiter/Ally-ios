@@ -3,7 +3,7 @@ import logo from "@/assets/logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import NotificationBell from "./NotificationBell";
 
 const AppHeader = () => {
-  const { user, userName, signOut } = useAuth();
+  const { user, userName, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const { t } = useTranslation();
 
@@ -116,6 +116,14 @@ const AppHeader = () => {
               </div>
             </div>
             <div className="py-1.5">
+              {isAdmin && (
+                <DropdownMenuItem asChild className="mx-1.5 rounded-md hover:bg-foreground/5 cursor-pointer">
+                  <Link to="/admin" className="flex items-center px-2.5 py-2">
+                    <Shield className="mr-2.5 h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium">Admin Panel</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild className="mx-1.5 rounded-md hover:bg-foreground/5 cursor-pointer">
                 <Link to="/settings" className="flex items-center px-2.5 py-2">
                   <Settings className="mr-2.5 h-4 w-4 text-muted-foreground" />

@@ -285,7 +285,8 @@ const MessageContent = memo(({
                       onClick={() => {
                         // Validate URL before opening to prevent XSS via javascript: URLs
                         const url = message.imageUrl || '';
-                        if (url.startsWith('data:image/') || url.startsWith('http://') || url.startsWith('https://')) {
+                        const urlLower = url.toLowerCase();
+                        if (urlLower.startsWith('data:image/') || urlLower.startsWith('http://') || urlLower.startsWith('https://')) {
                           window.open(url, '_blank', 'noopener,noreferrer');
                         }
                       }}

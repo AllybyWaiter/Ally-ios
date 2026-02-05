@@ -25,6 +25,7 @@ export function usePullToRefresh(
   const startY = useRef(0);
   const isPulling = useRef(false);
   const lastRefreshTime = useRef(0);
+  const isRefreshingRef = useRef(false); // Ref-based lock to prevent race conditions
   
   const isPastThreshold = pullDistance >= threshold;
 
@@ -92,7 +93,8 @@ export function usePullToRefresh(
       return;
     }
     
-    if (pullDistance >= threshold && !isRefreshing && !disabled) {
+    if (pullDistance >= threshold && !isRefreshing && !disabled && !isRefreshingRef.current) {
+      isRefreshingRef.current = true; // Set ref immediately to prevent race condition
       lastRefreshTime.current = now;
       setIsRefreshing(true);
       setPullDistance(threshold); // Hold at threshold during refresh
@@ -103,6 +105,7 @@ export function usePullToRefresh(
         console.error('Pull-to-refresh error:', error);
       } finally {
         setIsRefreshing(false);
+        isRefreshingRef.current = false; // Reset ref lock
         setPullDistance(0);
       }
     } else {

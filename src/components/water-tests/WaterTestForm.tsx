@@ -10,11 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, AlertCircle, CheckCircle2, Settings, Save, Lock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, AlertCircle, CheckCircle2, Settings, Save, Lock, Camera, Waves, PenLine } from "lucide-react";
 import { CustomTemplateManager } from "./CustomTemplateManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useWaterTestForm, usePhotoAnalysis } from "./hooks";
 import { PhotoUploadSection } from "./PhotoUploadSection";
+import { WaterWandSection } from "./WaterWandSection";
 import { ParameterInputGrid } from "./ParameterInputGrid";
 import { formatWaterBodyType } from "@/lib/waterBodyUtils";
 
@@ -26,11 +28,14 @@ interface WaterTestFormProps {
   };
 }
 
+type EntryMethod = 'photo' | 'wand' | 'manual';
+
 export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
   const { canCreateCustomTemplates, units } = useAuth();
   const { t } = useTranslation();
   const [showTemplateManager, setShowTemplateManager] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [entryMethod, setEntryMethod] = useState<EntryMethod>('photo');
 
   // Use form hook for all form state and logic
   const {
@@ -135,23 +140,62 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
           )}
 
           <form onSubmit={onFormSubmit} className="space-y-6">
-            {/* Photo Upload Section */}
-            <PhotoUploadSection
-              photoPreview={photoPreview}
-              analyzingPhoto={analyzingPhoto}
-              analysisResult={analysisResult}
-              feedbackGiven={false}
-              onPhotoSelect={handlePhotoSelect}
-              onAnalyzePhoto={() => {
-                // Validate photo file exists before analysis
-                if (!photoFile) {
-                  return;
-                }
-                handleAnalyzePhoto();
-              }}
-              onRemovePhoto={handleRemovePhoto}
-              onPhotoFeedback={handlePhotoFeedback}
-            />
+            {/* Entry Method Tabs */}
+            <Tabs value={entryMethod} onValueChange={(v) => setEntryMethod(v as EntryMethod)} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="photo" className="gap-2">
+                  <Camera className="h-4 w-4" />
+                  <span className="hidden sm:inline">Photo</span>
+                </TabsTrigger>
+                <TabsTrigger value="wand" className="gap-2">
+                  <Waves className="h-4 w-4" />
+                  <span className="hidden sm:inline">Wand</span>
+                </TabsTrigger>
+                <TabsTrigger value="manual" className="gap-2">
+                  <PenLine className="h-4 w-4" />
+                  <span className="hidden sm:inline">Manual</span>
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Photo Analysis Tab */}
+              <TabsContent value="photo" className="mt-0">
+                <PhotoUploadSection
+                  photoPreview={photoPreview}
+                  analyzingPhoto={analyzingPhoto}
+                  analysisResult={analysisResult}
+                  feedbackGiven={false}
+                  onPhotoSelect={handlePhotoSelect}
+                  onAnalyzePhoto={() => {
+                    if (!photoFile) return;
+                    handleAnalyzePhoto();
+                  }}
+                  onRemovePhoto={handleRemovePhoto}
+                  onPhotoFeedback={handlePhotoFeedback}
+                />
+              </TabsContent>
+
+              {/* BLE Wand Tab */}
+              <TabsContent value="wand" className="mt-0">
+                <WaterWandSection
+                  onParametersDetected={(detectedParams) => {
+                    setParameters(prev => ({ ...prev, ...detectedParams }));
+                  }}
+                />
+              </TabsContent>
+
+              {/* Manual Entry Tab */}
+              <TabsContent value="manual" className="mt-0">
+                <div className="p-4 border rounded-lg bg-gradient-to-br from-slate-500/5 to-slate-500/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <PenLine className="h-5 w-5 text-slate-500" />
+                    <h3 className="font-semibold">Manual Entry</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your water test results manually using the parameter fields below.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
 
             {/* Template Selector */}
             <div className="space-y-2">
@@ -218,6 +262,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
+                  maxLength={5000}
                 />
               </div>
 

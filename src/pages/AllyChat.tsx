@@ -82,6 +82,7 @@ const AllyChat = () => {
   const inputRef = useRef<MentionInputRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingToolExecutionsRef = useRef<ToolExecution[]>([]);
+  const isSubmittingRef = useRef(false); // Prevent double submission
 
   const { isStreaming, streamResponse, abort } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
@@ -386,7 +387,24 @@ const AllyChat = () => {
   }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast]);
 
   const sendMessage = async () => {
+    // Guard against double submission - check ref first (sync), then state
+    if (isSubmittingRef.current) return;
     if ((!input.trim() && !pendingPhoto) || isLoading) return;
+
+    // Set ref immediately to prevent double-click before state updates
+    isSubmittingRef.current = true;
+
+    // Validate input length to prevent memory issues
+    const MAX_INPUT_LENGTH = 10000;
+    if (input.length > MAX_INPUT_LENGTH) {
+      toast({
+        title: "Message too long",
+        description: `Please keep messages under ${MAX_INPUT_LENGTH.toLocaleString()} characters.`,
+        variant: "destructive",
+      });
+      isSubmittingRef.current = false;
+      return;
+    }
 
     // Clear any previous error
     setLastError(null);
@@ -528,6 +546,7 @@ const AllyChat = () => {
     } finally {
       setIsLoading(false);
       setStreamStartTime(null);
+      isSubmittingRef.current = false; // Reset double-submission guard
     }
   };
 

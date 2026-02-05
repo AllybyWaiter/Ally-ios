@@ -10,19 +10,20 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
-      position="bottom-right"
+      position="bottom-center"
       expand={false}
-      richColors
+      richColors={false}
       closeButton
       toastOptions={{
-        duration: 4000,
+        duration: 3000,
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg group-[.toaster]:rounded-xl",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:rounded-lg",
-          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:rounded-lg",
-          closeButton: "group-[.toast]:bg-background group-[.toast]:border-border",
+            "group toast group-[.toaster]:bg-black/70 group-[.toaster]:backdrop-blur-xl group-[.toaster]:text-white group-[.toaster]:border-white/10 group-[.toaster]:shadow-xl group-[.toaster]:rounded-2xl group-[.toaster]:px-4 group-[.toaster]:py-3 dark:group-[.toaster]:bg-white/10",
+          title: "group-[.toast]:text-[13px] group-[.toast]:font-medium",
+          description: "group-[.toast]:text-white/70 group-[.toast]:text-[12px]",
+          actionButton: "group-[.toast]:bg-white/20 group-[.toast]:text-white group-[.toast]:rounded-full group-[.toast]:text-xs group-[.toast]:px-3 group-[.toast]:py-1.5",
+          cancelButton: "group-[.toast]:bg-white/10 group-[.toast]:text-white/70 group-[.toast]:rounded-full group-[.toast]:text-xs",
+          closeButton: "group-[.toast]:bg-white/10 group-[.toast]:border-0 group-[.toast]:text-white/50 group-[.toast]:hover:text-white group-[.toast]:hover:bg-white/20",
         },
       }}
       {...props}
