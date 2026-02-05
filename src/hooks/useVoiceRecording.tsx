@@ -67,14 +67,22 @@ export const useVoiceRecording = () => {
         return;
       }
 
+      // Track if promise was already settled to prevent double resolution
+      let promiseSettled = false;
+
       // Add error handler for media recorder
-      mediaRecorderRef.current.onerror = (event) => {
+      mediaRecorderRef.current.onerror = () => {
+        if (promiseSettled) return;
+        promiseSettled = true;
         setIsRecording(false);
         setIsProcessing(false);
         reject(new Error('MediaRecorder error'));
       };
 
       mediaRecorderRef.current.onstop = async () => {
+        // Prevent handling if error already rejected the promise
+        if (promiseSettled) return;
+        promiseSettled = true;
         // Check if component unmounted before updating state
         if (isAbortedRef.current) {
           resolve(null);

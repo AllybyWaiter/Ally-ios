@@ -32,9 +32,10 @@ export const useAutoSave = <T,>({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dataRef = useRef<T>(data);
   const initialRenderRef = useRef(true);
+  const isMountedRef = useRef(true);
 
   const saveNow = useCallback(async () => {
-    if (!enabled) return;
+    if (!enabled || !isMountedRef.current) return;
 
     // Don't attempt auto-save when offline to avoid error spam
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -46,18 +47,26 @@ export const useAutoSave = <T,>({
 
     try {
       await onSave(dataRef.current);
-      setLastSaved(new Date());
+      // Only update state if still mounted
+      if (isMountedRef.current) {
+        setLastSaved(new Date());
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Auto-save failed');
-      setError(error);
-      // Only show toast if online (avoid spam on offline)
-      if (typeof navigator === 'undefined' || navigator.onLine) {
-        toast.error('Auto-save failed', {
-          description: error.message,
-        });
+      // Only update state if still mounted
+      if (isMountedRef.current) {
+        setError(error);
+        // Only show toast if online (avoid spam on offline)
+        if (typeof navigator === 'undefined' || navigator.onLine) {
+          toast.error('Auto-save failed', {
+            description: error.message,
+          });
+        }
       }
     } finally {
-      setIsSaving(false);
+      if (isMountedRef.current) {
+        setIsSaving(false);
+      }
     }
   }, [enabled, onSave]);
 
@@ -91,9 +100,11 @@ export const useAutoSave = <T,>({
     };
   }, [data, delay, enabled, saveNow]);
 
-  // Cleanup on unmount - cancel any pending saves
+  // Cleanup on unmount - cancel any pending saves and mark unmounted
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
