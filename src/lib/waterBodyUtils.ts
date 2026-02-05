@@ -1,10 +1,17 @@
 /**
  * Water Body Utilities
- * 
+ *
  * Helper functions for pool/spa vs aquarium type detection and labeling.
  */
 
-export type WaterBodyCategory = 'aquarium' | 'pool' | 'spa';
+import {
+  WaterBodyCategory,
+  WaterBodyType,
+  POOL_TYPES,
+  isPoolType as checkIsPoolType,
+} from '@/types/enums';
+
+export type { WaterBodyCategory } from '@/types/enums';
 
 /**
  * Format a water body type for display using i18n translations
@@ -30,18 +37,21 @@ export function formatWaterBodyType(type: string, t: (key: string) => string): s
  * Check if a water body type is a pool or spa
  */
 export function isPoolType(type: string): boolean {
-  const poolTypes = ['pool', 'spa', 'hot_tub'];
-  return poolTypes.includes(type.toLowerCase());
+  return checkIsPoolType(type.toLowerCase());
 }
 
 /**
  * Get the category of a water body
  */
 export function getWaterBodyCategory(type: string): WaterBodyCategory {
-  const lowerType = type.toLowerCase();
-  if (lowerType === 'spa' || lowerType === 'hot_tub') return 'spa';
-  if (lowerType === 'pool') return 'pool';
-  return 'aquarium';
+  const lowerType = type.toLowerCase() as WaterBodyType;
+  if (lowerType === WaterBodyType.SPA || lowerType === WaterBodyType.HOT_TUB) {
+    return WaterBodyCategory.SPA;
+  }
+  if (lowerType === WaterBodyType.POOL) {
+    return WaterBodyCategory.POOL;
+  }
+  return WaterBodyCategory.AQUARIUM;
 }
 
 /**
@@ -52,8 +62,8 @@ export function getWaterBodyLabels(type: string) {
   const category = getWaterBodyCategory(type);
   
   return {
-    entityName: category === 'spa' ? 'Spa' : category === 'pool' ? 'Pool' : 'Aquarium',
-    entityNamePlural: category === 'spa' ? 'Spas' : category === 'pool' ? 'Pools' : 'Aquariums',
+    entityName: category === WaterBodyCategory.SPA ? 'Spa' : category === WaterBodyCategory.POOL ? 'Pool' : 'Aquarium',
+    entityNamePlural: category === WaterBodyCategory.SPA ? 'Spas' : category === WaterBodyCategory.POOL ? 'Pools' : 'Aquariums',
     volumeLabel: isPool ? 'Capacity' : 'Volume',
     setupDateLabel: isPool ? 'Installation Date' : 'Setup Date',
     showLivestock: !isPool,

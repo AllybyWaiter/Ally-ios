@@ -202,21 +202,33 @@ describe('waterTests DAL', () => {
   });
 
   describe('fetchWaterTest', () => {
-    it('should fetch a single water test', async () => {
+    it('should fetch a single water test with ownership verification', async () => {
       const mockTest = { id: 'wt-1', test_date: '2025-01-15', test_parameters: [] };
 
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockTest, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockTest, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      const result = await fetchWaterTest('wt-1');
+      const result = await fetchWaterTest('wt-1', 'user-1');
 
       expect(supabase.from).toHaveBeenCalledWith('water_tests');
       expect(mockChain.eq).toHaveBeenCalledWith('id', 'wt-1');
+      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(result).toEqual(mockTest);
+    });
+
+    it('should throw error when water test not found', async () => {
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+
+      await expect(fetchWaterTest('invalid-id', 'user-1')).rejects.toThrow('Water test not found');
     });
   });
 
@@ -304,24 +316,32 @@ describe('waterTests DAL', () => {
   });
 
   describe('deleteWaterTest', () => {
-    it('should delete water test successfully', async () => {
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: null }),
+    it('should delete water test with ownership verification', async () => {
+      const mockChain = {
+        eq: vi.fn().mockReturnThis(),
+      };
+      // Make the final eq call resolve the promise
+      mockChain.eq = vi.fn().mockImplementation(() => {
+        return { eq: vi.fn().mockResolvedValue({ error: null }) };
       });
+      const mockDelete = vi.fn().mockReturnValue(mockChain);
       vi.mocked(supabase.from).mockReturnValue({ delete: mockDelete } as any);
 
-      await deleteWaterTest('wt-1');
+      await deleteWaterTest('wt-1', 'user-1');
 
       expect(supabase.from).toHaveBeenCalledWith('water_tests');
     });
 
     it('should throw error on failure', async () => {
-      const mockDelete = vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } }),
-      });
+      const mockChain = {
+        eq: vi.fn().mockImplementation(() => {
+          return { eq: vi.fn().mockResolvedValue({ error: { message: 'Delete failed' } }) };
+        }),
+      };
+      const mockDelete = vi.fn().mockReturnValue(mockChain);
       vi.mocked(supabase.from).mockReturnValue({ delete: mockDelete } as any);
 
-      await expect(deleteWaterTest('wt-1')).rejects.toEqual({ message: 'Delete failed' });
+      await expect(deleteWaterTest('wt-1', 'user-1')).rejects.toEqual({ message: 'Delete failed' });
     });
   });
 

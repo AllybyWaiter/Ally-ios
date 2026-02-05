@@ -79,7 +79,7 @@ export default function PlantDetailDialog({
               <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                 <img
                   src={plant.primary_photo_url}
-                  alt={plant.name}
+                  alt={plant.name || 'Plant photo'}
                   className="w-full h-full object-cover"
                 />
               </div>

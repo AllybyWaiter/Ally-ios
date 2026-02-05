@@ -80,7 +80,7 @@ describe('plants DAL', () => {
   });
 
   describe('fetchPlant', () => {
-    it('should fetch a single plant', async () => {
+    it('should fetch a single plant with ownership verification', async () => {
       const mockPlant = {
         id: 'pl-1',
         name: 'Java Fern',
@@ -91,13 +91,14 @@ describe('plants DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockPlant, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockPlant, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      const result = await fetchPlant('pl-1');
+      const result = await fetchPlant('pl-1', 'user-1');
 
       expect(mockChain.eq).toHaveBeenCalledWith('id', 'pl-1');
+      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(result).toEqual(mockPlant);
     });
 
@@ -105,11 +106,11 @@ describe('plants DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(fetchPlant('invalid-id')).rejects.toEqual({ code: 'PGRST116' });
+      await expect(fetchPlant('invalid-id', 'user-1')).rejects.toThrow('Plant not found');
     });
   });
 
@@ -197,35 +198,37 @@ describe('plants DAL', () => {
   });
 
   describe('updatePlant', () => {
-    it('should update plant with partial data', async () => {
+    it('should update plant with ownership verification', async () => {
       const mockPlant = { id: 'pl-1', name: 'Updated Name', condition: 'struggling' };
 
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: mockPlant, error: null }),
-          }),
+      const mockChain = {
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: mockPlant, error: null }),
         }),
-      });
+      };
+      const mockUpdate = vi.fn().mockReturnValue(mockChain);
       vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      const result = await updatePlant('pl-1', { name: 'Updated Name', condition: 'struggling' });
+      const result = await updatePlant('pl-1', 'user-1', { name: 'Updated Name', condition: 'struggling' });
 
       expect(mockUpdate).toHaveBeenCalledWith({ name: 'Updated Name', condition: 'struggling' });
+      expect(mockChain.eq).toHaveBeenCalledWith('id', 'pl-1');
+      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(result).toEqual(mockPlant);
     });
 
     it('should throw error on failure', async () => {
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
-          }),
+      const mockChain = {
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
         }),
-      });
+      };
+      const mockUpdate = vi.fn().mockReturnValue(mockChain);
       vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      await expect(updatePlant('pl-1', { notes: 'Test' })).rejects.toEqual({ message: 'Update failed' });
+      await expect(updatePlant('pl-1', 'user-1', { notes: 'Test' })).rejects.toEqual({ message: 'Update failed' });
     });
   });
 

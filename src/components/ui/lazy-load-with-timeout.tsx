@@ -2,6 +2,7 @@ import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface LazyLoadWithTimeoutProps {
   /** 
@@ -78,9 +79,7 @@ export function LazyLoadWithTimeout({
       window.clearTimeout(timeoutRef.current);
     }
 
-    console.log('[LazyLoadWithTimeout] Timeout started:', timeoutMs, 'ms');
     timeoutRef.current = window.setTimeout(() => {
-      console.log('[LazyLoadWithTimeout] Timeout fired - component did not signal ready in time');
       setIsTimedOut(true);
       onTimeout?.();
     }, timeoutMs);
@@ -94,7 +93,6 @@ export function LazyLoadWithTimeout({
 
   useEffect(() => {
     if (isLoaded && timeoutRef.current != null) {
-      console.log('[LazyLoadWithTimeout] Component signaled ready - clearing timeout');
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
@@ -115,7 +113,7 @@ export function LazyLoadWithTimeout({
 
   const handleError = useCallback(
     (error: Error) => {
-      console.error('[LazyLoadWithTimeout] Caught lazy component error:', error);
+      logger.error('[LazyLoadWithTimeout] Caught lazy component error:', error);
       setErrorMessage(error?.message || String(error));
       setHasError(true);
       onError?.(error);

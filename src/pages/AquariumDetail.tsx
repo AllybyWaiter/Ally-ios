@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { lazy, Suspense } from "react";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, MoreVertical, Pencil, Trash2, MapPin } from "lucide-react";
 import { LocationMapPreview } from "@/components/aquarium/LocationMapPreview";
 import { AquariumOverview } from "@/components/aquarium/AquariumOverview";
-import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
 import { AquariumTasks } from "@/components/aquarium/AquariumTasks";
 import { AquariumLivestock } from "@/components/aquarium/AquariumLivestock";
 import { TaskSuggestions } from "@/components/aquarium/TaskSuggestions";
 import { AquariumPhotoGallery } from "@/components/aquarium/AquariumPhotoGallery";
 import { format, isValid } from "date-fns";
+
+// Lazy load heavy chart component for better initial page load
+const WaterTestCharts = lazy(() => import("@/components/water-tests/WaterTestCharts").then(m => ({ default: m.WaterTestCharts })));
 import { AquariumDialog } from "@/components/aquarium/AquariumDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -245,7 +248,9 @@ export default function AquariumDetail() {
 
           <TabsContent value="water-tests">
             <SectionErrorBoundary fallbackTitle="Failed to load water tests" featureArea={FeatureArea.WATER_TESTS}>
-              <WaterTestCharts aquarium={{ id: id!, name: aquarium.name, type: aquarium.type }} />
+              <Suspense fallback={<div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+                <WaterTestCharts aquarium={{ id: id!, name: aquarium.name, type: aquarium.type }} />
+              </Suspense>
             </SectionErrorBoundary>
           </TabsContent>
 

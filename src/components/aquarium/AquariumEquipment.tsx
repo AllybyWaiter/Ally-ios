@@ -51,7 +51,7 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteEquipment,
+    mutationFn: (equipmentId: string) => deleteEquipment(equipmentId, user!.id),
     onMutate: async (equipmentId: string) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.equipment.list(aquariumId) });

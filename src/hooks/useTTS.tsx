@@ -60,17 +60,18 @@ export const useTTS = () => {
       // Get the user's session for authenticated TTS requests
       const { data: session } = await import('@/integrations/supabase/client')
         .then(m => m.supabase.auth.getSession());
-      
-      const authToken = session?.session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
+
+      if (!session?.session?.access_token) {
+        throw new Error('Authentication required for text-to-speech');
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${session.session.access_token}`,
           },
           body: JSON.stringify({ text: truncatedText }),
         }

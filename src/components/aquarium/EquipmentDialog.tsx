@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -90,6 +91,7 @@ export const EquipmentDialog = ({
   aquariumType = 'freshwater',
   equipment,
 }: EquipmentDialogProps) => {
+  const { user } = useAuth();
   const equipmentTypes = getEquipmentTypes(aquariumType);
   const queryClient = useQueryClient();
   const isEditing = !!equipment;
@@ -141,6 +143,17 @@ export const EquipmentDialog = ({
       let equipmentId: string;
 
       if (isEditing) {
+        // Verify ownership via aquarium relationship before updating
+        const { data: existing, error: verifyError } = await supabase
+          .from("equipment")
+          .select("id, aquariums!inner(user_id)")
+          .eq("id", equipment.id)
+          .eq("aquariums.user_id", user!.id)
+          .maybeSingle();
+
+        if (verifyError) throw verifyError;
+        if (!existing) throw new Error("Equipment not found");
+
         const { error } = await supabase
           .from("equipment")
           .update(data)

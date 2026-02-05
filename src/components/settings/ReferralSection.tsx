@@ -5,12 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useReferralCode } from '@/hooks/useReferralCode';
-import { 
-  Copy, 
-  Share2, 
-  Gift, 
-  Users, 
-  CheckCircle2,
+import {
+  Copy,
+  Gift,
+  Users,
   ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -123,39 +121,31 @@ export function ReferralSection() {
           {/* Share Buttons */}
           <div className="flex flex-wrap gap-2">
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleShare('twitter')}
-              className="flex-1 min-w-[100px]"
-            >
-              <Share2 className="h-4 w-4 mr-2" />
-              X / Twitter
-            </Button>
-            <Button
-              variant="outline"
               size="sm"
               onClick={() => handleShare('facebook')}
-              className="flex-1 min-w-[100px]"
+              className="flex-1 min-w-[100px] justify-center bg-[#1877F2] hover:bg-[#0d65d9] text-white border-none"
             >
-              <Share2 className="h-4 w-4 mr-2" />
               Facebook
             </Button>
             <Button
-              variant="outline"
               size="sm"
               onClick={() => handleShare('whatsapp')}
-              className="flex-1 min-w-[100px]"
+              className="flex-1 min-w-[100px] justify-center bg-[#25D366] hover:bg-[#1da851] text-white border-none"
             >
-              <Share2 className="h-4 w-4 mr-2" />
               WhatsApp
             </Button>
             <Button
-              variant="outline"
+              size="sm"
+              onClick={() => handleShare('twitter')}
+              className="flex-1 min-w-[100px] justify-center bg-black hover:bg-neutral-800 text-white border-none dark:bg-white dark:hover:bg-neutral-200 dark:text-black"
+            >
+              X / Twitter
+            </Button>
+            <Button
               size="sm"
               onClick={() => handleShare('email')}
-              className="flex-1 min-w-[100px]"
+              className="flex-1 min-w-[100px] justify-center bg-primary hover:bg-primary/90 text-primary-foreground border-none"
             >
-              <Share2 className="h-4 w-4 mr-2" />
               Email
             </Button>
           </div>

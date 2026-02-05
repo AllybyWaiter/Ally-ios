@@ -133,7 +133,7 @@ export function detectQuickActions(content: string, aquariumId?: string | null):
   ) {
     // Extract percentage if mentioned
     const percentMatch = content.match(/(\d{1,2})%\s*(?:water\s*)?change/i);
-    const percent = percentMatch ? parseInt(percentMatch[1]) : undefined;
+    const percent = percentMatch ? parseInt(percentMatch[1], 10) : undefined;
     addAction('schedule_water_change', percent ? `Schedule ${percent}% Water Change` : 'Schedule Water Change', { percent });
   }
 

@@ -102,12 +102,64 @@ export const queryPresets = {
   },
 } as const;
 
+/**
+ * Retry configuration with exponential backoff
+ * Retries help recover from transient network issues, especially on mobile
+ */
+export const retryConfig = {
+  /** Maximum number of retry attempts */
+  maxRetries: 3,
+  /** Base delay in milliseconds (doubles with each retry) */
+  baseDelayMs: 1000,
+  /** Maximum delay between retries */
+  maxDelayMs: 30000,
+} as const;
+
+/**
+ * Calculates retry delay with exponential backoff
+ * @param attemptIndex - Zero-based retry attempt index
+ * @returns Delay in milliseconds before next retry
+ */
+export function getRetryDelay(attemptIndex: number): number {
+  const delay = retryConfig.baseDelayMs * Math.pow(2, attemptIndex);
+  return Math.min(delay, retryConfig.maxDelayMs);
+}
+
+/**
+ * Determines whether a failed query should be retried
+ * Does not retry on 4xx client errors (except 408 Request Timeout and 429 Too Many Requests)
+ */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  if (failureCount >= retryConfig.maxRetries) return false;
+
+  // Check for HTTP error status codes
+  const status = (error as { status?: number })?.status;
+  if (status) {
+    // Don't retry client errors (except timeout and rate limit)
+    if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+      return false;
+    }
+  }
+
+  // Check for Supabase error codes that shouldn't be retried
+  const code = (error as { code?: string })?.code;
+  if (code) {
+    // Don't retry authentication errors
+    if (code.startsWith('PGRST') || code === 'invalid_grant' || code === 'unauthorized') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // Default query client options
 export const defaultQueryOptions = {
   queries: {
     staleTime: STALE_TIMES.semiStatic, // Default: 2 minutes
     gcTime: GC_TIMES.semiStatic, // Default: 10 minutes
-    retry: 1,
+    retry: shouldRetry,
+    retryDelay: getRetryDelay,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   },

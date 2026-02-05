@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFreshSession } from '@/lib/sessionUtils';
 
 export interface PlantPhoto {
   id: string;
@@ -11,16 +12,6 @@ export interface PlantPhoto {
   created_at: string;
 }
 
-async function ensureFreshSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-    const now = Date.now();
-    if (expiresAt - now < 60000) {
-      await supabase.auth.refreshSession();
-    }
-  }
-}
 
 export async function fetchPlantPhotos(plantId: string): Promise<PlantPhoto[]> {
   await ensureFreshSession();
@@ -75,43 +66,47 @@ export async function uploadPlantPhoto(
   return data;
 }
 
-export async function setAsPrimaryPlantPhoto(photoId: string, plantId: string): Promise<void> {
+export async function setAsPrimaryPlantPhoto(photoId: string, plantId: string, userId: string): Promise<void> {
   await ensureFreshSession();
-  
-  // First, unset all other primary photos for this plant
+
+  // First, unset all other primary photos for this plant (with ownership verification)
   await supabase
     .from('plant_photos')
     .update({ is_primary: false })
-    .eq('plant_id', plantId);
+    .eq('plant_id', plantId)
+    .eq('user_id', userId);
 
-  // Set the new primary photo
+  // Set the new primary photo (with ownership verification)
   const { data: photo, error: photoError } = await supabase
     .from('plant_photos')
     .update({ is_primary: true })
     .eq('id', photoId)
+    .eq('user_id', userId)
     .select('photo_url')
     .maybeSingle();
 
   if (photoError) throw photoError;
   if (!photo) throw new Error('Photo not found');
 
-  // Update the plant's primary_photo_url
+  // Update the plant's primary_photo_url (with ownership verification)
   const { error: plantError } = await supabase
     .from('plants')
     .update({ primary_photo_url: photo.photo_url })
-    .eq('id', plantId);
+    .eq('id', plantId)
+    .eq('user_id', userId);
 
   if (plantError) throw plantError;
 }
 
-export async function deletePlantPhoto(photoId: string, plantId: string): Promise<void> {
+export async function deletePlantPhoto(photoId: string, plantId: string, userId: string): Promise<void> {
   await ensureFreshSession();
-  
-  // Get the photo to check if it's primary and get the URL for storage deletion
+
+  // Get the photo to check if it's primary and get the URL for storage deletion (with ownership verification)
   const { data: photo, error: fetchError } = await supabase
     .from('plant_photos')
     .select('photo_url, is_primary')
     .eq('id', photoId)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (fetchError) throw fetchError;
@@ -123,19 +118,21 @@ export async function deletePlantPhoto(photoId: string, plantId: string): Promis
     await supabase.storage.from('plant-photos').remove([urlParts[1]]);
   }
 
-  // Delete the record
+  // Delete the record (with ownership verification)
   const { error } = await supabase
     .from('plant_photos')
     .delete()
-    .eq('id', photoId);
+    .eq('id', photoId)
+    .eq('user_id', userId);
 
   if (error) throw error;
 
-  // If it was primary, clear the plant's primary_photo_url
+  // If it was primary, clear the plant's primary_photo_url (with ownership verification)
   if (photo.is_primary) {
     await supabase
       .from('plants')
       .update({ primary_photo_url: null })
-      .eq('id', plantId);
+      .eq('id', plantId)
+      .eq('user_id', userId);
   }
 }

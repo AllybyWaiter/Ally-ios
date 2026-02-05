@@ -1,5 +1,5 @@
 // Central export for all shared utilities
-export { corsHeaders, handleCors } from './cors.ts';
+export { corsHeaders, getCorsHeaders, handleCors, getResponseHeaders, jsonResponse, errorResponse, securityHeaders } from './cors.ts';
 export { createLogger, type Logger } from './logger.ts';
 export {
   validateString,

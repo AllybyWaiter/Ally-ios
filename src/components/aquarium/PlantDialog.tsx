@@ -62,7 +62,7 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
       if (!user) throw new Error('User not authenticated');
       
       if (plant) {
-        return updatePlant(plant.id, {
+        return updatePlant(plant.id, user.id, {
           name: data.name,
           species: data.species,
           quantity: data.quantity,
@@ -154,8 +154,8 @@ export function PlantDialog({ open, onOpenChange, aquariumId, plant }: PlantDial
                 min="1"
                 value={formData.quantity}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  setFormData({ ...formData, quantity: isNaN(val) || val < 1 ? 1 : val });
+                  const val = parseInt(e.target.value, 10);
+                  setFormData({ ...formData, quantity: Number.isNaN(val) || val < 1 ? 1 : val });
                 }}
                 required
               />

@@ -122,7 +122,7 @@ export function AquariumPhotoUpload({
             <div className="relative">
               <img
                 src={preview}
-                alt="Preview"
+                alt="Aquarium photo preview"
                 className="w-full h-48 object-cover rounded-lg"
               />
               <Button

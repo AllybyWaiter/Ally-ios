@@ -49,7 +49,7 @@ export default function LivestockDetailDialog({
             {livestock.primary_photo_url ? (
               <img
                 src={livestock.primary_photo_url}
-                alt={livestock.name}
+                alt={livestock.name || 'Livestock photo'}
                 className="h-12 w-12 rounded-full object-cover"
               />
             ) : (

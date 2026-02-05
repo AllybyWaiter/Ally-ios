@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,8 @@ interface WaitlistEntry {
 export const BetaAccessManager = () => {
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
+  const [isLoading, setIsLoading] = useState(true);
   const [granting, setGranting] = useState(false);
   const [countToGrant, setCountToGrant] = useState('5');
   const { toast } = useToast();
@@ -32,7 +34,7 @@ export const BetaAccessManager = () => {
   }, []);
 
   const fetchWaitlist = async () => {
-    setLoading(true);
+    setIsLoading(true);
     const { data, error } = await supabase
       .from('waitlist')
       .select('*')
@@ -47,13 +49,13 @@ export const BetaAccessManager = () => {
     } else {
       setWaitlist(data || []);
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
   const grantRandomBetaAccess = async () => {
     if (!user?.id) return;
     
-    const count = parseInt(countToGrant);
+    const count = parseInt(countToGrant, 10);
     if (isNaN(count) || count < 1) {
       toast({
         title: 'Error',
@@ -134,9 +136,13 @@ export const BetaAccessManager = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredWaitlist = waitlist.filter(entry =>
-    entry.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredWaitlist = useMemo(() => {
+    if (!debouncedSearchTerm) return waitlist;
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    return waitlist.filter(entry =>
+      entry.email.toLowerCase().includes(searchLower)
+    );
+  }, [waitlist, debouncedSearchTerm]);
 
   const stats = {
     total: waitlist.length,
@@ -144,7 +150,7 @@ export const BetaAccessManager = () => {
     pending: waitlist.filter(e => !e.beta_access_granted).length,
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

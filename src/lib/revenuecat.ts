@@ -154,14 +154,33 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
 
   try {
     const customerInfo = await getCustomerInfo();
+
+    // Debug: Log all active entitlements and subscriptions
+    logger.log('RevenueCat: Active entitlements:', Object.keys(customerInfo.entitlements.active));
+    logger.log('RevenueCat: Active subscriptions:', Object.keys(customerInfo.activeSubscriptions || {}));
+    logger.log('RevenueCat: Looking for entitlement:', ENTITLEMENT_ID);
+
     const proEntitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
 
     if (!proEntitlement) {
+      // Fallback: Check if there are any active subscriptions even without entitlement
+      const activeSubscriptions = customerInfo.activeSubscriptions || {};
+      if (Object.keys(activeSubscriptions).length > 0) {
+        logger.log('RevenueCat: Found active subscriptions but no entitlement. Subscriptions:', activeSubscriptions);
+        // Try to determine tier from subscription product ID
+        const firstSubId = Object.keys(activeSubscriptions)[0];
+        if (firstSubId.includes('gold')) return 'gold';
+        if (firstSubId.includes('plus')) return 'plus';
+        if (firstSubId.includes('basic')) return 'basic';
+        return 'basic'; // Default to basic if subscribed
+      }
+      logger.log('RevenueCat: No active entitlements or subscriptions found');
       return 'free';
     }
 
     // Map product to tier based on product identifier
     const productId = proEntitlement.productIdentifier;
+    logger.log('RevenueCat: Found entitlement with product:', productId);
 
     if (productId.includes('gold')) {
       return 'gold';

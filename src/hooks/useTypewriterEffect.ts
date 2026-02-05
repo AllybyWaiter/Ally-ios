@@ -53,7 +53,8 @@ export function useTypewriterEffect(
       accumulatedTimeRef.current = 0;
       pauseRemainingRef.current = 0;
     }
-    // Intentionally only depend on content being empty to avoid resetting during streaming
+    // Deps: We intentionally only react to content becoming empty (new message start).
+    // Using content.length would cause resets during streaming as content grows.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content === '']);
 

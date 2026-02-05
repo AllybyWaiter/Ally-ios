@@ -80,7 +80,7 @@ describe('livestock DAL', () => {
   });
 
   describe('fetchLivestockItem', () => {
-    it('should fetch a single livestock item', async () => {
+    it('should fetch a single livestock item with ownership verification', async () => {
       const mockLivestock = {
         id: 'ls-1',
         name: 'Nemo',
@@ -91,13 +91,14 @@ describe('livestock DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockLivestock, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockLivestock, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      const result = await fetchLivestockItem('ls-1');
+      const result = await fetchLivestockItem('ls-1', 'user-1');
 
       expect(mockChain.eq).toHaveBeenCalledWith('id', 'ls-1');
+      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(result).toEqual(mockLivestock);
     });
 
@@ -105,11 +106,11 @@ describe('livestock DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(fetchLivestockItem('invalid-id')).rejects.toEqual({ code: 'PGRST116' });
+      await expect(fetchLivestockItem('invalid-id', 'user-1')).rejects.toThrow('Livestock not found');
     });
   });
 
@@ -198,35 +199,37 @@ describe('livestock DAL', () => {
   });
 
   describe('updateLivestock', () => {
-    it('should update livestock with partial data', async () => {
+    it('should update livestock with ownership verification', async () => {
       const mockLivestock = { id: 'ls-1', name: 'Updated Name', health_status: 'recovering' };
 
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: mockLivestock, error: null }),
-          }),
+      const mockChain = {
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: mockLivestock, error: null }),
         }),
-      });
+      };
+      const mockUpdate = vi.fn().mockReturnValue(mockChain);
       vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      const result = await updateLivestock('ls-1', { name: 'Updated Name', health_status: 'recovering' });
+      const result = await updateLivestock('ls-1', 'user-1', { name: 'Updated Name', health_status: 'recovering' });
 
       expect(mockUpdate).toHaveBeenCalledWith({ name: 'Updated Name', health_status: 'recovering' });
+      expect(mockChain.eq).toHaveBeenCalledWith('id', 'ls-1');
+      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(result).toEqual(mockLivestock);
     });
 
     it('should throw error on failure', async () => {
-      const mockUpdate = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
-          }),
+      const mockChain = {
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
         }),
-      });
+      };
+      const mockUpdate = vi.fn().mockReturnValue(mockChain);
       vi.mocked(supabase.from).mockReturnValue({ update: mockUpdate } as any);
 
-      await expect(updateLivestock('ls-1', { notes: 'Test' })).rejects.toEqual({ message: 'Update failed' });
+      await expect(updateLivestock('ls-1', 'user-1', { notes: 'Test' })).rejects.toEqual({ message: 'Update failed' });
     });
   });
 

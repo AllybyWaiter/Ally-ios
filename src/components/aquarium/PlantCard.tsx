@@ -48,13 +48,13 @@ export const PlantCard = memo(function PlantCard({
       <Card className="overflow-hidden">
         {/* Photo thumbnail */}
         {plant.primary_photo_url ? (
-          <div 
+          <div
             className="aspect-video bg-muted cursor-pointer relative group"
             onClick={() => setDetailOpen(true)}
           >
             <img
               src={plant.primary_photo_url}
-              alt={plant.name}
+              alt={plant.name || 'Plant photo'}
               className="w-full h-full object-cover"
             />
             {photoCount > 0 && (

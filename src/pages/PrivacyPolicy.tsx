@@ -1,247 +1,150 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
-const PrivacyPolicy = () => {
+export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main className="container mx-auto px-4 py-16 max-w-4xl">
-        <h1 className="text-4xl font-bold mb-8 text-foreground">Privacy Policy</h1>
-        <p className="text-muted-foreground mb-8">Last updated: December 7, 2025</p>
-        
-        {/* Table of Contents */}
-        <nav className="mb-12 p-6 bg-muted/30 rounded-lg border">
-          <h2 className="text-lg font-semibold mb-4 text-foreground">Table of Contents</h2>
-          <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-            <li><a href="#introduction" className="hover:text-primary transition-colors">Introduction</a></li>
-            <li><a href="#beta-testing" className="hover:text-primary transition-colors">Beta Testing Data Collection</a></li>
-            <li><a href="#information-collected" className="hover:text-primary transition-colors">Information We Collect</a></li>
-            <li><a href="#how-we-use" className="hover:text-primary transition-colors">How We Use Your Information</a></li>
-            <li><a href="#ai-machine-learning" className="hover:text-primary transition-colors">AI and Machine Learning</a></li>
-            <li><a href="#data-security" className="hover:text-primary transition-colors">Data Security</a></li>
-            <li><a href="#data-retention" className="hover:text-primary transition-colors">Data Retention</a></li>
-            <li><a href="#third-party" className="hover:text-primary transition-colors">Third Party Services</a></li>
-            <li><a href="#international-transfers" className="hover:text-primary transition-colors">International Data Transfers</a></li>
-            <li><a href="#your-rights" className="hover:text-primary transition-colors">Your Rights</a></li>
-            <li><a href="#children" className="hover:text-primary transition-colors">Children's Privacy</a></li>
-            <li><a href="#cookies" className="hover:text-primary transition-colors">Cookies and Tracking</a></li>
-            <li><a href="#ccpa" className="hover:text-primary transition-colors">California Privacy Rights (CCPA/CPRA)</a></li>
-            <li><a href="#changes" className="hover:text-primary transition-colors">Changes to This Policy</a></li>
-            <li><a href="#contact" className="hover:text-primary transition-colors">Contact Us</a></li>
-          </ol>
-        </nav>
-
-        <div className="space-y-8 text-foreground/90">
-          <section id="introduction">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">1. Introduction</h2>
-            <p className="leading-relaxed">
-              Welcome to Ally ("we," "our," or "us"). Your privacy is critically important to us. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our aquatic space management services. By using Ally, you consent to the data practices described in this policy.
-            </p>
-          </section>
-
-          <section id="beta-testing">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">2. Beta Testing Data Collection</h2>
-            <p className="leading-relaxed mb-4">
-              As a closed beta service, we collect additional information to improve our platform:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Beta waitlist information: Email addresses and submission timestamps</li>
-              <li>Feature usage analytics: How beta users interact with different features</li>
-              <li>Error logs and crash reports: Technical data to identify and fix issues</li>
-              <li>Feedback and bug reports: User submitted information about service quality</li>
-              <li>Performance metrics: System response times and resource usage</li>
-            </ul>
-          </section>
-
-          <section id="information-collected">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">3. Information We Collect</h2>
-            <p className="leading-relaxed mb-4">
-              We may collect information about you in a variety of ways. The information we may collect includes:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Personal Data:</strong> Name, email address, and other contact information you provide during registration</li>
-              <li><strong>Aquarium Data:</strong> Information about your aquariums, including tank specifications, livestock, plants, equipment, and water test results</li>
-              <li><strong>Photo and Image Data:</strong> Water test strip photos and aquarium images you upload for AI analysis or record keeping</li>
-              <li><strong>Chat and Communication Data:</strong> Messages exchanged with our AI assistant (Ally) and support team</li>
-              <li><strong>Usage Data:</strong> Information about how you use our website and services, including pages visited, features used, and time spent</li>
-              <li><strong>Device Data:</strong> Information about your device, browser type, operating system, and IP address</li>
-            </ul>
-          </section>
-
-          <section id="how-we-use">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">4. How We Use Your Information</h2>
-            <p className="leading-relaxed mb-4">
-              We use the information we collect to:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Provide, operate, and maintain our aquarium management services</li>
-              <li>Improve, personalize, and expand our services based on your usage patterns</li>
-              <li>Understand and analyze how you use our services to enhance user experience</li>
-              <li>Provide AI powered recommendations and insights for your aquarium care</li>
-              <li>Communicate with you about updates, offers, and important service notifications</li>
-              <li>Process your transactions and manage your subscription</li>
-              <li>Detect, prevent, and address technical issues and security threats</li>
-            </ul>
-          </section>
-
-          <section id="ai-machine-learning">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">5. AI and Machine Learning</h2>
-            <p className="leading-relaxed mb-4">
-              Our service uses artificial intelligence and machine learning to provide personalized recommendations and features:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>AI Chat Assistant:</strong> Our AI assistant (Ally) processes your aquarium data and conversation history to provide contextual advice and recommendations</li>
-              <li><strong>Photo Analysis:</strong> Water test photos are processed by AI models to automatically read and interpret parameter values</li>
-              <li><strong>Maintenance Suggestions:</strong> AI analyzes your aquarium setup, livestock, and history to suggest maintenance tasks</li>
-              <li><strong>Memory and Preferences:</strong> For premium users, our AI may remember your preferences and past interactions to provide more personalized assistance</li>
-            </ul>
-            <p className="leading-relaxed mt-4">
-              <strong>Important:</strong> AI generated recommendations are provided for informational purposes only and should not be considered a substitute for professional aquarium care advice. We do not guarantee the accuracy of AI generated content.
-            </p>
-          </section>
-
-          <section id="data-security">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">6. Data Security</h2>
-            <p className="leading-relaxed">
-              We implement appropriate technical and organizational security measures to protect your personal information, including encryption of data in transit and at rest, secure authentication protocols, and regular security audits. However, no method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security. We encourage you to use strong passwords and protect your account credentials.
-            </p>
-          </section>
-
-          <section id="data-retention">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">7. Data Retention</h2>
-            <p className="leading-relaxed mb-4">
-              We retain your information for as long as necessary to fulfill the purposes outlined in this Privacy Policy:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Account Data:</strong> Retained while your account is active and for up to 30 days after account deletion to allow for recovery</li>
-              <li><strong>Aquarium and Test Data:</strong> Retained for the duration of your account to provide historical tracking and analysis</li>
-              <li><strong>Chat History:</strong> Conversation logs are retained for up to 12 months to provide context for AI interactions</li>
-              <li><strong>Uploaded Photos:</strong> Images are retained while your account is active and deleted within 30 days of account closure</li>
-              <li><strong>Usage Analytics:</strong> Anonymized usage data may be retained indefinitely for service improvement purposes</li>
-            </ul>
-            <p className="leading-relaxed mt-4">
-              Upon account deletion, we will delete or anonymize your personal data within 30 days, except where retention is required by law or for legitimate business purposes (such as fraud prevention).
-            </p>
-          </section>
-
-          <section id="third-party">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">8. Third Party Services</h2>
-            <p className="leading-relaxed mb-4">
-              We may employ third party companies and services to facilitate our service. These third parties have access to your personal information only to perform specific tasks on our behalf and are obligated not to disclose or use it for any other purpose:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Cloud Infrastructure:</strong> Secure hosting and database services</li>
-              <li><strong>AI Processing:</strong> Third party AI models for chat, photo analysis, and recommendations</li>
-              <li><strong>Error Monitoring:</strong> Services like Sentry to track and resolve technical issues</li>
-              <li><strong>Payment Processing:</strong> Secure payment processors for subscription management</li>
-              <li><strong>Email Services:</strong> Transactional email delivery for notifications and announcements</li>
-            </ul>
-          </section>
-
-          <section id="international-transfers">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">9. International Data Transfers</h2>
-            <p className="leading-relaxed">
-              Your information may be transferred to and maintained on servers located outside of your state, province, country, or other governmental jurisdiction where data protection laws may differ from those in your jurisdiction. If you are located outside the United States and choose to provide information to us, please note that we transfer the data to the United States and process it there. Your consent to this Privacy Policy followed by your submission of such information represents your agreement to that transfer. We take appropriate measures to ensure your data receives an adequate level of protection wherever it is processed.
-            </p>
-          </section>
-
-          <section id="your-rights">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">10. Your Rights</h2>
-            <p className="leading-relaxed mb-4">
-              Depending on your location, you may have the following rights regarding your personal information:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Access:</strong> Request a copy of the personal information we hold about you</li>
-              <li><strong>Rectification:</strong> Request correction of inaccurate or incomplete data</li>
-              <li><strong>Erasure:</strong> Request deletion of your personal data (subject to legal retention requirements)</li>
-              <li><strong>Restriction:</strong> Request limitation of processing of your data</li>
-              <li><strong>Portability:</strong> Request transfer of your data in a machine readable format</li>
-              <li><strong>Objection:</strong> Object to processing of your data for certain purposes</li>
-              <li><strong>Withdraw Consent:</strong> Withdraw previously given consent at any time</li>
-            </ul>
-            <p className="leading-relaxed mt-4">
-              To exercise any of these rights, please contact us at <a href="mailto:info@allybywaiter.com" className="text-primary hover:underline">info@allybywaiter.com</a>.
-            </p>
-          </section>
-
-          <section id="children">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">11. Children's Privacy</h2>
-            <p className="leading-relaxed">
-              Our services are not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and become aware that your child has provided us with personal information, please contact us immediately. If we discover that a child under 13 has provided us with personal information, we will delete such information from our servers promptly.
-            </p>
-          </section>
-
-          <section id="cookies">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">12. Cookies and Tracking</h2>
-            <p className="leading-relaxed mb-4">
-              We use cookies and similar tracking technologies to track activity on our service and store certain information:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Essential Cookies:</strong> Required for basic functionality, authentication, and security</li>
-              <li><strong>Preference Cookies:</strong> Remember your settings and preferences (language, theme, units)</li>
-              <li><strong>Analytics Cookies:</strong> Help us understand how visitors interact with our service</li>
-            </ul>
-            <p className="leading-relaxed mt-4">
-              You can instruct your browser to refuse all cookies or indicate when a cookie is being sent. However, if you do not accept cookies, you may not be able to use some portions of our service.
-            </p>
-          </section>
-
-          <section id="ccpa">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">13. California Privacy Rights (CCPA/CPRA)</h2>
-            <p className="leading-relaxed mb-4">
-              If you are a California resident, you have specific rights under the California Consumer Privacy Act (CCPA) and the California Privacy Rights Act (CPRA):
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Right to Know:</strong> You can request information about the categories and specific pieces of personal information we have collected about you, the sources of that information, the business purposes for collecting it, and the categories of third parties with whom we share it.</li>
-              <li><strong>Right to Delete:</strong> You can request that we delete personal information we have collected from you, subject to certain exceptions.</li>
-              <li><strong>Right to Correct:</strong> You can request that we correct inaccurate personal information we maintain about you.</li>
-              <li><strong>Right to Opt Out of Sale/Sharing:</strong> You have the right to opt out of the "sale" or "sharing" of your personal information. <strong>We do not sell your personal information.</strong> We do not share your personal information for cross context behavioral advertising purposes.</li>
-              <li><strong>Right to Limit Use of Sensitive Personal Information:</strong> You can limit the use and disclosure of sensitive personal information to purposes necessary for providing the services.</li>
-              <li><strong>Right to Non Discrimination:</strong> We will not discriminate against you for exercising any of your CCPA/CPRA rights.</li>
-            </ul>
-            <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Categories of Personal Information Collected</h3>
-            <p className="leading-relaxed mb-4">
-              In the past 12 months, we have collected the following categories of personal information:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Identifiers (name, email address, IP address)</li>
-              <li>Internet or network activity (browsing history, interactions with our service)</li>
-              <li>Geolocation data (for weather features, with your consent)</li>
-              <li>Professional or employment related information (if provided in support inquiries)</li>
-              <li>Inferences drawn from the above to create a profile about preferences</li>
-            </ul>
-            <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Do Not Sell or Share My Personal Information</h3>
-            <p className="leading-relaxed mb-4">
-              <strong>We do not sell your personal information.</strong> We do not share your personal information with third parties for cross context behavioral advertising. If you wish to make a verifiable consumer request or have questions about your California privacy rights, please contact us at <a href="mailto:privacy@allybywaiter.com" className="text-primary hover:underline">privacy@allybywaiter.com</a>.
-            </p>
-            <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Authorized Agents</h3>
-            <p className="leading-relaxed">
-              You may designate an authorized agent to make a request on your behalf. We may require verification that you authorized the agent to act on your behalf before fulfilling their request.
-            </p>
-          </section>
-
-          <section id="changes">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">14. Changes to This Privacy Policy</h2>
-            <p className="leading-relaxed">
-              We may update our Privacy Policy from time to time. We will notify you of any material changes by posting the new Privacy Policy on this page, updating the "Last updated" date, and sending you an email notification if the changes are significant. You are advised to review this Privacy Policy periodically for any changes. Changes to this Privacy Policy are effective when they are posted on this page.
-            </p>
-          </section>
-
-          <section id="contact">
-            <h2 className="text-2xl font-semibold mb-4 text-foreground">15. Contact Us</h2>
-            <p className="leading-relaxed">
-              If you have any questions about this Privacy Policy or our data practices, please contact us:
-            </p>
-            <ul className="list-none space-y-2 mt-4 ml-4">
-              <li><strong>Email:</strong> <a href="mailto:info@allybywaiter.com" className="text-primary hover:underline">info@allybywaiter.com</a></li>
-              <li><strong>Support:</strong> Use the in app support chat or contact form</li>
-            </ul>
-          </section>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/settings">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Settings
+            </Link>
+          </Button>
         </div>
-      </main>
-      <Footer />
+
+        <article className="prose prose-sm dark:prose-invert max-w-none">
+          <h1>Privacy Policy</h1>
+          <p className="text-muted-foreground">Last updated: February 2026</p>
+
+          <p>
+            This Privacy Policy describes how WA.I.TER ("we," "us," or "our") collects, uses, and shares
+            information about you when you use the Ally mobile application and related services (collectively, the "Service").
+          </p>
+
+          <h2>Information We Collect</h2>
+
+          <h3>Personal Information</h3>
+          <ul>
+            <li><strong>Account Information:</strong> Name and email address when you create an account</li>
+            <li><strong>Aquarium/Water Data:</strong> Information about your aquariums, pools, ponds, or other water bodies including water test results, equipment, and maintenance logs</li>
+            <li><strong>Photos:</strong> Images you upload for AI analysis (water tests, aquariums, livestock)</li>
+            <li><strong>Chat History:</strong> Conversations with Ally, our AI assistant</li>
+            <li><strong>Location Data:</strong> Approximate location for weather-based recommendations (only when you enable this feature)</li>
+          </ul>
+
+          <h3>Usage Information</h3>
+          <ul>
+            <li>Device information (device type, operating system)</li>
+            <li>App usage analytics and feature interactions</li>
+            <li>Error logs and crash reports</li>
+            <li>Performance metrics</li>
+          </ul>
+
+          <h2>How We Use Your Information</h2>
+
+          <h3>AI-Powered Features</h3>
+          <p>Ally uses your data to provide personalized recommendations:</p>
+          <ul>
+            <li>Your aquarium data and chat history are processed to generate water care recommendations</li>
+            <li>Photos are analyzed by AI models to identify water test results and provide insights</li>
+            <li>Premium users benefit from Ally's memory feature, which remembers your setup and preferences for more personalized advice</li>
+          </ul>
+
+          <div className="bg-muted p-4 rounded-lg my-4">
+            <p className="font-semibold">Important Disclaimer</p>
+            <p className="text-sm mb-0">
+              AI recommendations provided by Ally are informational only and not a substitute for professional
+              aquarium, pool, or pond care advice. We are not responsible for the health of aquatic life or
+              water quality outcomes based on AI suggestions.
+            </p>
+          </div>
+
+          <h3>Other Uses</h3>
+          <ul>
+            <li>Provide, maintain, and improve the Service</li>
+            <li>Send you notifications about your water care schedule</li>
+            <li>Respond to your support requests</li>
+            <li>Monitor and analyze usage trends</li>
+            <li>Detect and prevent fraud or abuse</li>
+          </ul>
+
+          <h2>Data Retention</h2>
+          <ul>
+            <li><strong>Account Data:</strong> Retained while your account is active, plus 30 days after deletion</li>
+            <li><strong>Chat History:</strong> Retained for up to 12 months</li>
+            <li><strong>Photos:</strong> Deleted within 30 days of account closure</li>
+            <li><strong>Anonymized Analytics:</strong> May be retained indefinitely</li>
+          </ul>
+
+          <h2>Third-Party Services</h2>
+          <p>We share data with the following types of service providers:</p>
+          <ul>
+            <li><strong>Cloud Infrastructure:</strong> For hosting and data storage</li>
+            <li><strong>AI Processing:</strong> Third-party AI models for photo analysis and recommendations</li>
+            <li><strong>Error Monitoring:</strong> Sentry for crash reporting and performance monitoring</li>
+            <li><strong>Payment Processing:</strong> For subscription billing</li>
+            <li><strong>Email Services:</strong> For transactional emails and notifications</li>
+          </ul>
+
+          <h2>Your Rights</h2>
+
+          <h3>All Users</h3>
+          <p>You have the right to:</p>
+          <ul>
+            <li>Access your personal data</li>
+            <li>Correct inaccurate data</li>
+            <li>Delete your account and associated data</li>
+            <li>Export your data</li>
+            <li>Opt out of marketing communications</li>
+          </ul>
+
+          <h3>California Residents (CCPA/CPRA)</h3>
+          <p>
+            We do not sell your personal information. We do not share your personal information for
+            cross-context behavioral advertising purposes.
+          </p>
+          <p>California residents have additional rights including:</p>
+          <ul>
+            <li>Right to know what personal information is collected</li>
+            <li>Right to delete personal information</li>
+            <li>Right to correct inaccurate personal information</li>
+            <li>Right to opt out of sale/sharing (not applicable as we don't sell data)</li>
+            <li>Right to non-discrimination for exercising privacy rights</li>
+          </ul>
+
+          <h3>European Users (GDPR)</h3>
+          <p>If you are in the European Economic Area, you have additional rights under GDPR including data portability and the right to lodge a complaint with a supervisory authority.</p>
+
+          <h2>Data Security</h2>
+          <p>
+            We implement appropriate technical and organizational measures to protect your personal information
+            against unauthorized access, alteration, disclosure, or destruction.
+          </p>
+
+          <h2>Children's Privacy</h2>
+          <p>
+            The Service is not intended for children under 13. We do not knowingly collect personal information
+            from children under 13. If you believe we have collected information from a child under 13, please
+            contact us immediately.
+          </p>
+
+          <h2>Changes to This Policy</h2>
+          <p>
+            We may update this Privacy Policy from time to time. We will notify you of material changes by
+            posting the new policy on this page and updating the "Last updated" date.
+          </p>
+
+          <h2>Contact Us</h2>
+          <p>For questions about this Privacy Policy:</p>
+          <ul>
+            <li>General inquiries: <a href="mailto:info@allybywaiter.com">info@allybywaiter.com</a></li>
+            <li>Privacy requests: <a href="mailto:privacy@allybywaiter.com">privacy@allybywaiter.com</a></li>
+          </ul>
+        </article>
+      </div>
     </div>
   );
-};
-
-export default PrivacyPolicy;
+}

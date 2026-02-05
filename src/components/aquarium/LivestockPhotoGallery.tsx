@@ -48,7 +48,7 @@ export default function LivestockPhotoGallery({
 
   const setPrimaryMutation = useMutation({
     mutationFn: (photo: LivestockPhoto) =>
-      setAsPrimaryPhoto(photo.id, livestockId, photo.photo_url),
+      setAsPrimaryPhoto(photo.id, livestockId, userId, photo.photo_url),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.livestock.photos(livestockId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.livestock.all });
@@ -59,7 +59,7 @@ export default function LivestockPhotoGallery({
 
   const deleteMutation = useMutation({
     mutationFn: (photo: LivestockPhoto) =>
-      deleteLivestockPhoto(photo.id, photo.photo_url),
+      deleteLivestockPhoto(photo.id, userId, photo.photo_url),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.livestock.photos(livestockId) });
       toast.success('Photo deleted');

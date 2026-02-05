@@ -29,7 +29,7 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
 
   const setPrimaryMutation = useMutation({
     mutationFn: ({ photoId, photoUrl }: { photoId: string; photoUrl: string }) =>
-      setAsPrimaryAquariumPhoto(photoId, aquariumId, photoUrl),
+      setAsPrimaryAquariumPhoto(photoId, aquariumId, userId, photoUrl),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.photos(aquariumId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.detail(aquariumId) });
@@ -40,7 +40,7 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
 
   const deleteMutation = useMutation({
     mutationFn: ({ photoId, photoUrl }: { photoId: string; photoUrl: string }) =>
-      deleteAquariumPhoto(photoId, photoUrl),
+      deleteAquariumPhoto(photoId, userId, photoUrl),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.photos(aquariumId) });
       toast.success('Photo deleted');

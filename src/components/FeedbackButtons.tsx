@@ -3,7 +3,7 @@ import { ThumbsUp, ThumbsDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
-import { createFeedback } from "@/infrastructure/queries/feedback";
+import { createFeedback, FeedbackContext } from "@/infrastructure/queries/feedback";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -11,7 +11,7 @@ interface FeedbackButtonsProps {
   feature: "chat" | "photo_analysis" | "task_suggestions" | "ticket_reply";
   messageId?: string;
   waterTestId?: string;
-  context?: Record<string, any>;
+  context?: FeedbackContext;
   onFeedbackSubmitted?: (rating: "positive" | "negative") => void;
   className?: string;
   size?: "sm" | "default";

@@ -65,20 +65,26 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
     setIsSubmitting(true);
 
     try {
-      // Analyze message priority using AI
+      // Get current session for authenticated requests
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      // Analyze message priority using AI (works for both authenticated and guest users)
       const priorityResponse = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ticket-priority`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({ message: validatedData.message }),
         }
       );
 
-      const { priority } = await priorityResponse.json();
+      const { priority } = priorityResponse.ok
+        ? await priorityResponse.json()
+        : { priority: 'medium' };
 
       // Create support ticket with AI-determined priority
       const { data: ticket, error: ticketError } = await supabase

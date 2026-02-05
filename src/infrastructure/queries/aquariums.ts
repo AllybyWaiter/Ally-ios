@@ -1,10 +1,17 @@
 /**
  * Aquariums Data Access Layer
- * 
+ *
  * Centralized Supabase queries for aquarium-related data.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { ensureFreshSession } from '@/lib/sessionUtils';
+import {
+  createAquariumSchema,
+  validateOrThrow,
+  aquariumResponseSchema,
+} from '@/lib/validationSchemas';
+import { logger } from '@/lib/logger';
 
 export interface Aquarium {
   id: string;
@@ -26,24 +33,24 @@ export interface AquariumWithTaskCount extends Aquarium {
   maintenance_tasks: { count: number }[];
 }
 
-// Helper to ensure session is fresh (iOS PWA fix)
-async function ensureFreshSession() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session) {
-    await supabase.auth.refreshSession();
-  }
-}
+
+/** Maximum number of aquariums to return in a single query */
+const MAX_AQUARIUMS_LIMIT = 100;
 
 // Fetch all aquariums for a user with pending task counts
-export async function fetchAquariumsWithTaskCounts(userId: string) {
+export async function fetchAquariumsWithTaskCounts(userId: string, limit?: number) {
   await ensureFreshSession();
-  
+
+  // Apply limit with sensible default
+  const effectiveLimit = limit ? Math.min(limit, MAX_AQUARIUMS_LIMIT) : MAX_AQUARIUMS_LIMIT;
+
   // First, fetch aquariums
   const { data: aquariums, error: aquariumError } = await supabase
     .from('aquariums')
     .select('*')
     .eq('user_id', userId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(effectiveLimit);
 
   if (aquariumError) throw aquariumError;
   if (!aquariums || aquariums.length === 0) return [];
@@ -81,6 +88,13 @@ export async function fetchAquarium(aquariumId: string) {
 
   if (error) throw error;
   if (!data) throw new Error('Aquarium not found');
+
+  // Validate response shape (logs warning if unexpected shape, doesn't throw)
+  const parseResult = aquariumResponseSchema.safeParse(data);
+  if (!parseResult.success) {
+    logger.warn('Aquarium response validation warning:', parseResult.error.flatten());
+  }
+
   return data as Aquarium;
 }
 
@@ -113,9 +127,12 @@ export async function createAquarium(aquarium: {
   notes?: string;
   user_id: string;
 }) {
+  // Validate input before sending to database
+  const validatedData = validateOrThrow(createAquariumSchema, aquarium, 'aquarium');
+
   const { data, error } = await supabase
     .from('aquariums')
-    .insert(aquarium)
+    .insert(validatedData)
     .select()
     .single();
 

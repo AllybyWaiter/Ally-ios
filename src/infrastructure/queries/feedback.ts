@@ -1,10 +1,39 @@
 /**
  * AI Feedback Data Access Layer
- * 
+ *
  * Centralized Supabase queries for AI feedback data.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+
+// Typed context for AI feedback - captures relevant info about the interaction
+export interface FeedbackContext {
+  // Core identifiers
+  aquarium_id?: string;
+  aquarium_name?: string;
+  water_body_type?: string;
+  conversation_id?: string;
+  message_count?: number;
+  // Media context
+  photo_url?: string;
+  // Task context
+  task_type?: string;
+  task_id?: string;
+  // Support ticket context
+  ticket_id?: string;
+  // Analysis context
+  parameter_name?: string;
+  parameter_value?: number;
+  // Chat context
+  model_version?: string;
+  response_time_ms?: number;
+  // Photo analysis context
+  analysis_type?: string;
+  detected_issues?: string;
+  // Session info
+  session_id?: string;
+  user_tier?: string;
+}
 
 export interface AIFeedback {
   id: string;
@@ -14,7 +43,7 @@ export interface AIFeedback {
   feedback_text: string | null;
   message_id: string | null;
   water_test_id: string | null;
-  context: Record<string, any> | null;
+  context: FeedbackContext | null;
   created_at: string;
 }
 
@@ -25,7 +54,7 @@ export async function createFeedback(feedback: {
   rating: 'positive' | 'negative';
   message_id?: string | null;
   water_test_id?: string | null;
-  context?: Record<string, any> | null;
+  context?: FeedbackContext | null;
   feedback_text?: string | null;
 }) {
   const { data, error } = await supabase
@@ -82,7 +111,7 @@ export interface TrainingDataEntry {
   rating: string;
   feedback_text: string | null;
   created_at: string;
-  context: Record<string, any> | null;
+  context: FeedbackContext | null;
   message_id: string | null;
   water_test_id: string | null;
   user_message?: string | null;
@@ -126,8 +155,8 @@ export async function fetchTrainingData(options?: {
   const chatFeedback = feedbackData?.filter(f => f.feature === 'chat' && f.message_id) || [];
   const messageIds = chatFeedback.map(f => f.message_id).filter(Boolean) as string[];
 
-  let messagesMap: Record<string, { content: string; conversation_id: string }> = {};
-  let conversationMessagesMap: Record<string, Array<{ role: string; content: string; created_at: string }>> = {};
+  const messagesMap: Record<string, { content: string; conversation_id: string }> = {};
+  const conversationMessagesMap: Record<string, Array<{ role: string; content: string; created_at: string }>> = {};
 
   if (messageIds.length > 0) {
     // Fetch the assistant messages that were rated
@@ -172,7 +201,7 @@ export async function fetchTrainingData(options?: {
       rating: feedback.rating,
       feedback_text: feedback.feedback_text,
       created_at: feedback.created_at,
-      context: feedback.context as Record<string, any> | null,
+      context: feedback.context as FeedbackContext | null,
       message_id: feedback.message_id,
       water_test_id: feedback.water_test_id,
       user_message: null,

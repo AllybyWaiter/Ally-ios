@@ -49,7 +49,7 @@ export default function MemoryManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [memories, setMemories] = useState<Memory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterWaterType, setFilterWaterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
@@ -93,7 +93,7 @@ export default function MemoryManager() {
   const fetchMemories = async () => {
     if (!user) return;
     
-    setLoading(true);
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_memories')
@@ -111,7 +111,7 @@ export default function MemoryManager() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -398,7 +398,7 @@ export default function MemoryManager() {
         </div>
 
         {/* Memory List */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>

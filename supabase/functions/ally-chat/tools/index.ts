@@ -34,23 +34,23 @@ export const tools = [
     }
   },
   {
-    type: "function", 
+    type: "function",
     function: {
       name: "add_equipment",
-      description: "Add a piece of equipment to the user's aquarium. Use when user mentions they have specific equipment that should be formally tracked in their tank profile.",
+      description: "Add equipment to user's aquarium/pool profile. ACTIVELY USE THIS when user mentions ANY equipment they own or just purchased. Watch for: filter brands (Fluval, Eheim, AquaClear), heaters (Cobalt, Fluval), lights (AI Prime, Kessil, Fluval Plant), pumps (Tunze, Vortech), skimmers (Reef Octopus, Nyos), CO2 systems, ATO, dosing pumps, controllers (Apex, GHL). When detected: 1) Extract brand/model/type, 2) Confirm with user, 3) Call this tool after confirmation. Example triggers: 'I have a Fluval 407', 'running an AI Prime', 'just got an Apex controller', 'my Eheim heater'.",
       parameters: {
         type: "object",
         properties: {
           aquarium_id: { type: "string", description: "ID of the aquarium to add equipment to" },
-          name: { type: "string", description: "Name of the equipment" },
-          equipment_type: { 
-            type: "string", 
+          name: { type: "string", description: "Full equipment name, e.g., 'Fluval 407 Canister Filter', 'AI Prime 16HD'" },
+          equipment_type: {
+            type: "string",
             enum: ["Filter", "Heater", "Light", "Pump", "Skimmer", "CO2 System", "Air Pump", "Wavemaker", "RO/DI System", "Auto Top Off", "Dosing Pump", "Reactor", "UV Sterilizer", "Chiller", "Controller", "Salt Chlorine Generator", "Pool Cleaner", "Other"],
-            description: "Type of equipment"
+            description: "Type of equipment - infer from context (e.g., 'Fluval 407' = Filter, 'AI Prime' = Light)"
           },
-          brand: { type: "string", description: "Brand name if mentioned" },
-          model: { type: "string", description: "Model name/number if mentioned" },
-          notes: { type: "string", description: "Any additional details" }
+          brand: { type: "string", description: "Brand name (Fluval, Eheim, AI, Kessil, Neptune, etc.) - extract from equipment name" },
+          model: { type: "string", description: "Model name/number (407, 2217, Prime 16HD, etc.) - extract from equipment name" },
+          notes: { type: "string", description: "Any additional details like wattage, size, or special features" }
         },
         required: ["aquarium_id", "name", "equipment_type"],
         additionalProperties: false
@@ -280,6 +280,40 @@ export const tools = [
           save_to_profile: { type: "boolean", description: "Whether to save the calculated volume to the pool profile. Only set true after user confirms." }
         },
         required: ["aquarium_id", "shape", "depth_type"],
+        additionalProperties: false
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "add_equipment_batch",
+      description: "Add MULTIPLE pieces of equipment at once. USE THIS instead of add_equipment when user mentions 2+ equipment items in one message. Examples: 'I have a Fluval 407, Fluval Plant 3.0, and Cobalt heater', 'running an Eheim 2217 and AI Prime', 'my setup includes a skimmer, return pump, and ATO'. Parse ALL equipment from the message, present a summary list for confirmation, then call this tool once to add everything.",
+      parameters: {
+        type: "object",
+        properties: {
+          aquarium_id: { type: "string", description: "ID of the aquarium to add equipment to" },
+          equipment_list: {
+            type: "array",
+            description: "Array of equipment items to add",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Full equipment name, e.g., 'Fluval 407 Canister Filter'" },
+                equipment_type: {
+                  type: "string",
+                  enum: ["Filter", "Heater", "Light", "Pump", "Skimmer", "CO2 System", "Air Pump", "Wavemaker", "RO/DI System", "Auto Top Off", "Dosing Pump", "Reactor", "UV Sterilizer", "Chiller", "Controller", "Salt Chlorine Generator", "Pool Cleaner", "Other"],
+                  description: "Type of equipment"
+                },
+                brand: { type: "string", description: "Brand name" },
+                model: { type: "string", description: "Model name/number" },
+                notes: { type: "string", description: "Any additional details" }
+              },
+              required: ["name", "equipment_type"]
+            }
+          }
+        },
+        required: ["aquarium_id", "equipment_list"],
         additionalProperties: false
       }
     }

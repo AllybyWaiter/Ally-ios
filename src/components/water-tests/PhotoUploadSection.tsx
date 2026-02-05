@@ -88,7 +88,7 @@ export function PhotoUploadSection({
           <div className="relative rounded-lg overflow-hidden border">
             <img
               src={photoPreview}
-              alt="Water test"
+              alt="Water test photo preview"
               className="w-full h-48 object-cover"
             />
             <Button

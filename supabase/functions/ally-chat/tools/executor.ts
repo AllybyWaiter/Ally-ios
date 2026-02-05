@@ -62,6 +62,9 @@ export async function executeToolCalls(
       case 'add_equipment':
         result = await executeAddEquipment(supabase, functionArgs, toolCall.id, logger);
         break;
+      case 'add_equipment_batch':
+        result = await executeAddEquipmentBatch(supabase, functionArgs, toolCall.id, logger);
+        break;
       case 'create_task':
         result = await executeCreateTask(supabase, functionArgs, toolCall.id, logger);
         break;
@@ -198,6 +201,103 @@ async function executeAddEquipment(
       tool_call_id: toolCallId,
       role: 'tool',
       content: JSON.stringify({ success: false, error: 'Failed to add equipment' })
+    };
+  }
+}
+
+async function executeAddEquipmentBatch(
+  supabase: SupabaseClient,
+  args: {
+    aquarium_id: string;
+    equipment_list: Array<{
+      name: string;
+      equipment_type: string;
+      brand?: string;
+      model?: string;
+      notes?: string;
+    }>;
+  },
+  toolCallId: string,
+  logger: Logger
+): Promise<ToolResult> {
+  try {
+    if (!args.equipment_list || args.equipment_list.length === 0) {
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'No equipment items provided' })
+      };
+    }
+
+    const results: Array<{ name: string; success: boolean; error?: string }> = [];
+    const successfulItems: string[] = [];
+    const failedItems: string[] = [];
+
+    // Insert each equipment item
+    for (const item of args.equipment_list) {
+      const { error } = await supabase
+        .from('equipment')
+        .insert({
+          aquarium_id: args.aquarium_id,
+          name: item.name,
+          equipment_type: item.equipment_type,
+          brand: item.brand || null,
+          model: item.model || null,
+          notes: item.notes || null
+        });
+
+      if (error) {
+        logger.error('Failed to add equipment item', { name: item.name, error: error.message });
+        results.push({ name: item.name, success: false, error: error.message });
+        failedItems.push(item.name);
+      } else {
+        results.push({ name: item.name, success: true });
+        successfulItems.push(item.name);
+      }
+    }
+
+    const totalCount = args.equipment_list.length;
+    const successCount = successfulItems.length;
+    const failCount = failedItems.length;
+
+    logger.info('Batch equipment add completed', {
+      total: totalCount,
+      success: successCount,
+      failed: failCount
+    });
+
+    // Build response message
+    let message: string;
+    if (failCount === 0) {
+      message = `Successfully added ${successCount} equipment item${successCount > 1 ? 's' : ''}: ${successfulItems.join(', ')}`;
+    } else if (successCount === 0) {
+      message = `Failed to add any equipment. Errors occurred for: ${failedItems.join(', ')}`;
+    } else {
+      message = `Added ${successCount} of ${totalCount} items. Success: ${successfulItems.join(', ')}. Failed: ${failedItems.join(', ')}`;
+    }
+
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({
+        success: successCount > 0,
+        message,
+        summary: {
+          total: totalCount,
+          successful: successCount,
+          failed: failCount
+        },
+        results,
+        added_items: successfulItems,
+        failed_items: failedItems
+      })
+    };
+  } catch (e) {
+    logger.error('Error in batch equipment add', { error: String(e) });
+    return {
+      tool_call_id: toolCallId,
+      role: 'tool',
+      content: JSON.stringify({ success: false, error: 'Failed to add equipment batch' })
     };
   }
 }

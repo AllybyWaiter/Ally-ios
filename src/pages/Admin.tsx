@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Download, Search, Trash2, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import SupportTickets from '@/components/admin/SupportTickets';
 import UserManagement from '@/components/admin/UserManagement';
 import AnnouncementManager from '@/components/admin/AnnouncementManager';
-import BlogManager from '@/components/admin/BlogManager';
 import { RoleManager } from '@/components/admin/RoleManager';
 import { BetaAccessManager } from '@/components/admin/BetaAccessManager';
 import UserActivityLogs from '@/components/admin/UserActivityLogs';
@@ -24,7 +20,6 @@ import FeatureFlagManager from '@/components/admin/FeatureFlagManager';
 import { AdminDashboardHome } from '@/components/admin/AdminDashboardHome';
 import { ReferralLeaderboard } from '@/components/admin/ReferralLeaderboard';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
-import { formatDate } from '@/lib/formatters';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
 import { FeatureArea } from '@/lib/sentry';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
@@ -32,131 +27,23 @@ import { CommandPalette } from '@/components/admin/CommandPalette';
 import { ContactsManager } from '@/components/admin/ContactsManager';
 import { SystemHealth } from '@/components/admin/SystemHealth';
 import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
-import { PartnerApplicationsManager } from '@/components/admin/PartnerApplicationsManager';
-
-interface WaitlistEntry {
-  id: string;
-  email: string;
-  created_at: string;
-}
-
-interface ContactEntry {
-  id: string;
-  name: string;
-  email: string;
-  message: string;
-  status: string;
-  created_at: string;
-}
 
 export default function Admin() {
   const { hasPermission, hasAnyRole } = useAuth();
   const { toast } = useToast();
-  
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>([]);
-  const [contacts, setContacts] = useState<ContactEntry[]>([]);
-  const [waitlistSearch, setWaitlistSearch] = useState('');
-  const [contactsSearch, setContactsSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  // Determine default section based on role - content creators go directly to blog
-  const getDefaultSection = () => {
-    if (hasPermission('manage_blog') && !hasAnyRole(['admin', 'super_admin'])) {
-      return 'blog';
-    }
-    return 'overview';
-  };
-  
-  const [activeSection, setActiveSection] = useState(getDefaultSection);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('overview');
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    // Simulate initial load
+    setIsLoading(false);
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
-    
-    const { data: waitlistData } = await supabase
-      .from('waitlist')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    const { data: contactsData } = await supabase
-      .from('contacts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (waitlistData) setWaitlist(waitlistData);
-    if (contactsData) setContacts(contactsData);
-    
-    setLoading(false);
-  };
-
-  const deleteWaitlistEntry = async (id: string) => {
-    const { error } = await supabase
-      .from('waitlist')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete entry',
-        variant: 'destructive',
-      });
-    } else {
-      toast({ title: 'Success', description: 'Entry deleted' });
-      fetchData();
-    }
-  };
-
-  const deleteContact = async (id: string) => {
-    const { error } = await supabase
-      .from('contacts')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete contact',
-        variant: 'destructive',
-      });
-    } else {
-      toast({ title: 'Success', description: 'Contact deleted' });
-      fetchData();
-    }
-  };
-
-  const exportToCSV = <T extends object>(data: T[], filename: string) => {
-    if (data.length === 0) return;
-    const headers = Object.keys(data[0]);
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => headers.map(header => JSON.stringify((row as Record<string, unknown>)[header] ?? '')).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filename}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-
-  const filteredWaitlist = waitlist.filter(entry =>
-    entry.email.toLowerCase().includes(waitlistSearch.toLowerCase())
-  );
-
-  const filteredContacts = contacts.filter(entry =>
-    entry.name.toLowerCase().includes(contactsSearch.toLowerCase()) ||
-    entry.email.toLowerCase().includes(contactsSearch.toLowerCase()) ||
-    entry.message.toLowerCase().includes(contactsSearch.toLowerCase())
-  );
-
   const renderContent = () => {
-    if (loading) {
+    if (isLoading) {
       return (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -204,14 +91,6 @@ export default function Admin() {
           </SectionErrorBoundary>
         );
 
-      case 'blog':
-        if (!hasPermission('manage_blog') && !hasPermission('publish_blog')) return <AccessDenied />;
-        return (
-          <SectionErrorBoundary fallbackTitle="Failed to load blog manager" featureArea={FeatureArea.ADMIN}>
-            <BlogManager />
-          </SectionErrorBoundary>
-        );
-
       case 'announcements':
         if (!hasPermission('manage_announcements')) return <AccessDenied />;
         return (
@@ -226,70 +105,6 @@ export default function Admin() {
           <SectionErrorBoundary fallbackTitle="Failed to load contacts" featureArea={FeatureArea.ADMIN}>
             <ContactsManager />
           </SectionErrorBoundary>
-        );
-
-      case 'partners':
-        if (!hasAnyRole(['admin'])) return <AccessDenied />;
-        return (
-          <SectionErrorBoundary fallbackTitle="Failed to load partner applications" featureArea={FeatureArea.ADMIN}>
-            <PartnerApplicationsManager />
-          </SectionErrorBoundary>
-        );
-
-      case 'waitlist':
-        if (!hasAnyRole(['admin'])) return <AccessDenied />;
-        return (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <CardTitle>Waitlist Signups</CardTitle>
-                  <CardDescription>Manage and export waitlist entries</CardDescription>
-                </div>
-                <Button onClick={() => exportToCSV(waitlist, 'waitlist')} variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 mt-4">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by email..."
-                  value={waitlistSearch}
-                  onChange={(e) => setWaitlistSearch(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredWaitlist.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{entry.email}</TableCell>
-                      <TableCell>{formatDate(entry.created_at, 'PP')}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteWaitlistEntry(entry.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
         );
 
       case 'tickets':
@@ -395,15 +210,15 @@ export default function Admin() {
           </main>
         </SidebarInset>
       </div>
-      
+
       {/* Global components */}
-      <CommandPalette 
-        open={commandPaletteOpen} 
+      <CommandPalette
+        open={commandPaletteOpen}
         onOpenChange={setCommandPaletteOpen}
         onSectionChange={setActiveSection}
       />
-      <KeyboardShortcuts 
-        open={shortcutsOpen} 
+      <KeyboardShortcuts
+        open={shortcutsOpen}
         onOpenChange={setShortcutsOpen}
         onCommandPaletteOpen={() => setCommandPaletteOpen(true)}
         onSectionChange={setActiveSection}

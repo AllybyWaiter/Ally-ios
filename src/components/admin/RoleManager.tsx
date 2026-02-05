@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +68,7 @@ export const RoleManager = () => {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [showAuditDialog, setShowAuditDialog] = useState(false);
@@ -130,15 +132,16 @@ export const RoleManager = () => {
     return stats;
   }, [usersData?.users]);
 
-  // Filter users based on search query
+  // Filter users based on debounced search query
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return usersData?.users || [];
+    if (!debouncedSearchQuery) return usersData?.users || [];
+    const searchLower = debouncedSearchQuery.toLowerCase();
     return (usersData?.users || []).filter(user =>
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.roles.some(role => role.toLowerCase().includes(searchQuery.toLowerCase()))
+      user.email.toLowerCase().includes(searchLower) ||
+      user.name?.toLowerCase().includes(searchLower) ||
+      user.roles.some(role => role.toLowerCase().includes(searchLower))
     );
-  }, [searchQuery, usersData?.users]);
+  }, [debouncedSearchQuery, usersData?.users]);
 
   // Fetch audit logs using React Query
   const { data: auditLogs = [] } = useQuery({

@@ -102,7 +102,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
 
   // Delete mutation with optimistic updates
   const deleteMutation = useMutation({
-    mutationFn: deleteTask,
+    mutationFn: (taskId: string) => deleteTask(taskId, user!.id),
     onMutate: async (taskId: string) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
       const previousTasks = queryClient.getQueryData<MaintenanceTask[]>(queryKeys.tasks.list(aquariumId));
@@ -141,15 +141,16 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
   // Complete mutation with optimistic updates
   const completeMutation = useMutation({
     mutationFn: async (taskId: string) => {
-      // Get task details for potential recurring task creation
+      // Get task details for potential recurring task creation (with ownership verification)
       const { data: task } = await supabase
         .from("maintenance_tasks")
-        .select("*")
+        .select("*, aquariums!inner(user_id)")
         .eq("id", taskId)
+        .eq("aquariums.user_id", user!.id)
         .maybeSingle();
 
       // Complete the task
-      await completeTask(taskId);
+      await completeTask(taskId, user!.id);
 
       // Handle task-level recurring tasks first
       if (task?.is_recurring && task?.recurrence_days) {

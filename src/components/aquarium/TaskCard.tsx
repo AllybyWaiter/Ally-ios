@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "@/lib/formatters";
 import type { MaintenanceTask } from "@/infrastructure/queries";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getTaskTypeConfig } from "@/components/calendar/types";
 
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PP"): string => {
   if (!dateValue) return '';
@@ -54,7 +55,7 @@ export const PendingTaskCard = memo(function PendingTaskCard({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h4 className="font-semibold">{task.task_name}</h4>
-              <Badge variant="secondary">{task.task_type || ''}</Badge>
+              <Badge variant="secondary">{getTaskTypeConfig(task.task_type || 'other').label}</Badge>
               {task.is_recurring && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -126,7 +127,7 @@ export const CompletedTaskCard = memo(function CompletedTaskCard({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h4 className="font-semibold">{task.task_name}</h4>
-              <Badge variant="secondary">{task.task_type}</Badge>
+              <Badge variant="secondary">{getTaskTypeConfig(task.task_type || 'other').label}</Badge>
               <Badge variant="outline">{t('tasks.completed')}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">

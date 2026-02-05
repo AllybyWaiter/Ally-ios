@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Download, Edit, Mail, UserCheck, UserX, Trash2, CheckSquare, Square, Activity } from 'lucide-react';
 import UserActivityLogs from './UserActivityLogs';
@@ -40,9 +42,9 @@ export default function UserManagement() {
   const { hasRole } = useAuth();
   const isSuperAdmin = hasRole('super_admin');
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
@@ -82,17 +84,21 @@ export default function UserManagement() {
     };
   }, []);
 
-  useEffect(() => {
-    const filtered = users.filter(user => 
-      user.email?.toLowerCase().includes(search.toLowerCase()) ||
-      user.name?.toLowerCase().includes(search.toLowerCase()) ||
-      user.subscription_tier?.toLowerCase().includes(search.toLowerCase())
+  // Filter users based on debounced search
+  const filteredUsers = useMemo(() => {
+    if (!debouncedSearch) {
+      return users;
+    }
+    const searchLower = debouncedSearch.toLowerCase();
+    return users.filter(user =>
+      user.email?.toLowerCase().includes(searchLower) ||
+      user.name?.toLowerCase().includes(searchLower) ||
+      user.subscription_tier?.toLowerCase().includes(searchLower)
     );
-    setFilteredUsers(filtered);
-  }, [search, users]);
+  }, [debouncedSearch, users]);
 
   const fetchUsers = async () => {
-    setLoading(true);
+    setIsLoading(true);
     
     const { data, error } = await supabase
       .from('profiles')
@@ -107,15 +113,14 @@ export default function UserManagement() {
       });
     } else {
       setUsers(data || []);
-      setFilteredUsers(data || []);
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
-  const handleEditUser = (user: UserProfile) => {
+  const handleEditUser = useCallback((user: UserProfile) => {
     setEditingUser({ ...user });
     setEditDialogOpen(true);
-  };
+  }, []);
 
   const handleSaveUser = async () => {
     if (!editingUser) return;
@@ -148,15 +153,17 @@ export default function UserManagement() {
     }
   };
 
-  const toggleUserSelection = (userId: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
-    }
-    setSelectedUsers(newSelected);
-  };
+  const toggleUserSelection = useCallback((userId: string) => {
+    setSelectedUsers(prev => {
+      const newSelected = new Set(prev);
+      if (newSelected.has(userId)) {
+        newSelected.delete(userId);
+      } else {
+        newSelected.add(userId);
+      }
+      return newSelected;
+    });
+  }, []);
 
   const toggleSelectAll = () => {
     if (selectedUsers.size === filteredUsers.length) {
@@ -258,27 +265,27 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeleteUser = (user: UserProfile) => {
+  const handleDeleteUser = useCallback((user: UserProfile) => {
     setDeletingUser(user);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleSuspendUser = (user: UserProfile) => {
+  const handleSuspendUser = useCallback((user: UserProfile) => {
     setSuspendingUser(user);
     setSuspensionType('suspend');
     setSuspensionReason('');
     setSuspensionDuration('7');
     setSuspendDialogOpen(true);
-  };
+  }, []);
 
-  const handleBanUser = (user: UserProfile) => {
+  const handleBanUser = useCallback((user: UserProfile) => {
     setSuspendingUser(user);
     setSuspensionType('ban');
     setSuspensionReason('');
     setSuspendDialogOpen(true);
-  };
+  }, []);
 
-  const handleReactivateUser = async (user: UserProfile) => {
+  const handleReactivateUser = useCallback(async (user: UserProfile) => {
     try {
       const { error } = await supabase
         .from('profiles')
@@ -305,7 +312,7 @@ export default function UserManagement() {
         variant: 'destructive',
       });
     }
-  };
+  }, [toast, fetchUsers]);
 
   const confirmSuspendUser = async () => {
     if (!suspendingUser) return;
@@ -410,7 +417,7 @@ export default function UserManagement() {
     a.click();
   };
 
-  const getTierBadge = (tier: string) => {
+  const getTierBadge = useCallback((tier: string) => {
     const variants: Record<string, "default" | "secondary" | "outline"> = {
       free: 'secondary',
       plus: 'default',
@@ -418,20 +425,20 @@ export default function UserManagement() {
       enterprise: 'default',
     };
     return <Badge variant={variants[tier] || 'outline'}>{tier}</Badge>;
-  };
+  }, []);
 
-  const getStatusBadge = (status: string, suspended_until: string | null) => {
+  const getStatusBadge = useCallback((status: string, suspended_until: string | null) => {
     if (status === 'active') {
       return <Badge variant="default" className="bg-green-500">Active</Badge>;
     } else if (status === 'suspended') {
       const until = suspended_until ? new Date(suspended_until) : null;
       const isPermanent = !until;
       const isExpired = until && until <= new Date();
-      
+
       if (isExpired) {
         return <Badge variant="default" className="bg-green-500">Active</Badge>;
       }
-      
+
       return (
         <Badge variant="destructive">
           Suspended {isPermanent ? '(Permanent)' : `until ${formatDate(suspended_until!, 'PP')}`}
@@ -441,23 +448,141 @@ export default function UserManagement() {
       return <Badge variant="destructive" className="bg-red-600">Banned</Badge>;
     }
     return <Badge variant="outline">{status}</Badge>;
-  };
+  }, []);
 
-  if (loading) {
+  // All hooks must be called before any conditional returns (React rules of hooks)
+  const ROW_HEIGHT = 72; // Approximate height of each table row
+
+  // Memoize stats calculation to avoid filtering on every render
+  const stats = useMemo(() => {
+    let free = 0, plus = 0, gold = 0, completed = 0;
+    for (const user of users) {
+      if (user.subscription_tier === 'free') free++;
+      else if (user.subscription_tier === 'plus') plus++;
+      else if (user.subscription_tier === 'gold') gold++;
+      if (user.onboarding_completed) completed++;
+    }
+    return { total: users.length, free, plus, gold, completed };
+  }, [users]);
+
+  // Virtualization setup for the user table
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: filteredUsers.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 10,
+  });
+
+  // Memoized row renderer for better performance
+  const renderUserRow = useCallback((user: UserProfile, virtualRow: { index: number; start: number; size: number }) => {
+    return (
+      <TableRow
+        key={user.id}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: `${virtualRow.size}px`,
+          transform: `translateY(${virtualRow.start}px)`,
+        }}
+      >
+        <TableCell className="w-[50px]">
+          <Checkbox
+            checked={selectedUsers.has(user.id)}
+            onCheckedChange={() => toggleUserSelection(user.id)}
+          />
+        </TableCell>
+        <TableCell>
+          <div>
+            <div className="font-medium">{user.name || 'No name'}</div>
+            <div className="text-sm text-muted-foreground">{user.email}</div>
+            {user.suspension_reason && (
+              <div className="text-xs text-muted-foreground mt-1">
+                Reason: {user.suspension_reason}
+              </div>
+            )}
+          </div>
+        </TableCell>
+        <TableCell>{getStatusBadge(user.status, user.suspended_until)}</TableCell>
+        <TableCell>{getTierBadge(user.subscription_tier)}</TableCell>
+        <TableCell className="capitalize">{user.skill_level}</TableCell>
+        <TableCell>
+          {user.onboarding_completed ? (
+            <UserCheck className="h-4 w-4 text-green-500" />
+          ) : (
+            <UserX className="h-4 w-4 text-muted-foreground" />
+          )}
+        </TableCell>
+        <TableCell>{formatDate(user.created_at, 'PP')}</TableCell>
+        <TableCell className="text-right">
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEditUser(user)}
+              aria-label="Edit user"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            {isSuperAdmin && (
+              <>
+                {user.status === 'active' ? (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSuspendUser(user)}
+                      className="text-orange-500 hover:text-orange-600"
+                    >
+                      Suspend
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleBanUser(user)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      Ban
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleReactivateUser(user)}
+                    className="text-green-500 hover:text-green-600"
+                  >
+                    Reactivate
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteUser(user)}
+                  className="text-destructive hover:text-destructive"
+                  aria-label="Delete user"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    );
+  }, [selectedUsers, isSuperAdmin, toggleUserSelection, handleEditUser, handleSuspendUser, handleBanUser, handleReactivateUser, handleDeleteUser, getTierBadge, getStatusBadge]);
+
+  // Early return for loading state - AFTER all hooks
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
-
-  const stats = {
-    total: users.length,
-    free: users.filter(u => u.subscription_tier === 'free').length,
-    plus: users.filter(u => u.subscription_tier === 'plus').length,
-    gold: users.filter(u => u.subscription_tier === 'gold').length,
-    completed: users.filter(u => u.onboarding_completed).length,
-  };
 
   return (
     <div className="space-y-6">
@@ -571,6 +696,7 @@ export default function UserManagement() {
           )}
         </CardHeader>
         <CardContent>
+          {/* Fixed header table */}
           <Table>
             <TableHeader>
               <TableRow>
@@ -589,95 +715,35 @@ export default function UserManagement() {
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedUsers.has(user.id)}
-                      onCheckedChange={() => toggleUserSelection(user.id)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{user.name || 'No name'}</div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
-                      {user.suspension_reason && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Reason: {user.suspension_reason}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(user.status, user.suspended_until)}</TableCell>
-                  <TableCell>{getTierBadge(user.subscription_tier)}</TableCell>
-                  <TableCell className="capitalize">{user.skill_level}</TableCell>
-                  <TableCell>
-                    {user.onboarding_completed ? (
-                      <UserCheck className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <UserX className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDate(user.created_at, 'PP')}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditUser(user)}
-                        aria-label="Edit user"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      {isSuperAdmin && (
-                        <>
-                          {user.status === 'active' ? (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleSuspendUser(user)}
-                                className="text-orange-500 hover:text-orange-600"
-                              >
-                                Suspend
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleBanUser(user)}
-                                className="text-red-500 hover:text-red-600"
-                              >
-                                Ban
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleReactivateUser(user)}
-                              className="text-green-500 hover:text-green-600"
-                            >
-                              Reactivate
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user)}
-                            className="text-destructive hover:text-destructive"
-                            aria-label="Delete user"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
           </Table>
+          {/* Virtualized scrollable body */}
+          <div
+            ref={tableContainerRef}
+            className="h-[500px] overflow-auto border rounded-md"
+            style={{ contain: 'strict' }}
+          >
+            <div
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              <Table>
+                <tbody>
+                  {virtualizer.getVirtualItems().map((virtualRow) => {
+                    const user = filteredUsers[virtualRow.index];
+                    return renderUserRow(user, virtualRow);
+                  })}
+                </tbody>
+              </Table>
+            </div>
+          </div>
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              No users found matching your search.
+            </div>
+          )}
         </CardContent>
       </Card>
 

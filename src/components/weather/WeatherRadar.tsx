@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback, Component, ReactNode } from 'react';
 import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
+import type { Geometry, Position, GeometryCollection } from 'geojson';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Critical: ensure Leaflet CSS is loaded
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -127,7 +129,7 @@ function MapUpdater({ latitude, longitude }: { latitude: number; longitude: numb
     try {
       map.setView([latitude, longitude], map.getZoom());
     } catch (err) {
-      console.error('[Radar] MapUpdater error:', err);
+      logger.error('[Radar] MapUpdater error:', err);
     }
   }, [latitude, longitude, map]);
   
@@ -146,7 +148,7 @@ function MapResizer() {
       try {
         map.invalidateSize();
       } catch (err) {
-        console.error('[Radar] MapResizer error:', err);
+        logger.error('[Radar] MapResizer error:', err);
       }
     });
     
@@ -157,7 +159,7 @@ function MapResizer() {
       try {
         map.invalidateSize();
       } catch (err) {
-        console.error('[Radar] MapResizer initial error:', err);
+        logger.error('[Radar] MapResizer initial error:', err);
       }
     }, 300);
     
@@ -189,7 +191,7 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
         }).addTo(map);
       }
     } catch (err) {
-      console.error('[Radar] RadarLayer error:', err);
+      logger.error('[Radar] RadarLayer error:', err);
     }
 
     return () => {
@@ -198,7 +200,7 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
           map.removeLayer(layerRef.current);
         }
       } catch (err) {
-        console.error('[Radar] RadarLayer cleanup error:', err);
+        logger.error('[Radar] RadarLayer cleanup error:', err);
       }
     };
   }, [framePath, opacity, map]);
@@ -206,29 +208,35 @@ function RadarLayer({ framePath, opacity }: { framePath: string | null; opacity:
   return null;
 }
 
+// Type for coordinate validation - can be a Position or nested arrays of positions
+type CoordinateArray = Position | Position[] | Position[][] | Position[][][];
+
 // Enhanced GeoJSON validation with coordinate checking
-function isValidGeometry(geom: any): geom is GeoJSON.Geometry {
+function isValidGeometry(geom: unknown): geom is Geometry {
   if (!geom || typeof geom !== 'object') return false;
-  if (!geom.type) return false;
-  
+
+  const geometry = geom as { type?: string; coordinates?: CoordinateArray; geometries?: unknown[] };
+  if (!geometry.type) return false;
+
   // Check coordinates are valid numbers (not NaN or Infinity)
-  const validateCoords = (coords: any): boolean => {
+  const validateCoords = (coords: CoordinateArray): boolean => {
     if (!Array.isArray(coords)) return false;
-    
+
     // Check if it's a coordinate pair [lon, lat]
     if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
       return Number.isFinite(coords[0]) && Number.isFinite(coords[1]);
     }
-    
+
     // Otherwise it's a nested array, validate each element
-    return coords.every((c) => validateCoords(c));
+    return (coords as CoordinateArray[]).every((c) => validateCoords(c));
   };
-  
-  if (geom.type === 'GeometryCollection') {
-    return Array.isArray(geom.geometries) && geom.geometries.every((g: any) => isValidGeometry(g));
+
+  if (geometry.type === 'GeometryCollection') {
+    const geoCollection = geometry as GeometryCollection;
+    return Array.isArray(geoCollection.geometries) && geoCollection.geometries.every((g) => isValidGeometry(g));
   }
-  
-  return Array.isArray(geom.coordinates) && validateCoords(geom.coordinates);
+
+  return Array.isArray(geometry.coordinates) && validateCoords(geometry.coordinates);
 }
 
 // Alert polygons layer - with hardened error handling
@@ -239,13 +247,7 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
     <>
       {alerts.map((alert) => {
         // Validate geometry before rendering
-        if (!alert.geometry) {
-          console.log('[Radar] AlertsLayer: skipping alert without geometry:', alert.id);
-          return null;
-        }
-        
-        if (!isValidGeometry(alert.geometry)) {
-          console.log('[Radar] AlertsLayer: skipping alert with invalid geometry:', alert.id);
+        if (!alert.geometry || !isValidGeometry(alert.geometry)) {
           return null;
         }
         
@@ -271,7 +273,7 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
             />
           );
         } catch (err) {
-          console.error('[Radar] AlertsLayer: Failed to render alert geometry:', alert.id, err);
+          logger.error('[Radar] AlertsLayer: Failed to render alert geometry:', alert.id, err);
           return null;
         }
       })}
@@ -311,7 +313,8 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   useEffect(() => {
     try {
       // Check if _getIconUrl exists before deleting to avoid strict mode errors
-      const proto = L.Icon.Default.prototype as any;
+      // Leaflet's internal prototype has _getIconUrl which isn't in the type definitions
+      const proto = L.Icon.Default.prototype as typeof L.Icon.Default.prototype & { _getIconUrl?: unknown };
       if (proto._getIconUrl) {
         delete proto._getIconUrl;
       }
@@ -322,7 +325,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
       });
       setLeafletReady(true);
     } catch (err) {
-      console.error('[Radar] Failed to configure Leaflet icons:', err);
+      logger.error('[Radar] Failed to configure Leaflet icons:', err);
       setLeafletReady(true);
     }
   }, []);
@@ -331,7 +334,6 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   // This prevents LazyLoadWithTimeout from timing out while waiting for tiles
   useEffect(() => {
     if (leafletReady && onReady) {
-      console.log('[Radar] Leaflet ready - signaling onReady to clear timeout');
       onReady();
     }
   }, [leafletReady, onReady]);
@@ -350,11 +352,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
 
         if (!proxyError && proxyData?.data) {
           raw = proxyData.data as RainViewerResponse;
-          console.log('[Radar] Loaded frames via backend proxy:', proxyData?.source);
         } else {
-          if (proxyError) {
-            console.warn('[Radar] Backend proxy failed, falling back to direct fetch:', proxyError);
-          }
 
           const response = await fetch('https://api.rainviewer.com/public/weather-maps.json', {
             headers: { Accept: 'application/json' },
@@ -368,7 +366,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         setCurrentFrameIndex(raw.radar.past.length - 1);
       } catch (err) {
         setError('Unable to load radar data');
-        console.error('[Radar] Radar fetch error:', err);
+        logger.error('[Radar] Radar fetch error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -419,7 +417,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         
         setAlerts(parsedAlerts);
       } catch (err) {
-        console.error('Alert fetch error:', err);
+        logger.error('Alert fetch error:', err);
         setAlerts([]);
       } finally {
         setAlertsLoading(false);

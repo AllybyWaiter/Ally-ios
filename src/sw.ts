@@ -8,6 +8,16 @@ import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 
 declare let self: ServiceWorkerGlobalScope;
 
+// Production-safe logging for service worker context
+// Service workers can't import from app modules, so we use a simple inline check
+const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
+const swLog = {
+  log: (...args: unknown[]) => { if (isDev) swLog.log(...args); },
+  debug: (...args: unknown[]) => { if (isDev) console.debug(...args); },
+  warn: (...args: unknown[]) => { if (isDev) console.warn(...args); },
+  error: (...args: unknown[]) => swLog.error(...args), // Always log errors
+};
+
 // Cache version - increment to force cache invalidation on iOS PWA
 const CACHE_VERSION = 'v2';
 
@@ -23,17 +33,17 @@ cleanupOutdatedCaches();
 // Listen for messages from the main thread to clear caches
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CLEAR_ALL_CACHES') {
-    console.log('[SW] Received CLEAR_ALL_CACHES message');
+    swLog.log('[SW] Received CLEAR_ALL_CACHES message');
     event.waitUntil(
       caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            console.log('[SW] Deleting cache:', cacheName);
+            swLog.log('[SW] Deleting cache:', cacheName);
             return caches.delete(cacheName);
           })
         );
       }).then(() => {
-        console.log('[SW] All caches cleared');
+        swLog.log('[SW] All caches cleared');
         // Notify all clients that caches are cleared
         self.clients.matchAll().then((clients) => {
           clients.forEach((client) => {
@@ -47,14 +57,14 @@ self.addEventListener('message', (event) => {
 
 // On activation, clear all old caches to prevent iOS PWA stale module issues
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating new service worker version:', CACHE_VERSION);
+  swLog.log('[SW] Activating new service worker version:', CACHE_VERSION);
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           // Clear any cache that doesn't match our current version prefix
           if (!cacheName.includes(CACHE_VERSION)) {
-            console.log('[SW] Deleting outdated cache:', cacheName);
+            swLog.log('[SW] Deleting outdated cache:', cacheName);
             return caches.delete(cacheName);
           }
           return Promise.resolve();
@@ -160,7 +170,7 @@ const vibrationPatterns: Record<string, number[]> = {
 };
 
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push event received');
+  swLog.log('[SW] Push event received');
   
   let data: Record<string, unknown> = { title: 'Ally', body: 'You have a new notification' };
   
@@ -169,7 +179,7 @@ self.addEventListener('push', (event) => {
       data = event.data.json();
     }
   } catch (e) {
-    console.error('[SW] Error parsing push data:', e);
+    swLog.error('[SW] Error parsing push data:', e);
   }
   
   const notificationType = (data.notificationType as string) || 'default';
@@ -198,7 +208,7 @@ self.addEventListener('push', (event) => {
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
+  swLog.log('[SW] Notification clicked');
   
   event.notification.close();
   
@@ -206,7 +216,7 @@ self.addEventListener('notificationclick', (event) => {
   
   // Handle action clicks
   if (event.action) {
-    console.log('[SW] Action clicked:', event.action);
+    swLog.log('[SW] Action clicked:', event.action);
   }
   
   event.waitUntil(
@@ -230,5 +240,5 @@ self.addEventListener('notificationclick', (event) => {
 
 // Handle notification close (for analytics if needed)
 self.addEventListener('notificationclose', (event) => {
-  console.log('[SW] Notification closed without interaction');
+  swLog.log('[SW] Notification closed without interaction');
 });

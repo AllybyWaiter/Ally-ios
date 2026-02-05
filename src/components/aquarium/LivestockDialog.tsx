@@ -110,7 +110,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
         : 'healthy';
       
       if (livestock) {
-        return updateLivestock(livestock.id, {
+        return updateLivestock(livestock.id, user.id, {
           name: data.name,
           species: data.species,
           category: data.category,
@@ -354,7 +354,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
                   min="1"
                   value={formData.quantity}
                   onChange={(e) => {
-                    const value = parseInt(e.target.value) || 1;
+                    const value = parseInt(e.target.value, 10) || 1;
                     // Ensure quantity is at least 1 to prevent ghost entries
                     setFormData({ ...formData, quantity: Math.max(1, value) });
                   }}
