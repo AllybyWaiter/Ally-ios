@@ -306,7 +306,7 @@ export const MentionInput = forwardRef<MentionInputRef, MentionInputProps>(({
           <>
             <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               <Search className="h-3 w-3" />
-              {mentionSearch ? `Tanks matching "${mentionSearch}"` : 'Your Tanks'}
+              {mentionSearch ? `Matching "${mentionSearch}"` : 'Your Aquatic Spaces'}
             </div>
             {filteredItems.map((item, index) => {
               const Icon = iconMap[item.icon || "fish"];
@@ -344,9 +344,9 @@ export const MentionInput = forwardRef<MentionInputRef, MentionInputProps>(({
         ) : (
           <div className="px-3 py-4 text-sm text-muted-foreground text-center">
             {mentionItems.length === 0 ? (
-              <>No tanks yet. Create one to use @mentions.</>
+              <>No aquatic spaces yet. Create one to use @mentions.</>
             ) : (
-              <>No tanks matching "{mentionSearch}"</>
+              <>No matches for "{mentionSearch}"</>
             )}
           </div>
         )}
