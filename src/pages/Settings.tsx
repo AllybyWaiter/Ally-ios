@@ -71,6 +71,7 @@ const Settings = () => {
     restore,
     showCustomerCenter,
     showPaywall,
+    refreshCustomerInfo,
     isLoading: rcLoading
   } = useRevenueCat();
 
@@ -412,6 +413,8 @@ const Settings = () => {
     setPortalLoading(true);
     try {
       const restored = await restore();
+      // Also refresh customer info to ensure UI is up to date
+      await refreshCustomerInfo();
       if (restored) {
         toast({ title: "Purchases Restored", description: "Your subscription has been restored successfully." });
       } else {
@@ -432,6 +435,8 @@ const Settings = () => {
       setPortalLoading(true);
       try {
         const purchased = await showPaywall();
+        // Always refresh customer info after paywall closes to get latest subscription status
+        await refreshCustomerInfo();
         if (purchased) {
           toast({ title: "Subscription Activated!", description: "Welcome to Ally Pro!" });
         }
