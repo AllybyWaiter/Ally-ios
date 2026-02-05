@@ -1,27 +1,35 @@
 import { useEffect, useState, useRef } from 'react';
 
 interface AnimatedCounterProps {
-  value: number;
+  value?: number;
+  end?: number; // Alias for value
   duration?: number;
   formatValue?: (value: number) => string;
   suffix?: string;
+  decimals?: number;
   className?: string;
 }
 
 export default function AnimatedCounter({
   value,
+  end,
   duration = 1000,
   formatValue,
   suffix = '',
+  decimals = 0,
   className = '',
 }: AnimatedCounterProps) {
+  // Use end as alias for value, with NaN safety
+  const targetValue = end ?? value ?? 0;
+  const safeTarget = Number.isNaN(targetValue) ? 0 : targetValue;
+
   const [displayValue, setDisplayValue] = useState(0);
   const startTimeRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const startValue = displayValue;
-    const endValue = value;
+    const endValue = safeTarget;
     const diff = endValue - startValue;
 
     if (diff === 0) return;
@@ -38,7 +46,8 @@ export default function AnimatedCounter({
       const easeOut = 1 - Math.pow(1 - progress, 3);
       const currentValue = startValue + diff * easeOut;
 
-      setDisplayValue(Math.round(currentValue * 100) / 100);
+      const multiplier = Math.pow(10, decimals);
+      setDisplayValue(Math.round(currentValue * multiplier) / multiplier);
 
       if (progress < 1) {
         animationFrameRef.current = requestAnimationFrame(animate);
@@ -53,11 +62,17 @@ export default function AnimatedCounter({
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [value, duration]);
+  }, [safeTarget, duration, decimals]);
+
+  // Guard against NaN in display
+  const safeDisplayValue = Number.isNaN(displayValue) ? 0 : displayValue;
 
   const formattedValue = formatValue
-    ? formatValue(displayValue)
-    : displayValue.toLocaleString();
+    ? formatValue(safeDisplayValue)
+    : safeDisplayValue.toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
 
   return (
     <span className={className}>

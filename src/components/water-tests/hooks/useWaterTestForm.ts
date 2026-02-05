@@ -237,6 +237,8 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
     onSuccess: async (result) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.templates(aquarium.type, user?.id) });
+      // Invalidate aquarium health score so dashboard updates
+      queryClient.invalidateQueries({ queryKey: ['aquarium-health', aquarium.id] });
 
       localStorage.removeItem(`water-test-draft-${aquarium.id}`);
 

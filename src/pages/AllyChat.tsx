@@ -808,6 +808,47 @@ const AllyChat = () => {
           </Button>
         </header>
 
+        {/* Aquarium Context Banner */}
+        {conversationManager.selectedAquarium !== 'general' && conversationManager.aquariums.length > 0 && (
+          <div className="flex-shrink-0 px-4 py-2 bg-primary/5 border-b border-primary/10">
+            <div className="flex items-center justify-between max-w-3xl mx-auto">
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Fish className="h-3 w-3 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Talking about</p>
+                  <p className="text-sm font-medium -mt-0.5">{conversationManager.getSelectedAquariumName()}</p>
+                </div>
+              </div>
+              <Select
+                value={conversationManager.selectedAquarium}
+                onValueChange={conversationManager.setSelectedAquarium}
+              >
+                <SelectTrigger className="w-fit h-7 text-xs gap-1 border-primary/20 bg-background">
+                  <span>Switch</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-3 w-3" />
+                      General Advice
+                    </span>
+                  </SelectItem>
+                  {conversationManager.aquariums.map((aq) => (
+                    <SelectItem key={aq.id} value={aq.id}>
+                      <span className="flex items-center gap-2">
+                        <Fish className="h-3 w-3" />
+                        {aq.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
         {/* Messages Area */}
         <main className="flex-1 overflow-hidden">
           <VirtualizedMessageList
