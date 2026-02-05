@@ -75,7 +75,7 @@ export function HourlyForecast() {
         <h3 className="text-sm font-medium text-muted-foreground mb-3">Today's Forecast</h3>
         <ScrollArea className="w-full">
           <div className="flex gap-1">
-            {weather.hourlyForecast.map((hour) => {
+            {weather.hourlyForecast.map((hour, index) => {
               let isNow = false;
               try {
                 const time = parseISO(hour.time);
@@ -83,12 +83,12 @@ export function HourlyForecast() {
               } catch {
                 isNow = false;
               }
-              
+
               return (
-                <HourlyItem 
-                  key={hour.time || crypto.randomUUID()} 
-                  hour={hour} 
-                  units={units} 
+                <HourlyItem
+                  key={`${hour.time || 'hour'}-${index}`}
+                  hour={hour}
+                  units={units}
                   isNow={isNow}
                 />
               );
