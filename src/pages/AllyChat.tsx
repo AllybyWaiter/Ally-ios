@@ -517,8 +517,8 @@ const AllyChat = () => {
         }
       );
     } catch (error) {
-      console.error("Chat error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
+      console.error("Chat error:", errorMessage, error);
       
       // Store error for retry
       setLastError({ message: errorMessage, userMessage });

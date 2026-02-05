@@ -119,22 +119,27 @@ export function useStreamingResponse() {
 
     if (!response.ok || !response.body) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      
+
       // Parse error response for specific messages
-      let errorMessage = "Failed to get response";
+      let errorMessage = `Failed to get response (${response.status})`;
       try {
         const errorData = await response.json();
         if (response.status === 429) {
           errorMessage = errorData.error || "Rate limit exceeded. Please wait a moment and try again.";
         } else if (response.status === 402) {
           errorMessage = errorData.error || "AI service temporarily unavailable. Please try again later.";
+        } else if (response.status === 401) {
+          errorMessage = errorData.error || "Session expired. Please refresh the page.";
+        } else if (response.status === 502 || response.status === 503) {
+          errorMessage = errorData.error || "AI service is temporarily unavailable. Please try again.";
         } else if (errorData.error) {
           errorMessage = errorData.error;
         }
       } catch {
-        // Use generic message if parsing fails
+        // Use generic message with status code if parsing fails
+        console.warn('Failed to parse error response:', response.status, response.statusText);
       }
-      
+
       throw new Error(errorMessage);
     }
 
