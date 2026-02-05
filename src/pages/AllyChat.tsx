@@ -34,7 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ChatHistorySidebar } from "@/components/chat/ChatHistorySidebar";
 import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
 import { ConversationStarters } from "@/components/chat/ConversationStarters";
-import { useStreamingResponse, type ToolExecution } from "@/hooks/useStreamingResponse";
+import { useStreamingResponse, type ToolExecution, type DataCardPayload } from "@/hooks/useStreamingResponse";
 import { useConversationManager } from "@/hooks/useConversationManager";
 import { useSuggestedQuestions } from "@/hooks/useSuggestedQuestions";
 import { compressImage, validateImageFile } from "@/lib/imageCompression";
@@ -53,6 +53,7 @@ interface Message {
   aquariumName?: string;
   imageUrl?: string;
   toolExecutions?: ToolExecution[];
+  dataCards?: DataCardPayload[];
 }
 
 import { MODEL_OPTIONS, type ModelType, type ModelOption } from '@/lib/constants';
@@ -87,6 +88,7 @@ const AllyChat = () => {
   const isProcessingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingToolExecutionsRef = useRef<ToolExecution[]>([]);
+  const pendingDataCardsRef = useRef<DataCardPayload[]>([]);
   const isSubmittingRef = useRef(false); // Prevent double submission
 
   const { isStreaming, streamResponse, abort } = useStreamingResponse();
@@ -328,6 +330,7 @@ const AllyChat = () => {
           onStreamStart: () => {
             triggerHaptic('light'); // Haptic on first token
             pendingToolExecutionsRef.current = []; // Reset tool executions
+            pendingDataCardsRef.current = []; // Reset data cards
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -347,6 +350,9 @@ const AllyChat = () => {
                 aquariumName: currentAquariumName,
                 toolExecutions: pendingToolExecutionsRef.current.length > 0
                   ? [...pendingToolExecutionsRef.current]
+                  : undefined,
+                dataCards: pendingDataCardsRef.current.length > 0
+                  ? [...pendingDataCardsRef.current]
                   : undefined
               };
               return newMessages;
@@ -387,6 +393,20 @@ const AllyChat = () => {
                 newMessages[newMessages.length - 1] = {
                   ...newMessages[newMessages.length - 1],
                   toolExecutions: executions
+                };
+              }
+              return newMessages;
+            });
+          },
+          onDataCard: (card) => {
+            pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
+            triggerHaptic('light');
+            setMessages(prev => {
+              const newMessages = [...prev];
+              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  dataCards: [...pendingDataCardsRef.current]
                 };
               }
               return newMessages;
@@ -472,6 +492,7 @@ const AllyChat = () => {
           onStreamStart: () => {
             triggerHaptic('light'); // Haptic on first token
             pendingToolExecutionsRef.current = []; // Reset tool executions
+            pendingDataCardsRef.current = []; // Reset data cards
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -491,6 +512,9 @@ const AllyChat = () => {
                 aquariumName: currentAquariumName,
                 toolExecutions: pendingToolExecutionsRef.current.length > 0
                   ? [...pendingToolExecutionsRef.current]
+                  : undefined,
+                dataCards: pendingDataCardsRef.current.length > 0
+                  ? [...pendingDataCardsRef.current]
                   : undefined
               };
               return newMessages;
@@ -542,6 +566,21 @@ const AllyChat = () => {
                 newMessages[newMessages.length - 1] = {
                   ...newMessages[newMessages.length - 1],
                   toolExecutions: executions
+                };
+              }
+              return newMessages;
+            });
+          },
+          onDataCard: (card) => {
+            // Accumulate data cards for the current message
+            pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
+            triggerHaptic('light');
+            setMessages(prev => {
+              const newMessages = [...prev];
+              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  dataCards: [...pendingDataCardsRef.current]
                 };
               }
               return newMessages;
@@ -644,6 +683,7 @@ const AllyChat = () => {
         {
           onStreamStart: () => {
             pendingToolExecutionsRef.current = [];
+            pendingDataCardsRef.current = [];
             setMessages(prev => [...prev, {
               role: "assistant",
               content: "",
@@ -658,6 +698,9 @@ const AllyChat = () => {
                 content,
                 toolExecutions: pendingToolExecutionsRef.current.length > 0
                   ? [...pendingToolExecutionsRef.current]
+                  : undefined,
+                dataCards: pendingDataCardsRef.current.length > 0
+                  ? [...pendingDataCardsRef.current]
                   : undefined
               };
               return updated;
@@ -692,6 +735,19 @@ const AllyChat = () => {
                 updated[updated.length - 1] = {
                   ...updated[updated.length - 1],
                   toolExecutions: executions
+                };
+              }
+              return updated;
+            });
+          },
+          onDataCard: (card) => {
+            pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
+            setMessages(prev => {
+              const updated = [...prev];
+              if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  dataCards: [...pendingDataCardsRef.current]
                 };
               }
               return updated;

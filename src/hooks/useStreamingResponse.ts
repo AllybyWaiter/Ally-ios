@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface Message {
   role: "user" | "assistant";
@@ -20,12 +21,32 @@ export interface ToolExecution {
   message: string;
 }
 
+export interface DataCardParameter {
+  name: string;
+  value: number;
+  unit: string;
+  status: 'good' | 'warning' | 'critical';
+  trend?: 'up' | 'down' | 'stable';
+  sparkline?: number[];
+  change?: number;
+}
+
+export interface DataCardPayload {
+  card_type: 'latest_test' | 'parameter_trend' | 'tank_summary';
+  title: string;
+  aquarium_name: string;
+  timestamp: string;
+  test_count?: number;
+  parameters: DataCardParameter[];
+}
+
 interface StreamingCallbacks {
   onStreamStart: () => void;
   onToken: (fullContent: string) => void;
   onStreamEnd: (fullContent: string) => void;
   onError: (error: Error) => void;
   onToolExecution?: (executions: ToolExecution[]) => void;
+  onDataCard?: (card: DataCardPayload) => void;
 }
 
 type ModelType = 'standard' | 'thinking';
@@ -127,15 +148,14 @@ export function useStreamingResponse() {
 
       // Handle 401 - try to refresh session and retry automatically (once)
       if (response.status === 401 && !retryToken) {
-        console.log('Session expired, attempting refresh and retry...');
+        logger.log('Session expired, attempting refresh and retry...');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        console.log('Refresh result:', {
+        logger.log('Refresh result:', {
           hasSession: !!refreshData?.session,
           error: refreshError?.message,
-          tokenPreview: refreshData?.session?.access_token?.slice(0, 20) + '...'
         });
         if (refreshError || !refreshData.session) {
-          console.error('Session refresh failed:', refreshError);
+          logger.error('Session refresh failed:', refreshError);
           toast({
             title: "Session expired",
             description: "Please sign in again to continue.",
@@ -145,13 +165,13 @@ export function useStreamingResponse() {
           throw new Error("Session expired. Please sign in again.");
         }
         // Session refreshed - retry with the NEW token directly
-        console.log('Session refreshed, retrying with new token...');
+        logger.log('Session refreshed, retrying with new token...');
         return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token);
       }
 
       // If retry also failed with 401, user needs to fully re-authenticate
       if (response.status === 401 && retryToken) {
-        console.error('Retry with refreshed token still got 401 - forcing re-auth');
+        logger.error('Retry with refreshed token still got 401 - forcing re-auth');
         toast({
           title: "Authentication error",
           description: "Please sign out and sign in again.",
@@ -176,7 +196,7 @@ export function useStreamingResponse() {
         }
       } catch {
         // Use generic message with status code if parsing fails
-        console.warn('Failed to parse error response:', response.status, response.statusText);
+        logger.warn('Failed to parse error response:', response.status, response.statusText);
       }
 
       throw new Error(errorMessage);
@@ -241,6 +261,12 @@ export function useStreamingResponse() {
           // Handle tool execution feedback events
           if (parsed.type === 'tool_executions' && parsed.executions) {
             callbacks.onToolExecution?.(parsed.executions as ToolExecution[]);
+            continue;
+          }
+
+          // Handle data card events
+          if (parsed.type === 'data_card' && parsed.card) {
+            callbacks.onDataCard?.(parsed.card as DataCardPayload);
             continue;
           }
 

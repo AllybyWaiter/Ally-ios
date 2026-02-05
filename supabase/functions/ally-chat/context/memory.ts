@@ -4,7 +4,7 @@
  * Fetches and formats user memories for AI context.
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 export interface MemoryContext {
   context: string;

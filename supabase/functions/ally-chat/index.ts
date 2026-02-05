@@ -11,7 +11,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { corsHeaders, handleCors, getCorsHeaders } from '../_shared/cors.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { validateUuid, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
@@ -24,7 +24,7 @@ import { executeToolCalls } from './tools/executor.ts';
 import { buildAquariumContext } from './context/aquarium.ts';
 import { buildMemoryContext } from './context/memory.ts';
 import { buildSystemPrompt } from './prompts/system.ts';
-import { parseStreamForToolCalls, createContentStream, createToolExecutionStream } from './utils/streamParser.ts';
+import { parseStreamForToolCalls, createContentStream, createToolExecutionStream, DataCardPayload } from './utils/streamParser.ts';
 import { validateRequiredInputs } from './utils/inputGate.ts';
 
 // Model configuration - Using OpenAI directly
@@ -364,32 +364,44 @@ serve(async (req) => {
         return createErrorResponse('Failed to process follow-up request', logger, { status: 502, request: req });
       }
 
-      // Extract tool execution feedback from results
-      const toolExecutions = toolResults.map((result, index) => {
+      // Extract tool execution feedback and data cards from results
+      const toolExecutions: Array<{ toolName: string; success: boolean; message: string }> = [];
+      const dataCards: DataCardPayload[] = [];
+
+      toolResults.forEach((result, index) => {
         const toolCall = toolCallsForExecutor[index];
         try {
           const parsed = JSON.parse(result.content);
-          return {
+
+          // Check if this is a data card from show_water_data
+          if (toolCall.function.name === 'show_water_data' && parsed.data_card) {
+            dataCards.push(parsed.data_card as DataCardPayload);
+            // Don't show tool execution feedback for data cards
+            return;
+          }
+
+          toolExecutions.push({
             toolName: toolCall.function.name,
             success: parsed.success ?? true,
             message: parsed.message || `${toolCall.function.name} completed`,
-          };
+          });
         } catch {
-          return {
+          toolExecutions.push({
             toolName: toolCall.function.name,
             success: true,
             message: `${toolCall.function.name} completed`,
-          };
+          });
         }
       });
 
       logger.info('Streaming follow-up response with tool feedback', {
-        toolCount: toolExecutions.length
+        toolCount: toolExecutions.length,
+        dataCardCount: dataCards.length
       });
 
-      // Stream tool execution feedback first, then the AI response
+      // Stream tool execution feedback and data cards first, then the AI response
       return createStreamResponse(
-        createToolExecutionStream(toolExecutions, followUpResponse.body),
+        createToolExecutionStream(toolExecutions, followUpResponse.body, dataCards),
         req
       );
     }
