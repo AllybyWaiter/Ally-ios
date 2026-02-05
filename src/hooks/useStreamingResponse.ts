@@ -49,18 +49,22 @@ export function useStreamingResponse() {
     aquariumId: string | null,
     model: ModelType = 'standard',
     callbacks: StreamingCallbacks,
-    isRetry = false
+    retryToken?: string // Token to use for retry after refresh
   ): Promise<string> => {
-    // Check authentication
-    let session = await supabase.auth.getSession();
-    if (!session.data.session) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to chat with Ally",
-        variant: "destructive",
-      });
-      navigate("/auth");
-      throw new Error("Authentication required");
+    // Get access token - use retry token if provided, otherwise get from session
+    let accessToken = retryToken;
+    if (!accessToken) {
+      const session = await supabase.auth.getSession();
+      if (!session.data.session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to chat with Ally",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        throw new Error("Authentication required");
+      }
+      accessToken = session.data.session.access_token;
     }
 
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
@@ -108,7 +112,7 @@ export function useStreamingResponse() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.data.session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         messages: formattedMessages,
@@ -122,7 +126,7 @@ export function useStreamingResponse() {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       // Handle 401 - try to refresh session and retry automatically (once)
-      if (response.status === 401 && !isRetry) {
+      if (response.status === 401 && !retryToken) {
         console.log('Session expired, attempting refresh and retry...');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError || !refreshData.session) {
@@ -135,9 +139,9 @@ export function useStreamingResponse() {
           navigate("/auth");
           throw new Error("Session expired. Please sign in again.");
         }
-        // Session refreshed - retry the request automatically
-        console.log('Session refreshed, retrying request...');
-        return streamResponse(messages, aquariumId, model, callbacks, true);
+        // Session refreshed - retry with the NEW token directly
+        console.log('Session refreshed, retrying with new token...');
+        return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token);
       }
 
       // Parse error response for specific messages
