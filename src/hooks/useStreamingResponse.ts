@@ -129,6 +129,11 @@ export function useStreamingResponse() {
       if (response.status === 401 && !retryToken) {
         console.log('Session expired, attempting refresh and retry...');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        console.log('Refresh result:', {
+          hasSession: !!refreshData?.session,
+          error: refreshError?.message,
+          tokenPreview: refreshData?.session?.access_token?.slice(0, 20) + '...'
+        });
         if (refreshError || !refreshData.session) {
           console.error('Session refresh failed:', refreshError);
           toast({
@@ -142,6 +147,18 @@ export function useStreamingResponse() {
         // Session refreshed - retry with the NEW token directly
         console.log('Session refreshed, retrying with new token...');
         return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token);
+      }
+
+      // If retry also failed with 401, user needs to fully re-authenticate
+      if (response.status === 401 && retryToken) {
+        console.error('Retry with refreshed token still got 401 - forcing re-auth');
+        toast({
+          title: "Authentication error",
+          description: "Please sign out and sign in again.",
+          variant: "destructive",
+        });
+        navigate("/auth");
+        throw new Error("Authentication failed. Please sign in again.");
       }
 
       // Parse error response for specific messages
