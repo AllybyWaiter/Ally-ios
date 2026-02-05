@@ -120,6 +120,24 @@ export function useStreamingResponse() {
     if (!response.ok || !response.body) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
+      // Handle 401 - try to refresh session automatically
+      if (response.status === 401) {
+        console.log('Session expired, attempting refresh...');
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('Session refresh failed:', refreshError);
+          toast({
+            title: "Session expired",
+            description: "Please sign in again to continue.",
+            variant: "destructive",
+          });
+          navigate("/auth");
+          throw new Error("Session expired. Please sign in again.");
+        }
+        // Session refreshed - tell user to retry
+        throw new Error("Session refreshed. Please try again.");
+      }
+
       // Parse error response for specific messages
       let errorMessage = `Failed to get response (${response.status})`;
       try {
@@ -128,8 +146,6 @@ export function useStreamingResponse() {
           errorMessage = errorData.error || "Rate limit exceeded. Please wait a moment and try again.";
         } else if (response.status === 402) {
           errorMessage = errorData.error || "AI service temporarily unavailable. Please try again later.";
-        } else if (response.status === 401) {
-          errorMessage = errorData.error || "Session expired. Please refresh the page.";
         } else if (response.status === 502 || response.status === 503) {
           errorMessage = errorData.error || "AI service is temporarily unavailable. Please try again.";
         } else if (errorData.error) {
