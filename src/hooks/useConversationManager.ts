@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { logger } from "@/lib/logger";
 
 interface Message {
   role: "user" | "assistant";
@@ -65,7 +66,7 @@ export function useConversationManager(userId: string | null) {
         .order('updated_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to fetch conversations:', error);
+        logger.error('Failed to fetch conversations:', error);
         toast({
           title: 'Error',
           description: 'Failed to load chat history',
@@ -78,7 +79,7 @@ export function useConversationManager(userId: string | null) {
         setConversations(data as Conversation[]);
       }
     } catch (error) {
-      console.error('Failed to fetch conversations:', error);
+      logger.error('Failed to fetch conversations:', error);
     }
   }, [userId, toast]);
 
@@ -101,7 +102,7 @@ export function useConversationManager(userId: string | null) {
         await fetchConversations();
       }
     } catch (error) {
-      console.error('Failed to pin conversation:', error);
+      logger.error('Failed to pin conversation:', error);
     }
   }, [userId, conversations, fetchConversations]);
 
@@ -183,19 +184,29 @@ export function useConversationManager(userId: string | null) {
   }, [conversations]);
 
   const loadConversation = useCallback(async (conversationId: string): Promise<Message[]> => {
-    const { data: messagesData } = await supabase
+    const { data: messagesData, error } = await supabase
       .from('chat_messages')
       .select('*')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
-    if (messagesData) {
+    if (error) {
+      logger.error('Failed to load conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load conversation messages',
+        variant: 'destructive',
+      });
+      return [createInitialMessage()];
+    }
+
+    if (messagesData && messagesData.length > 0) {
       const messages = messagesData.map(msg => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
         timestamp: new Date(msg.created_at)
       }));
-      
+
       setCurrentConversationId(conversationId);
 
       // Update selected aquarium from conversation
@@ -203,12 +214,15 @@ export function useConversationManager(userId: string | null) {
       if (conv) {
         setSelectedAquarium(conv.aquarium_id || "general");
       }
-      
+
       return messages;
     }
-    
+
+    // Conversation exists but has no messages - might be corrupted or deleted
+    logger.warn('Loaded conversation with no messages:', conversationId);
+    setCurrentConversationId(null); // Don't keep stale ID
     return [createInitialMessage()];
-  }, [conversations]);
+  }, [conversations, toast]);
 
   const startNewConversation = useCallback((): Message[] => {
     setCurrentConversationId(null);
@@ -288,18 +302,27 @@ export function useConversationManager(userId: string | null) {
       ]);
 
     if (messagesError) {
-      console.error('Failed to save messages:', messagesError);
+      logger.error('Failed to save messages:', messagesError);
+      toast({
+        title: 'Warning',
+        description: 'Message may not have been saved',
+        variant: 'destructive',
+      });
     }
 
     // Update conversation timestamp and preview
     const preview = assistantMessage.content.slice(0, 100) + (assistantMessage.content.length > 100 ? '...' : '');
-    await supabase
+    const { error: updateError } = await supabase
       .from('chat_conversations')
-      .update({ 
+      .update({
         updated_at: new Date().toISOString(),
         last_message_preview: preview
       })
       .eq('id', conversationId);
+
+    if (updateError) {
+      logger.error('Failed to update conversation:', updateError);
+    }
 
     return conversationId;
   }, [userId, currentConversationId, selectedAquarium, fetchConversations]);

@@ -80,7 +80,8 @@ export const useFeatureRateLimit = (endpoint: string) => {
           data = JSON.parse(stored);
         }
       } catch {
-        // Invalid JSON in localStorage, reset
+        // Invalid JSON in localStorage - remove corrupted data
+        localStorage.removeItem(storageKey);
         data = null;
       }
 
@@ -92,7 +93,12 @@ export const useFeatureRateLimit = (endpoint: string) => {
             timestamp: now,
             reset: now + config.windowMs,
           };
-          localStorage.setItem(storageKey, JSON.stringify(newData));
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(newData));
+          } catch {
+            // Storage quota exceeded - continue without persisting
+            console.warn('localStorage quota exceeded for rate limit');
+          }
           setState({
             remaining: config.maxRequests,
             reset: newData.reset,
@@ -114,7 +120,12 @@ export const useFeatureRateLimit = (endpoint: string) => {
           timestamp: now,
           reset: now + config.windowMs,
         };
-        localStorage.setItem(storageKey, JSON.stringify(newData));
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(newData));
+        } catch {
+          // Storage quota exceeded - continue without persisting
+          console.warn('localStorage quota exceeded for rate limit');
+        }
         setState({
           remaining: config.maxRequests,
           reset: newData.reset,
@@ -127,7 +138,9 @@ export const useFeatureRateLimit = (endpoint: string) => {
   }, [user, endpoint, config]);
 
   const checkLimit = async (): Promise<boolean> => {
-    if (!user || !config) return false;
+    // Allow operation if user not authenticated (rate limiting requires user context)
+    // or if config is missing (fail-open to avoid blocking features)
+    if (!user || !config) return true;
 
     const storageKey = `rate_limit_${user.id}_${endpoint}`;
     const now = Date.now();
@@ -140,7 +153,8 @@ export const useFeatureRateLimit = (endpoint: string) => {
         data = JSON.parse(stored);
       }
     } catch {
-      // Invalid JSON, treat as no data
+      // Invalid JSON - remove corrupted data
+      localStorage.removeItem(storageKey);
       data = null;
     }
 
@@ -150,7 +164,12 @@ export const useFeatureRateLimit = (endpoint: string) => {
         timestamp: now,
         reset: now + config.windowMs,
       };
-      localStorage.setItem(storageKey, JSON.stringify(newData));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newData));
+      } catch {
+        // Storage quota exceeded - continue without persisting
+        console.warn('localStorage quota exceeded for rate limit');
+      }
       
       addBreadcrumb(
         `Rate limit check: ${endpoint}`,
@@ -178,8 +197,13 @@ export const useFeatureRateLimit = (endpoint: string) => {
         timestamp: now,
         reset: now + config.windowMs,
       };
-      localStorage.setItem(storageKey, JSON.stringify(newData));
-      
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newData));
+      } catch {
+        // Storage quota exceeded - continue without persisting
+        console.warn('localStorage quota exceeded for rate limit');
+      }
+
       setState({
         remaining: config.maxRequests - 1,
         reset: newData.reset,
@@ -187,7 +211,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
       });
 
       await trackUsage(endpoint, tier);
-      
+
       return true;
     }
 
@@ -220,7 +244,12 @@ export const useFeatureRateLimit = (endpoint: string) => {
       ...data,
       count: data.count + 1,
     };
-    localStorage.setItem(storageKey, JSON.stringify(newData));
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newData));
+    } catch {
+      // Storage quota exceeded - continue without persisting
+      console.warn('localStorage quota exceeded for rate limit');
+    }
 
     const remaining = config.maxRequests - newData.count;
     

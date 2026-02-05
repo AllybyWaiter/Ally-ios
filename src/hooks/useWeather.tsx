@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getDistanceKm } from '@/lib/geoUtils';
@@ -172,7 +172,11 @@ export function useWeather() {
     initializing: true,
   }));
 
+  // Abort ref to prevent state updates after unmount in geolocation callbacks
+  const geolocationAbortRef = useRef<{ aborted: boolean }>({ aborted: false });
+
   const fetchWeather = useCallback(async (latitude: number, longitude: number) => {
+    const abortFlag = geolocationAbortRef.current;
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -180,6 +184,7 @@ export function useWeather() {
         body: { latitude, longitude },
       });
 
+      if (abortFlag.aborted) return null; // Check before state update
       if (error) throw error;
 
       // Add coordinates to weather data for components that need them
@@ -189,7 +194,8 @@ export function useWeather() {
         longitude,
       };
       setCachedWeather(weatherData, user?.id);
-      
+
+      if (abortFlag.aborted) return null; // Check before state update
       setState(prev => ({
         ...prev,
         weather: weatherData,
@@ -197,7 +203,9 @@ export function useWeather() {
       }));
 
       return weatherData;
-    } catch {
+    } catch (err) {
+      if (abortFlag.aborted) return null; // Check before state update
+      console.error('Failed to fetch weather:', err);
       setState(prev => ({
         ...prev,
         loading: false,
@@ -205,7 +213,7 @@ export function useWeather() {
       }));
       return null;
     }
-  }, []);
+  }, [user?.id]);
 
   // Request fresh GPS location and save to profile
   const fetchWeatherForCurrentLocation = useCallback(async (forceRefresh = false) => {
@@ -216,10 +224,17 @@ export function useWeather() {
 
     setState(prev => ({ ...prev, loading: true }));
 
+    // Reset abort flag for new geolocation request
+    geolocationAbortRef.current = { aborted: false };
+    const currentAbortRef = geolocationAbortRef.current;
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        // Check if component unmounted or new request started
+        if (currentAbortRef.aborted) return;
+
         const { latitude, longitude } = position.coords;
-        
+
         // Save the new coordinates to profile for future sessions (no more GPS prompts)
         if (user?.id) {
           await supabase
@@ -227,10 +242,14 @@ export function useWeather() {
             .update({ latitude, longitude })
             .eq('user_id', user.id);
         }
-        
+
+        if (currentAbortRef.aborted) return;
         await fetchWeather(latitude, longitude);
       },
       async () => {
+        // Check if component unmounted or new request started
+        if (currentAbortRef.aborted) return;
+
         // Fallback to saved profile location
         if (user?.id) {
           const { data: profile } = await supabase
@@ -238,6 +257,8 @@ export function useWeather() {
             .select('latitude, longitude')
             .eq('user_id', user.id)
             .maybeSingle();
+
+          if (currentAbortRef.aborted) return;
 
           if (profile?.latitude && profile?.longitude) {
             await fetchWeather(profile.latitude, profile.longitude);
@@ -265,9 +286,19 @@ export function useWeather() {
       return { lat: savedLat, lon: savedLon };
     }
 
+    // Reset abort flag for new geolocation request
+    geolocationAbortRef.current = { aborted: false };
+    const currentAbortRef = geolocationAbortRef.current;
+
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
+          // Check if component unmounted
+          if (currentAbortRef.aborted) {
+            resolve({ lat: savedLat, lon: savedLon });
+            return;
+          }
+
           const { latitude, longitude } = position.coords;
           const distance = getDistanceKm(savedLat, savedLon, latitude, longitude);
 
@@ -297,12 +328,21 @@ export function useWeather() {
     });
   }, [user?.id]);
 
+  // Cleanup effect to abort pending geolocation requests on unmount or user change
+  useEffect(() => {
+    return () => {
+      geolocationAbortRef.current.aborted = true;
+    };
+  }, [user?.id]);
+
   // Load weather on mount if user has weather enabled - prioritize saved location
   useEffect(() => {
     if (!user?.id) {
       setState(prev => ({ ...prev, initializing: false, loading: false }));
       return;
     }
+
+    let isMounted = true;
 
     const loadWeather = async () => {
       try {
@@ -312,9 +352,11 @@ export function useWeather() {
           .eq('user_id', user.id)
           .maybeSingle();
 
+        if (!isMounted) return;
+
         if (profile?.weather_enabled) {
           setState(prev => ({ ...prev, enabled: true }));
-          
+
           // Use cached weather if still valid
           const cached = getCachedWeather(user?.id);
           if (cached) {
@@ -322,23 +364,30 @@ export function useWeather() {
             return;
           }
 
-          // Use saved profile coordinates if available (NO GPS PROMPT!)
+          // Use saved profile coordinates if available
           if (profile.latitude && profile.longitude) {
-            // Silently check if location changed significantly
-            const { lat, lon } = await checkAndUpdateLocation(profile.latitude, profile.longitude);
-            await fetchWeather(lat, lon);
+            // Fetch weather directly without geolocation check
+            await fetchWeather(profile.latitude, profile.longitude);
           } else {
             // Only request GPS if no saved location exists
             await fetchWeatherForCurrentLocation();
           }
         }
+      } catch (err) {
+        console.error('Error loading weather:', err);
       } finally {
-        setState(prev => ({ ...prev, initializing: false, loading: false }));
+        if (isMounted) {
+          setState(prev => ({ ...prev, initializing: false, loading: false }));
+        }
       }
     };
 
     loadWeather();
-  }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation, checkAndUpdateLocation]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation]);
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(getCacheKey(user?.id));

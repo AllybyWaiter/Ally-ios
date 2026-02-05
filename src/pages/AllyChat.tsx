@@ -56,8 +56,8 @@ interface Message {
 
 import { MODEL_OPTIONS, type ModelType, type ModelOption } from '@/lib/constants';
 
-// Persist last conversation ID for session continuity
-const LAST_CONVERSATION_KEY = 'ally_last_conversation_id';
+// Persist last conversation ID for session continuity (user-scoped)
+const getLastConversationKey = (userId: string) => `ally_last_conversation_${userId}`;
 
 const AllyChat = () => {
   const navigate = useNavigate();
@@ -181,10 +181,14 @@ const AllyChat = () => {
     await conversationManager.fetchConversations();
     
     // Restore last conversation if available
-    const lastConvoId = localStorage.getItem(LAST_CONVERSATION_KEY);
+    const lastConvoId = localStorage.getItem(getLastConversationKey(user.id));
     if (lastConvoId && conversationManager.conversations.some(c => c.id === lastConvoId)) {
       const loadedMessages = await conversationManager.loadConversation(lastConvoId);
-      setMessages(loadedMessages);
+      if (loadedMessages && loadedMessages.length > 0) {
+        setMessages(loadedMessages);
+      } else {
+        setMessages(conversationManager.startNewConversation());
+      }
     } else {
       setMessages(conversationManager.startNewConversation());
     }
@@ -194,14 +198,18 @@ const AllyChat = () => {
     const loadedMessages = await conversationManager.loadConversation(id);
     setMessages(loadedMessages);
     // Persist for session continuity
-    localStorage.setItem(LAST_CONVERSATION_KEY, id);
-  }, [conversationManager]);
+    if (userId) {
+      localStorage.setItem(getLastConversationKey(userId), id);
+    }
+  }, [conversationManager, userId]);
 
   const handleStartNewConversation = useCallback(() => {
     setMessages(conversationManager.startNewConversation());
     setLastError(null);
-    localStorage.removeItem(LAST_CONVERSATION_KEY);
-  }, [conversationManager]);
+    if (userId) {
+      localStorage.removeItem(getLastConversationKey(userId));
+    }
+  }, [conversationManager, userId]);
 
   const handleDeleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -330,12 +338,19 @@ const AllyChat = () => {
               timestamp: new Date()
             };
             const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
-            if (savedId) {
-              localStorage.setItem(LAST_CONVERSATION_KEY, savedId);
+            if (savedId && userId) {
+              localStorage.setItem(getLastConversationKey(userId), savedId);
             }
           },
           onError: (error) => {
             console.error("Stream error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to get response";
+            setLastError({ message: errorMessage, userMessage });
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
           },
           onToolExecution: (executions) => {
             pendingToolExecutionsRef.current = executions;
@@ -447,8 +462,8 @@ const AllyChat = () => {
               timestamp: new Date()
             };
             const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
-            if (savedId) {
-              localStorage.setItem(LAST_CONVERSATION_KEY, savedId);
+            if (savedId && userId) {
+              localStorage.setItem(getLastConversationKey(userId), savedId);
             }
 
             if (shouldAutoPlay && content) {
@@ -458,6 +473,13 @@ const AllyChat = () => {
           },
           onError: (error) => {
             console.error("Stream error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to get response";
+            setLastError({ message: errorMessage, userMessage });
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
           },
           onToolExecution: (executions) => {
             // Store tool executions and update the current message
@@ -598,6 +620,12 @@ const AllyChat = () => {
           },
           onError: (error) => {
             console.error("Regeneration error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to regenerate response";
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
           },
           onToolExecution: (executions) => {
             pendingToolExecutionsRef.current = executions;

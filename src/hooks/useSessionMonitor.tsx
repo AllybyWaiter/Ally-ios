@@ -20,14 +20,14 @@ export const useSessionMonitor = () => {
     
     try {
       // Create a timeout promise for quick response
-      const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) => {
-        setTimeout(() => resolve({ data: { session: null }, error: null }), 
+      const timeoutPromise = new Promise<Awaited<ReturnType<typeof supabase.auth.getSession>>>((resolve) => {
+        setTimeout(() => resolve({ data: { session: null }, error: null }),
           isVisibilityChange ? VISIBILITY_REFRESH_TIMEOUT : 5000
         );
       });
 
       const sessionPromise = supabase.auth.getSession();
-      
+
       const { data: { session }, error } = await Promise.race([
         sessionPromise,
         timeoutPromise

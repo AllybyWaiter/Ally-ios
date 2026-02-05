@@ -42,7 +42,7 @@ export const ProtectedRoute = ({
     return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
   }
 
-  if (requireAnyRole && !hasAnyRole(requireAnyRole)) {
+  if (requireAnyRole && requireAnyRole.length > 0 && !hasAnyRole(requireAnyRole)) {
     return fallback ? <>{fallback}</> : <Navigate to="/" replace />;
   }
 

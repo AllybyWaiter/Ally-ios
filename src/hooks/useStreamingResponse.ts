@@ -155,6 +155,7 @@ export function useStreamingResponse() {
       const sanitized = DOMPurify.sanitize(content, {
         ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
         ALLOWED_ATTR: ['href'],
+        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
       });
 
       const now = Date.now();
