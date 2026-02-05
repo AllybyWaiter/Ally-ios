@@ -333,6 +333,38 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "show_water_data",
+      description: "Display a visual data card showing water test results and trends. ALWAYS use this when user asks about tank status, parameter trends, test results, or water quality - show visual cards instead of just describing numbers. Examples: 'how's my tank doing?', 'show me my pH', 'what were my last results?', 'is my ammonia okay?', 'how are my parameters?'",
+      parameters: {
+        type: "object",
+        properties: {
+          aquarium_id: {
+            type: "string",
+            description: "ID of the aquarium/pool/spa to show data for"
+          },
+          card_type: {
+            type: "string",
+            enum: ["latest_test", "parameter_trend", "tank_summary"],
+            description: "Type of visualization: latest_test (most recent results), parameter_trend (history of specific params with sparklines), tank_summary (overview with key params and status)"
+          },
+          parameters: {
+            type: "array",
+            items: { type: "string" },
+            description: "Which parameters to show (e.g., ['pH', 'Ammonia', 'Nitrate']). If omitted, shows most relevant for the water type."
+          },
+          days: {
+            type: "number",
+            description: "Days of history for trends. Default 30."
+          }
+        },
+        required: ["aquarium_id", "card_type"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 

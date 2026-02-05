@@ -181,12 +181,34 @@ export interface ToolExecutionFeedback {
 }
 
 /**
- * Create a stream that first emits tool execution feedback, then pipes the AI response.
+ * Data card payload for water test visualizations
+ */
+export interface DataCardPayload {
+  card_type: 'latest_test' | 'parameter_trend' | 'tank_summary';
+  title: string;
+  aquarium_name: string;
+  timestamp: string;
+  test_count?: number;
+  parameters: Array<{
+    name: string;
+    value: number;
+    unit: string;
+    status: 'good' | 'warning' | 'critical';
+    trend?: 'up' | 'down' | 'stable';
+    sparkline?: number[];
+    change?: number;
+  }>;
+}
+
+/**
+ * Create a stream that first emits tool execution feedback and data cards, then pipes the AI response.
  * The tool_executions event allows the UI to show confirmations before the AI response.
+ * Data cards are shown as visual components for water test results.
  */
 export function createToolExecutionStream(
   toolExecutions: ToolExecutionFeedback[],
-  aiResponseStream: ReadableStream<Uint8Array> | null
+  aiResponseStream: ReadableStream<Uint8Array> | null,
+  dataCards?: DataCardPayload[]
 ): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
 
@@ -198,6 +220,17 @@ export function createToolExecutionStream(
         executions: toolExecutions,
       };
       controller.enqueue(encoder.encode(`data: ${JSON.stringify(toolEvent)}\n\n`));
+
+      // Send data cards if present
+      if (dataCards && dataCards.length > 0) {
+        for (const card of dataCards) {
+          const cardEvent = {
+            type: 'data_card',
+            card,
+          };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(cardEvent)}\n\n`));
+        }
+      }
 
       // Then pipe through the AI response
       if (aiResponseStream) {

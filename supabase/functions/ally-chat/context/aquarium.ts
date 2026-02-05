@@ -4,7 +4,7 @@
  * Fetches and formats aquarium data for AI context.
  */
 
-import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { getWaterType } from '../tools/index.ts';
 
 export interface AquariumContext {
@@ -58,6 +58,7 @@ export async function buildAquariumContext(
   const context = `
 
 Current Aquarium Context:
+- ID: ${aquarium.id}
 - Name: ${aquarium.name}
 - Type: ${aquarium.type}
 - Water Type: ${waterType}

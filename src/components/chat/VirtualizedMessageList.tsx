@@ -25,6 +25,9 @@ import { LazySyntaxHighlighter } from "./LazySyntaxHighlighter";
 import { parseFollowUpSuggestions, FollowUpSuggestions, type FollowUpItem } from "./FollowUpSuggestions";
 import { QuickActionChips, detectQuickActions, type QuickAction } from "./QuickActionChips";
 import { ToolExecutionFeedback, type ToolExecution } from "./ToolExecutionFeedback";
+import { DataCard, type DataCardPayload } from "./DataCard";
+import { WaterDataCardParser } from "./WaterDataCardParser";
+import { mentionsToDisplay } from "./MentionInput";
 
 // Typed props for markdown components
 interface CodeProps {
@@ -87,6 +90,7 @@ interface Message {
   aquariumName?: string;
   imageUrl?: string;
   toolExecutions?: ToolExecution[];
+  dataCards?: DataCardPayload[];
 }
 
 interface VirtualizedMessageListProps {
@@ -229,6 +233,22 @@ const MessageContent = memo(({
               {message.toolExecutions && message.toolExecutions.length > 0 && (
                 <ToolExecutionFeedback executions={message.toolExecutions} />
               )}
+              {/* Data cards for water test visualizations */}
+              {message.dataCards && message.dataCards.length > 0 ? (
+                <div className="space-y-3 mb-3 not-prose">
+                  {message.dataCards.map((card, idx) => (
+                    <DataCard key={`${card.card_type}-${idx}`} card={card} />
+                  ))}
+                </div>
+              ) : (
+                /* Fallback: Parse content for water parameters if no explicit data card */
+                !isTypewriterActive && cleanContent && (
+                  <WaterDataCardParser
+                    content={cleanContent}
+                    aquariumName={message.aquariumName}
+                  />
+                )
+              )}
               {isTypewriterActive ? (
                 <p className="whitespace-pre-wrap leading-relaxed">
                   {stableContent}
@@ -294,7 +314,7 @@ const MessageContent = memo(({
                   )}
                   {message.content && (
                     <div className="inline-block bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2 break-words">
-                      <p className="text-sm leading-relaxed">{message.content}</p>
+                      <p className="text-sm leading-relaxed">{mentionsToDisplay(message.content)}</p>
                     </div>
                   )}
                 </div>
