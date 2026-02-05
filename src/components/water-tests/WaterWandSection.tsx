@@ -56,11 +56,22 @@ interface WandDevice {
 interface WaterWandSectionProps {
   onReadingComplete?: (reading: WaterReading) => void;
   onParametersDetected?: (params: Record<string, string>) => void;
+  units?: 'metric' | 'imperial';
 }
+
+// Temperature conversion helpers
+const celsiusToFahrenheit = (celsius: number): number => (celsius * 9/5) + 32;
+const formatTemperature = (celsius: number, units: 'metric' | 'imperial'): string => {
+  if (units === 'imperial') {
+    return `${celsiusToFahrenheit(celsius).toFixed(1)}°F`;
+  }
+  return `${celsius.toFixed(1)}°C`;
+};
 
 export function WaterWandSection({
   onReadingComplete,
   onParametersDetected,
+  units = 'imperial',
 }: WaterWandSectionProps) {
   // Mock state until BLE plugin is installed
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
@@ -162,11 +173,16 @@ export function WaterWandSection({
           setLastReading(mockReading);
           setStatus('connected');
 
-          // Convert to form parameters
+          // Convert to form parameters (temperature in user's preferred units)
           if (onParametersDetected) {
             const params: Record<string, string> = {};
             if (mockReading.ph !== null) params['pH'] = mockReading.ph.toFixed(2);
-            if (mockReading.temperature !== null) params['Temperature'] = mockReading.temperature.toFixed(1);
+            if (mockReading.temperature !== null) {
+              const temp = units === 'imperial'
+                ? celsiusToFahrenheit(mockReading.temperature)
+                : mockReading.temperature;
+              params['Temperature'] = temp.toFixed(1);
+            }
             if (mockReading.ec !== null) params['EC'] = mockReading.ec.toString();
             if (mockReading.tds !== null) params['TDS'] = mockReading.tds.toString();
             onParametersDetected(params);
@@ -499,7 +515,7 @@ export function WaterWandSection({
                     <Thermometer className="h-3.5 w-3.5" />
                     <span className="text-xs font-medium">Temp</span>
                   </div>
-                  <p className="text-xl font-bold">{lastReading.temperature.toFixed(1)}°C</p>
+                  <p className="text-xl font-bold">{formatTemperature(lastReading.temperature, units)}</p>
                 </motion.div>
               )}
 
