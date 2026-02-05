@@ -150,6 +150,20 @@ export const MentionInput = forwardRef<MentionInputRef, MentionInputProps>(({
     for (let i = textBeforeCursor.length - 1; i >= 0; i--) {
       if (textBeforeCursor[i] === '@') {
         const afterAt = textBeforeCursor.slice(i + 1);
+
+        // Check if this @ is part of a completed mention (matches a known item name followed by space)
+        const isCompletedMention = mentionItems.some(item => {
+          const mentionPattern = item.name;
+          // Check if afterAt starts with the item name followed by a space or is exactly the item name at cursor
+          return afterAt.startsWith(mentionPattern + ' ') ||
+                 (afterAt === mentionPattern && cursor === i + 1 + mentionPattern.length);
+        });
+
+        if (isCompletedMention) {
+          // This @ is part of a completed mention, skip it
+          continue;
+        }
+
         // If there's no ] after the @, it's a new mention being typed
         if (!afterAt.includes(']')) {
           lastAtIndex = i;
@@ -309,7 +323,8 @@ export const MentionInput = forwardRef<MentionInputRef, MentionInputProps>(({
               {mentionSearch ? `Matching "${mentionSearch}"` : 'Your Aquatic Spaces'}
             </div>
             {filteredItems.map((item, index) => {
-              const Icon = iconMap[item.icon || "fish"];
+              const iconKey = item.icon && item.icon in iconMap ? item.icon : "fish";
+              const Icon = iconMap[iconKey];
               return (
                 <button
                   key={item.id}

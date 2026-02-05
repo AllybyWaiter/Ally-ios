@@ -153,7 +153,9 @@ export const formatWindSpeed = (kmh: number | null | undefined, units: UnitSyste
 export const getCardinalDirection = (degrees: number | null | undefined): string => {
   if (degrees == null || isNaN(degrees)) return '';
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  const index = Math.round(((degrees % 360) / 45)) % 8;
+  // Normalize to positive degrees (0-359) to handle negative values
+  const normalizedDegrees = ((degrees % 360) + 360) % 360;
+  const index = Math.round(normalizedDegrees / 45) % 8;
   return directions[index];
 };
 
@@ -171,7 +173,8 @@ export const formatWindWithDirection = (
 export const getWindRotation = (degrees: number | null | undefined): number => {
   // Returns rotation for an arrow pointing in the direction wind is coming FROM
   if (degrees == null || isNaN(degrees)) return 0;
-  return degrees;
+  // Normalize to 0-359 range
+  return ((degrees % 360) + 360) % 360;
 };
 
 // UV Index helpers

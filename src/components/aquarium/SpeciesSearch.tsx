@@ -81,7 +81,7 @@ export function SpeciesSearch({
         break;
       case 'Enter':
         e.preventDefault();
-        if (selectedIndex >= 0 && species[selectedIndex]) {
+        if (selectedIndex >= 0 && selectedIndex < species.length && species[selectedIndex]) {
           selectSpecies(species[selectedIndex]);
         }
         break;
