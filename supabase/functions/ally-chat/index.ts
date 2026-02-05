@@ -12,7 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { corsHeaders, handleCors } from '../_shared/cors.ts';
+import { corsHeaders, handleCors, getCorsHeaders } from '../_shared/cors.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { validateUuid, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
 import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
@@ -27,20 +27,14 @@ import { buildSystemPrompt } from './prompts/system.ts';
 import { parseStreamForToolCalls, createContentStream, createToolExecutionStream } from './utils/streamParser.ts';
 import { validateRequiredInputs } from './utils/inputGate.ts';
 
-// Model configuration
+// Model configuration - Using OpenAI directly
 const AI_MODELS = {
-  standard: "google/gemini-3-flash-preview",  // Fast, balanced (latest)
-  thinking: "openai/gpt-5"                    // Powerful reasoning for Gold users
+  standard: "gpt-4o-mini",    // Fast, cost-effective
+  thinking: "gpt-4o"          // Powerful reasoning for Gold users
 };
 
 const GOLD_TIERS = ['gold', 'business', 'enterprise'];
-const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-
-// GPT-5 models require max_completion_tokens instead of max_tokens
-const USES_COMPLETION_TOKENS = ['openai/gpt-5', 'openai/gpt-5-mini', 'openai/gpt-5-nano'];
-
-// Only Gemini models support custom temperature (GPT-5 only supports default 1.0)
-const SUPPORTS_TEMPERATURE = ['google/gemini-2.5-flash', 'google/gemini-2.5-pro', 'google/gemini-3-flash-preview', 'google/gemini-3-pro-preview'];
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
 serve(async (req) => {
   const corsResponse = handleCors(req);
@@ -84,7 +78,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       logger.error('No authorization header provided');
-      return createErrorResponse('Authentication required', logger, { status: 401 });
+      return createErrorResponse('Authentication required', logger, { status: 401, request: req });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -94,11 +88,22 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
+    logger.info('Attempting auth', {
+      tokenPreview: token.slice(0, 20) + '...',
+      supabaseUrl: Deno.env.get('SUPABASE_URL')?.slice(0, 30),
+      hasAnonKey: !!Deno.env.get('SUPABASE_ANON_KEY')
+    });
+
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
-    
+
     if (authError || !authUser) {
-      logger.error('Authentication failed', { error: authError?.message });
-      return createErrorResponse('Authentication failed', logger, { status: 401 });
+      logger.error('Authentication failed', {
+        error: authError?.message,
+        errorCode: authError?.code,
+        errorStatus: authError?.status,
+        hasUser: !!authUser
+      });
+      return createErrorResponse('Authentication failed', logger, { status: 401, request: req });
     }
     
     logger.info('User authenticated', { userId: authUser.id });
@@ -117,10 +122,10 @@ serve(async (req) => {
     }
 
     // Check API key
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      logger.error('LOVABLE_API_KEY not configured');
-      return createErrorResponse('AI service not configured', logger, { status: 500 });
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    if (!OPENAI_API_KEY) {
+      logger.error('OPENAI_API_KEY not configured');
+      return createErrorResponse('AI service not configured', logger, { status: 500, request: req });
     }
 
     // Fetch profile and context in parallel for better performance
@@ -149,14 +154,13 @@ serve(async (req) => {
       ? 'thinking' 
       : 'standard';
     const aiModel = AI_MODELS[selectedModel];
-    const usesCompletionTokens = USES_COMPLETION_TOKENS.includes(aiModel);
-    
-    logger.info('Model selection', { 
-      requested: requestedModel, 
-      selected: selectedModel, 
+
+    logger.info('Model selection', {
+      requested: requestedModel,
+      selected: selectedModel,
       aiModel,
       canUseThinking,
-      subscriptionTier 
+      subscriptionTier
     });
 
     // Wait for aquarium context (was started in parallel with profile fetch)
@@ -196,7 +200,7 @@ serve(async (req) => {
       userName,
     });
 
-    logger.info('Processing chat request', { 
+    logger.info('Processing chat request', {
       aquariumId: aquariumId || 'none',
       skillLevel,
       subscriptionTier,
@@ -204,8 +208,7 @@ serve(async (req) => {
       memoryCount: memoryResult.memories?.length || 0,
       messageCount: messages.length,
       hasImages,
-      selectedModel,
-      usesCompletionTokens
+      selectedModel
     });
 
     // Format messages for the API - handle multi-modal content
@@ -231,18 +234,10 @@ serve(async (req) => {
       model: aiModel,
       messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
       stream: true,
+      temperature: 0.7,
+      max_tokens: 4096,
     };
-    
-    // Only include temperature for models that support it (GPT-5 doesn't)
-    if (SUPPORTS_TEMPERATURE.includes(aiModel)) {
-      streamingApiBody.temperature = 0.7;
-    }
-    
-    // Use max_completion_tokens for GPT-5 models
-    if (usesCompletionTokens) {
-      streamingApiBody.max_completion_tokens = 4096;
-    }
-    
+
     // Include tools for users with memory access
     if (hasMemoryAccess) {
       streamingApiBody.tools = tools;
@@ -254,10 +249,10 @@ serve(async (req) => {
       model: aiModel 
     });
 
-    const response = await fetch(AI_GATEWAY_URL, {
+    const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(streamingApiBody),
@@ -270,24 +265,24 @@ serve(async (req) => {
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 429, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
-      
+
       if (response.status === 402) {
         return new Response(
           JSON.stringify({ error: 'Service temporarily unavailable. Please try again later.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 402, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
       
-      return createErrorResponse('Failed to process AI request', logger, { status: 502 });
+      return createErrorResponse('Failed to process AI request', logger, { status: 502, request: req });
     }
 
     // If no tools enabled, stream directly without parsing
     if (!hasMemoryAccess) {
       logger.info('Streaming response (no tools)', { model: aiModel });
-      return createStreamResponse(response.body);
+      return createStreamResponse(response.body, req);
     }
 
     // Parse stream to detect tool calls (buffering strategy for reliability)
@@ -350,20 +345,14 @@ serve(async (req) => {
         model: aiModel,
         messages: followUpMessages,
         stream: true,
+        temperature: 0.7,
+        max_tokens: 4096,
       };
-      
-      if (SUPPORTS_TEMPERATURE.includes(aiModel)) {
-        followUpApiBody.temperature = 0.7;
-      }
-      
-      if (usesCompletionTokens) {
-        followUpApiBody.max_completion_tokens = 4096;
-      }
 
-      const followUpResponse = await fetch(AI_GATEWAY_URL, {
+      const followUpResponse = await fetch(OPENAI_API_URL, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(followUpApiBody),
@@ -372,7 +361,7 @@ serve(async (req) => {
       if (!followUpResponse.ok) {
         const errorText = await followUpResponse.text();
         logger.error('Follow-up AI gateway error', { status: followUpResponse.status, error: errorText });
-        return createErrorResponse('Failed to process follow-up request', logger, { status: 502 });
+        return createErrorResponse('Failed to process follow-up request', logger, { status: 502, request: req });
       }
 
       // Extract tool execution feedback from results
@@ -400,7 +389,8 @@ serve(async (req) => {
 
       // Stream tool execution feedback first, then the AI response
       return createStreamResponse(
-        createToolExecutionStream(toolExecutions, followUpResponse.body)
+        createToolExecutionStream(toolExecutions, followUpResponse.body),
+        req
       );
     }
 
@@ -410,9 +400,9 @@ serve(async (req) => {
       contentLength: parseResult.contentBuffer.length 
     });
     
-    return createStreamResponse(createContentStream(parseResult.contentBuffer));
+    return createStreamResponse(createContentStream(parseResult.contentBuffer), req);
   } catch (error) {
     logger.error('Unexpected error', { error: error instanceof Error ? error.message : 'Unknown error' });
-    return createErrorResponse(error, logger);
+    return createErrorResponse(error, logger, { request: req });
   }
 });

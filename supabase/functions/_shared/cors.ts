@@ -20,11 +20,9 @@ function getAllowedOrigins(): string[] {
     return customOrigins.split(',').map(o => o.trim());
   }
 
-  // In production, only allow production origins
-  const isProduction = Deno.env.get('ENVIRONMENT') === 'production' ||
-                       Deno.env.get('SUPABASE_URL')?.includes('supabase.co');
-
-  return isProduction ? productionOrigins : [...productionOrigins, ...developmentOrigins];
+  // Always include both production and development origins
+  // Development origins (localhost) are safe to include since they only work locally
+  return [...productionOrigins, ...developmentOrigins];
 }
 
 const allowedOrigins = getAllowedOrigins();
