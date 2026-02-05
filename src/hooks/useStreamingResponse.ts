@@ -48,10 +48,11 @@ export function useStreamingResponse() {
     messages: Message[],
     aquariumId: string | null,
     model: ModelType = 'standard',
-    callbacks: StreamingCallbacks
+    callbacks: StreamingCallbacks,
+    isRetry = false
   ): Promise<string> => {
     // Check authentication
-    const session = await supabase.auth.getSession();
+    let session = await supabase.auth.getSession();
     if (!session.data.session) {
       toast({
         title: "Authentication required",
@@ -120,11 +121,11 @@ export function useStreamingResponse() {
     if (!response.ok || !response.body) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-      // Handle 401 - try to refresh session automatically
-      if (response.status === 401) {
-        console.log('Session expired, attempting refresh...');
-        const { error: refreshError } = await supabase.auth.refreshSession();
-        if (refreshError) {
+      // Handle 401 - try to refresh session and retry automatically (once)
+      if (response.status === 401 && !isRetry) {
+        console.log('Session expired, attempting refresh and retry...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError || !refreshData.session) {
           console.error('Session refresh failed:', refreshError);
           toast({
             title: "Session expired",
@@ -134,8 +135,9 @@ export function useStreamingResponse() {
           navigate("/auth");
           throw new Error("Session expired. Please sign in again.");
         }
-        // Session refreshed - tell user to retry
-        throw new Error("Session refreshed. Please try again.");
+        // Session refreshed - retry the request automatically
+        console.log('Session refreshed, retrying request...');
+        return streamResponse(messages, aquariumId, model, callbacks, true);
       }
 
       // Parse error response for specific messages
