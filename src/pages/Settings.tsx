@@ -24,12 +24,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { 
-  ArrowLeft, User, Lock, Trash2, Moon, Sun, Monitor, 
-  Globe, Shield, Crown, Brain, MapPin, 
+import {
+  ArrowLeft, User, Lock, Trash2, Moon, Sun, Monitor,
+  Globe, Shield, Crown, Brain, MapPin,
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
   Mail, ChevronRight, Settings as SettingsIcon, BookOpen, Sparkles, Loader2,
-  Palette, Ruler, Cloud
+  Palette, Ruler, Cloud, Bluetooth, Waves
 } from "lucide-react";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useTheme } from "next-themes";
@@ -434,9 +434,15 @@ const Settings = () => {
       setActiveSection(null); // Close the subscription sheet
       setPortalLoading(true);
       try {
+        logger.log('Settings: Opening paywall...');
         const purchased = await showPaywall();
+        logger.log('Settings: Paywall closed, purchased:', purchased);
+        // Give RevenueCat a moment to process the transaction (sandbox can be slow)
+        await new Promise(resolve => setTimeout(resolve, 1000));
         // Always refresh customer info after paywall closes to get latest subscription status
+        logger.log('Settings: Calling refreshCustomerInfo...');
         await refreshCustomerInfo();
+        logger.log('Settings: refreshCustomerInfo complete, current tier:', rcSubscriptionTier);
         if (purchased) {
           toast({ title: "Subscription Activated!", description: "Welcome to Ally Pro!" });
         }
@@ -657,12 +663,27 @@ const Settings = () => {
                 description="What Ally remembers"
                 onClick={() => setActiveSection('memory')}
               />
-              <SettingsRow 
-                icon={Sparkles} 
-                iconClassName="bg-green-500/10 text-green-500" 
+              <SettingsRow
+                icon={Sparkles}
+                iconClassName="bg-green-500/10 text-green-500"
                 label="Refer Friends"
                 description="Earn free months of Plus"
                 onClick={() => setActiveSection('referrals')}
+              />
+            </SettingsSection>
+
+            <SettingsSection title="Devices">
+              <SettingsRow
+                icon={Waves}
+                iconClassName="bg-blue-500/10 text-blue-500"
+                label="Ally Wand"
+                description="BLE water testing wand"
+                onClick={() => setActiveSection('ally-wand')}
+                rightElement={
+                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">
+                    BLE
+                  </Badge>
+                }
               />
             </SettingsSection>
           </TabsContent>
@@ -949,6 +970,65 @@ const Settings = () => {
           <ReferralSection />
           <Separator />
           <ReferralRewards />
+        </div>
+      </DetailSheet>
+
+      <DetailSheet id="ally-wand" title="Ally Wand" description="Manage your BLE water testing wand">
+        <div className="space-y-6">
+          {/* Connection Status */}
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Waves className="h-5 w-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="font-medium">No Device Connected</p>
+                <p className="text-xs text-muted-foreground">Pair your wand to get started</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-muted-foreground">Disconnected</Badge>
+          </div>
+
+          {/* How to Connect */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">How to Connect</h4>
+            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+              <li>Power on your Ally Wand</li>
+              <li>Go to Water Tests and tap "Use Ally Wand"</li>
+              <li>Tap "Find Water Wand" to scan for devices</li>
+              <li>Select your wand from the list to pair</li>
+            </ol>
+          </div>
+
+          {/* Supported Devices */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Supported Devices</h4>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { model: 'BLE-9909', params: '5-in-1: pH, EC, TDS, Temp, Salinity' },
+                { model: 'BLE-9908', params: '4-in-1: pH, EC, TDS, Temp' },
+                { model: 'BLE-C600', params: '7-in-1: pH, EC, TDS, Salinity, S.G., ORP, Temp' },
+              ].map((device) => (
+                <div key={device.model} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                  <Bluetooth className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{device.model}</p>
+                    <p className="text-xs text-muted-foreground truncate">{device.params}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Troubleshooting */}
+          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <h4 className="text-sm font-medium text-amber-600 dark:text-amber-400 mb-2">Troubleshooting</h4>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• Make sure Bluetooth is enabled in device settings</li>
+              <li>• Keep the wand within 2 meters during pairing</li>
+              <li>• If not found, power cycle the wand and try again</li>
+            </ul>
+          </div>
         </div>
       </DetailSheet>
 

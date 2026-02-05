@@ -202,6 +202,16 @@ export function usePushNotifications() {
 
   // Subscribe to push notifications
   const subscribe = useCallback(async () => {
+    // Check online status before attempting to subscribe
+    if (!navigator.onLine) {
+      toast({
+        title: 'You are offline',
+        description: 'Please connect to the internet to enable notifications.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     if (!user || !isSupported || !vapidPublicKey) {
       toast({
         title: 'Cannot subscribe',

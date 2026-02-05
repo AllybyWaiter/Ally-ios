@@ -12,6 +12,9 @@ export async function compressImage(
   maxWidthOrHeight: number = 1920,
   quality: number = 0.8
 ): Promise<File> {
+  // Validate and clamp quality to valid range (0.1 to 1.0)
+  const validQuality = Math.max(0.1, Math.min(1, quality));
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -74,7 +77,7 @@ export async function compressImage(
                 resolve(compressedFile);
               } else {
                 // Need more compression, reduce quality
-                const newQuality = Math.max(0.5, quality * 0.8);
+                const newQuality = Math.max(0.5, validQuality * 0.8);
                 
                 canvas.toBlob(
                   (secondBlob) => {
@@ -96,7 +99,7 @@ export async function compressImage(
               }
             },
             'image/jpeg',
-            quality
+            validQuality
           );
         } catch (error) {
           reject(error);

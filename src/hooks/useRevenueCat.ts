@@ -94,13 +94,17 @@ export function useRevenueCat(): UseRevenueCatReturn {
     if (!isNative || !isInitialized) return;
 
     const unsubscribe = addCustomerInfoUpdateListener(async (info) => {
+      logger.log('useRevenueCat: Customer info update received from listener');
+      logger.log('useRevenueCat: Active entitlements from listener:', Object.keys(info.entitlements.active));
       setCustomerInfo(info);
 
       // Update entitlement status
       const hasPro = await hasProAccess();
       setIsPro(hasPro);
+      logger.log('useRevenueCat: hasPro from listener:', hasPro);
 
       const tier = await getSubscriptionTier();
+      logger.log('useRevenueCat: tier from listener:', tier);
       setSubscriptionTier(tier);
     });
 
@@ -198,14 +202,19 @@ export function useRevenueCat(): UseRevenueCatReturn {
   const refreshCustomerInfo = useCallback(async (): Promise<void> => {
     if (!isNative) return;
 
+    logger.log('useRevenueCat: refreshCustomerInfo called');
     try {
       const info = await getCustomerInfo();
+      logger.log('useRevenueCat: refreshCustomerInfo got info, entitlements:', Object.keys(info.entitlements.active));
+      logger.log('useRevenueCat: refreshCustomerInfo subscriptions:', Object.keys(info.activeSubscriptions || {}));
       setCustomerInfo(info);
 
       const hasPro = await hasProAccess();
+      logger.log('useRevenueCat: refreshCustomerInfo hasPro:', hasPro);
       setIsPro(hasPro);
 
       const tier = await getSubscriptionTier();
+      logger.log('useRevenueCat: refreshCustomerInfo setting tier to:', tier);
       setSubscriptionTier(tier);
     } catch (error) {
       logger.error('Failed to refresh customer info:', error);

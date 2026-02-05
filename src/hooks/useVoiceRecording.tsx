@@ -8,10 +8,17 @@ export const useVoiceRecording = () => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const isAbortedRef = useRef(false); // Track if component unmounted
 
   // Cleanup function to stop all media tracks
   useEffect(() => {
+    // Reset abort flag on mount
+    isAbortedRef.current = false;
+
     return () => {
+      // Mark as aborted to prevent state updates after unmount
+      isAbortedRef.current = true;
+
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -68,11 +75,14 @@ export const useVoiceRecording = () => {
       };
 
       mediaRecorderRef.current.onstop = async () => {
+        // Check if component unmounted before updating state
+        if (isAbortedRef.current) {
+          resolve(null);
+          return;
+        }
+
         setIsRecording(false);
         setIsProcessing(true);
-
-        // Track if the operation was aborted (component unmounted)
-        let isAborted = false;
 
         try {
           const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
@@ -82,37 +92,47 @@ export const useVoiceRecording = () => {
 
           reader.onerror = () => {
             console.error('FileReader error:', reader.error);
-            if (!isAborted) {
+            if (!isAbortedRef.current) {
               setIsProcessing(false);
               resolve(null);
             }
           };
 
           reader.onabort = () => {
-            if (!isAborted) {
+            if (!isAbortedRef.current) {
               setIsProcessing(false);
               resolve(null);
             }
           };
 
           reader.onloadend = async () => {
-            if (isAborted) return;
+            if (isAbortedRef.current) return;
 
-            const base64Audio = (reader.result as string).split(',')[1];
+            const resultString = reader.result as string;
+            const splitResult = resultString.split(',');
+            if (splitResult.length < 2) {
+              console.error('Invalid data URL format');
+              if (!isAbortedRef.current) {
+                setIsProcessing(false);
+              }
+              resolve(null);
+              return;
+            }
+            const base64Audio = splitResult[1];
 
             try {
               const { data, error } = await supabase.functions.invoke('transcribe-audio', {
                 body: { audio: base64Audio }
               });
 
-              if (isAborted) return;
+              if (isAbortedRef.current) return;
               if (error) throw error;
 
               setIsProcessing(false);
               toast.success('Transcription complete');
               resolve(data.text);
             } catch (error) {
-              if (isAborted) return;
+              if (isAbortedRef.current) return;
               console.error('Transcription error:', error);
               toast.error('Failed to transcribe audio');
               setIsProcessing(false);
@@ -122,7 +142,7 @@ export const useVoiceRecording = () => {
 
           reader.readAsDataURL(audioBlob);
         } catch (error) {
-          if (isAborted) return;
+          if (isAbortedRef.current) return;
           console.error('Error processing audio:', error);
           toast.error('Failed to process audio');
           setIsProcessing(false);

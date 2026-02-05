@@ -68,9 +68,8 @@ export default function Dashboard() {
   const handlePullRefresh = useCallback(async () => {
     if (user) {
       await loadAquariums(user.id);
-      toast({ 
-        title: 'Dashboard refreshed',
-        description: `Updated ${new Date().toLocaleTimeString()}`
+      toast({
+        title: 'Updated',
       });
     }
   }, [user, loadAquariums, toast]);

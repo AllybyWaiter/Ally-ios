@@ -264,10 +264,15 @@ export function useConversationManager(userId: string | null) {
     // Create new conversation if needed
     if (!conversationId) {
       // Smart title generation: use first sentence or truncate at word boundary
-      const firstSentence = userMessage.content.split(/[.!?]/)[0]?.trim() || userMessage.content;
-      const title = firstSentence.length > 50 
-        ? firstSentence.slice(0, 47).replace(/\s+\S*$/, '') + "..." 
-        : firstSentence.slice(0, 50);
+      // Sanitize to prevent XSS - strip HTML tags and special chars
+      const sanitizedContent = userMessage.content
+        .replace(/<[^>]*>/g, '') // Strip HTML tags
+        .replace(/[<>"'&]/g, '') // Remove special chars that could be XSS vectors
+        .trim();
+      const firstSentence = sanitizedContent.split(/[.!?]/)[0]?.trim() || sanitizedContent;
+      const title = firstSentence.length > 50
+        ? firstSentence.slice(0, 47).replace(/\s+\S*$/, '') + "..."
+        : firstSentence.slice(0, 50) || "New conversation";
       const { data: newConv, error: convError } = await supabase
         .from('chat_conversations')
         .insert({
@@ -356,8 +361,12 @@ export function useConversationManager(userId: string | null) {
       .eq('conversation_id', currentConversationId)
       .order('created_at', { ascending: true });
 
-    if (existingMessages && existingMessages.length > messageIndex) {
+    if (existingMessages && existingMessages.length > messageIndex && messageIndex >= 0) {
       const messageToUpdate = existingMessages[messageIndex];
+      if (!messageToUpdate?.id) {
+        logger.error('Invalid message to update at index:', messageIndex);
+        return;
+      }
 
       // Update the edited message
       await supabase

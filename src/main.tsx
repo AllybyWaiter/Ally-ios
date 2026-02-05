@@ -36,9 +36,10 @@ if (!envValidation.isValid) {
       logger.warn('RevenueCat initialization skipped or failed:', error);
     });
 
-    // Hide splash screen once React is ready
-    const windowWithSplash = window as Window & { hideSplash?: () => void };
-    if (windowWithSplash.hideSplash) {
+    // Hide splash screen once React is ready (web/PWA only - native apps use native splash)
+    const windowWithSplash = window as Window & { hideSplash?: () => void; Capacitor?: { isNativePlatform?: () => boolean } };
+    const isNative = windowWithSplash.Capacitor?.isNativePlatform?.();
+    if (!isNative && windowWithSplash.hideSplash) {
       windowWithSplash.hideSplash();
     }
 

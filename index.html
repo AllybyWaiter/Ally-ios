@@ -206,6 +206,7 @@
       }
     </style>
     
+    <!-- Web splash screen - hidden on native Capacitor apps (iOS/Android have native splash) -->
     <div id="splash-screen">
       <div id="splash-logo">
         <img src="/splash-logo.png" alt="Ally" width="100" height="100" />
@@ -214,6 +215,16 @@
       <div id="splash-subtext">by WA.I.TER</div>
       <div id="splash-loader"></div>
     </div>
+    <script>
+      // Hide web splash immediately on native Capacitor apps (they have native splash screens)
+      (function() {
+        var isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+        if (isCapacitor) {
+          var splash = document.getElementById('splash-screen');
+          if (splash) splash.style.display = 'none';
+        }
+      })();
+    </script>
     <div id="root"></div>
 
     <!-- Fallback content for crawlers that cannot execute JavaScript -->
