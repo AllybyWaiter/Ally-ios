@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Camera, Plus, Sparkles, Waves, Bluetooth, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ interface QuickLogSectionProps {
 
 export function QuickLogSection({ aquarium }: QuickLogSectionProps) {
   const { t } = useTranslation();
+  const { units } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isWandSheetOpen, setIsWandSheetOpen] = useState(false);
 
@@ -125,6 +127,7 @@ export function QuickLogSection({ aquarium }: QuickLogSectionProps) {
           <div className="space-y-6">
             {/* Wand Connection & Reading */}
             <WaterWandSection
+              units={units}
               onReadingComplete={(reading) => {
                 // TODO: Auto-save or prompt to save
                 console.log('Reading complete:', reading);

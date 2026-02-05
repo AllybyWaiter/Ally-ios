@@ -177,6 +177,7 @@ export const WaterTestForm = ({ aquarium }: WaterTestFormProps) => {
               {/* BLE Wand Tab */}
               <TabsContent value="wand" className="mt-0">
                 <WaterWandSection
+                  units={units}
                   onParametersDetected={(detectedParams) => {
                     setParameters(prev => ({ ...prev, ...detectedParams }));
                   }}
