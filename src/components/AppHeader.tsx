@@ -1,23 +1,15 @@
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
-import { Settings, LogOut, Shield } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import NotificationBell from "./NotificationBell";
 
 const AppHeader = () => {
-  const { user, userName, signOut, isAdmin } = useAuth();
+  const { userName } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const getInitials = (name: string | null) => {
@@ -89,59 +81,18 @@ const AppHeader = () => {
           {/* Notification Bell */}
           <NotificationBell />
 
-          {/* User Profile Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 hover:bg-foreground/5">
-                <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm">
-                  <AvatarFallback className="bg-[#34406A] text-white text-sm font-medium">
-                    {getInitials(userName)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden sm:inline text-sm font-medium">{userName || "User"}</span>
-              </Button>
-            </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64 p-0 bg-background/95 backdrop-blur-xl border-border/50 shadow-lg">
-            <div className="px-4 py-3 border-b border-border/40">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
-                  <AvatarFallback className="bg-[#34406A] text-white text-sm font-semibold">
-                    {getInitials(userName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0">
-                  <p className="text-sm font-semibold truncate">{userName || "User"}</p>
-                  <p className="text-xs text-muted-foreground/80 truncate">{user?.email}</p>
-                </div>
-              </div>
-            </div>
-            <div className="py-1.5">
-              {isAdmin && (
-                <DropdownMenuItem asChild className="mx-1.5 rounded-md hover:bg-foreground/5 cursor-pointer">
-                  <Link to="/admin" className="flex items-center px-2.5 py-2">
-                    <Shield className="mr-2.5 h-4 w-4 text-amber-500" />
-                    <span className="text-sm font-medium">Admin Panel</span>
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem asChild className="mx-1.5 rounded-md hover:bg-foreground/5 cursor-pointer">
-                <Link to="/settings" className="flex items-center px-2.5 py-2">
-                  <Settings className="mr-2.5 h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{t('navigation.settings')}</span>
-                </Link>
-              </DropdownMenuItem>
-            </div>
-            <div className="border-t border-border/40 py-1.5">
-              <DropdownMenuItem 
-                onClick={signOut} 
-                className="mx-1.5 rounded-md hover:bg-destructive/10 cursor-pointer text-destructive/90"
-              >
-                <LogOut className="mr-2.5 h-4 w-4" />
-                <span className="text-sm font-medium">{t('navigation.signOut')}</span>
-              </DropdownMenuItem>
-            </div>
-          </DropdownMenuContent>
-          </DropdownMenu>
+          {/* User Profile - Navigate to Settings */}
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 h-9 px-2 hover:bg-foreground/5"
+            onClick={() => navigate('/settings')}
+          >
+            <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm">
+              <AvatarFallback className="bg-[#34406A] text-white text-sm font-medium">
+                {getInitials(userName)}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
         </div>
       </div>
     </header>

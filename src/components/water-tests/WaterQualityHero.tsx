@@ -39,9 +39,9 @@ export function WaterQualityHero({
 }: WaterQualityHeroProps) {
   const { t } = useTranslation();
 
-  const criticalAlerts = alerts.filter((a) => a.status === 'critical');
-  const warningAlerts = alerts.filter((a) => a.status === 'warning');
-  const goodCount = alerts.filter((a) => a.status === 'good').length;
+  const criticalAlerts = alerts.filter((a) => a?.status === 'critical');
+  const warningAlerts = alerts.filter((a) => a?.status === 'warning');
+  const goodCount = alerts.filter((a) => a?.status === 'good').length;
 
   return (
     <motion.div

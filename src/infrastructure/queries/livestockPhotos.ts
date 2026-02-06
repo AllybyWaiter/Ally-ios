@@ -39,7 +39,8 @@ export async function uploadLivestockPhoto(
   caption?: string,
   takenAt?: string
 ) {
-  const fileExt = file.name.split('.').pop();
+  const parts = file.name.split('.');
+  const fileExt = parts.length > 1 ? parts.pop() : 'jpg';
   const fileName = `${userId}/${livestockId}/${Date.now()}.${fileExt}`;
 
   // Upload to storage

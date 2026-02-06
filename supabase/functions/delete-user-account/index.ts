@@ -172,7 +172,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Account deletion completed for user: ${userId}`);
+    console.log('Account deletion completed');
 
     return new Response(
       JSON.stringify({ 

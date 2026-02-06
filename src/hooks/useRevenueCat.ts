@@ -48,7 +48,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
 
   const isNative = isNativePlatform();
 
-  // Initialize RevenueCat
+  // Initialize RevenueCat (only once, without user ID)
   useEffect(() => {
     if (!isNative) {
       setIsLoading(false);
@@ -57,26 +57,12 @@ export function useRevenueCat(): UseRevenueCatReturn {
 
     const init = async () => {
       try {
-        await initializeRevenueCat(user?.id);
+        // Initialize without user ID - we'll call logIn separately
+        await initializeRevenueCat();
         setIsInitialized(true);
+        logger.log('useRevenueCat: SDK initialized');
 
-        // If user is logged in, sync with RevenueCat
-        if (user?.id) {
-          await loginUser(user.id);
-        }
-
-        // Get initial customer info
-        const info = await getCustomerInfo();
-        setCustomerInfo(info);
-
-        // Check entitlements
-        const hasPro = await hasProAccess();
-        setIsPro(hasPro);
-
-        const tier = await getSubscriptionTier();
-        setSubscriptionTier(tier);
-
-        // Get offerings
+        // Get offerings (doesn't require login)
         const offering = await getOfferings();
         setCurrentOffering(offering);
       } catch (error) {
@@ -87,7 +73,54 @@ export function useRevenueCat(): UseRevenueCatReturn {
     };
 
     init();
-  }, [isNative, user?.id]);
+  }, [isNative]);
+
+  // Handle user authentication with RevenueCat
+  useEffect(() => {
+    if (!isNative || !isInitialized) return;
+
+    const syncUser = async () => {
+      try {
+        let info: CustomerInfo;
+
+        if (user?.id) {
+          // Login to RevenueCat with user ID - this merges any anonymous purchases
+          logger.log('useRevenueCat: Logging in user:', user.id);
+          info = await loginUser(user.id);
+          logger.log('useRevenueCat: Login successful, appUserID:', info.originalAppUserId);
+        } else {
+          // No user, just get current info (will be anonymous)
+          info = await getCustomerInfo();
+        }
+
+        setCustomerInfo(info);
+
+        // Check entitlements
+        const hasPro = await hasProAccess();
+        setIsPro(hasPro);
+        logger.log('useRevenueCat: hasPro:', hasPro);
+
+        const tier = await getSubscriptionTier();
+        setSubscriptionTier(tier);
+        logger.log('useRevenueCat: tier:', tier);
+      } catch (error) {
+        logger.error('Failed to sync user with RevenueCat:', error);
+        // Still try to get customer info even if login fails
+        try {
+          const info = await getCustomerInfo();
+          setCustomerInfo(info);
+          const hasPro = await hasProAccess();
+          setIsPro(hasPro);
+          const tier = await getSubscriptionTier();
+          setSubscriptionTier(tier);
+        } catch (e) {
+          logger.error('Failed to get customer info:', e);
+        }
+      }
+    };
+
+    syncUser();
+  }, [isNative, isInitialized, user?.id]);
 
   // Listen for customer info updates
   useEffect(() => {
@@ -110,35 +143,6 @@ export function useRevenueCat(): UseRevenueCatReturn {
 
     return unsubscribe;
   }, [isNative, isInitialized]);
-
-  // Handle user login/logout
-  useEffect(() => {
-    if (!isNative || !isInitialized) return;
-
-    const syncUser = async () => {
-      try {
-        if (user?.id) {
-          await loginUser(user.id);
-        } else {
-          await logoutUser();
-        }
-
-        // Refresh customer info
-        const info = await getCustomerInfo();
-        setCustomerInfo(info);
-
-        const hasPro = await hasProAccess();
-        setIsPro(hasPro);
-
-        const tier = await getSubscriptionTier();
-        setSubscriptionTier(tier);
-      } catch (error) {
-        logger.error('Failed to sync user with RevenueCat:', error);
-      }
-    };
-
-    syncUser();
-  }, [isNative, isInitialized, user?.id]);
 
   // Purchase a package
   const purchase = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
@@ -190,13 +194,51 @@ export function useRevenueCat(): UseRevenueCatReturn {
   // Show paywall
   const showPaywall = useCallback(async (): Promise<boolean> => {
     if (!isNative) return false;
-    return await presentPaywall();
+
+    const purchased = await presentPaywall();
+
+    // Always refresh customer info after paywall closes
+    // (whether purchased, restored, or cancelled)
+    try {
+      const info = await getCustomerInfo();
+      logger.log('useRevenueCat: showPaywall refreshing info, entitlements:', Object.keys(info.entitlements.active));
+      setCustomerInfo(info);
+
+      const hasPro = await hasProAccess();
+      setIsPro(hasPro);
+
+      const tier = await getSubscriptionTier();
+      logger.log('useRevenueCat: showPaywall setting tier to:', tier);
+      setSubscriptionTier(tier);
+    } catch (error) {
+      logger.error('Failed to refresh after paywall:', error);
+    }
+
+    return purchased;
   }, [isNative]);
 
   // Show customer center
   const showCustomerCenter = useCallback(async (): Promise<void> => {
+    if (!isNative) return;
+
     await presentCustomerCenter();
-  }, []);
+
+    // Refresh customer info after customer center closes
+    // (user may have changed subscription)
+    try {
+      const info = await getCustomerInfo();
+      logger.log('useRevenueCat: showCustomerCenter refreshing info');
+      setCustomerInfo(info);
+
+      const hasPro = await hasProAccess();
+      setIsPro(hasPro);
+
+      const tier = await getSubscriptionTier();
+      setSubscriptionTier(tier);
+    } catch (error) {
+      logger.error('Failed to refresh after customer center:', error);
+    }
+  }, [isNative]);
 
   // Refresh customer info
   const refreshCustomerInfo = useCallback(async (): Promise<void> => {

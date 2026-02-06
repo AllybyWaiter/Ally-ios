@@ -9,26 +9,34 @@ export const tools = [
     type: "function",
     function: {
       name: "save_memory",
-      description: "Save an important fact about the user's aquarium setup, preferences, products they use, or practices. Use this when the user shares information worth remembering for future conversations. Examples: water source (RO/DI, tap), products they use, feeding schedules, equipment brands, maintenance routines.",
+      description: "Save an important fact about the user's setup, preferences, goals, treatments, or observations. You can save MULTIPLE memories per category — use descriptive keys. Proactively save important facts when users share them.",
       parameters: {
         type: "object",
         properties: {
-          memory_key: { 
-            type: "string", 
-            enum: ["equipment", "product", "water_source", "feeding", "maintenance", "preference", "livestock_care", "other"],
-            description: "Category of the memory"
+          memory_key: {
+            type: "string",
+            description: "Short descriptive identifier for this memory (e.g., 'fluval_407', 'ich_treatment_jan', 'breeding_corydoras', 'ro_di_system')"
           },
-          memory_value: { 
-            type: "string", 
+          category: {
+            type: "string",
+            enum: ["equipment", "product", "water_source", "feeding", "maintenance", "preference", "livestock_care", "goal", "treatment_history", "problem_history", "species_note", "water_chemistry", "breeding", "other"],
+            description: "Category grouping for this memory"
+          },
+          memory_value: {
+            type: "string",
             description: "The fact to remember (e.g., 'Uses BRS 4-stage RO/DI system for water purification')"
           },
-          water_type: { 
-            type: "string", 
+          water_type: {
+            type: "string",
             enum: ["freshwater", "saltwater", "brackish", "universal"],
             description: "Which water type this applies to. Use 'universal' if it applies to all their tanks."
+          },
+          aquarium_id: {
+            type: "string",
+            description: "Optional: ID of the specific aquarium this memory applies to. Omit for facts that apply to all tanks."
           }
         },
-        required: ["memory_key", "memory_value", "water_type"],
+        required: ["memory_key", "category", "memory_value", "water_type"],
         additionalProperties: false
       }
     }

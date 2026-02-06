@@ -129,9 +129,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           FeatureArea.AUTH
         );
         setUserContext(data.user.id, data.user.email, undefined);
-        logLoginHistory(data.user.id, !error, error?.message).catch(console.error);
+        logLoginHistory(data.user.id, !error, error?.message).catch((err: unknown) => logger.error('Activity logging failed:', err));
         if (!error) {
-          logActivity({ actionType: 'login', userId: data.user.id }).catch(console.error);
+          logActivity({ actionType: 'login', userId: data.user.id }).catch((err: unknown) => logger.error('Activity logging failed:', err));
         }
       }
 
@@ -159,13 +159,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) {
       addBreadcrumb('Sign up failed', 'auth', { error: error.message }, FeatureArea.AUTH);
       if (data?.user) {
-        logLoginHistory(data.user.id, false, error.message).catch(console.error);
+        logLoginHistory(data.user.id, false, error.message).catch((err: unknown) => logger.error('Activity logging failed:', err));
       }
     } else if (data?.user) {
       addBreadcrumb('Sign up successful', 'auth', { userId: data.user.id }, FeatureArea.AUTH);
       setUserContext(data.user.id, data.user.email, name);
-      logLoginHistory(data.user.id, true).catch(console.error);
-      logActivity({ actionType: 'login', userId: data.user.id, actionDetails: { type: 'signup' } }).catch(console.error);
+      logLoginHistory(data.user.id, true).catch((err: unknown) => logger.error('Activity logging failed:', err));
+      logActivity({ actionType: 'login', userId: data.user.id, actionDetails: { type: 'signup' } }).catch((err: unknown) => logger.error('Activity logging failed:', err));
     }
 
     return { error: error ?? null };
@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
 
     if (currentUserId) {
-      logActivity({ actionType: 'logout', userId: currentUserId }).catch(console.error);
+      logActivity({ actionType: 'logout', userId: currentUserId }).catch((err: unknown) => logger.error('Activity logging failed:', err));
     }
 
     clearUserContext();

@@ -130,7 +130,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
 
   // Create test mutation
   const createTestMutation = useMutation({
-    mutationFn: async (photoFile: File | null) => {
+    mutationFn: async ({ photoFile, currentPhotoUrl }: { photoFile: File | null; currentPhotoUrl: string | null }) => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) throw new Error('Not authenticated');
 
@@ -139,11 +139,12 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
         throw new Error('Please enter at least one valid parameter value');
       }
 
-      let uploadedPhotoUrl = photoUrl;
+      let uploadedPhotoUrl = currentPhotoUrl;
 
       // Upload photo if exists
-      if (photoFile && !photoUrl) {
-        const fileExt = photoFile.name.split('.').pop();
+      if (photoFile && !currentPhotoUrl) {
+        const photoParts = photoFile.name.split('.');
+        const fileExt = photoParts.length > 1 ? photoParts.pop() : 'jpg';
         const fileName = `${authUser.id}/${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
@@ -299,7 +300,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
     }
 
     localStorage.removeItem(`water-test-draft-${aquarium.id}`);
-    createTestMutation.mutate(photoFile);
+    createTestMutation.mutate({ photoFile, currentPhotoUrl: photoUrl });
   };
 
   return {

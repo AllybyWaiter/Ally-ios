@@ -11,20 +11,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2, Lock, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
-import { logger } from "@/lib/logger";
+import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2 } from "lucide-react";
 
 interface Memory {
   id: string;
   user_id: string;
   water_type: string | null;
   memory_key: string;
+  category: string | null;
   memory_value: string;
   source: string;
   confidence: string;
   created_at: string;
   updated_at: string;
+  aquarium_id: string | null;
 }
 
 const MEMORY_CATEGORIES = [
@@ -35,6 +35,12 @@ const MEMORY_CATEGORIES = [
   { value: "maintenance", label: "Maintenance", icon: "🔄" },
   { value: "preference", label: "Preferences", icon: "⚙️" },
   { value: "livestock_care", label: "Livestock Care", icon: "🐠" },
+  { value: "goal", label: "Goals", icon: "🎯" },
+  { value: "treatment_history", label: "Treatments", icon: "💊" },
+  { value: "problem_history", label: "Problems", icon: "⚠️" },
+  { value: "species_note", label: "Species Notes", icon: "🔬" },
+  { value: "water_chemistry", label: "Water Chemistry", icon: "⚗️" },
+  { value: "breeding", label: "Breeding", icon: "🥚" },
   { value: "other", label: "Other", icon: "📝" },
 ];
 
@@ -53,8 +59,7 @@ export default function MemoryManager() {
   const [isLoading, setIsLoading] = useState(true);
   const [filterWaterType, setFilterWaterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
-  
+
   // Add/Edit dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
@@ -67,29 +72,9 @@ export default function MemoryManager() {
 
   useEffect(() => {
     if (user) {
-      fetchSubscriptionTier();
       fetchMemories();
     }
   }, [user]);
-
-  const fetchSubscriptionTier = async () => {
-    if (!user) return;
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('subscription_tier')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (!error && data?.subscription_tier) {
-        setSubscriptionTier(data.subscription_tier);
-      }
-    } catch (error) {
-      logger.error('Failed to fetch subscription tier:', error);
-    }
-  };
-
-  const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
 
   const fetchMemories = async () => {
     if (!user) return;
@@ -210,15 +195,16 @@ export default function MemoryManager() {
   };
 
   const filteredMemories = memories.filter(m => {
-    const waterTypeMatch = filterWaterType === "all" || 
+    const waterTypeMatch = filterWaterType === "all" ||
       (filterWaterType === "universal" && m.water_type === null) ||
       m.water_type === filterWaterType;
-    const categoryMatch = filterCategory === "all" || m.memory_key === filterCategory;
+    const memoryCategory = m.category || m.memory_key;
+    const categoryMatch = filterCategory === "all" || memoryCategory === filterCategory;
     return waterTypeMatch && categoryMatch;
   });
 
   const groupedMemories = filteredMemories.reduce((acc, memory) => {
-    const key = memory.memory_key;
+    const key = memory.category || memory.memory_key;
     if (!acc[key]) acc[key] = [];
     acc[key].push(memory);
     return acc;
@@ -241,47 +227,6 @@ export default function MemoryManager() {
       </Badge>
     );
   };
-
-  // Show upgrade prompt for free/basic users
-  if (!hasMemoryAccess) {
-    return (
-      <Card className="border-2 shadow-lg">
-        <CardHeader className="text-center space-y-4 pb-6">
-          <div className="mx-auto p-4 rounded-full bg-primary/10">
-            <Lock className="h-10 w-10 text-primary" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl">Ally's Memory</CardTitle>
-            <CardDescription className="text-base mt-2 max-w-md mx-auto">
-              Upgrade to Plus or higher to unlock Ally's memory feature. Ally will remember your equipment, preferences, and practices across all conversations.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="text-center space-y-4 pb-6">
-          <div className="flex flex-wrap justify-center gap-2 text-sm text-muted-foreground">
-            <Badge variant="secondary" className="gap-1">
-              <Sparkles className="h-3 w-3" /> Equipment preferences
-            </Badge>
-            <Badge variant="secondary" className="gap-1">
-              <Sparkles className="h-3 w-3" /> Water source info
-            </Badge>
-            <Badge variant="secondary" className="gap-1">
-              <Sparkles className="h-3 w-3" /> Feeding routines
-            </Badge>
-            <Badge variant="secondary" className="gap-1">
-              <Sparkles className="h-3 w-3" /> Maintenance habits
-            </Badge>
-          </div>
-          <Button asChild className="gap-2">
-            <Link to="/pricing">
-              <Sparkles className="h-4 w-4" />
-              View Plans
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="border-2 shadow-lg">

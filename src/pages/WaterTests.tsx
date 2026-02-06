@@ -50,20 +50,25 @@ const WaterTests = () => {
       // Check if URL param aquarium exists
       if (urlAquariumId && aquariums.some(a => a.id === urlAquariumId)) {
         setSelectedAquariumId(urlAquariumId);
+        return;
       }
-      // Check if current selection still exists, otherwise reset to first
-      else if (selectedAquariumId && !aquariums.some(a => a.id === selectedAquariumId)) {
-        setSelectedAquariumId(aquariums[0].id);
-      }
-      // No selection yet, select first
-      else if (!selectedAquariumId) {
-        setSelectedAquariumId(aquariums[0].id);
-      }
+      // Use callback form to access current state without adding to dependencies
+      setSelectedAquariumId(current => {
+        // Check if current selection still exists, otherwise reset to first
+        if (current && !aquariums.some(a => a.id === current)) {
+          return aquariums[0].id;
+        }
+        // No selection yet, select first
+        if (!current) {
+          return aquariums[0].id;
+        }
+        return current;
+      });
     } else if (aquariums && aquariums.length === 0) {
       // All aquariums deleted, clear selection
       setSelectedAquariumId(null);
     }
-  }, [aquariums, urlAquariumId, selectedAquariumId]);
+  }, [aquariums, urlAquariumId]);
 
   const selectedAquarium = aquariums?.find((a) => a.id === selectedAquariumId);
 

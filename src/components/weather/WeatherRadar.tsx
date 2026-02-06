@@ -346,27 +346,41 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
         setError(null);
 
         // Prefer backend proxy to avoid CORS and network filtering issues
-        const { data: proxyData, error: proxyError } = await supabase.functions.invoke('get-radar-frames');
-
         let raw: RainViewerResponse | null = null;
 
-        if (!proxyError && proxyData?.data) {
-          raw = proxyData.data as RainViewerResponse;
-        } else {
+        try {
+          const { data: proxyData, error: proxyError } = await supabase.functions.invoke('get-radar-frames');
 
+          if (proxyError) {
+            logger.warn('[Radar] Proxy error:', proxyError.message || proxyError);
+          }
+
+          if (!proxyError && proxyData?.data) {
+            raw = proxyData.data as RainViewerResponse;
+            logger.log('[Radar] Loaded from proxy');
+          }
+        } catch (proxyErr) {
+          logger.warn('[Radar] Proxy fetch failed:', proxyErr instanceof Error ? proxyErr.message : proxyErr);
+        }
+
+        // Fallback to direct API call if proxy failed
+        if (!raw) {
+          logger.log('[Radar] Trying direct RainViewer API...');
           const response = await fetch('https://api.rainviewer.com/public/weather-maps.json', {
             headers: { Accept: 'application/json' },
           });
-          if (!response.ok) throw new Error(`Failed to fetch radar data (${response.status})`);
+          if (!response.ok) throw new Error(`RainViewer API error (${response.status})`);
           raw = (await response.json()) as RainViewerResponse;
+          logger.log('[Radar] Loaded from direct API');
         }
 
         const allFrames = [...raw.radar.past, ...raw.radar.nowcast];
         setFrames(allFrames);
         setCurrentFrameIndex(raw.radar.past.length - 1);
       } catch (err) {
-        setError('Unable to load radar data');
-        logger.error('[Radar] Radar fetch error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Network error';
+        setError(`Unable to load radar data: ${errorMessage}`);
+        logger.error('[Radar] Radar fetch error:', err instanceof Error ? err.message : err, err);
       } finally {
         setIsLoading(false);
       }

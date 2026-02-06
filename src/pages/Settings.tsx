@@ -27,7 +27,7 @@ import {
   ArrowLeft, User, Lock, Trash2, Moon, Sun, Monitor,
   Globe, Shield, Crown, Brain, MapPin,
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
-  Mail, ChevronRight, BookOpen, Sparkles, Loader2,
+  Mail, ChevronRight, ChevronDown, BookOpen, Sparkles, Loader2,
   Palette, Ruler, Cloud, Bluetooth, Waves, LogOut
 } from "lucide-react";
 import NotificationSettings from "@/components/settings/NotificationSettings";
@@ -55,7 +55,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
 };
 
 const Settings = () => {
-  const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut, refreshProfile } = useAuth();
+  const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut, refreshProfile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -113,6 +113,12 @@ const Settings = () => {
 
   // Local theme state for immediate UI feedback
   const [selectedTheme, setSelectedTheme] = useState<string>(theme || themePreference || 'system');
+
+  // Collapsible sections state
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
 
   useEffect(() => {
     if (!user) navigate("/auth");
@@ -507,7 +513,10 @@ const Settings = () => {
     if (isMobile) {
       return (
         <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-          <DrawerContent className="max-h-[90vh]">
+          <DrawerContent
+            className="max-h-[90vh]"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
             <DrawerHeader>
               <DrawerTitle>{title}</DrawerTitle>
               {description && <DrawerDescription>{description}</DrawerDescription>}
@@ -520,7 +529,10 @@ const Settings = () => {
 
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="max-w-md max-h-[85vh] overflow-y-auto"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
@@ -571,6 +583,19 @@ const Settings = () => {
 
         {/* Settings Sections */}
         <div className="space-y-6">
+          {/* ADMIN (only for admins) */}
+          {isAdmin && (
+            <SettingsSection title="Admin">
+              <SettingsRow
+                icon={Shield}
+                iconClassName="bg-amber-500/10 text-amber-500"
+                label="Admin Panel"
+                description="Manage app and users"
+                href="/admin"
+              />
+            </SettingsSection>
+          )}
+
           {/* ACCOUNT */}
           <SettingsSection title="Account">
             <SettingsRow
@@ -688,24 +713,58 @@ const Settings = () => {
             />
           </SettingsSection>
 
-          {/* SUPPORT */}
-          <SettingsSection title="Support">
-            <SettingsRow icon={BookOpen} iconClassName="bg-primary/10 text-primary" label="Help Center" description="Tutorials and guides" href="/help" />
-            <SettingsRow icon={HelpCircle} iconClassName="bg-secondary/10 text-secondary" label="FAQ" description="Common questions" href="/faq" />
-            <SettingsRow icon={Mail} iconClassName="bg-accent/10 text-accent" label="Contact Us" description="Get in touch" href="/contact" />
-            <SettingsRow icon={Star} iconClassName="bg-amber-500/10 text-amber-500" label="Rate on App Store" description="Love the app? Review us" onClick={handleRateApp} rightElement={<ExternalLink className="h-5 w-5 text-muted-foreground" />} />
-            <SettingsRow icon={MessageSquare} iconClassName="bg-green-500/10 text-green-500" label="Send Feedback" description="Share your thoughts" href="/contact?type=feedback" />
+          {/* SUPPORT - Collapsible */}
+          <SettingsSection>
+            <SettingsRow
+              icon={HelpCircle}
+              iconClassName="bg-primary/10 text-primary"
+              label="Support"
+              description="Help, FAQ, and feedback"
+              onClick={() => toggleSection('support')}
+              rightElement={
+                <ChevronDown className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform",
+                  expandedSections.support && "rotate-180"
+                )} />
+              }
+            />
+            {expandedSections.support && (
+              <>
+                <SettingsRow icon={BookOpen} iconClassName="bg-primary/10 text-primary" label="Help Center" description="Tutorials and guides" href="/help" />
+                <SettingsRow icon={HelpCircle} iconClassName="bg-secondary/10 text-secondary" label="FAQ" description="Common questions" href="/faq" />
+                <SettingsRow icon={Mail} iconClassName="bg-accent/10 text-accent" label="Contact Us" description="Get in touch" href="/contact" />
+                <SettingsRow icon={Star} iconClassName="bg-amber-500/10 text-amber-500" label="Rate on App Store" description="Love the app? Review us" onClick={handleRateApp} rightElement={<ExternalLink className="h-5 w-5 text-muted-foreground" />} />
+                <SettingsRow icon={MessageSquare} iconClassName="bg-green-500/10 text-green-500" label="Send Feedback" description="Share your thoughts" href="/contact?type=feedback" />
+              </>
+            )}
           </SettingsSection>
 
-          {/* LEGAL */}
-          <SettingsSection title="Legal">
-            <SettingsRow icon={Shield} iconClassName="bg-primary/10 text-primary" label="Privacy Policy" description="How we handle your data" href="/privacy" />
-            <SettingsRow icon={FileText} iconClassName="bg-secondary/10 text-secondary" label="Terms of Service" description="Rules and guidelines" href="/terms" />
-            <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Policy" description="How we use cookies" href="/cookies" />
-            <SettingsRow icon={FileText} iconClassName="bg-muted-foreground/10 text-muted-foreground" label="Subprocessors" description="Third party providers" href="/subprocessors" />
-            <SettingsRow icon={Brain} iconClassName="bg-primary/10 text-primary" label="AI Transparency" description="How we use AI" href="/legal/ai-transparency" />
-            <SettingsRow icon={Shield} iconClassName="bg-secondary/10 text-secondary" label="Privacy Rights" description="Your data rights" href="/legal/privacy-rights" />
-            <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Preferences" description="Manage cookies" href="/legal/cookie-preferences" />
+          {/* LEGAL - Collapsible */}
+          <SettingsSection>
+            <SettingsRow
+              icon={FileText}
+              iconClassName="bg-secondary/10 text-secondary"
+              label="Legal"
+              description="Privacy, terms, and policies"
+              onClick={() => toggleSection('legal')}
+              rightElement={
+                <ChevronDown className={cn(
+                  "h-5 w-5 text-muted-foreground transition-transform",
+                  expandedSections.legal && "rotate-180"
+                )} />
+              }
+            />
+            {expandedSections.legal && (
+              <>
+                <SettingsRow icon={Shield} iconClassName="bg-primary/10 text-primary" label="Privacy Policy" description="How we handle your data" href="/privacy" />
+                <SettingsRow icon={FileText} iconClassName="bg-secondary/10 text-secondary" label="Terms of Service" description="Rules and guidelines" href="/terms" />
+                <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Policy" description="How we use cookies" href="/cookies" />
+                <SettingsRow icon={FileText} iconClassName="bg-muted-foreground/10 text-muted-foreground" label="Subprocessors" description="Third party providers" href="/subprocessors" />
+                <SettingsRow icon={Brain} iconClassName="bg-primary/10 text-primary" label="AI Transparency" description="How we use AI" href="/legal/ai-transparency" />
+                <SettingsRow icon={Shield} iconClassName="bg-secondary/10 text-secondary" label="Privacy Rights" description="Your data rights" href="/legal/privacy-rights" />
+                <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Preferences" description="Manage cookies" href="/legal/cookie-preferences" />
+              </>
+            )}
           </SettingsSection>
 
           {/* ACCOUNT ACTIONS */}

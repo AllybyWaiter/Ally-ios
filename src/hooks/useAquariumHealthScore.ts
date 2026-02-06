@@ -157,7 +157,7 @@ function calculateConsistencyScore(tests: WaterTestWithParams[], tasks: Maintena
 
 export function useAquariumHealthScore(aquariumId: string): AquariumHealthData {
   // Fetch all health-related data
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['aquarium-health', aquariumId],
     queryFn: async () => {
       const thirtyDaysAgo = new Date();
@@ -205,7 +205,7 @@ export function useAquariumHealthScore(aquariumId: string): AquariumHealthData {
   });
 
   return useMemo(() => {
-    if (isLoading || !data) {
+    if (isLoading) {
       return {
         score: 0,
         label: 'Loading',
@@ -216,6 +216,21 @@ export function useAquariumHealthScore(aquariumId: string): AquariumHealthData {
         lastWaterTest: null,
         overdueTasks: 0,
         isLoading: true,
+      };
+    }
+
+    // Handle error or missing data - show default state instead of infinite loading
+    if (isError || !data) {
+      return {
+        score: 50,
+        label: 'Unknown',
+        color: 'hsl(var(--muted))',
+        breakdown: { waterTests: 50, livestockHealth: 50, maintenance: 50, careConsistency: 50 },
+        trend: { direction: 'stable' as const, change: 0 },
+        alerts: 0,
+        lastWaterTest: null,
+        overdueTasks: 0,
+        isLoading: false,
       };
     }
 
@@ -267,5 +282,5 @@ export function useAquariumHealthScore(aquariumId: string): AquariumHealthData {
       overdueTasks,
       isLoading: false,
     };
-  }, [data, isLoading]);
+  }, [data, isLoading, isError]);
 }

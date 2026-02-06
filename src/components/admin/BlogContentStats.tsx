@@ -22,11 +22,9 @@ export default function BlogContentStats({
   featuredImage,
   categories,
 }: BlogContentStatsProps) {
-  // Calculate word count (strip HTML tags)
+  // Calculate word count (strip HTML tags safely via regex — no DOM parsing of untrusted content)
   const stripHtml = (html: string) => {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
+    return html.replace(/<[^>]*>/g, '');
   };
 
   const wordCount = stripHtml(content).split(/\s+/).filter(Boolean).length;

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,16 +36,18 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
   const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [accumulatedTests, setAccumulatedTests] = useState<WaterTest[]>([]);
-  
+  // Track current aquariumId to prevent stale data from old requests
+  const currentAquariumIdRef = useRef(aquariumId);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [...queryKeys.waterTests.list(aquariumId), page],
     queryFn: () => fetchWaterTests(aquariumId, { limit: PAGE_SIZE, offset: page * PAGE_SIZE }),
     ...queryPresets.waterTests,
   });
 
-  // Accumulate tests across pages
+  // Accumulate tests across pages - check aquariumId to prevent race conditions
   useEffect(() => {
-    if (data?.data) {
+    if (data?.data && currentAquariumIdRef.current === aquariumId) {
       setAccumulatedTests(prev => {
         if (page === 0) {
           return data.data as WaterTest[];
@@ -56,10 +58,11 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
         return [...prev, ...newTests];
       });
     }
-  }, [data?.data, page]);
+  }, [data?.data, page, aquariumId]);
 
   // Reset accumulated tests when aquariumId changes
   useEffect(() => {
+    currentAquariumIdRef.current = aquariumId;
     setPage(0);
     setAccumulatedTests([]);
   }, [aquariumId]);
