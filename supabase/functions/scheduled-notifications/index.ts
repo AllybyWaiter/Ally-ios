@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders, securityHeaders } from '../_shared/cors.ts';
 
 interface NWSAlert {
   id: string;
@@ -164,9 +160,8 @@ function getHealthLabel(score: number): { label: string; severity: 'critical' | 
 
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   const requestId = crypto.randomUUID().slice(0, 8);
   console.log(JSON.stringify({ requestId, message: 'scheduled-notifications started', time: new Date().toISOString() }));
@@ -594,20 +589,20 @@ serve(async (req) => {
     }));
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        taskNotificationsSent, 
+      JSON.stringify({
+        success: true,
+        taskNotificationsSent,
         alertNotificationsSent,
         weatherNotificationsSent,
         healthNotificationsSent,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...getCorsHeaders(req), ...securityHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error(JSON.stringify({ requestId, error: 'Unexpected error', message: error instanceof Error ? error.message : String(error) }));
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), ...securityHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

@@ -7,11 +7,17 @@ const productionOrigins = [
   'capacitor://localhost', // iOS Capacitor app
 ];
 
-// Development origins - only in development mode
+// Development origins - only allowed when DENO_ENV !== 'production'
 const developmentOrigins = [
   'http://localhost:8080',
   'http://localhost:5173',
 ];
+
+// Check if running in production
+function isProduction(): boolean {
+  const env = Deno.env.get('DENO_ENV') || Deno.env.get('ENVIRONMENT') || '';
+  return env.toLowerCase() === 'production';
+}
 
 // Get allowed origins based on environment
 function getAllowedOrigins(): string[] {
@@ -20,8 +26,11 @@ function getAllowedOrigins(): string[] {
     return customOrigins.split(',').map(o => o.trim());
   }
 
-  // Always include both production and development origins
-  // Development origins (localhost) are safe to include since they only work locally
+  // Only include dev origins in non-production environments
+  if (isProduction()) {
+    return productionOrigins;
+  }
+
   return [...productionOrigins, ...developmentOrigins];
 }
 
@@ -56,6 +65,7 @@ export const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Cache-Control': 'no-store, no-cache, must-revalidate',
   'Pragma': 'no-cache',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
 };
 
 // Combined headers for responses
