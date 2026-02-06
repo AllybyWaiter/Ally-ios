@@ -9,6 +9,13 @@ export const useTTS = () => {
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  // Refs to avoid dependency array issues while still accessing current state
+  const isSpeakingRef = useRef(isSpeaking);
+  const speakingMessageIdRef = useRef(speakingMessageId);
+
+  // Keep refs in sync with state
+  isSpeakingRef.current = isSpeaking;
+  speakingMessageIdRef.current = speakingMessageId;
 
   const stop = useCallback(() => {
     if (audioRef.current) {
@@ -25,8 +32,8 @@ export const useTTS = () => {
   }, []);
 
   const speak = useCallback(async (text: string, messageId: string, onEnded?: () => void) => {
-    // If already speaking this message, stop it
-    if (speakingMessageId === messageId && isSpeaking) {
+    // If already speaking this message, stop it (use refs to avoid stale closure)
+    if (speakingMessageIdRef.current === messageId && isSpeakingRef.current) {
       stop();
       return;
     }
@@ -131,7 +138,7 @@ export const useTTS = () => {
       setIsSpeaking(false);
       setSpeakingMessageId(null);
     }
-  }, [speakingMessageId, isSpeaking, stop]);
+  }, [stop]);
 
   // Clean up audio and blob URL on unmount
   useEffect(() => {
