@@ -1,4 +1,5 @@
 import type { SupabaseClient, ToolResult, Logger } from '../types.ts';
+import { generateEmbedding, formatEmbeddingForPostgres } from '../../../_shared/embeddings.ts';
 
 export async function executeSaveMemory(
   supabase: SupabaseClient,
@@ -14,6 +15,18 @@ export async function executeSaveMemory(
   logger: Logger
 ): Promise<ToolResult> {
   try {
+    // Generate embedding for semantic search
+    let embedding: string | null = null;
+    try {
+      const embeddingText = `${args.category}: ${args.memory_key} - ${args.memory_value}`;
+      const embeddingResult = await generateEmbedding(embeddingText);
+      embedding = formatEmbeddingForPostgres(embeddingResult.embedding);
+      logger.debug('Generated embedding for memory', { tokens: embeddingResult.tokens });
+    } catch (embError) {
+      // Don't fail the save if embedding fails - just log and continue
+      logger.error('Failed to generate embedding', { error: String(embError) });
+    }
+
     const { error } = await supabase
       .from('user_memories')
       .insert({
@@ -24,7 +37,8 @@ export async function executeSaveMemory(
         water_type: args.water_type === 'universal' ? null : args.water_type,
         aquarium_id: args.aquarium_id || null,
         source: 'conversation',
-        confidence: 'confirmed'
+        confidence: 'confirmed',
+        embedding: embedding
       });
 
     if (error) {

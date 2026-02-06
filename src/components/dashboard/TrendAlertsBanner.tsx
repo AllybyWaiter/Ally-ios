@@ -8,6 +8,7 @@ import { fetchActiveAlerts, dismissAlert, WaterTestAlert } from '@/infrastructur
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const alertIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -92,7 +93,15 @@ export function TrendAlertsBanner() {
     },
   });
 
-  if (isLoading || alerts.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="mb-6">
+        <Skeleton className="h-16 rounded-lg" />
+      </div>
+    );
+  }
+
+  if (alerts.length === 0) {
     return null;
   }
 

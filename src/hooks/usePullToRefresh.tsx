@@ -34,25 +34,27 @@ export function usePullToRefresh(
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
     if (disabled || isRefreshing || !isTouchDevice) return;
-    
-    // Check scroll position - support both window and container scroll
+
+    // Check scroll position - use container scrollTop if it has overflow, otherwise window
     const container = containerRef.current;
-    const scrollTop = container ? container.scrollTop : window.scrollY;
-    
+    const containerScroll = container ? container.scrollTop : 0;
+    const scrollTop = containerScroll > 0 ? containerScroll : window.scrollY;
+
     // Only activate if at the top
     if (scrollTop > 0) return;
-    
+
     startY.current = e.touches[0].clientY;
     isPulling.current = true;
   }, [disabled, isRefreshing, isTouchDevice, containerRef]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isPulling.current || disabled || isRefreshing) return;
-    
-    // Check scroll position - support both window and container scroll
+
+    // Check scroll position - use container scrollTop if it has overflow, otherwise window
     const container = containerRef.current;
-    const scrollTop = container ? container.scrollTop : window.scrollY;
-    
+    const containerScroll = container ? container.scrollTop : 0;
+    const scrollTop = containerScroll > 0 ? containerScroll : window.scrollY;
+
     // Only activate if still at top
     if (scrollTop > 0) {
       isPulling.current = false;
