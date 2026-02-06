@@ -77,12 +77,14 @@ export async function buildMemoryContext(
 
     // If aquarium selected, include both global and aquarium-specific memories
     if (aquariumId) {
+      // Sanitize aquariumId to prevent PostgREST filter injection (must be valid UUID format)
+      const sanitizedAquariumId = aquariumId.replace(/[^a-f0-9-]/gi, '');
       query = supabase
         .from('user_memories')
         .select('*')
         .eq('user_id', userId)
         .or(`water_type.eq.${waterType.replace(/[.,()%_\\]/g, '')},water_type.eq.universal,water_type.is.null`)
-        .or(`aquarium_id.eq.${aquariumId},aquarium_id.is.null`)
+        .or(`aquarium_id.eq.${sanitizedAquariumId},aquarium_id.is.null`)
         .order('updated_at', { ascending: false })
         .limit(50);
     }

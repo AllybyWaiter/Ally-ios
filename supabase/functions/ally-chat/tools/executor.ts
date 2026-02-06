@@ -57,13 +57,13 @@ export async function executeToolCalls(
         result = await executeSaveMemory(supabase, userId, functionArgs, toolCall.id, logger);
         break;
       case 'add_equipment':
-        result = await executeAddEquipment(supabase, functionArgs, toolCall.id, logger);
+        result = await executeAddEquipment(supabase, userId, functionArgs, toolCall.id, logger);
         break;
       case 'add_equipment_batch':
-        result = await executeAddEquipmentBatch(supabase, functionArgs, toolCall.id, logger);
+        result = await executeAddEquipmentBatch(supabase, userId, functionArgs, toolCall.id, logger);
         break;
       case 'create_task':
-        result = await executeCreateTask(supabase, functionArgs, toolCall.id, logger);
+        result = await executeCreateTask(supabase, userId, functionArgs, toolCall.id, logger);
         break;
       case 'log_water_test':
         result = await executeLogWaterTest(supabase, userId, functionArgs, toolCall.id, logger);

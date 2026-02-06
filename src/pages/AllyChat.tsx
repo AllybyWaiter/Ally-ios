@@ -392,8 +392,9 @@ const AllyChat = () => {
 
   // Retry last failed message
   const handleRetry = useCallback(async () => {
-    if (!lastError) return;
-    
+    if (!lastError || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+
     const userMessage = lastError.userMessage;
     setLastError(null);
     
@@ -440,6 +441,7 @@ const AllyChat = () => {
     } finally {
       setIsLoading(false);
       setStreamStartTime(null);
+      isSubmittingRef.current = false;
     }
   }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks]);
 
@@ -905,7 +907,7 @@ const AllyChat = () => {
                 hasAlerts={hasAlerts}
                 onSelectQuestion={(question) => {
                   setInput(question);
-                  setTimeout(() => sendMessage(), 100);
+                  setTimeout(() => sendMessageRef.current(), 100);
                 }}
               />
             </motion.div>

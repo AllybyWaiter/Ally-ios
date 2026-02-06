@@ -2,6 +2,7 @@ import type { SupabaseClient, ToolResult, Logger } from '../types.ts';
 
 export async function executeAddEquipment(
   supabase: SupabaseClient,
+  userId: string,
   args: {
     aquarium_id: string;
     name: string;
@@ -14,6 +15,23 @@ export async function executeAddEquipment(
   logger: Logger
 ): Promise<ToolResult> {
   try {
+    // Verify user owns this aquarium
+    const { data: aquarium } = await supabase
+      .from('aquariums')
+      .select('id')
+      .eq('id', args.aquarium_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!aquarium) {
+      logger.warn('Aquarium ownership check failed', { aquariumId: args.aquarium_id, userId });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'Aquarium not found or access denied' })
+      };
+    }
+
     const { error } = await supabase
       .from('equipment')
       .insert({
@@ -52,6 +70,7 @@ export async function executeAddEquipment(
 
 export async function executeAddEquipmentBatch(
   supabase: SupabaseClient,
+  userId: string,
   args: {
     aquarium_id: string;
     equipment_list: Array<{
@@ -71,6 +90,23 @@ export async function executeAddEquipmentBatch(
         tool_call_id: toolCallId,
         role: 'tool',
         content: JSON.stringify({ success: false, error: 'No equipment items provided' })
+      };
+    }
+
+    // Verify user owns this aquarium
+    const { data: aquarium } = await supabase
+      .from('aquariums')
+      .select('id')
+      .eq('id', args.aquarium_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!aquarium) {
+      logger.warn('Aquarium ownership check failed (batch)', { aquariumId: args.aquarium_id, userId });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'Aquarium not found or access denied' })
       };
     }
 

@@ -2,6 +2,7 @@ import type { SupabaseClient, ToolResult, Logger } from '../types.ts';
 
 export async function executeCreateTask(
   supabase: SupabaseClient,
+  userId: string,
   args: {
     aquarium_id: string;
     task_name: string;
@@ -16,6 +17,23 @@ export async function executeCreateTask(
   logger: Logger
 ): Promise<ToolResult> {
   try {
+    // Verify user owns this aquarium
+    const { data: aquarium } = await supabase
+      .from('aquariums')
+      .select('id')
+      .eq('id', args.aquarium_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!aquarium) {
+      logger.warn('Aquarium ownership check failed', { aquariumId: args.aquarium_id, userId });
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'Aquarium not found or access denied' })
+      };
+    }
+
     const { error } = await supabase
       .from('maintenance_tasks')
       .insert({
