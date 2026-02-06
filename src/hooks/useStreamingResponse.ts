@@ -64,6 +64,8 @@ export function useStreamingResponse() {
   const lastUpdateRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const timeoutRef = useRef<number | null>(null);
+  // Track current request ID to prevent stale cleanup
+  const currentRequestIdRef = useRef<number>(0);
 
   const streamResponse = useCallback(async (
     messages: Message[],
@@ -90,13 +92,19 @@ export function useStreamingResponse() {
 
     const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ally-chat`;
 
+    // Generate unique request ID for this request
+    const requestId = ++currentRequestIdRef.current;
+
     // Cancel any in-flight request and clear existing timeout
     abortControllerRef.current?.abort();
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    abortControllerRef.current = new AbortController();
+
+    // Create new AbortController for this specific request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
 
     // Format messages for API - convert imageUrl to proper format
     // Filter out initial greeting to prevent AI confusion about identity
@@ -123,10 +131,13 @@ export function useStreamingResponse() {
       };
     });
 
-    // Set up timeout
+    // Set up timeout for this specific request
     timeoutRef.current = window.setTimeout(() => {
-      abortControllerRef.current?.abort();
-      callbacks.onError(new Error('Request timed out after 60 seconds'));
+      // Only abort if this is still the current request
+      if (currentRequestIdRef.current === requestId) {
+        abortController.abort();
+        callbacks.onError(new Error('Request timed out after 60 seconds'));
+      }
     }, STREAM_TIMEOUT_MS);
 
     const response = await fetch(CHAT_URL, {
@@ -140,8 +151,13 @@ export function useStreamingResponse() {
         aquariumId,
         model, // Pass model selection to backend
       }),
-      signal: abortControllerRef.current.signal,
+      signal: abortController.signal,
     });
+
+    // Check if request was superseded before processing response
+    if (currentRequestIdRef.current !== requestId) {
+      return "";
+    }
 
     if (!response.ok || !response.body) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);

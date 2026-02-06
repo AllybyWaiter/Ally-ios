@@ -173,8 +173,8 @@ export const useSystemStatus = () => {
       return [];
     }
 
-    // Fetch updates for each incident
-    const incidentsWithUpdates: SystemIncident[] = await Promise.all(
+    // Fetch updates for each incident using allSettled to handle individual failures gracefully
+    const results = await Promise.allSettled(
       incidentsData.map(async (incident) => {
         const { data: updates } = await supabase
           .from('incident_updates')
@@ -201,6 +201,11 @@ export const useSystemStatus = () => {
         };
       })
     );
+
+    // Filter out failed promises and extract successful results
+    const incidentsWithUpdates: SystemIncident[] = results
+      .filter((result): result is PromiseFulfilledResult<SystemIncident> => result.status === 'fulfilled')
+      .map(result => result.value);
 
     return incidentsWithUpdates;
   }, []);

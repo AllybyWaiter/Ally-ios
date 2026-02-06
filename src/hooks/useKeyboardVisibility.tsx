@@ -21,12 +21,17 @@ export function useKeyboardVisibility(
 
   // Track all active timeouts for cleanup
   const timeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
-  // Helper to create tracked timeouts
+  // Helper to create tracked timeouts with mount check
   const createTimeout = useCallback((callback: () => void, delay: number) => {
     const timeoutId = setTimeout(() => {
       timeoutsRef.current.delete(timeoutId);
-      callback();
+      // Only execute callback if still mounted
+      if (isMountedRef.current) {
+        callback();
+      }
     }, delay);
     timeoutsRef.current.add(timeoutId);
     return timeoutId;
@@ -140,11 +145,20 @@ export function useKeyboardVisibility(
       document.removeEventListener('focusin', handleFocus);
       document.removeEventListener('focusout', handleBlur);
       window.removeEventListener('orientationchange', handleOrientationChange);
-      // Clear all pending timeouts
+      // Mark as unmounted and clear all pending timeouts
+      isMountedRef.current = false;
       timeoutsRef.current.forEach(clearTimeout);
       timeoutsRef.current.clear();
     };
   }, [isKeyboardVisible, onKeyboardShow, onKeyboardHide, scrollInputIntoView, createTimeout]);
+
+  // Reset mounted ref on mount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   return {
     isKeyboardVisible,
