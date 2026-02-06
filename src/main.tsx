@@ -168,5 +168,20 @@ if (!envValidation.isValid) {
         }
       }
     }
+  }).catch((error) => {
+    logger.error("App bootstrap failed before initial render:", error);
+    const rootElement = document.getElementById("root");
+    if (!rootElement) return;
+
+    createRoot(rootElement).render(
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 text-center">
+        <div>
+          <h1 className="text-xl font-semibold mb-2">Unable to load Ally</h1>
+          <p className="text-sm text-muted-foreground">
+            We hit a startup error. Please close and reopen the app.
+          </p>
+        </div>
+      </div>
+    );
   });
 }

@@ -20,8 +20,7 @@ export function ToastNavigationCleanup() {
 
     sonnerToast.dismiss();
     dismiss();
-  }, [location.pathname, location.search, dismiss]);
+  }, [location.pathname, location.search, location.hash, location.key, dismiss]);
 
   return null;
 }
-

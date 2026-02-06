@@ -20,7 +20,7 @@ import { logger } from '@/lib/logger';
 interface Announcement {
   id: string;
   read: boolean;
-  created_at: string;
+  created_at: string | null;
   announcements: {
     title: string;
     message: string;
@@ -33,8 +33,23 @@ interface NotificationLog {
   notification_type: string;
   title: string;
   body: string;
-  sent_at: string;
+  sent_at: string | null;
 }
+
+const formatRelativeTime = (timestamp: string | null | undefined) => {
+  if (!timestamp) return "Just now";
+
+  const parsedDate = new Date(timestamp);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Just now";
+  }
+
+  try {
+    return formatDistanceToNow(parsedDate, { addSuffix: true });
+  } catch {
+    return "Just now";
+  }
+};
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -250,7 +265,7 @@ export default function NotificationBell() {
                           {notification.body}
                         </p>
                         <span className="text-xs text-muted-foreground mt-1 block">
-                          {formatDistanceToNow(new Date(notification.sent_at), { addSuffix: true })}
+                          {formatRelativeTime(notification.sent_at)}
                         </span>
                       </div>
                     </div>
@@ -291,7 +306,7 @@ export default function NotificationBell() {
                         {notification.announcements?.message ?? ''}
                       </p>
                       <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                        {formatRelativeTime(notification.created_at)}
                       </span>
                     </div>
                   ))}

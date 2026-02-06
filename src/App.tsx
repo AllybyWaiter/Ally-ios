@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AppProviders } from "@/contexts";
 import { useSessionMonitor } from "@/hooks/useSessionMonitor";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -139,6 +139,11 @@ const SessionWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const RootRedirect = () => {
+  const location = useLocation();
+  return <Navigate to={`/dashboard${location.search}`} replace />;
+};
+
 const App = () => (
   <ErrorBoundary featureArea={FeatureArea.GENERAL}>
     <QueryClientProvider client={queryClient}>
@@ -158,7 +163,7 @@ const App = () => (
                   <main id="main-content">
                   <Routes>
                   {/* Redirect root to dashboard or auth */}
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/" element={<RootRedirect />} />
 
                   {/* Auth routes */}
                   <Route path="/auth" element={<PageErrorBoundary pageName="Authentication" featureArea="auth"><Auth /></PageErrorBoundary>} />
@@ -235,6 +240,17 @@ const App = () => (
                       </ProtectedRoute>
                     }
                   />
+                  <Route path="/checkout/success" element={<Navigate to="/dashboard?subscription=activated" replace />} />
+
+                  {/* Temporary aliases to avoid dead-end 404s from in-app links */}
+                  <Route path="/help" element={<Navigate to="/settings" replace />} />
+                  <Route path="/faq" element={<Navigate to="/settings" replace />} />
+                  <Route path="/contact" element={<Navigate to="/settings" replace />} />
+                  <Route path="/cookies" element={<Navigate to="/privacy" replace />} />
+                  <Route path="/subprocessors" element={<Navigate to="/privacy" replace />} />
+                  <Route path="/legal/ai-transparency" element={<Navigate to="/privacy" replace />} />
+                  <Route path="/legal/privacy-rights" element={<Navigate to="/privacy" replace />} />
+                  <Route path="/legal/cookie-preferences" element={<Navigate to="/privacy" replace />} />
                   <Route
                     path="/ally"
                     element={

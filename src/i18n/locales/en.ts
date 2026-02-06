@@ -83,7 +83,7 @@ export const en = {
       combinedCapacity: "Combined capacity",
       tasksDueThisWeek: "Tasks due this week",
       chatWithAlly: "Chat with Ally",
-      chatDescription: "Get personalized aquarium advice and answers to your questions",
+      chatDescription: "Get personalized aquatics guidance and answers to your questions",
       startChat: "Start Chat",
       noAquariumsYet: "No aquatic spaces yet",
       getStartedMessage: "Get started by adding your first aquatic space",

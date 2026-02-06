@@ -35,7 +35,7 @@ export default function Dashboard() {
   const { user, isAdmin, hasPermission, hasAnyRole, units, onboardingCompleted, loading: authLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { limits, canCreateAquarium, getRemainingAquariums, getUpgradeSuggestion, tier, loading: limitsLoading } = usePlanLimits();
+  const { limits, canCreateAquarium, getUpgradeSuggestion, tier, loading: limitsLoading } = usePlanLimits();
   
   const {
     loading,
@@ -180,8 +180,6 @@ export default function Dashboard() {
     
     // Prioritize subscription param to avoid double toast
     const status = subscriptionStatus || checkoutStatus;
-    const paramToClean = subscriptionStatus ? 'subscription' : 'checkout';
-    
     if (status === 'activated' || status === 'success') {
       toast({
         title: 'Subscription Activated!',
@@ -230,8 +228,8 @@ export default function Dashboard() {
     if (!canCreateAquarium(aquariums.length)) {
       const upgradeTier = getUpgradeSuggestion();
       toast({
-        title: 'Aquarium Limit Reached',
-        description: `Your ${tier} plan allows up to ${limits.maxAquariums} aquarium${limits.maxAquariums !== 1 ? 's' : ''}. ${upgradeTier ? `Upgrade to ${upgradeTier.charAt(0).toUpperCase() + upgradeTier.slice(1)} for more.` : ''}`,
+        title: 'Aquatic Space Limit Reached',
+        description: `Your ${tier} plan allows up to ${limits.maxAquariums} aquatic space${limits.maxAquariums !== 1 ? 's' : ''}. ${upgradeTier ? `Upgrade to ${upgradeTier.charAt(0).toUpperCase() + upgradeTier.slice(1)} for more.` : ''}`,
         variant: 'destructive',
       });
       return;
