@@ -17,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAquariumHealthScore } from "@/hooks/useAquariumHealthScore";
 import { fetchAllWaterTests } from "@/infrastructure/queries/waterTests";
 import { useProfileContext } from "@/contexts/ProfileContext";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const WaterTests = () => {
   const [searchParams] = useSearchParams();
@@ -25,12 +27,17 @@ const WaterTests = () => {
   const [selectedParameter, setSelectedParameter] = useState<string>("pH");
   const { t } = useTranslation();
   const { units } = useProfileContext();
+  const { user, loading: authLoading } = useAuth();
 
-  const { data: aquariums, isLoading: aquariumsLoading } = useQuery({
+  const {
+    data: aquariums,
+    isLoading: aquariumsLoading,
+    isError: aquariumsError,
+    refetch: refetchAquariums,
+  } = useQuery({
     queryKey: queryKeys.aquariums.all,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user) return [];
 
       const { data, error } = await supabase
         .from("aquariums")
@@ -41,6 +48,7 @@ const WaterTests = () => {
       if (error) throw error;
       return data;
     },
+    enabled: !authLoading && !!user,
   });
 
   // Auto-select aquarium from URL param or first available
@@ -111,7 +119,7 @@ const WaterTests = () => {
     document.getElementById('trends-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  if (aquariumsLoading) {
+  if (authLoading || aquariumsLoading) {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
@@ -122,6 +130,21 @@ const WaterTests = () => {
             {[...Array(6)].map((_, i) => (
               <Skeleton key={i} className="h-28 rounded-xl" />
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (aquariumsError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader />
+        <div className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold">Unable to load water tests</h2>
+            <p className="text-muted-foreground">Please retry and make sure your connection is stable.</p>
+            <Button onClick={() => refetchAquariums()}>Retry</Button>
           </div>
         </div>
       </div>

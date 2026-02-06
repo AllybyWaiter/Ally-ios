@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Check, Crown, Sparkles, Zap, Building2, Loader2, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Crown, Sparkles, Zap, Building2, Loader2, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -179,8 +178,8 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
         body: {
           plan_name: planId,
           billing_interval: isAnnual ? 'year' : 'month',
-          success_url: `${window.location.origin}/checkout/success`,
-          cancel_url: `${window.location.origin}/settings?checkout=cancelled`,
+          success_url: `${window.location.origin}/dashboard?subscription=activated`,
+          cancel_url: `${window.location.origin}/dashboard?checkout=cancelled`,
         },
       });
 

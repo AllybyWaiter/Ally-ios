@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { PLAN_DEFINITIONS, getPaidPlans } from '@/lib/planConstants';
+import { getPaidPlans } from '@/lib/planConstants';
 import { useSearchParams } from 'react-router-dom';
 
 interface PlanSelectionStepProps {
@@ -85,8 +85,8 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
         body: {
           plan_name: planId,
           billing_interval: isAnnual ? 'year' : 'month',
-          success_url: `${window.location.origin}/checkout/success`,
-          cancel_url: `${window.location.origin}/?onboarding_step=6&checkout=cancelled`,
+          success_url: `${window.location.origin}/dashboard?subscription=activated`,
+          cancel_url: `${window.location.origin}/dashboard?checkout=cancelled`,
         },
       });
 

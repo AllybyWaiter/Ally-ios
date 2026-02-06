@@ -48,6 +48,11 @@ const scheduleDismissFallback = (toastId: string | number, duration: number) => 
   setTimeout(() => {
     sonnerToast.dismiss(toastId);
   }, duration + 400);
+
+  // Secondary guard in case timers are delayed during route transitions.
+  setTimeout(() => {
+    sonnerToast.dismiss(toastId);
+  }, Math.max(duration + 1400, 8000));
 };
 
 const createToast = (type: ToastType, title: string, options?: ToastOptions) => {
