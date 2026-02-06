@@ -182,17 +182,17 @@ const WaterTests = () => {
         </SectionErrorBoundary>
 
         {/* Collapsible Trends Section */}
-        <Collapsible open={trendsOpen} onOpenChange={setTrendsOpen}>
+        <Collapsible open={trendsOpen} onOpenChange={setTrendsOpen} className="mb-24">
           <CollapsibleTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center justify-between"
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-between py-4 min-h-[56px]"
             >
-              <span>{t('waterTests.trends')}</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${trendsOpen ? 'rotate-180' : ''}`} />
+              <span className="text-base font-medium">{t('waterTests.trends')}</span>
+              <ChevronDown className={`w-5 h-5 transition-transform ${trendsOpen ? 'rotate-180' : ''}`} />
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
+          <CollapsibleContent className="mt-4 pb-20">
             <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
               <Suspense fallback={<WaterTestChartsSkeleton />}>
                 {selectedAquarium && (
