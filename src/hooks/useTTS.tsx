@@ -1,5 +1,7 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -22,7 +24,7 @@ export const useTTS = () => {
     setSpeakingMessageId(null);
   }, []);
 
-  const speak = useCallback(async (text: string, messageId: string) => {
+  const speak = useCallback(async (text: string, messageId: string, onEnded?: () => void) => {
     // If already speaking this message, stop it
     if (speakingMessageId === messageId && isSpeaking) {
       stop();
@@ -58,10 +60,9 @@ export const useTTS = () => {
 
     try {
       // Get the user's session for authenticated TTS requests
-      const { data: session } = await import('@/integrations/supabase/client')
-        .then(m => m.supabase.auth.getSession());
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session?.session?.access_token) {
+      if (!session?.access_token) {
         throw new Error('Authentication required for text-to-speech');
       }
 
@@ -71,7 +72,7 @@ export const useTTS = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.session.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ text: truncatedText }),
         }
@@ -96,9 +97,11 @@ export const useTTS = () => {
           URL.revokeObjectURL(audioUrlRef.current);
           audioUrlRef.current = null;
         }
+        onEnded?.();
       };
 
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        logger.error('Audio playback error:', e);
         toast.error('Failed to play audio');
         setIsSpeaking(false);
         setIsGenerating(false);
@@ -111,15 +114,38 @@ export const useTTS = () => {
 
       setIsGenerating(false);
       setIsSpeaking(true);
-      await audio.play();
+
+      try {
+        await audio.play();
+      } catch (playError) {
+        logger.error('Audio play() error:', playError);
+        toast.error('Audio playback failed - try tapping again');
+        setIsSpeaking(false);
+        setSpeakingMessageId(null);
+      }
     } catch (error) {
-      console.error('TTS error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate speech');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('TTS error:', errorMessage, error);
+      toast.error(errorMessage || 'Failed to generate speech');
       setIsGenerating(false);
       setIsSpeaking(false);
       setSpeakingMessageId(null);
     }
   }, [speakingMessageId, isSpeaking, stop]);
+
+  // Clean up audio and blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     isSpeaking,

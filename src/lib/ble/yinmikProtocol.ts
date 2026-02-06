@@ -8,6 +8,8 @@
  * @see https://github.com/don/cordova-plugin-ble-central/issues/971
  */
 
+import { logger } from '@/lib/logger';
+
 // ============================================================================
 // BLE Service & Characteristic UUIDs
 // ============================================================================
@@ -103,7 +105,7 @@ export function parseWaterReading(data: DataView | ArrayBuffer): Partial<WaterRe
   const bytes = new Uint8Array(buffer);
 
   // Log raw data for debugging during development
-  console.log('[YINMIK] Raw bytes:', Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
+  logger.log('[YINMIK] Raw bytes:', Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
 
   // Try ASCII parsing first (some devices send text)
   const asciiResult = tryParseAscii(bytes);
@@ -233,7 +235,7 @@ function tryParseBinary(bytes: Uint8Array): Partial<WaterReading> | null {
 
     return Object.keys(result).length > 0 ? result : null;
   } catch (e) {
-    console.warn('[YINMIK] Binary parse error:', e);
+    logger.warn('[YINMIK] Binary parse error:', e);
     return null;
   }
 }

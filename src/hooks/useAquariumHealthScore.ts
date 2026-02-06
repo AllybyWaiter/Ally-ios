@@ -11,6 +11,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
+import { logger } from '@/lib/logger';
 
 export interface HealthBreakdown {
   waterTests: number;
@@ -185,7 +186,13 @@ export function useAquariumHealthScore(aquariumId: string): AquariumHealthData {
           .eq('aquarium_id', aquariumId)
           .eq('is_dismissed', false),
       ]);
-      
+
+      // Log errors but don't throw — partial data is better than no health score
+      if (testsRes.error) logger.error('Health score: failed to fetch tests:', testsRes.error);
+      if (livestockRes.error) logger.error('Health score: failed to fetch livestock:', livestockRes.error);
+      if (tasksRes.error) logger.error('Health score: failed to fetch tasks:', tasksRes.error);
+      if (alertsRes.error) logger.error('Health score: failed to fetch alerts:', alertsRes.error);
+
       return {
         tests: testsRes.data || [],
         livestock: livestockRes.data || [],

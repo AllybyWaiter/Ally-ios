@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getDistanceKm } from '@/lib/geoUtils';
+import { logger } from '@/lib/logger';
 
 const LOCATION_CHANGE_THRESHOLD_KM = 10; // Auto-update if moved more than 10km
 
@@ -237,10 +238,11 @@ export function useWeather() {
 
         // Save the new coordinates to profile for future sessions (no more GPS prompts)
         if (user?.id) {
-          await supabase
+          const { error: locError } = await supabase
             .from('profiles')
             .update({ latitude, longitude })
             .eq('user_id', user.id);
+          if (locError) logger.error('Failed to save location:', locError);
         }
 
         if (currentAbortRef.aborted) return;
@@ -252,11 +254,12 @@ export function useWeather() {
 
         // Fallback to saved profile location
         if (user?.id) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('latitude, longitude')
             .eq('user_id', user.id)
             .maybeSingle();
+          if (profileError) logger.error('Failed to load saved location:', profileError);
 
           if (currentAbortRef.aborted) return;
 

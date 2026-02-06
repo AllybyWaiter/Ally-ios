@@ -9,6 +9,7 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 import { PlanSelectionStep } from '@/components/onboarding/PlanSelectionStep';
 
 interface PreferencesOnboardingProps {
@@ -131,7 +132,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
         while (!vapidData?.publicKey && retries <= maxRetries) {
           const { data, error } = await supabase.functions.invoke('get-vapid-key');
           if (error) {
-            console.error(`VAPID fetch attempt ${retries + 1} failed:`, error);
+            logger.error(`VAPID fetch attempt ${retries + 1} failed:`, error);
             retries++;
             setVapidRetryCount(retries);
             if (retries <= maxRetries) {
@@ -150,24 +151,32 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             applicationServerKey: applicationServerKey,
           });
           const subscriptionJson = subscription.toJSON();
-          
+
+          if (!subscriptionJson.endpoint || !subscriptionJson.keys?.p256dh || !subscriptionJson.keys?.auth) {
+            throw new Error('Push subscription is missing required fields');
+          }
+
           // Save subscription
-          await supabase.from('push_subscriptions').upsert({
+          const { error: subError } = await supabase.from('push_subscriptions').upsert({
             user_id: userId,
-            endpoint: subscriptionJson.endpoint!,
-            p256dh: subscriptionJson.keys!.p256dh,
-            auth: subscriptionJson.keys!.auth,
+            endpoint: subscriptionJson.endpoint,
+            p256dh: subscriptionJson.keys.p256dh,
+            auth: subscriptionJson.keys.auth,
             user_agent: navigator.userAgent,
           }, { onConflict: 'user_id,endpoint' });
 
+          if (subError) throw subError;
+
           // Save notification preferences
-          await supabase.from('notification_preferences').upsert({
+          const { error: prefError } = await supabase.from('notification_preferences').upsert({
             user_id: userId,
             push_enabled: true,
             task_reminders_enabled: true,
             water_alerts_enabled: true,
             announcements_enabled: true,
           }, { onConflict: 'user_id' });
+
+          if (prefError) throw prefError;
 
           setNotificationsEnabled(true);
           toast({
@@ -183,7 +192,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
         });
       }
     } catch (error: unknown) {
-      console.error('Failed to enable notifications:', error);
+      logger.error('Failed to enable notifications:', error);
       toast({
         title: t('preferencesOnboarding.step5.error', 'Failed to enable notifications'),
         description: t('preferencesOnboarding.step5.enableLater'),
@@ -251,7 +260,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
       onComplete();
     } catch (error: unknown) {
-      console.error('Error saving preferences:', error);
+      logger.error('Error saving preferences:', error);
       toast({
         title: t('common.error'),
         description: error instanceof Error ? error.message : t('settings.saveError'),

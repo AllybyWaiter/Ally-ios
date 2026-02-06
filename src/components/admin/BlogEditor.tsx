@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 import { ArrowLeft, Save, Eye, Upload, X, Calendar as CalendarIcon, Clock, Table, ChevronDown, LayoutTemplate, Grid3X3, Edit3 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -101,7 +102,7 @@ export default function BlogEditor() {
         .order('name');
       
       if (error) {
-        console.error('Failed to fetch categories:', error);
+        logger.error('Failed to fetch categories:', error);
         toast({
           title: 'Warning',
           description: 'Failed to load categories',
@@ -110,7 +111,7 @@ export default function BlogEditor() {
       }
       setCategories(data || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
       setCategories([]);
     }
   };
@@ -235,7 +236,7 @@ export default function BlogEditor() {
         
         const [hours, minutes] = scheduleTime.split(':');
         const scheduledDateTime = new Date(scheduleDate);
-        scheduledDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        scheduledDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
 
         if (scheduledDateTime <= new Date()) {
           toast({
@@ -310,7 +311,7 @@ export default function BlogEditor() {
           .eq('post_id', postId);
 
         if (deleteError) {
-          console.error('Failed to delete existing categories:', deleteError);
+          logger.error('Failed to delete existing categories:', deleteError);
           throw new Error('Failed to update categories');
         }
 
@@ -322,7 +323,7 @@ export default function BlogEditor() {
           }));
           const { error: insertError } = await supabase.from('blog_post_categories').insert(categoryData);
           if (insertError) {
-            console.error('Failed to insert categories:', insertError);
+            logger.error('Failed to insert categories:', insertError);
             throw new Error('Failed to save categories');
           }
         }

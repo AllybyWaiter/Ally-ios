@@ -43,6 +43,7 @@ import { useTTS } from "@/hooks/useTTS";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { copyToClipboard } from "@/lib/clipboard";
 import { triggerHaptic } from "@/hooks/useHaptics";
+import { logger } from "@/lib/logger";
 
 interface Message {
   role: "user" | "assistant";
@@ -115,6 +116,73 @@ const AllyChat = () => {
   });
 
   const canUseThinking = limits.hasReasoningModel;
+
+  // Factory for streaming callbacks — eliminates duplication across send, retry, and edit flows
+  const createStreamCallbacks = useCallback((options: {
+    aquariumContext?: string;
+    aquariumName?: string;
+    onStreamEnd: (content: string) => Promise<void> | void;
+    onError: (error: Error) => void;
+  }) => ({
+    onStreamStart: () => {
+      triggerHaptic('light');
+      pendingToolExecutionsRef.current = [];
+      pendingDataCardsRef.current = [];
+      setMessages(prev => [...prev, {
+        role: "assistant" as const,
+        content: "",
+        timestamp: new Date(),
+        ...(options.aquariumContext && { aquariumContext: options.aquariumContext }),
+        ...(options.aquariumName && { aquariumName: options.aquariumName }),
+      }]);
+    },
+    onToken: (content: string) => {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          ...newMessages[newMessages.length - 1],
+          content,
+          toolExecutions: pendingToolExecutionsRef.current.length > 0
+            ? [...pendingToolExecutionsRef.current]
+            : undefined,
+          dataCards: pendingDataCardsRef.current.length > 0
+            ? [...pendingDataCardsRef.current]
+            : undefined,
+        };
+        return newMessages;
+      });
+    },
+    onStreamEnd: options.onStreamEnd,
+    onError: options.onError,
+    onToolExecution: (executions: ToolExecution[]) => {
+      pendingToolExecutionsRef.current = executions;
+      triggerHaptic('light');
+      setMessages(prev => {
+        const newMessages = [...prev];
+        if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+          newMessages[newMessages.length - 1] = {
+            ...newMessages[newMessages.length - 1],
+            toolExecutions: executions,
+          };
+        }
+        return newMessages;
+      });
+    },
+    onDataCard: (card: DataCardPayload) => {
+      pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
+      triggerHaptic('light');
+      setMessages(prev => {
+        const newMessages = [...prev];
+        if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+          newMessages[newMessages.length - 1] = {
+            ...newMessages[newMessages.length - 1],
+            dataCards: [...pendingDataCardsRef.current],
+          };
+        }
+        return newMessages;
+      });
+    },
+  }), []);
 
   const handleModelSelect = (modelId: ModelType) => {
     if (modelId === 'thinking' && !canUseThinking) {
@@ -193,25 +261,32 @@ const AllyChat = () => {
   }, [location.state, input]);
 
   const initializeChat = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-    setUserId(user.id);
-    await conversationManager.fetchAquariums();
-    await conversationManager.fetchConversations();
-    
-    // Restore last conversation if available
-    const lastConvoId = localStorage.getItem(getLastConversationKey(user.id));
-    if (lastConvoId && conversationManager.conversations.some(c => c.id === lastConvoId)) {
-      const loadedMessages = await conversationManager.loadConversation(lastConvoId);
-      if (loadedMessages && loadedMessages.length > 0) {
-        setMessages(loadedMessages);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate("/auth");
+        return;
+      }
+      setUserId(user.id);
+      await conversationManager.fetchAquariums();
+      const conversations = await conversationManager.fetchConversations();
+
+      // Restore last conversation if available
+      // Use the fresh conversations array returned by fetchConversations
+      // instead of conversationManager.conversations which may be stale
+      const lastConvoId = localStorage.getItem(getLastConversationKey(user.id));
+      if (lastConvoId && conversations.some(c => c.id === lastConvoId)) {
+        const loadedMessages = await conversationManager.loadConversation(lastConvoId);
+        if (loadedMessages && loadedMessages.length > 0) {
+          setMessages(loadedMessages);
+        } else {
+          setMessages(conversationManager.startNewConversation());
+        }
       } else {
         setMessages(conversationManager.startNewConversation());
       }
-    } else {
+    } catch (error) {
+      logger.error('Failed to initialize chat:', error);
       setMessages(conversationManager.startNewConversation());
     }
   };
@@ -326,110 +401,39 @@ const AllyChat = () => {
         [...messages, userMessage],
         conversationManager.getAquariumIdForApi(),
         selectedModel,
-        {
-          onStreamStart: () => {
-            triggerHaptic('light'); // Haptic on first token
-            pendingToolExecutionsRef.current = []; // Reset tool executions
-            pendingDataCardsRef.current = []; // Reset data cards
-            setMessages(prev => [...prev, {
-              role: "assistant",
-              content: "",
-              timestamp: new Date(),
-              aquariumContext: currentAquariumContext,
-              aquariumName: currentAquariumName
-            }]);
-          },
-          onToken: (content) => {
-            setMessages(prev => {
-              const newMessages = [...prev];
-              newMessages[newMessages.length - 1] = {
-                role: "assistant",
-                content,
-                timestamp: new Date(),
-                aquariumContext: currentAquariumContext,
-                aquariumName: currentAquariumName,
-                toolExecutions: pendingToolExecutionsRef.current.length > 0
-                  ? [...pendingToolExecutionsRef.current]
-                  : undefined,
-                dataCards: pendingDataCardsRef.current.length > 0
-                  ? [...pendingDataCardsRef.current]
-                  : undefined
-              };
-              return newMessages;
-            });
-          },
+        createStreamCallbacks({
+          aquariumContext: currentAquariumContext,
+          aquariumName: currentAquariumName,
           onStreamEnd: async (content) => {
-            triggerHaptic('success'); // Haptic on completion
+            triggerHaptic('success');
             setStreamStartTime(null);
-            const finalAssistantMessage = {
-              role: "assistant" as const,
-              content,
-              timestamp: new Date()
-            };
+            const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
             const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
             if (savedId && userId) {
               localStorage.setItem(getLastConversationKey(userId), savedId);
             }
           },
           onError: (error) => {
-            console.error("Stream error:", error);
+            logger.error("Stream error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to get response";
             setLastError({ message: errorMessage, userMessage });
-            if (conversationModeRef.current) {
-              setConversationMode(false);
-            }
-            toast({
-              title: "Error",
-              description: errorMessage,
-              variant: "destructive",
-            });
+            if (conversationModeRef.current) setConversationMode(false);
+            toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
-          onToolExecution: (executions) => {
-            pendingToolExecutionsRef.current = executions;
-            triggerHaptic('light');
-            setMessages(prev => {
-              const newMessages = [...prev];
-              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
-                newMessages[newMessages.length - 1] = {
-                  ...newMessages[newMessages.length - 1],
-                  toolExecutions: executions
-                };
-              }
-              return newMessages;
-            });
-          },
-          onDataCard: (card) => {
-            pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
-            triggerHaptic('light');
-            setMessages(prev => {
-              const newMessages = [...prev];
-              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
-                newMessages[newMessages.length - 1] = {
-                  ...newMessages[newMessages.length - 1],
-                  dataCards: [...pendingDataCardsRef.current]
-                };
-              }
-              return newMessages;
-            });
-          }
-        }
+        })
       );
     } catch (error) {
-      console.error("Retry error:", error);
+      logger.error("Retry error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
       setLastError({ message: errorMessage, userMessage });
       setMessages(prev => prev.slice(0, -1));
       triggerHaptic('error');
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
       setStreamStartTime(null);
     }
-  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast]);
+  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks]);
 
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
@@ -488,46 +492,13 @@ const AllyChat = () => {
         [...messages, userMessage],
         conversationManager.getAquariumIdForApi(),
         selectedModel,
-        {
-          onStreamStart: () => {
-            triggerHaptic('light'); // Haptic on first token
-            pendingToolExecutionsRef.current = []; // Reset tool executions
-            pendingDataCardsRef.current = []; // Reset data cards
-            setMessages(prev => [...prev, {
-              role: "assistant",
-              content: "",
-              timestamp: new Date(),
-              aquariumContext: currentAquariumContext,
-              aquariumName: currentAquariumName
-            }]);
-          },
-          onToken: (content) => {
-            setMessages(prev => {
-              const newMessages = [...prev];
-              newMessages[newMessages.length - 1] = {
-                role: "assistant",
-                content,
-                timestamp: new Date(),
-                aquariumContext: currentAquariumContext,
-                aquariumName: currentAquariumName,
-                toolExecutions: pendingToolExecutionsRef.current.length > 0
-                  ? [...pendingToolExecutionsRef.current]
-                  : undefined,
-                dataCards: pendingDataCardsRef.current.length > 0
-                  ? [...pendingDataCardsRef.current]
-                  : undefined
-              };
-              return newMessages;
-            });
-          },
+        createStreamCallbacks({
+          aquariumContext: currentAquariumContext,
+          aquariumName: currentAquariumName,
           onStreamEnd: async (content) => {
-            triggerHaptic('success'); // Haptic on completion
+            triggerHaptic('success');
             setStreamStartTime(null);
-            const finalAssistantMessage = {
-              role: "assistant" as const,
-              content,
-              timestamp: new Date()
-            };
+            const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
             const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
             if (savedId && userId) {
               localStorage.setItem(getLastConversationKey(userId), savedId);
@@ -536,7 +507,6 @@ const AllyChat = () => {
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
               speak(content, messageId, () => {
-                // After TTS finishes, auto-start recording if still in conversation mode
                 if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
                   startRecording();
                 }
@@ -544,53 +514,17 @@ const AllyChat = () => {
             }
           },
           onError: (error) => {
-            console.error("Stream error:", error);
+            logger.error("Stream error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to get response";
             setLastError({ message: errorMessage, userMessage });
-            if (conversationModeRef.current) {
-              setConversationMode(false);
-            }
-            toast({
-              title: "Error",
-              description: errorMessage,
-              variant: "destructive",
-            });
+            if (conversationModeRef.current) setConversationMode(false);
+            toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
-          onToolExecution: (executions) => {
-            // Store tool executions and update the current message
-            pendingToolExecutionsRef.current = executions;
-            triggerHaptic('light'); // Haptic feedback for tool execution
-            setMessages(prev => {
-              const newMessages = [...prev];
-              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
-                newMessages[newMessages.length - 1] = {
-                  ...newMessages[newMessages.length - 1],
-                  toolExecutions: executions
-                };
-              }
-              return newMessages;
-            });
-          },
-          onDataCard: (card) => {
-            // Accumulate data cards for the current message
-            pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
-            triggerHaptic('light');
-            setMessages(prev => {
-              const newMessages = [...prev];
-              if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
-                newMessages[newMessages.length - 1] = {
-                  ...newMessages[newMessages.length - 1],
-                  dataCards: [...pendingDataCardsRef.current]
-                };
-              }
-              return newMessages;
-            });
-          }
-        }
+        })
       );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
-      console.error("Chat error:", errorMessage, error);
+      logger.error("Chat error:", errorMessage, error);
       
       // Store error for retry
       setLastError({ message: errorMessage, userMessage });
@@ -680,32 +614,7 @@ const AllyChat = () => {
         newMessages,
         conversationManager.getAquariumIdForApi(),
         selectedModel,
-        {
-          onStreamStart: () => {
-            pendingToolExecutionsRef.current = [];
-            pendingDataCardsRef.current = [];
-            setMessages(prev => [...prev, {
-              role: "assistant",
-              content: "",
-              timestamp: new Date()
-            }]);
-          },
-          onToken: (content) => {
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                content,
-                toolExecutions: pendingToolExecutionsRef.current.length > 0
-                  ? [...pendingToolExecutionsRef.current]
-                  : undefined,
-                dataCards: pendingDataCardsRef.current.length > 0
-                  ? [...pendingDataCardsRef.current]
-                  : undefined
-              };
-              return updated;
-            });
-          },
+        createStreamCallbacks({
           onStreamEnd: async (content) => {
             if (conversationManager.currentConversationId) {
               await conversationManager.saveAssistantMessage(content);
@@ -719,44 +628,14 @@ const AllyChat = () => {
             }
           },
           onError: (error) => {
-            console.error("Regeneration error:", error);
+            logger.error("Regeneration error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to regenerate response";
-            toast({
-              title: "Error",
-              description: errorMessage,
-              variant: "destructive",
-            });
+            toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
-          onToolExecution: (executions) => {
-            pendingToolExecutionsRef.current = executions;
-            setMessages(prev => {
-              const updated = [...prev];
-              if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
-                updated[updated.length - 1] = {
-                  ...updated[updated.length - 1],
-                  toolExecutions: executions
-                };
-              }
-              return updated;
-            });
-          },
-          onDataCard: (card) => {
-            pendingDataCardsRef.current = [...pendingDataCardsRef.current, card];
-            setMessages(prev => {
-              const updated = [...prev];
-              if (updated.length > 0 && updated[updated.length - 1].role === 'assistant') {
-                updated[updated.length - 1] = {
-                  ...updated[updated.length - 1],
-                  dataCards: [...pendingDataCardsRef.current]
-                };
-              }
-              return updated;
-            });
-          }
-        }
+        })
       );
     } catch (error) {
-      console.error("Error regenerating response:", error);
+      logger.error("Error regenerating response:", error);
       toast({
         title: "Error",
         description: "Failed to regenerate response. Please try again.",
@@ -767,18 +646,50 @@ const AllyChat = () => {
     }
   }, [editingIndex, editingContent, messages, conversationManager, streamResponse, toast, selectedModel]);
 
-  const handleRegenerateResponse = useCallback((index: number) => {
-    if (messages[index]?.role === "user") {
-      const messageContent = messages[index].content;
-      startEditMessage(index, messageContent);
-      // Use setTimeout with 0ms to ensure state updates are processed before saveEdit
-      // This avoids the stale closure issue with requestAnimationFrame
-      setTimeout(() => {
-        // Trigger save by directly calling the edit flow
-        saveEdit();
-      }, 0);
+  const handleRegenerateResponse = useCallback(async (index: number) => {
+    if (messages[index]?.role !== "user") return;
+
+    const messageContent = messages[index].content;
+
+    // Directly truncate and re-send instead of going through edit state,
+    // which caused a stale closure bug (saveEdit would read null editingIndex)
+    const newMessages = messages.slice(0, index + 1);
+    setMessages(newMessages);
+
+    await conversationManager.updateMessageInDb(index, messageContent);
+
+    setIsLoading(true);
+
+    try {
+      await streamResponse(
+        newMessages,
+        conversationManager.getAquariumIdForApi(),
+        selectedModel,
+        createStreamCallbacks({
+          onStreamEnd: async (content) => {
+            if (conversationManager.currentConversationId) {
+              await conversationManager.saveAssistantMessage(content);
+            } else {
+              const lastUserMessage = newMessages[newMessages.length - 1];
+              await conversationManager.saveConversation(
+                lastUserMessage,
+                { role: "assistant", content, timestamp: new Date() }
+              );
+            }
+          },
+        }),
+      );
+    } catch (error) {
+      logger.error("Failed to regenerate response:", error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, [messages, startEditMessage, saveEdit]);
+  }, [messages, conversationManager, streamResponse, toast, selectedModel, createStreamCallbacks]);
 
   return (
     <TooltipProvider>

@@ -126,11 +126,15 @@ const Settings = () => {
   useEffect(() => {
     const fetchSkillLevel = async () => {
       if (!user) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('skill_level, weather_enabled')
         .eq('user_id', user.id)
         .maybeSingle();
+      if (error) {
+        logger.error('Failed to fetch skill level:', error);
+        return;
+      }
       if (data?.skill_level) setSkillLevel(data.skill_level);
       if (data?.weather_enabled !== undefined) setWeatherEnabled(data.weather_enabled);
     };
@@ -192,11 +196,35 @@ const Settings = () => {
     setSelectedTheme(newTheme);
     // Apply theme to next-themes
     setTheme(newTheme);
-    // Persist to database
+
+    // Force immediate DOM update for Capacitor/iOS WebView
+    // next-themes can be slow to apply on mobile, so we manually set the class
+    const root = document.documentElement;
+    if (newTheme === 'dark') {
+      root.classList.add('dark');
+      root.style.colorScheme = 'dark';
+    } else if (newTheme === 'light') {
+      root.classList.remove('dark');
+      root.style.colorScheme = 'light';
+    } else if (newTheme === 'system') {
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemDark) {
+        root.classList.add('dark');
+        root.style.colorScheme = 'dark';
+      } else {
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+      }
+    }
+
+    // Persist to database and refresh profile so ThemeWrapper gets updated value
     try {
-      await supabase.from('profiles').update({ theme_preference: newTheme }).eq('user_id', user.id);
+      const { error: dbError } = await supabase.from('profiles').update({ theme_preference: newTheme }).eq('user_id', user.id);
+      if (dbError) throw dbError;
+      // Refresh profile to sync auth context with new theme
+      await refreshProfile();
     } catch (error: unknown) {
-      console.error('Failed to save theme preference:', error);
+      logger.error('Failed to save theme preference:', error);
     }
   };
 
@@ -346,7 +374,7 @@ const Settings = () => {
       try {
         await showCustomerCenter();
       } catch (e) {
-        console.error('Customer center error:', e);
+        logger.error('Customer center error:', e);
         // Fallback to native subscription settings
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         if (isIOS) {
@@ -421,7 +449,7 @@ const Settings = () => {
         toast({ title: "No Purchases Found", description: "No previous purchases were found to restore." });
       }
     } catch (e) {
-      console.error('Restore error:', e);
+      logger.error('Restore error:', e);
       toast({ title: "Restore Failed", description: "Unable to restore purchases. Please try again.", variant: "destructive" });
     } finally {
       setPortalLoading(false);
@@ -447,7 +475,7 @@ const Settings = () => {
           toast({ title: "Subscription Activated!", description: "Welcome to Ally Pro!" });
         }
       } catch (e) {
-        console.error('Paywall error:', e);
+        logger.error('Paywall error:', e);
         toast({ title: "Unable to Load Paywall", description: "Please try again.", variant: "destructive" });
       } finally {
         setPortalLoading(false);
@@ -464,7 +492,8 @@ const Settings = () => {
     if (!user) return;
     setWeatherEnabled(enabled);
     try {
-      await supabase.from('profiles').update({ weather_enabled: enabled }).eq('user_id', user.id);
+      const { error } = await supabase.from('profiles').update({ weather_enabled: enabled }).eq('user_id', user.id);
+      if (error) throw error;
       toast({ title: enabled ? "Weather enabled" : "Weather disabled" });
     } catch {
       toast({ title: "Error", description: "Failed to update weather setting.", variant: "destructive" });

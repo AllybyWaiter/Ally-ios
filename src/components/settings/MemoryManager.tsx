@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2, Lock, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { logger } from "@/lib/logger";
 
 interface Memory {
   id: string;
@@ -83,8 +84,8 @@ export default function MemoryManager() {
       if (!error && data?.subscription_tier) {
         setSubscriptionTier(data.subscription_tier);
       }
-    } catch {
-      // Silently handle error - default tier will be used
+    } catch (error) {
+      logger.error('Failed to fetch subscription tier:', error);
     }
   };
 

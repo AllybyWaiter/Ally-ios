@@ -38,9 +38,14 @@ const lazyWithRetry = <T extends ComponentType<unknown>>(
   componentImport: () => Promise<{ default: T }>
 ) =>
   lazy(async () => {
-    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
-      sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
-    );
+    let pageHasAlreadyBeenForceRefreshed = false;
+    try {
+      pageHasAlreadyBeenForceRefreshed = JSON.parse(
+        sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+      );
+    } catch {
+      // Corrupted sessionStorage value — treat as not refreshed
+    }
 
     try {
       const component = await componentImport();

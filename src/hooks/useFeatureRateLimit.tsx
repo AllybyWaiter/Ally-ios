@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 import { addBreadcrumb, FeatureArea } from '@/lib/sentry';
 import { PLAN_DEFINITIONS, type PlanTier } from '@/lib/planConstants';
+import { logger } from '@/lib/logger';
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -97,7 +98,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
             localStorage.setItem(storageKey, JSON.stringify(newData));
           } catch {
             // Storage quota exceeded - continue without persisting
-            console.warn('localStorage quota exceeded for rate limit');
+            logger.warn('localStorage quota exceeded for rate limit');
           }
           setState({
             remaining: config.maxRequests,
@@ -124,7 +125,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
           localStorage.setItem(storageKey, JSON.stringify(newData));
         } catch {
           // Storage quota exceeded - continue without persisting
-          console.warn('localStorage quota exceeded for rate limit');
+          logger.warn('localStorage quota exceeded for rate limit');
         }
         setState({
           remaining: config.maxRequests,
@@ -168,7 +169,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
         localStorage.setItem(storageKey, JSON.stringify(newData));
       } catch {
         // Storage quota exceeded - continue without persisting
-        console.warn('localStorage quota exceeded for rate limit');
+        logger.warn('localStorage quota exceeded for rate limit');
       }
       
       addBreadcrumb(
@@ -201,7 +202,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
         localStorage.setItem(storageKey, JSON.stringify(newData));
       } catch {
         // Storage quota exceeded - continue without persisting
-        console.warn('localStorage quota exceeded for rate limit');
+        logger.warn('localStorage quota exceeded for rate limit');
       }
 
       setState({
@@ -248,7 +249,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
       localStorage.setItem(storageKey, JSON.stringify(newData));
     } catch {
       // Storage quota exceeded - continue without persisting
-      console.warn('localStorage quota exceeded for rate limit');
+      logger.warn('localStorage quota exceeded for rate limit');
     }
 
     const remaining = config.maxRequests - newData.count;
@@ -286,7 +287,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
         },
       });
     } catch (error) {
-      console.error('Failed to track usage:', error);
+      logger.error('Failed to track usage:', error);
     }
   };
 

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sheet';
 import { WaterTestForm } from './WaterTestForm';
 import { WaterWandSection } from './WaterWandSection';
+import { logger } from '@/lib/logger';
 
 interface QuickLogSectionProps {
   aquarium: { id: string; name: string; type: string } | null;
@@ -130,10 +131,10 @@ export function QuickLogSection({ aquarium }: QuickLogSectionProps) {
               units={units}
               onReadingComplete={(reading) => {
                 // TODO: Auto-save or prompt to save
-                console.log('Reading complete:', reading);
+                logger.log('Reading complete:', reading);
               }}
               onParametersDetected={(params) => {
-                console.log('Parameters detected:', params);
+                logger.log('Parameters detected:', params);
               }}
             />
 

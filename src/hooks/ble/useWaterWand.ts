@@ -42,6 +42,7 @@ import {
   type YinmikDevice,
   type ConnectionStatus,
 } from '@/lib/ble/yinmikProtocol';
+import { logger } from '@/lib/logger';
 
 // ============================================================================
 // Types
@@ -131,7 +132,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
     const message = err instanceof Error ? err.message : String(err);
     const fullMessage = `${context}: ${message}`;
 
-    console.error(`[WaterWand] ${fullMessage}`);
+    logger.error(`[WaterWand] ${fullMessage}`);
     setError(fullMessage);
     updateStatus('error');
     onError?.(new Error(fullMessage));
@@ -220,7 +221,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
               devices[existingIndex] = yinmikDevice;
             } else {
               devices.push(yinmikDevice);
-              console.log('[WaterWand] Found device:', yinmikDevice);
+              logger.log('[WaterWand] Found device:', yinmikDevice);
             }
 
             setDiscoveredDevices([...devices]);
@@ -245,7 +246,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
       await BleClient.stopLEScan();
       updateStatus('disconnected');
     } catch (err) {
-      console.warn('[WaterWand] Stop scan error:', err);
+      logger.warn('[WaterWand] Stop scan error:', err);
     }
   }, [updateStatus]);
 
@@ -262,7 +263,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
     try {
       // Set up disconnect handler
       await BleClient.connect(deviceId, (disconnectedDeviceId) => {
-        console.log('[WaterWand] Device disconnected:', disconnectedDeviceId);
+        logger.log('[WaterWand] Device disconnected:', disconnectedDeviceId);
         if (connectedDeviceIdRef.current === disconnectedDeviceId) {
           connectedDeviceIdRef.current = null;
           setDevice(null);
@@ -322,7 +323,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
       setDevice(null);
       updateStatus('disconnected');
     } catch (err) {
-      console.warn('[WaterWand] Disconnect error:', err);
+      logger.warn('[WaterWand] Disconnect error:', err);
       // Force cleanup
       connectedDeviceIdRef.current = null;
       setDevice(null);
@@ -341,7 +342,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
         YINMIK_SERVICE_UUID,
         YINMIK_CHARACTERISTICS.DATA,
         (value) => {
-          console.log('[WaterWand] Notification received');
+          logger.log('[WaterWand] Notification received');
 
           // Parse the reading
           const reading = parseWaterReading(value);
@@ -372,7 +373,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
         }
       );
     } catch (err) {
-      console.warn('[WaterWand] Failed to setup notifications:', err);
+      logger.warn('[WaterWand] Failed to setup notifications:', err);
       // Non-fatal - we can still try to read directly
     }
   }, [onReading]);
@@ -422,7 +423,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
       }
 
       // Method 2: Try direct read if notification didn't work
-      console.log('[WaterWand] Trying direct read...');
+      logger.log('[WaterWand] Trying direct read...');
 
       const directResult = await BleClient.read(
         deviceId,
@@ -483,13 +484,13 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
       const bytes = new Uint8Array(result.buffer);
       if (bytes.length > 0) {
         const battery = bytes[0];
-        console.log('[WaterWand] Battery level:', battery);
+        logger.log('[WaterWand] Battery level:', battery);
         return battery;
       }
 
       return null;
     } catch (err) {
-      console.warn('[WaterWand] Failed to read battery:', err);
+      logger.warn('[WaterWand] Failed to read battery:', err);
       return null;
     }
   }, []);
