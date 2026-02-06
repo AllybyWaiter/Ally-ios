@@ -256,8 +256,9 @@ export function useAquariumHealthScore(aquariumId: string): AquariumHealthData {
     const { label, color } = getHealthLabel(score);
     
     // Calculate trend (simplified - compare recent vs older tests)
+    // Need at least 4 tests for fair comparison (2 recent vs 2 older)
     let trend: HealthTrend = { direction: 'stable', change: 0 };
-    if (tests.length >= 3) {
+    if (tests.length >= 4) {
       const recentAvg = calculateWaterTestScore(tests.slice(0, 2));
       const olderAvg = calculateWaterTestScore(tests.slice(2, 4));
       const change = recentAvg - olderAvg;

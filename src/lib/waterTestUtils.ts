@@ -246,7 +246,12 @@ export const validateParameter = (
   aquariumType: string
 ): { isValid: boolean; hint?: string } => {
   const templates = getParameterTemplates(aquariumType);
-  const param = templates[0]?.parameters.find((p) => p.name === paramName);
+  // Search all templates for the parameter, not just the first one
+  let param = null;
+  for (const template of templates) {
+    param = template.parameters.find((p) => p.name === paramName);
+    if (param) break;
+  }
 
   if (!param) return { isValid: true };
 

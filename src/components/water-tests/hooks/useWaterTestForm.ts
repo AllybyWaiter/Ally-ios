@@ -144,7 +144,9 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
       // Upload photo if exists
       if (photoFile && !currentPhotoUrl) {
         const photoParts = photoFile.name.split('.');
-        const fileExt = photoParts.length > 1 ? photoParts.pop() : 'jpg';
+        // Get extension safely: use last part if multiple parts exist and it's not empty
+        const lastPart = photoParts.length > 1 ? photoParts[photoParts.length - 1] : '';
+        const fileExt = lastPart && lastPart.length <= 5 ? lastPart.toLowerCase() : 'jpg';
         const fileName = `${authUser.id}/${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage

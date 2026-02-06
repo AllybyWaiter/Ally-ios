@@ -77,7 +77,12 @@ export function ParameterInputGrid({
               {validation && !validation.isValid && (
                 <div className="flex items-start gap-2 text-xs text-warning">
                   <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                  <span>{validation.hint}</span>
+                  <span>
+                    {/* Override hint for temperature when displaying in different units */}
+                    {param.unit === '°F' && units === 'metric'
+                      ? `Value should be between ${formatDecimal(displayMin, 1)} and ${formatDecimal(displayMax, 1)} ${displayUnit}`
+                      : validation.hint}
+                  </span>
                 </div>
               )}
               {validation && validation.isValid && value && (
