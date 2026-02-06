@@ -60,7 +60,7 @@ serve(async (req) => {
 
     if (errors.length > 0) {
       logger.warn('Validation failed', { errors });
-      return validationErrorResponse(errors);
+      return validationErrorResponse(errors, req);
     }
 
     // Rate limiting (10 transcriptions per minute)
@@ -72,7 +72,7 @@ serve(async (req) => {
     }, logger);
 
     if (!rateLimitResult.allowed) {
-      return rateLimitExceededResponse(rateLimitResult);
+      return rateLimitExceededResponse(rateLimitResult, req);
     }
 
     logger.info('Processing audio transcription', {
@@ -96,8 +96,8 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('OpenAI API error', { status: response.status, error: errorText });
-      throw new Error(`OpenAI API error: ${errorText}`);
+      logger.error('OpenAI API error', { status: response.status, error: errorText.slice(0, 200) });
+      throw new Error('Failed to process audio transcription');
     }
 
     const result = await response.json();
@@ -105,9 +105,9 @@ serve(async (req) => {
       textLength: result.text?.length || 0,
     });
 
-    return createSuccessResponse({ text: result.text });
+    return createSuccessResponse({ text: result.text }, 200, req);
 
   } catch (error) {
-    return createErrorResponse(error, logger);
+    return createErrorResponse(error, logger, { request: req });
   }
 });

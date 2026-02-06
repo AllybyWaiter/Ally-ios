@@ -249,7 +249,11 @@ serve(async (req) => {
 
     const isPoolOrSpaType = ['pool', 'spa', 'hot_tub'].includes((aquarium?.type || '').toLowerCase());
     
-    if (isPoolOrSpaType && profile?.weather_enabled && profile?.latitude && profile?.longitude) {
+    if (isPoolOrSpaType && profile?.weather_enabled &&
+        typeof profile?.latitude === 'number' && typeof profile?.longitude === 'number' &&
+        isFinite(profile.latitude) && isFinite(profile.longitude) &&
+        profile.latitude >= -90 && profile.latitude <= 90 &&
+        profile.longitude >= -180 && profile.longitude <= 180) {
       try {
         logger.info('Fetching weather data for pool/spa', { 
           lat: profile.latitude, 

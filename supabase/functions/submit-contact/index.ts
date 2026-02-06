@@ -6,6 +6,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { createLogger } from "../_shared/logger.ts";
 import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from "../_shared/rateLimit.ts";
 import { createErrorResponse, createSuccessResponse } from "../_shared/errorHandler.ts";
+import { escapeHtml } from "../_shared/validation.ts";
 
 // Validation schema
 const contactSchema = z.object({
@@ -137,7 +138,7 @@ serve(async (req: Request) => {
                       <!-- Main Content -->
                       <tr>
                         <td style="padding: 40px;">
-                          <h2 style="margin: 0 0 16px 0; color: #333333; font-size: 22px;">Hi ${data.name},</h2>
+                          <h2 style="margin: 0 0 16px 0; color: #333333; font-size: 22px;">Hi ${escapeHtml(data.name)},</h2>
                           <p style="margin: 0 0 24px 0; color: #666666; font-size: 16px; line-height: 1.6;">
                             Thank you for reaching out! We've received your message and our team will review it shortly.
                           </p>
@@ -147,7 +148,7 @@ serve(async (req: Request) => {
                             <tr>
                               <td style="padding: 24px;">
                                 <span style="color: #999999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Message</span>
-                                <p style="margin: 8px 0 0 0; color: #666666; font-size: 14px; line-height: 1.5; font-style: italic;">"${data.message.length > 200 ? data.message.substring(0, 200) + '...' : data.message}"</p>
+                                <p style="margin: 8px 0 0 0; color: #666666; font-size: 14px; line-height: 1.5; font-style: italic;">"${escapeHtml(data.message.length > 200 ? data.message.substring(0, 200) + '...' : data.message)}"</p>
                               </td>
                             </tr>
                           </table>

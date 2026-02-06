@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-import { handleCors, createLogger, checkRateLimit, extractIdentifier } from "../_shared/mod.ts";
+import { handleCors, createLogger, checkRateLimit, extractIdentifier, rateLimitExceededResponse } from "../_shared/mod.ts";
 import { createErrorResponse, createSuccessResponse } from "../_shared/errorHandler.ts";
 
 const FUNCTION_NAME = "get-radar-frames";
@@ -30,17 +30,7 @@ serve(async (req) => {
     }, logger);
 
     if (!rateLimit.allowed) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit exceeded" }),
-        {
-          status: 429,
-          headers: {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return rateLimitExceededResponse(rateLimit);
     }
 
     // Simple in memory cache to reduce external calls

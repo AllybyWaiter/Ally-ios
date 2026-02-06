@@ -9,6 +9,7 @@ export {
   validateEnum,
   validationErrorResponse,
   collectErrors,
+  escapeHtml,
   type ValidationError,
   type ValidationResult,
 } from './validation.ts';

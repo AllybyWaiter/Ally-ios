@@ -144,26 +144,9 @@ export function useTimeOfDay(): TimeOfDayInfo {
     };
   });
 
-  // Update when weather changes
-  useEffect(() => {
-    const hour = new Date().getHours();
-    const slot = getTimeSlot(hour);
-    const paths = getImagePaths(slot, weatherCondition, weatherEnabled);
-    
-    setTimeInfo({
-      slot,
-      imagePath: paths.default,
-      imagePathWebP: paths.webp,
-      imagePathJpg: paths.jpg,
-      greeting: getGreeting(slot, weatherCondition, weatherEnabled),
-      weather: weatherCondition,
-      weatherEnabled,
-    });
-  }, [weatherCondition, weatherEnabled]);
-
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
-    
+
     const updateTimeInfo = () => {
       const hour = new Date().getHours();
       const slot = getTimeSlot(hour);
@@ -202,6 +185,9 @@ export function useTimeOfDay(): TimeOfDayInfo {
       }
     };
     
+    // Immediate update for weather/time changes
+    updateTimeInfo();
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     if (!document.hidden) startInterval();
 

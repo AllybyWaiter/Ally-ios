@@ -71,6 +71,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Limit maximum emails per request to prevent abuse
+    const MAX_EMAILS_PER_REQUEST = 1000;
+    if (emails.length > MAX_EMAILS_PER_REQUEST) {
+      return new Response(
+        JSON.stringify({ error: `Maximum ${MAX_EMAILS_PER_REQUEST} emails per request` }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     if (!subject || !message) {
       return new Response(
         JSON.stringify({ error: "Subject and message are required" }),

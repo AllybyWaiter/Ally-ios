@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/lib/clipboard';
+import { logger } from '@/lib/logger';
 
 interface ReferralStats {
   totalReferrals: number;
@@ -49,7 +50,7 @@ export function useReferralCode() {
       });
 
       if (error) {
-        console.error('Error creating referral code:', error);
+        logger.error('Error creating referral code:', error);
         return null;
       }
 
@@ -72,7 +73,7 @@ export function useReferralCode() {
         .eq('referrer_id', user.id);
 
       if (error) {
-        console.error('Error fetching referral stats:', error);
+        logger.error('Error fetching referral stats:', error);
         return { totalReferrals: 0, pendingReferrals: 0, rewardedReferrals: 0 };
       }
 
@@ -98,7 +99,7 @@ export function useReferralCode() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching rewards:', error);
+        logger.error('Error fetching rewards:', error);
         return [];
       }
 
@@ -140,7 +141,7 @@ export function useReferralCode() {
       });
 
     if (error) {
-      console.error('Error creating referral:', error);
+      logger.error('Error creating referral:', error);
       throw error;
     }
   };

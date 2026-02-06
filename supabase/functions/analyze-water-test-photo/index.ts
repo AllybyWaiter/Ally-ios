@@ -373,8 +373,8 @@ Use the analyze_water_test tool to return your analysis.`;
     });
     
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
+      JSON.stringify({
+        error: 'Unable to analyze image. Please try again later.',
         parameters: [],
         testType: "unknown",
         notes: "Error analyzing image. Please try again or enter values manually."
