@@ -86,10 +86,14 @@ const WaterTests = () => {
   const parameterAlerts = useMemo(() => {
     if (!testsData?.length) return [];
     const latest = testsData[0];
-    return latest.test_parameters?.map(p => ({
-      parameter: p.parameter_name,
-      status: (p.status as 'good' | 'warning' | 'critical') || 'unknown'
-    })) || [];
+    const validStatuses = ['good', 'warning', 'critical'] as const;
+    return latest.test_parameters?.map(p => {
+      // Safely validate status is one of the expected values
+      const status = validStatuses.includes(p.status as typeof validStatuses[number])
+        ? (p.status as 'good' | 'warning' | 'critical')
+        : 'unknown';
+      return { parameter: p.parameter_name, status };
+    }) || [];
   }, [testsData]);
 
   const handleAquariumChange = (aquarium: { id: string }) => {

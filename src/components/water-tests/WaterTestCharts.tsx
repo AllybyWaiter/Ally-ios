@@ -70,7 +70,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
   const [dateRange, setDateRange] = useState<DateRange>("30d");
   const [selectedParameter, setSelectedParameter] = useState<string>("pH");
 
-  const { data: chartData, isLoading } = useQuery({
+  const { data: chartData, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.waterTests.charts(aquarium.id, dateRange),
     queryFn: async () => {
       const data = await fetchWaterTestsForChart(aquarium.id, dateRange);
@@ -163,6 +163,18 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
       <div className="flex items-center justify-center p-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-destructive">
+            Failed to load chart data. {error instanceof Error ? error.message : 'Please try again.'}
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 

@@ -132,7 +132,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
       if (data.parameters && data.parameters.length > 0) {
         const newParams: Record<string, string> = {};
         const detectedParams: Record<string, AiDetectedParam> = {};
-        
+
         data.parameters.forEach((param: AnalysisResultParam) => {
           if (param.value != null) {
             newParams[param.name] = param.value.toString();
@@ -142,12 +142,19 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
             };
           }
         });
-        
-        onParametersDetected(newParams, detectedParams);
 
-        toast.success(`Detected ${data.parameters.length} parameters from photo`, {
-          description: 'Review and edit values before saving',
-        });
+        // Only call callback if we actually detected parameters with values
+        const detectedCount = Object.keys(newParams).length;
+        if (detectedCount > 0) {
+          onParametersDetected(newParams, detectedParams);
+          toast.success(`Detected ${detectedCount} parameters from photo`, {
+            description: 'Review and edit values before saving',
+          });
+        } else {
+          toast.warning('No readable values detected', {
+            description: 'Please enter values manually',
+          });
+        }
       } else {
         toast.warning('No parameters detected', {
           description: 'Please enter values manually',

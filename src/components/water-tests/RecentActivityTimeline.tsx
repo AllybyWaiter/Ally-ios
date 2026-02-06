@@ -115,6 +115,7 @@ export function RecentActivityTimeline({
                       key={test.id}
                       layout
                       onClick={() => onTestClick?.(test.id)}
+                      aria-label={`View water test from ${formatRelativeTime(test.test_date)}${hasWarnings ? ', has warnings' : ''}`}
                       className={cn(
                         'w-full p-4 rounded-xl border text-left transition-all',
                         'hover:bg-muted/50 hover:border-primary/30',

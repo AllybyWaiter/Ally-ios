@@ -88,11 +88,15 @@ export function WaterWandSection({
   useEffect(() => {
     if (status === 'scanning') {
       const interval = setInterval(() => {
-        setScanProgress(prev => (prev >= 100 ? 0 : prev + 2));
+        if (isMountedRef.current) {
+          setScanProgress(prev => (prev >= 100 ? 0 : prev + 2));
+        }
       }, 100);
       return () => clearInterval(interval);
     }
-    setScanProgress(0);
+    if (isMountedRef.current) {
+      setScanProgress(0);
+    }
   }, [status]);
 
   // Cleanup countdown on unmount
