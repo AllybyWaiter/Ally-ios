@@ -99,14 +99,16 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
 
         test.test_parameters?.forEach((param) => {
           let displayValue = param.value;
-          
+          let displayUnit = param.unit;
+
           // Convert temperature to user's preferred unit
           if (param.unit === '°F' && units === 'metric') {
             displayValue = fahrenheitToCelsius(param.value);
+            displayUnit = '°C';
           }
-          
+
           dataPoint[param.parameter_name] = displayValue;
-          dataPoint[`${param.parameter_name}_unit`] = param.unit;
+          dataPoint[`${param.parameter_name}_unit`] = displayUnit;
         });
 
         return dataPoint;
@@ -146,7 +148,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
   const parameterRange = useMemo(() => {
     const templates = getParameterTemplates(aquarium.type);
     for (const template of templates) {
-      const param = template.parameters.find(p => p.name === selectedParameter);
+      const param = template.parameters?.find(p => p.name === selectedParameter);
       if (param?.range) return param.range;
     }
     return null;

@@ -136,6 +136,12 @@ export function WaterQualityHero({
                 {t('waterTests.logFirstTest')}
               </Badge>
             )}
+            {/* Fallback: alerts exist but none match good/warning/critical */}
+            {alerts.length > 0 && goodCount === 0 && criticalAlerts.length === 0 && warningAlerts.length === 0 && (
+              <Badge variant="secondary" className="gap-1">
+                {t('waterTests.parametersLogged', { count: alerts.length })}
+              </Badge>
+            )}
           </div>
         </div>
       </div>

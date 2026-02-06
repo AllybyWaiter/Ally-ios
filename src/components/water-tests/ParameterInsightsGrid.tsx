@@ -67,8 +67,13 @@ export function ParameterInsightsGrid({
 
     // Convert to array with insights
     const insights = Array.from(paramMap.entries()).map(([name, readings]) => {
-      // Sort by date descending
-      readings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      // Sort by date descending - handle invalid dates gracefully
+      const getTime = (dateStr: string) => {
+        const d = new Date(dateStr);
+        const time = d.getTime();
+        return isNaN(time) ? 0 : time;
+      };
+      readings.sort((a, b) => getTime(b.date) - getTime(a.date));
 
       const latest = readings[0];
       const previous = readings[1];

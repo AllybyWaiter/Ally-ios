@@ -115,8 +115,8 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
         if (!templateParamNames.includes(paramName)) return false;
         if (value === '' || value === undefined || value === null) return false;
         const parsed = parseFloat(value);
-        // Validate: not NaN, not negative, and within reasonable bounds
-        if (isNaN(parsed) || parsed < 0 || parsed > 100000) return false;
+        // Validate: not NaN and not negative (no upper limit - some parameters like EC can be very high)
+        if (isNaN(parsed) || parsed < 0) return false;
         return true;
       })
       .map(([paramName, value]) => ({

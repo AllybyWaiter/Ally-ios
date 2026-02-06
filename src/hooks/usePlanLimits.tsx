@@ -34,8 +34,8 @@ export function usePlanLimits() {
         .from('water_tests')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .gte('created_at', monthStart)
-        .lte('created_at', monthEnd);
+        .gte('test_date', monthStart)
+        .lte('test_date', monthEnd);
       
       if (error) {
         console.error('Error fetching test count:', error);
