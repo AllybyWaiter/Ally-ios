@@ -344,6 +344,7 @@ export function useConversationManager(userId: string | null) {
         description: 'Message may not have been saved',
         variant: 'destructive',
       });
+      return null;
     }
 
     // Update conversation timestamp and preview

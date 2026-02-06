@@ -110,7 +110,7 @@ export const useSessionMonitor = () => {
       // Show warning if getting close to expiry
       else if (timeUntilExpiry < SESSION_WARNING_THRESHOLD && timeUntilExpiry > SESSION_REFRESH_THRESHOLD) {
         const minutesRemaining = Math.round(timeUntilExpiry / 60000);
-        toast({
+        toastRef.current({
           title: "Session Expiring Soon",
           description: `Your session will expire in ${minutesRemaining} minutes. Save your work.`,
         });

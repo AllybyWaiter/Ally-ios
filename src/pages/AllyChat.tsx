@@ -214,12 +214,12 @@ const AllyChat = () => {
   const sendMessageRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    if (autoSendPending && input.trim() && !isLoading) {
+    if (autoSendPending && input.trim() && !isLoading && userId) {
       setAutoSendPending(false);
       // Use ref to get latest sendMessage function, avoiding stale closure
       sendMessageRef.current();
     }
-  }, [autoSendPending, input, isLoading]);
+  }, [autoSendPending, input, isLoading, userId]);
 
   // Cleanup auto-send pending state on unmount
   useEffect(() => {
