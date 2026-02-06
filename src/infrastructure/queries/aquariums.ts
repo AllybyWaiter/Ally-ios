@@ -18,6 +18,7 @@ export interface Aquarium {
   name: string;
   type: string;
   volume_gallons: number | null;
+  primary_photo_url?: string | null;
   status: string | null;
   setup_date: string | null;
   notes: string | null;

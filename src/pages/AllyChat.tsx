@@ -845,7 +845,7 @@ const AllyChat = () => {
                   <SelectItem value="general">
                     <span className="flex items-center gap-2">
                       <Sparkles className="h-3 w-3" />
-                      General Advice
+                      Aquatics Advice
                     </span>
                   </SelectItem>
                   {conversationManager.aquariums.map((aq) => (
@@ -992,7 +992,7 @@ const AllyChat = () => {
                     <SelectItem value="general">
                       <span className="flex items-center gap-2">
                         <Sparkles className="h-3 w-3" />
-                        General Advice
+                        Aquatics Advice
                       </span>
                     </SelectItem>
                     {conversationManager.aquariums.map((aq) => (

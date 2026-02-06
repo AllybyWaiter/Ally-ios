@@ -152,6 +152,20 @@ export default function AquariumDetail() {
           {t('aquarium.backToDashboard')}
         </Button>
 
+        {aquarium.primary_photo_url && (
+          <div className="mb-6 overflow-hidden rounded-2xl border border-border/60">
+            <div className="relative aspect-[16/7] sm:aspect-[3/1] bg-muted">
+              <img
+                src={aquarium.primary_photo_url}
+                alt={`${aquarium.name} cover`}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent" />
+            </div>
+          </div>
+        )}
+
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">

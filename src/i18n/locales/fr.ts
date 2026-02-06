@@ -67,7 +67,7 @@ export const fr = {
       totalPools: "Total des Piscines",
       poolsAndSpas: "Piscines et Spas",
       aquariums: "Aquariums",
-      totalAquariums: "Total des Aquariums",
+      totalAquariums: "Total des Espaces Aquatiques",
       totalVolume: "Volume Total",
       upcomingTasks: "Tâches À Venir",
       active: "actif",

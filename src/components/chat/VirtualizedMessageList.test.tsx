@@ -146,7 +146,7 @@ describe('VirtualizedMessageList', () => {
       expect(screen.queryByTestId('typing-indicator')).not.toBeInTheDocument();
     });
 
-    it('shows blinking cursor when streaming the last message', () => {
+    it('shows blinking cursor when streaming the last message', async () => {
       const messages = [
         createMessage('user', 'Hello'),
         createMessage('assistant', 'Streaming...'),
@@ -160,8 +160,12 @@ describe('VirtualizedMessageList', () => {
         />
       );
       
-      // The streaming message should have the blinking cursor span
-      expect(screen.getByText('Streaming...')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByLabelText("Ally's response")).toHaveTextContent('Streaming');
+      });
+
+      // Cursor should be visible while typewriter streaming is active
+      expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
     });
   });
 

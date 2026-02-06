@@ -18,7 +18,6 @@ import {
 import { FeedbackButtons } from "@/components/FeedbackButtons";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ThinkingIndicator } from "@/components/ThinkingIndicator";
-import { useTypewriterEffect } from "@/hooks/useTypewriterEffect";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { LazySyntaxHighlighter } from "./LazySyntaxHighlighter";
@@ -185,26 +184,9 @@ const MessageContent = memo(({
     }
     return detectQuickActions(cleanContent, aquariumId);
   }, [cleanContent, message.role, isStreaming, aquariumId]);
-  
-  // Smooth typewriter effect for streaming assistant messages
-  const isTypewriterActive = isStreaming && isLastMessage && message.role === "assistant";
-  const { displayedContent } = useTypewriterEffect(cleanContent, {
-    isActive: isTypewriterActive,
-    charsPerSecond: 60, // Natural reading pace
-  });
 
-  // Split content into stable and fading parts for smooth animation
-  const fadeChars = 3;
-  const stableContent = useMemo(() => {
-    if (!isTypewriterActive || displayedContent.length <= fadeChars) return '';
-    return displayedContent.slice(0, -fadeChars);
-  }, [isTypewriterActive, displayedContent, fadeChars]);
-  
-  const fadingContent = useMemo(() => {
-    if (!isTypewriterActive) return '';
-    if (displayedContent.length <= fadeChars) return displayedContent;
-    return displayedContent.slice(-fadeChars);
-  }, [isTypewriterActive, displayedContent, fadeChars]);
+  // Last assistant message may still be streaming token-by-token.
+  const isMessageStreaming = isStreaming && isLastMessage && message.role === "assistant";
 
   return (
     <div
@@ -244,21 +226,23 @@ const MessageContent = memo(({
                 </div>
               ) : (
                 /* Fallback: Parse content for water parameters if no explicit data card */
-                !isTypewriterActive && cleanContent && (
+                !isMessageStreaming && cleanContent && (
                   <WaterDataCardParser
                     content={cleanContent}
                     aquariumName={message.aquariumName}
                   />
                 )
               )}
-              {isTypewriterActive ? (
-                <p className="whitespace-pre-wrap leading-relaxed">
-                  {stableContent}
-                  <span className="typewriter-fade">{fadingContent}</span>
-                  <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
-                </p>
-              ) : (
-                <MemoizedMarkdown content={cleanContent} />
+              {cleanContent && (
+                <>
+                  <MemoizedMarkdown content={cleanContent} />
+                  {isMessageStreaming && (
+                    <span
+                      aria-hidden="true"
+                      className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle"
+                    />
+                  )}
+                </>
               )}
               {/* Follow-up suggestions for assistant messages */}
               {!isStreaming && suggestions.length > 0 && onSelectSuggestion && (
@@ -315,8 +299,8 @@ const MessageContent = memo(({
                     />
                   )}
                   {message.content && (
-                    <div className="inline-block bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2 break-words">
-                      <p className="text-sm leading-relaxed">{mentionsToDisplay(message.content)}</p>
+                    <div className="inline-block max-w-full break-words">
+                      <p className="text-sm leading-relaxed text-primary">{mentionsToDisplay(message.content)}</p>
                     </div>
                   )}
                 </div>

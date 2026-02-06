@@ -29,7 +29,7 @@ interface Conversation {
 // Factory function to create initial message with fresh timestamp
 const createInitialMessage = (): Message => ({
   role: "assistant",
-  content: "Hi! I'm Ally, your aquarium assistant. I can help you with water parameters, fish care, equipment, and everything aquarium-related. What would you like to know?",
+  content: "Hi! I'm Ally, your aquatics assistant. I can help with aquariums, pools, spas, and ponds - including water chemistry, livestock care, equipment, and maintenance. What would you like help with?",
   timestamp: new Date()
 });
 
@@ -439,9 +439,9 @@ export function useConversationManager(userId: string | null) {
   }, [currentConversationId]);
 
   const getSelectedAquariumName = useCallback(() => {
-    if (selectedAquarium === "general") return "General Advice";
+    if (selectedAquarium === "general") return "Aquatics Advice";
     const aquarium = aquariums.find(aq => aq.id === selectedAquarium);
-    return aquarium ? aquarium.name : "General Advice";
+    return aquarium ? aquarium.name : "Aquatics Advice";
   }, [selectedAquarium, aquariums]);
 
   const getAquariumIdForApi = useCallback(() => {

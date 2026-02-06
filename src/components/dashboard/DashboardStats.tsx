@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Droplets, Calendar, Shield, Waves } from 'lucide-react';
+import { Droplets, Calendar, Shield, Waves, Fish } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatVolume, UnitSystem } from '@/lib/unitConversions';
 import { useNavigate } from 'react-router-dom';
@@ -60,7 +60,7 @@ export function DashboardStats({
               {hasMixed ? t('dashboard.aquariums') : t('dashboard.totalAquariums')}
             </CardTitle>
             <div className="icon-glow" aria-hidden="true">
-              <Droplets className="h-5 w-5 text-primary" />
+              <Fish className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent>

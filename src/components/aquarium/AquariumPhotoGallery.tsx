@@ -22,10 +22,11 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
   const [photoToDelete, setPhotoToDelete] = useState<{ id: string; url: string } | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: photos = [], isLoading } = useQuery({
+  const { data: photosResult, isLoading } = useQuery({
     queryKey: queryKeys.aquariums.photos(aquariumId),
     queryFn: () => fetchAquariumPhotos(aquariumId),
   });
+  const photos = photosResult?.data ?? [];
 
   const setPrimaryMutation = useMutation({
     mutationFn: ({ photoId, photoUrl }: { photoId: string; photoUrl: string }) =>
@@ -33,6 +34,7 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.photos(aquariumId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.detail(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.all });
       toast.success('Cover photo updated');
     },
     onError: () => toast.error('Failed to set cover photo'),
@@ -83,6 +85,9 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
           Add Photo
         </Button>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Landscape photos are recommended for cover banners.
+      </p>
 
       {photos.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">

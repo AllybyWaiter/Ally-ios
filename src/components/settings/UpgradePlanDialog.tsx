@@ -21,8 +21,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { PLAN_DEFINITIONS, getPaidPlans } from '@/lib/planConstants';
+import { getPaidPlans } from '@/lib/planConstants';
 import { useRevenueCat } from '@/hooks/useRevenueCat';
+import { useNavigate } from 'react-router-dom';
 
 // Currency formatter for locale-aware pricing
 const formatCurrency = (amount: number): string => {
@@ -59,6 +60,7 @@ const plans = getPaidPlans().map(({ tier, definition }) => ({
 }));
 
 function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: () => void }) {
+  const navigate = useNavigate();
   const [isAnnual, setIsAnnual] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -297,14 +299,16 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
 
       {/* Footer */}
       <div className="flex flex-col items-center gap-2 pt-2 border-t">
-        <a
-          href="/pricing"
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            navigate('/pricing');
+          }}
           className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
         >
           View full feature comparison <ExternalLink className="w-3 h-3" />
-        </a>
+        </button>
         <p className="text-xs text-muted-foreground text-center">
           All plans include a 7-day free trial. Cancel anytime.
         </p>

@@ -1,7 +1,7 @@
 /**
  * Ally Chat Edge Function
  * 
- * Main orchestration for the AI aquarium assistant.
+ * Main orchestration for the AI aquatics assistant.
  * Modules: tools/, context/, prompts/
  * 
  * Performance optimizations:
@@ -25,7 +25,7 @@ import { buildAquariumContext } from './context/aquarium.ts';
 import { buildMemoryContext } from './context/memory.ts';
 import { buildSystemPrompt } from './prompts/system.ts';
 import { parseStreamForToolCalls, createContentStream, createToolExecutionStream, DataCardPayload } from './utils/streamParser.ts';
-import { validateRequiredInputs } from './utils/inputGate.ts';
+import { validateAquaticScope, validateRequiredInputs } from './utils/inputGate.ts';
 import { trimConversationHistory } from './utils/conversationTrimmer.ts';
 
 // Model configuration - Using OpenAI directly
@@ -127,6 +127,19 @@ serve(async (req) => {
     if (!OPENAI_API_KEY) {
       logger.error('OPENAI_API_KEY not configured');
       return createErrorResponse('AI service not configured', logger, { status: 500, request: req });
+    }
+
+    // Enforce aquatics-only conversation scope
+    const scopeValidation = validateAquaticScope(messages);
+    if (!scopeValidation.isInScope) {
+      logger.info('Aquatic scope gate triggered', { reason: scopeValidation.reason });
+      return createStreamResponse(
+        createContentStream(
+          scopeValidation.redirectMessage ??
+            "I can only help with aquatics topics: aquariums, pools, spas, and ponds."
+        ),
+        req
+      );
     }
 
     // Fetch profile and context in parallel for better performance

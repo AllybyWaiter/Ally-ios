@@ -223,6 +223,7 @@ export const aquariumResponseSchema = z.object({
   name: z.string(),
   type: z.string(),
   volume_gallons: z.number().nullable(),
+  primary_photo_url: z.string().nullable().optional(),
   status: z.string().nullable(),
   setup_date: z.string().nullable(),
   notes: z.string().nullable(),

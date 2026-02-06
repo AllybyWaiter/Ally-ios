@@ -345,7 +345,7 @@ export const AquariumTasks = ({ aquariumId }: AquariumTasksProps) => {
 
   return (
       <>
-      <div className="space-y-6">
+      <div className="space-y-6 pb-[calc(8rem+env(safe-area-inset-bottom))] md:pb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 className="text-2xl font-bold">{t('tasks.title')}</h2>
           <Button onClick={handleCreateTask}>
