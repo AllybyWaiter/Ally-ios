@@ -61,10 +61,12 @@ export async function executeCheckFishCompatibility(
     const livestock = existingLivestock || [];
 
     // 3. Look up the species in our database
+    // Sanitize species name for PostgREST filter safety
+    const safeName = args.species_name.replace(/[.,()%_\\]/g, '');
     const { data: speciesData, error: speciesError } = await supabase
       .from('fish_species')
       .select('*')
-      .or(`common_name.ilike.%${args.species_name}%,scientific_name.ilike.%${args.species_name}%`)
+      .or(`common_name.ilike.%${safeName}%,scientific_name.ilike.%${safeName}%`)
       .limit(1)
       .maybeSingle();
 
@@ -94,9 +96,11 @@ export async function executeCheckFishCompatibility(
     let existingSpeciesData: FishSpeciesRecord[] = [];
 
     if (existingSpeciesNames.length > 0) {
-      const conditions = existingSpeciesNames.map(name =>
-        `common_name.ilike.${name},scientific_name.ilike.${name}`
-      ).join(',');
+      // Sanitize names for PostgREST filter safety
+      const conditions = existingSpeciesNames.map(name => {
+        const safe = name.replace(/[.,()%_\\]/g, '');
+        return `common_name.ilike.${safe},scientific_name.ilike.${safe}`;
+      }).join(',');
 
       const { data: speciesResults } = await supabase
         .from('fish_species')

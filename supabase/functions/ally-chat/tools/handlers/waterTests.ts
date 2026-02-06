@@ -48,7 +48,7 @@ export async function executeLogWaterTest(
       return {
         tool_call_id: toolCallId,
         role: 'tool',
-        content: JSON.stringify({ success: false, error: testError?.message || 'Failed to create water test' })
+        content: JSON.stringify({ success: false, error: 'Failed to create water test' })
       };
     }
 
