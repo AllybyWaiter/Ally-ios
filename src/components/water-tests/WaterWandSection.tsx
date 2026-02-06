@@ -82,6 +82,7 @@ export function WaterWandSection({
   const [scanProgress, setScanProgress] = useState(0);
   const [readingCountdown, setReadingCountdown] = useState(0);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = useRef(true);
 
   // Simulate scanning animation
   useEffect(() => {
@@ -96,9 +97,12 @@ export function WaterWandSection({
 
   // Cleanup countdown on unmount
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (countdownRef.current) {
         clearInterval(countdownRef.current);
+        countdownRef.current = null;
       }
     };
   }, []);
@@ -152,11 +156,21 @@ export function WaterWandSection({
     setReadingCountdown(10);
 
     countdownRef.current = setInterval(() => {
+      // Check if component is still mounted before updating state
+      if (!isMountedRef.current) {
+        if (countdownRef.current) {
+          clearInterval(countdownRef.current);
+          countdownRef.current = null;
+        }
+        return;
+      }
+
       setReadingCountdown(prev => {
         if (prev <= 1) {
           // Countdown complete - show readings
           if (countdownRef.current) {
             clearInterval(countdownRef.current);
+            countdownRef.current = null;
           }
 
           // Generate mock reading with slight randomness
@@ -170,25 +184,27 @@ export function WaterWandSection({
             timestamp: new Date(),
           };
 
-          setLastReading(mockReading);
-          setStatus('connected');
+          if (isMountedRef.current) {
+            setLastReading(mockReading);
+            setStatus('connected');
 
-          // Convert to form parameters (temperature in user's preferred units)
-          if (onParametersDetected) {
-            const params: Record<string, string> = {};
-            if (mockReading.ph !== null) params['pH'] = mockReading.ph.toFixed(2);
-            if (mockReading.temperature !== null) {
-              const temp = units === 'imperial'
-                ? celsiusToFahrenheit(mockReading.temperature)
-                : mockReading.temperature;
-              params['Temperature'] = temp.toFixed(1);
+            // Convert to form parameters (temperature in user's preferred units)
+            if (onParametersDetected) {
+              const params: Record<string, string> = {};
+              if (mockReading.ph !== null) params['pH'] = mockReading.ph.toFixed(2);
+              if (mockReading.temperature !== null) {
+                const temp = units === 'imperial'
+                  ? celsiusToFahrenheit(mockReading.temperature)
+                  : mockReading.temperature;
+                params['Temperature'] = temp.toFixed(1);
+              }
+              if (mockReading.ec !== null) params['EC'] = mockReading.ec.toString();
+              if (mockReading.tds !== null) params['TDS'] = mockReading.tds.toString();
+              onParametersDetected(params);
             }
-            if (mockReading.ec !== null) params['EC'] = mockReading.ec.toString();
-            if (mockReading.tds !== null) params['TDS'] = mockReading.tds.toString();
-            onParametersDetected(params);
-          }
 
-          onReadingComplete?.(mockReading);
+            onReadingComplete?.(mockReading);
+          }
           return 0;
         }
         return prev - 1;

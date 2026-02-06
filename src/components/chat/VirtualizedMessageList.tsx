@@ -208,6 +208,8 @@ const MessageContent = memo(({
 
   return (
     <div
+      role="article"
+      aria-label={message.role === "user" ? "Your message" : "Ally's response"}
       className={cn(
         "flex gap-4 group animate-fade-in relative py-2",
         message.role === "user" ? "justify-end" : "justify-start"
@@ -235,7 +237,7 @@ const MessageContent = memo(({
               )}
               {/* Data cards for water test visualizations */}
               {message.dataCards && message.dataCards.length > 0 ? (
-                <div className="space-y-3 mb-3 not-prose">
+                <div className="space-y-3 mb-3 not-prose" role="region" aria-label="Water test data">
                   {message.dataCards.map((card, idx) => (
                     <DataCard key={`${card.card_type}-${idx}`} card={card} />
                   ))}
@@ -287,10 +289,10 @@ const MessageContent = memo(({
                       if (e.key === "Escape") onCancelEdit();
                     }}
                   />
-                  <Button size="icon" variant="ghost" onClick={onSaveEdit}>
+                  <Button size="icon" variant="ghost" onClick={onSaveEdit} aria-label="Save edit">
                     <Check className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={onCancelEdit}>
+                  <Button size="icon" variant="ghost" onClick={onCancelEdit} aria-label="Cancel edit">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -469,8 +471,10 @@ export const VirtualizedMessageList = memo(({
   }, [messages.length, virtualizer]);
 
   return (
-    <div 
-      ref={parentRef} 
+    <div
+      ref={parentRef}
+      role="log"
+      aria-label="Chat messages"
       className="h-full overflow-auto px-4 lg:px-6"
       aria-live="polite"
       aria-atomic="false"

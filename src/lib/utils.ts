@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import DOMPurify from "dompurify";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,22 +35,8 @@ export function sanitizeInput(input: string): string {
  * @returns Sanitized HTML safe for rendering
  */
 export function sanitizeHtml(html: string): string {
-  const allowedTags = ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'];
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  
-  // Remove all script tags
-  const scripts = div.querySelectorAll('script');
-  scripts.forEach(script => script.remove());
-  
-  // Remove event handlers
-  div.querySelectorAll('*').forEach(element => {
-    Array.from(element.attributes).forEach(attr => {
-      if (attr.name.startsWith('on')) {
-        element.removeAttribute(attr.name);
-      }
-    });
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'],
+    ALLOWED_ATTR: ['href', 'target'],
   });
-  
-  return div.innerHTML;
 }

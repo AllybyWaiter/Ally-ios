@@ -26,6 +26,7 @@ import { buildMemoryContext } from './context/memory.ts';
 import { buildSystemPrompt } from './prompts/system.ts';
 import { parseStreamForToolCalls, createContentStream, createToolExecutionStream, DataCardPayload } from './utils/streamParser.ts';
 import { validateRequiredInputs } from './utils/inputGate.ts';
+import { trimConversationHistory } from './utils/conversationTrimmer.ts';
 
 // Model configuration - Using OpenAI directly
 const AI_MODELS = {
@@ -146,7 +147,8 @@ serve(async (req) => {
     const skillLevel = profile?.skill_level || 'beginner';
     const subscriptionTier = profile?.subscription_tier || 'free';
     const userName = profile?.name || null;
-    const hasMemoryAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
+    const hasMemoryAccess = true; // Memory is available to all users
+    const hasToolAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
     
     // Validate model selection - server-side check for Gold access
     const canUseThinking = GOLD_TIERS.includes(subscriptionTier);
@@ -166,10 +168,8 @@ serve(async (req) => {
     // Wait for aquarium context (was started in parallel with profile fetch)
     const aquariumResult = await aquariumPromise;
 
-    // Now fetch memory context (depends on aquarium waterType)
-    const memoryResult = hasMemoryAccess
-      ? await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType)
-      : { context: '', memories: [] };
+    // Now fetch memory context (depends on aquarium waterType) — available to all users
+    const memoryResult = await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType, aquariumId);
 
     // Validate required inputs for dosing/treatment conversations
     const inputValidation = validateRequiredInputs(
@@ -189,7 +189,8 @@ serve(async (req) => {
 
     // Build system prompt using module (water-type-specific for reduced token usage)
     const systemPrompt = buildSystemPrompt({
-      hasMemoryAccess,
+      hasMemoryAccess: true,
+      hasToolAccess,
       aquariumId,
       memoryContext: memoryResult.context,
       aquariumContext: aquariumResult.context,
@@ -204,7 +205,7 @@ serve(async (req) => {
       aquariumId: aquariumId || 'none',
       skillLevel,
       subscriptionTier,
-      hasMemoryAccess,
+      hasToolAccess,
       memoryCount: memoryResult.memories?.length || 0,
       messageCount: messages.length,
       hasImages,
@@ -228,25 +229,45 @@ serve(async (req) => {
 
     const formattedMessages = messages.map(formatMessageForApi);
 
+    // Trim conversation history for long conversations (saves 40-60% tokens)
+    const { trimmedMessages, wasTrimmed } = await trimConversationHistory(
+      formattedMessages,
+      OPENAI_API_KEY,
+      logger
+    );
+
+    if (wasTrimmed) {
+      logger.info('Conversation trimmed', {
+        originalCount: formattedMessages.length,
+        trimmedCount: trimmedMessages.length,
+      });
+    }
+
     // Build streaming API request with tools enabled
     // Single streaming call eliminates the previous double-call pattern (500-1500ms savings)
     const streamingApiBody: Record<string, unknown> = {
       model: aiModel,
-      messages: [{ role: "system", content: systemPrompt }, ...formattedMessages],
+      messages: [{ role: "system", content: systemPrompt }, ...trimmedMessages],
       stream: true,
       temperature: 0.7,
       max_tokens: 4096,
     };
 
-    // Include tools for users with memory access
-    if (hasMemoryAccess) {
+    // All users get save_memory; paid users get all tools
+    if (hasToolAccess) {
       streamingApiBody.tools = tools;
+    } else {
+      // Free/basic users only get the memory tool
+      streamingApiBody.tools = tools.filter(
+        (t: { function: { name: string } }) => t.function.name === 'save_memory'
+      );
     }
 
-    logger.debug('Calling AI gateway (single streaming call)', { 
-      hasTools: hasMemoryAccess, 
+    logger.debug('Calling AI gateway (single streaming call)', {
+      hasTools: true,
+      hasAllTools: hasToolAccess,
       hasImages,
-      model: aiModel 
+      model: aiModel
     });
 
     const response = await fetch(OPENAI_API_URL, {
@@ -279,11 +300,7 @@ serve(async (req) => {
       return createErrorResponse('Failed to process AI request', logger, { status: 502, request: req });
     }
 
-    // If no tools enabled, stream directly without parsing
-    if (!hasMemoryAccess) {
-      logger.info('Streaming response (no tools)', { model: aiModel });
-      return createStreamResponse(response.body, req);
-    }
+    // All users now have at least save_memory, so always parse for tool calls
 
     // Parse stream to detect tool calls (buffering strategy for reliability)
     logger.debug('Parsing stream for tool calls');
@@ -334,7 +351,7 @@ serve(async (req) => {
       // Follow-up streaming call with tool results
       const followUpMessages = [
         { role: "system", content: systemPrompt },
-        ...formattedMessages,
+        ...trimmedMessages,
         assistantMessageWithTools,
         ...toolResults
       ];

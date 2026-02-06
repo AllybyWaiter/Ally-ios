@@ -10,10 +10,16 @@ const VISIBILITY_REFRESH_TIMEOUT = 2000; // Quick timeout for visibility change 
 
 export const useSessionMonitor = () => {
   const { toast } = useToast();
+  const toastRef = useRef(toast);
   const lastVisibilityCheck = useRef<number>(0);
   const isCheckingRef = useRef<boolean>(false);
   // Queue a pending check if one is requested during an ongoing check
   const pendingCheckRef = useRef<boolean>(false);
+
+  // Keep toast ref current without causing callback recreation
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   const checkAndRefreshSession = useCallback(async (isVisibilityChange = false) => {
     // If already checking, queue a pending check instead of dropping
@@ -92,7 +98,7 @@ export const useSessionMonitor = () => {
           console.error('Session refresh error:', refreshError);
           addBreadcrumb('Session refresh failed', 'auth', { error: refreshError.message }, FeatureArea.AUTH);
           
-          toast({
+          toastRef.current({
             title: "Session Expired",
             description: "Please sign in again to continue.",
             variant: "destructive",
@@ -121,7 +127,7 @@ export const useSessionMonitor = () => {
         setTimeout(() => checkAndRefreshSession(false), 100);
       }
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     // Initial check

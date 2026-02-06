@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Ruler, Moon, Sun, Monitor, Languages, MapPin, Bell, Check, Loader2 } from 'lucide-react';
+import { Ruler, Moon, Sun, Monitor, Languages, MapPin, Bell, Check, Loader2, GraduationCap } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useTheme } from 'next-themes';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +20,7 @@ interface PreferencesOnboardingProps {
 export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboardingProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialStep = parseInt(searchParams.get('onboarding_step') || '1', 10);
-  const [step, setStep] = useState(initialStep >= 1 && initialStep <= 6 ? initialStep : 1);
+  const [step, setStep] = useState(initialStep >= 1 && initialStep <= 7 ? initialStep : 1);
   const [isLoading, setIsLoading] = useState(false);
   const [permissionLoading, setPermissionLoading] = useState(false);
   const [vapidRetryCount, setVapidRetryCount] = useState(0);
@@ -30,6 +30,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const { refreshProfile } = useAuth();
 
   // Preferences state
+  const [skillLevel, setSkillLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [unitPreference, setUnitPreference] = useState<'metric' | 'imperial'>('imperial');
   const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('system');
   const [languagePreference, setLanguagePreference] = useState<'en' | 'es' | 'fr'>('en');
@@ -37,7 +38,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [pendingWeatherData, setPendingWeatherData] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  const totalSteps = 6;
+  const totalSteps = 7;
 
   // Apply theme immediately when user selects it
   useEffect(() => {
@@ -55,7 +56,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   // Warn user before leaving during onboarding
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (step > 1 && step < 6) {
+      if (step > 1 && step < 7) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -221,6 +222,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
     try {
       // Build update object with all preferences atomically
       const updateData: Record<string, unknown> = {
+        skill_level: skillLevel,
         unit_preference: unitPreference,
         theme_preference: themePreference,
         language_preference: languagePreference,
@@ -371,8 +373,78 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             </div>
           )}
 
-          {/* Step 2: Theme */}
+          {/* Step 2: Experience Level */}
           {step === 2 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
+              <div className="text-center mb-6">
+                <GraduationCap className="w-16 h-16 mx-auto text-primary mb-4" />
+                <CardTitle className="text-2xl">Experience Level</CardTitle>
+                <CardDescription>This helps Ally tailor explanations to your knowledge level.</CardDescription>
+              </div>
+
+              <div className="grid gap-4" role="radiogroup" aria-label="Experience Level">
+                <button
+                  onClick={() => setSkillLevel('beginner')}
+                  role="radio"
+                  aria-checked={skillLevel === 'beginner'}
+                  className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
+                    skillLevel === 'beginner'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50 active:border-primary/50'
+                  }`}
+                >
+                  <div className="font-semibold text-lg mb-2">Beginner</div>
+                  <div className="text-sm text-muted-foreground">
+                    I'm new to aquariums/pools. Explain things simply with step-by-step guidance.
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setSkillLevel('intermediate')}
+                  role="radio"
+                  aria-checked={skillLevel === 'intermediate'}
+                  className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
+                    skillLevel === 'intermediate'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50 active:border-primary/50'
+                  }`}
+                >
+                  <div className="font-semibold text-lg mb-2">Intermediate</div>
+                  <div className="text-sm text-muted-foreground">
+                    I know the basics. Give me practical tips with some technical detail.
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setSkillLevel('advanced')}
+                  role="radio"
+                  aria-checked={skillLevel === 'advanced'}
+                  className={`p-6 rounded-lg border-2 transition-all text-left cursor-pointer touch-manipulation ${
+                    skillLevel === 'advanced'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50 active:border-primary/50'
+                  }`}
+                >
+                  <div className="font-semibold text-lg mb-2">Advanced / Professional</div>
+                  <div className="text-sm text-muted-foreground">
+                    I'm experienced or work in the field. Use scientific language and skip the basics.
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button onClick={() => setStep(1)} variant="outline" disabled={isLoading}>
+                  {t('preferencesOnboarding.back')}
+                </Button>
+                <Button onClick={handleNext} disabled={isLoading} className="touch-manipulation min-h-[44px] min-w-[88px]">
+                  {t('preferencesOnboarding.next')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Theme */}
+          {step === 3 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Monitor className="w-16 h-16 mx-auto text-primary mb-4" />
@@ -440,7 +512,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button onClick={() => setStep(1)} variant="outline" disabled={isLoading}>
+                <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
                   {t('preferencesOnboarding.back')}
                 </Button>
                 <Button onClick={handleNext} disabled={isLoading}>
@@ -450,8 +522,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             </div>
           )}
 
-          {/* Step 3: Language */}
-          {step === 3 && (
+          {/* Step 4: Language */}
+          {step === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Languages className="w-16 h-16 mx-auto text-primary mb-4" />
@@ -510,7 +582,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               </div>
 
               <div className="flex justify-between pt-4">
-                <Button onClick={() => setStep(2)} variant="outline" disabled={isLoading}>
+                <Button onClick={() => setStep(3)} variant="outline" disabled={isLoading}>
                   {t('preferencesOnboarding.back')}
                 </Button>
                 <Button onClick={handleNext} disabled={isLoading}>
@@ -520,8 +592,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             </div>
           )}
 
-          {/* Step 4: Location & Weather */}
-          {step === 4 && (
+          {/* Step 5: Location & Weather */}
+          {step === 5 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <MapPin className="w-16 h-16 mx-auto text-primary mb-4" />
@@ -572,7 +644,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               )}
 
               <div className="flex justify-between pt-4">
-                <Button onClick={() => setStep(3)} variant="outline" disabled={permissionLoading}>
+                <Button onClick={() => setStep(4)} variant="outline" disabled={permissionLoading}>
                   {t('preferencesOnboarding.back')}
                 </Button>
                 {weatherEnabled && (
@@ -584,8 +656,8 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             </div>
           )}
 
-          {/* Step 5: Push Notifications */}
-          {step === 5 && (
+          {/* Step 6: Push Notifications */}
+          {step === 6 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-5 duration-300">
               <div className="text-center mb-6">
                 <Bell className="w-16 h-16 mx-auto text-primary mb-4" />
@@ -636,7 +708,7 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
               )}
 
               <div className="flex justify-between pt-4">
-                <Button onClick={() => setStep(4)} variant="outline" disabled={permissionLoading || isLoading}>
+                <Button onClick={() => setStep(5)} variant="outline" disabled={permissionLoading || isLoading}>
                   {t('preferencesOnboarding.back')}
                 </Button>
                 {notificationsEnabled && (
@@ -648,11 +720,11 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
             </div>
           )}
 
-          {/* Step 6: Plan Selection */}
-          {step === 6 && (
+          {/* Step 7: Plan Selection */}
+          {step === 7 && (
             <PlanSelectionStep
               userId={userId}
-              onBack={() => setStep(5)}
+              onBack={() => setStep(6)}
               onComplete={handleSubmit}
               currentPreferences={{
                 units: unitPreference,

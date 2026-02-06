@@ -32,13 +32,49 @@ export const PRODUCT_IDS = {
 // Subscription tier mapping
 export type SubscriptionTier = 'free' | 'basic' | 'plus' | 'gold' | 'business';
 
+// Tier priority for comparison (higher = better)
+const TIER_PRIORITY: Record<SubscriptionTier, number> = {
+  free: 0,
+  basic: 1,
+  plus: 2,
+  gold: 3,
+  business: 4,
+};
+
+/**
+ * Get the tier from a product identifier
+ */
+export function getTierFromProductId(productId: string): SubscriptionTier {
+  if (productId.includes('business')) return 'business';
+  if (productId.includes('gold')) return 'gold';
+  if (productId.includes('plus')) return 'plus';
+  if (productId.includes('basic')) return 'basic';
+  return 'free';
+}
+
+/**
+ * Check if purchasing a product would be an upgrade from current tier
+ */
+export function isUpgrade(currentTier: SubscriptionTier, productId: string): boolean {
+  const newTier = getTierFromProductId(productId);
+  return TIER_PRIORITY[newTier] > TIER_PRIORITY[currentTier];
+}
+
+/**
+ * Check if purchasing a product would be the same tier (monthly <-> yearly switch)
+ */
+export function isSameTier(currentTier: SubscriptionTier, productId: string): boolean {
+  const newTier = getTierFromProductId(productId);
+  return newTier === currentTier;
+}
+
 let isInitialized = false;
 
 /**
  * Initialize RevenueCat SDK
  * Call this once when app starts
  */
-export async function initializeRevenueCat(userId?: string): Promise<void> {
+export async function initializeRevenueCat(): Promise<void> {
   if (!Capacitor.isNativePlatform()) {
     logger.log('RevenueCat: Skipping initialization on web platform');
     return;
@@ -56,14 +92,14 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
   }
 
   try {
-    // Set log level - use ERROR in production to reduce noise
+    // Set log level - use DEBUG in development to see what's happening
     const logLevel = import.meta.env.PROD ? LOG_LEVEL.ERROR : LOG_LEVEL.DEBUG;
     await Purchases.setLogLevel({ level: logLevel });
 
-    // Configure with API key
+    // Configure without user ID - login happens separately via logIn()
+    // This ensures anonymous purchases can be properly transferred on login
     await Purchases.configure({
       apiKey: REVENUECAT_API_KEY,
-      appUserID: userId || undefined, // Let RevenueCat generate anonymous ID if no user
     });
 
     isInitialized = true;
@@ -152,46 +188,59 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
     return 'free';
   }
 
+  // Helper to get tier priority (higher = better)
+  const getTierPriority = (tier: SubscriptionTier): number => {
+    switch (tier) {
+      case 'business': return 5;
+      case 'gold': return 4;
+      case 'plus': return 3;
+      case 'basic': return 2;
+      case 'free': return 1;
+      default: return 0;
+    }
+  };
+
+  // Helper to extract tier from product ID
+  const getTierFromProductId = (productId: string): SubscriptionTier => {
+    if (productId.includes('gold')) return 'gold';
+    if (productId.includes('plus')) return 'plus';
+    if (productId.includes('basic')) return 'basic';
+    return 'basic'; // Default for any subscription
+  };
+
   try {
     const customerInfo = await getCustomerInfo();
 
     // Debug: Log all active entitlements and subscriptions
     logger.log('RevenueCat: Active entitlements:', Object.keys(customerInfo.entitlements.active));
-    logger.log('RevenueCat: Active subscriptions:', Object.keys(customerInfo.activeSubscriptions || {}));
-    logger.log('RevenueCat: Looking for entitlement:', ENTITLEMENT_ID);
+    logger.log('RevenueCat: Active subscriptions:', customerInfo.activeSubscriptions || []);
 
-    const proEntitlement = customerInfo.entitlements.active[ENTITLEMENT_ID];
+    let highestTier: SubscriptionTier = 'free';
 
-    if (!proEntitlement) {
-      // Fallback: Check if there are any active subscriptions even without entitlement
-      // Note: activeSubscriptions is an array of product IDs, not an object
-      const activeSubscriptions = customerInfo.activeSubscriptions || [];
-      if (Array.isArray(activeSubscriptions) && activeSubscriptions.length > 0) {
-        logger.log('RevenueCat: Found active subscriptions but no entitlement. Subscriptions:', activeSubscriptions);
-        // Try to determine tier from subscription product ID
-        const firstSubId = activeSubscriptions[0];
-        if (firstSubId.includes('gold')) return 'gold';
-        if (firstSubId.includes('plus')) return 'plus';
-        if (firstSubId.includes('basic')) return 'basic';
-        return 'basic'; // Default to basic if subscribed
+    // Check all active entitlements
+    const activeEntitlements = Object.values(customerInfo.entitlements.active);
+    for (const entitlement of activeEntitlements) {
+      const tier = getTierFromProductId(entitlement.productIdentifier);
+      if (getTierPriority(tier) > getTierPriority(highestTier)) {
+        highestTier = tier;
+        logger.log('RevenueCat: Found entitlement with tier:', tier, 'from product:', entitlement.productIdentifier);
       }
-      logger.log('RevenueCat: No active entitlements or subscriptions found');
-      return 'free';
     }
 
-    // Map product to tier based on product identifier
-    const productId = proEntitlement.productIdentifier;
-    logger.log('RevenueCat: Found entitlement with product:', productId);
-
-    if (productId.includes('gold')) {
-      return 'gold';
-    } else if (productId.includes('plus')) {
-      return 'plus';
-    } else if (productId.includes('basic')) {
-      return 'basic';
+    // Also check active subscriptions (fallback if entitlements aren't set up)
+    const activeSubscriptions = customerInfo.activeSubscriptions || [];
+    if (Array.isArray(activeSubscriptions)) {
+      for (const subId of activeSubscriptions) {
+        const tier = getTierFromProductId(subId);
+        if (getTierPriority(tier) > getTierPriority(highestTier)) {
+          highestTier = tier;
+          logger.log('RevenueCat: Found subscription with tier:', tier, 'from product:', subId);
+        }
+      }
     }
 
-    return 'basic'; // Default for any pro subscription
+    logger.log('RevenueCat: Determined highest tier:', highestTier);
+    return highestTier;
   } catch (error) {
     logger.error('RevenueCat: Failed to get subscription tier', error);
     return 'free';

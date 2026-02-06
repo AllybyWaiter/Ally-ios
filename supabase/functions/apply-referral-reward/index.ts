@@ -32,10 +32,33 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Authenticate the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return createErrorResponse('Authentication required', logger, { status: 401 });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return createErrorResponse('Invalid authentication', logger, { status: 401 });
+    }
+
     const { referee_id, trigger } = await req.json();
 
     if (!referee_id) {
       return createErrorResponse('referee_id is required', logger, { status: 400 });
+    }
+
+    // Only allow the referee themselves to trigger their reward
+    if (referee_id !== user.id) {
+      logger.warn('Unauthorized referral reward attempt', { referee_id, authenticated_user: user.id });
+      return createErrorResponse('Unauthorized', logger, { status: 403 });
     }
 
     logger.info('Processing referral reward', { referee_id, trigger });

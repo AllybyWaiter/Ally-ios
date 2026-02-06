@@ -45,7 +45,7 @@ serve(async (req) => {
     
     if (!validation.success) {
       logger.warn('Invalid input', { errors: validation.error.errors });
-      return createErrorResponse(new Error('Invalid input: ' + validation.error.errors[0].message), logger, { status: 400 });
+      return createErrorResponse(new Error('Invalid input: ' + validation.error.errors[0].message), logger, { status: 400, request: req });
     }
 
     const { text, voiceId } = validation.data;
@@ -56,7 +56,7 @@ serve(async (req) => {
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     if (!ELEVENLABS_API_KEY) {
       logger.error('ELEVENLABS_API_KEY not configured');
-      return createErrorResponse(new Error('TTS service not configured'), logger, { status: 500 });
+      return createErrorResponse(new Error('TTS service not configured'), logger, { status: 500, request: req });
     }
 
     logger.info('Generating TTS', { textLength: text.length, voiceId: selectedVoiceId });
@@ -94,7 +94,7 @@ serve(async (req) => {
         );
       }
       
-      return createErrorResponse(new Error('Failed to generate speech'), logger, { status: 502 });
+      return createErrorResponse(new Error('Failed to generate speech'), logger, { status: 502, request: req });
     }
 
     const audioBuffer = await response.arrayBuffer();
@@ -108,6 +108,6 @@ serve(async (req) => {
     });
   } catch (error) {
     logger.error('TTS error', error);
-    return createErrorResponse(error, logger, { status: 500 });
+    return createErrorResponse(error, logger, { status: 500, request: req });
   }
 });

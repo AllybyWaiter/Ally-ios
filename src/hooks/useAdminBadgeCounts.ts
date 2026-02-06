@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface BadgeCounts {
   openTickets: number;
@@ -37,6 +38,11 @@ export const useAdminBadgeCounts = () => {
           .select('id', { count: 'exact', head: true })
           .eq('status', 'pending'),
       ]);
+
+      if (ticketsResult.error) logger.error('Failed to fetch ticket counts:', ticketsResult.error);
+      if (contactsResult.error) logger.error('Failed to fetch contact counts:', contactsResult.error);
+      if (waitlistResult.error) logger.error('Failed to fetch waitlist counts:', waitlistResult.error);
+      if (partnersResult.error) logger.error('Failed to fetch partner counts:', partnersResult.error);
 
       return {
         openTickets: ticketsResult.count || 0,

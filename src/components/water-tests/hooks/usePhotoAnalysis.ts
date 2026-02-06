@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useFeatureRateLimit } from '@/hooks/useFeatureRateLimit';
@@ -37,6 +37,15 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Track mounted state for async operations
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,7 +75,9 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        if (isMountedRef.current) {
+          setPhotoPreview(reader.result as string);
+        }
       };
       reader.readAsDataURL(compressedFile);
     } catch (error) {
@@ -75,10 +86,14 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         description: 'Using original file instead',
       });
 
+      if (!isMountedRef.current) return;
+
       setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        if (isMountedRef.current) {
+          setPhotoPreview(reader.result as string);
+        }
       };
       reader.readAsDataURL(file);
     }

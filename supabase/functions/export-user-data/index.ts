@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Exporting data for user: ${user.id}`);
+    console.log('Data export started');
 
     // Fetch all user data in parallel - including activity logs and login history for GDPR compliance
     const [
@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    console.log(`Export complete for user: ${user.id} - included ${maskedActivityLogs.length} activity logs and ${maskedLoginHistory.length} login records`);
+    console.log(`Export complete - included ${maskedActivityLogs.length} activity logs and ${maskedLoginHistory.length} login records`);
 
     return new Response(
       JSON.stringify(exportData, null, 2),

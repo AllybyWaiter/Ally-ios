@@ -69,7 +69,8 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (announcementError || !announcement) {
-      throw new Error(`Announcement not found: ${announcementError?.message}`);
+      logger.error('Announcement not found', { announcementId, error: announcementError?.message });
+      return createErrorResponse('Announcement not found', logger, { status: 404 });
     }
 
     logger.info('Announcement loaded', {
@@ -94,7 +95,8 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: targetUsers, error: usersError } = await query;
 
     if (usersError) {
-      throw new Error(`Failed to fetch target users: ${usersError.message}`);
+      logger.error('Failed to fetch target users', { error: usersError.message });
+      return createErrorResponse('Failed to process announcement', logger, { status: 500 });
     }
 
     logger.info('Target users found', { count: targetUsers?.length || 0 });
