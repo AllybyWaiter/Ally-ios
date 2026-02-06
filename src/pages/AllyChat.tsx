@@ -578,12 +578,19 @@ const AllyChat = () => {
     }
   };
 
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMessage = useCallback(async (content: string, index: number) => {
     const success = await copyToClipboard(content);
     if (success) {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), 2000);
+      copyTimeoutRef.current = setTimeout(() => setCopiedIndex(null), 2000);
     }
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
   }, []);
 
   const startEditMessage = useCallback((index: number, content: string) => {
@@ -720,8 +727,13 @@ const AllyChat = () => {
               setHistoryOpen(open);
               if (open) {
                 setIsLoadingConversations(true);
-                await conversationManager.fetchConversations();
-                setIsLoadingConversations(false);
+                try {
+                  await conversationManager.fetchConversations();
+                } catch (error) {
+                  logger.error('Failed to fetch conversations:', error);
+                } finally {
+                  setIsLoadingConversations(false);
+                }
               }
             }}>
               <SheetTrigger asChild>
