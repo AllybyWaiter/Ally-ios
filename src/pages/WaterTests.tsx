@@ -92,7 +92,7 @@ const WaterTests = () => {
       const status = validStatuses.includes(p.status as typeof validStatuses[number])
         ? (p.status as 'good' | 'warning' | 'critical')
         : 'unknown';
-      return { parameter: p.parameter_name, status };
+      return { parameter: p.parameter_name, status, value: p.value, unit: p.unit };
     }) || [];
   }, [testsData]);
 
@@ -159,6 +159,7 @@ const WaterTests = () => {
             healthColor={healthData.color}
             lastTestDate={healthData.lastWaterTest}
             alerts={parameterAlerts}
+            onAlertParameterClick={handleParameterClick}
           />
         </SectionErrorBoundary>
 

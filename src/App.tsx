@@ -34,6 +34,19 @@ const checkForServiceWorkerUpdate = () => {
   }
 };
 
+// Preload core authenticated pages to avoid first-navigation blank fallbacks on mobile.
+const preloadCoreRoutes = (loaders: Array<() => Promise<unknown>>) => {
+  if (typeof window === 'undefined') return;
+
+  window.setTimeout(() => {
+    loaders.forEach((load) => {
+      load().catch((error) => {
+        logger.debug('Route preload skipped:', error);
+      });
+    });
+  }, 0);
+};
+
 // Lazy loader with retry logic and cache clearing for mobile network issues
 const lazyWithRetry = <T extends ComponentType<unknown>>(
   componentImport: () => Promise<{ default: T }>
@@ -80,17 +93,38 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import AquariumDetail from "./pages/AquariumDetail"; // Eagerly loaded to prevent iOS PWA module resolution errors
 
+const loadAdmin = () => import("./pages/Admin");
+const loadDashboard = () => import("./pages/Dashboard");
+const loadWaterTests = () => import("./pages/WaterTests");
+const loadTaskCalendar = () => import("./pages/TaskCalendar");
+const loadSettings = () => import("./pages/Settings");
+const loadPricing = () => import("./pages/Pricing");
+const loadAllyChat = () => import("./pages/AllyChat");
+const loadWeather = () => import("./pages/Weather");
+const loadPrivacyPolicy = () => import("./pages/PrivacyPolicy");
+const loadTermsOfService = () => import("./pages/TermsOfService");
+
 // Lazy load authenticated pages with retry logic (code splitting)
-const Admin = lazyWithRetry(() => import("./pages/Admin"));
-const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
-const WaterTests = lazyWithRetry(() => import("./pages/WaterTests"));
-const TaskCalendar = lazyWithRetry(() => import("./pages/TaskCalendar"));
-const Settings = lazyWithRetry(() => import("./pages/Settings"));
-const Pricing = lazyWithRetry(() => import("./pages/Pricing"));
-const AllyChat = lazyWithRetry(() => import("./pages/AllyChat"));
-const Weather = lazyWithRetry(() => import("./pages/Weather"));
-const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
-const TermsOfService = lazyWithRetry(() => import("./pages/TermsOfService"));
+const Admin = lazyWithRetry(loadAdmin);
+const Dashboard = lazyWithRetry(loadDashboard);
+const WaterTests = lazyWithRetry(loadWaterTests);
+const TaskCalendar = lazyWithRetry(loadTaskCalendar);
+const Settings = lazyWithRetry(loadSettings);
+const Pricing = lazyWithRetry(loadPricing);
+const AllyChat = lazyWithRetry(loadAllyChat);
+const Weather = lazyWithRetry(loadWeather);
+const PrivacyPolicy = lazyWithRetry(loadPrivacyPolicy);
+const TermsOfService = lazyWithRetry(loadTermsOfService);
+
+// Trigger route preloads for bottom-nav experiences right after app boot.
+preloadCoreRoutes([
+  loadWaterTests,
+  loadTaskCalendar,
+  loadWeather,
+  loadAllyChat,
+  loadSettings,
+  loadPricing,
+]);
 
 // Configure React Query with optimized caching
 import { defaultQueryOptions } from "@/lib/queryConfig";
