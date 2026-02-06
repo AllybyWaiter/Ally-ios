@@ -224,15 +224,15 @@ export function calculatePoolVolume(
   let explanation = `Based on ${shapeLabel} shape`;
   
   if (dimensions.shape === 'round') {
-    explanation += ` (${dimensions.diameter_ft}' diameter)`;
+    explanation += ` (${dimensions.diameter_ft ?? 0}' diameter)`;
   } else {
-    explanation += ` (${dimensions.length_ft}' × ${dimensions.width_ft}')`;
+    explanation += ` (${dimensions.length_ft ?? 0}' × ${dimensions.width_ft ?? 0}')`;
   }
 
   if (dimensions.depth_type === 'sloped') {
-    explanation += ` with ${dimensions.shallow_depth_ft}'-${dimensions.deep_depth_ft}' sloped depth`;
+    explanation += ` with ${dimensions.shallow_depth_ft ?? 0}'-${dimensions.deep_depth_ft ?? 0}' sloped depth`;
   } else {
-    explanation += ` with ${dimensions.single_depth_ft}' depth`;
+    explanation += ` with ${dimensions.single_depth_ft ?? 0}' depth`;
   }
 
   if (reductions.length > 0) {

@@ -79,7 +79,7 @@ export default function ConversationAnalytics() {
   const dailyTrends = useMemo(() => {
     const today = new Date();
     // Ensure we don't try to process future dates
-    const endDate = startDate > today ? today : today;
+    const endDate = startDate > today ? startDate : today;
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     
     return days.map(day => {

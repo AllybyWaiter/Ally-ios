@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -23,6 +24,7 @@ export function useGlobalAdminSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 300);
+  const searchIdRef = useRef(0);
 
   const search = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -30,15 +32,19 @@ export function useGlobalAdminSearch() {
       return;
     }
 
+    const currentSearchId = ++searchIdRef.current;
     setLoading(true);
     const allResults: SearchResult[] = [];
+
+    // Escape special LIKE/ILIKE characters to prevent wildcard injection
+    const escaped = searchQuery.replace(/[%_\\]/g, '\\$&');
 
     try {
       // Search users - only search on text columns (email, name), not UUIDs
       const { data: users } = await supabase
         .from('profiles')
         .select('user_id, email, name')
-        .or(`email.ilike.%${searchQuery}%,name.ilike.%${searchQuery}%`)
+        .or(`email.ilike.%${escaped}%,name.ilike.%${escaped}%`)
         .limit(5);
 
       if (users) {
@@ -54,7 +60,7 @@ export function useGlobalAdminSearch() {
       const { data: tickets } = await supabase
         .from('support_tickets')
         .select('id, subject, email, status')
-        .or(`subject.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
+        .or(`subject.ilike.%${escaped}%,email.ilike.%${escaped}%`)
         .limit(5);
 
       if (tickets) {
@@ -70,7 +76,7 @@ export function useGlobalAdminSearch() {
       const { data: posts } = await supabase
         .from('blog_posts')
         .select('id, title, status, slug')
-        .ilike('title', `%${searchQuery}%`)
+        .ilike('title', `%${escaped}%`)
         .limit(5);
 
       if (posts) {
@@ -87,7 +93,7 @@ export function useGlobalAdminSearch() {
       const { data: contacts } = await supabase
         .from('contacts')
         .select('id, name, email, subject')
-        .or(`name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%,subject.ilike.%${searchQuery}%`)
+        .or(`name.ilike.%${escaped}%,email.ilike.%${escaped}%,subject.ilike.%${escaped}%`)
         .limit(5);
 
       if (contacts) {
@@ -103,7 +109,7 @@ export function useGlobalAdminSearch() {
       const { data: waitlist } = await supabase
         .from('waitlist')
         .select('id, email')
-        .ilike('email', `%${searchQuery}%`)
+        .ilike('email', `%${escaped}%`)
         .limit(5);
 
       if (waitlist) {
@@ -119,7 +125,7 @@ export function useGlobalAdminSearch() {
       const { data: announcements } = await supabase
         .from('announcements')
         .select('id, title, status')
-        .ilike('title', `%${searchQuery}%`)
+        .ilike('title', `%${escaped}%`)
         .limit(5);
 
       if (announcements) {
@@ -131,11 +137,16 @@ export function useGlobalAdminSearch() {
         })));
       }
 
-      setResults(allResults);
+      // Only update results if this is still the latest search
+      if (currentSearchId === searchIdRef.current) {
+        setResults(allResults);
+      }
     } catch (error) {
-      console.error('Search error:', error);
+      logger.error('Search error:', error);
     } finally {
-      setLoading(false);
+      if (currentSearchId === searchIdRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 

@@ -163,3 +163,13 @@ export function validationErrorResponse(errors: ValidationError[], request?: Req
 export function collectErrors(...errors: (ValidationError | null)[]): ValidationError[] {
   return errors.filter((e): e is ValidationError => e !== null);
 }
+
+// HTML entity escaping for safe embedding in HTML templates (emails, etc.)
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}

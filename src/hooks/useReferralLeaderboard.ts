@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export interface LeaderboardEntry {
   userId: string;
@@ -38,10 +39,12 @@ export function useReferralLeaderboard(period: TimePeriod = 'all') {
 
       // Get user profiles for these codes
       const userIds = [...new Set(codes.map(c => c.user_id))];
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('user_id, email, name')
         .in('user_id', userIds);
+
+      if (profilesError) logger.error('Failed to fetch profiles for leaderboard:', profilesError);
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
@@ -62,7 +65,8 @@ export function useReferralLeaderboard(period: TimePeriod = 'all') {
         referralsQuery = referralsQuery.gte('created_at', dateFilter);
       }
 
-      const { data: referrals } = await referralsQuery;
+      const { data: referrals, error: referralsError } = await referralsQuery;
+      if (referralsError) logger.error('Failed to fetch referrals for leaderboard:', referralsError);
 
       // Get rewards
       let rewardsQuery = supabase
@@ -73,7 +77,8 @@ export function useReferralLeaderboard(period: TimePeriod = 'all') {
         rewardsQuery = rewardsQuery.gte('created_at', dateFilter);
       }
 
-      const { data: rewards } = await rewardsQuery;
+      const { data: rewards, error: rewardsError } = await rewardsQuery;
+      if (rewardsError) logger.error('Failed to fetch rewards for leaderboard:', rewardsError);
 
       // Aggregate data per user
       const leaderboard: LeaderboardEntry[] = codes.map(code => {
@@ -121,17 +126,20 @@ export function useReferralProgramStats() {
         .eq('is_active', true);
 
       // Count referrals by status
-      const { data: referrals } = await supabase
+      const { data: referrals, error: refError } = await supabase
         .from('referrals')
         .select('status');
 
+      if (refError) logger.error('Failed to fetch referrals for program stats:', refError);
       const totalReferrals = referrals?.length || 0;
       const qualifiedReferrals = referrals?.filter(r => r.status === 'qualified' || r.status === 'rewarded').length || 0;
 
       // Count rewards
-      const { data: rewards } = await supabase
+      const { data: rewards, error: rwdError } = await supabase
         .from('referral_rewards')
         .select('status');
+
+      if (rwdError) logger.error('Failed to fetch rewards for program stats:', rwdError);
 
       const rewardsDistributed = rewards?.filter(r => r.status === 'applied').length || 0;
       const estimatedValue = rewardsDistributed * 14.99;

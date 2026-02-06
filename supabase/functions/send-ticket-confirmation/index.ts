@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
+import { escapeHtml } from "../_shared/validation.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -64,6 +65,13 @@ serve(async (req: Request): Promise<Response> => {
     const priorityColor = getPriorityColor(priority);
     const shortTicketId = ticketId.substring(0, 8).toUpperCase();
 
+    // Escape user-provided values to prevent HTML injection in emails
+    const safeName = escapeHtml(name);
+    const safePriority = escapeHtml(priority);
+    const safePreview = escapeHtml(
+      messagePreview.length > 150 ? messagePreview.substring(0, 150) + '...' : messagePreview
+    );
+
     const emailResponse = await resend.emails.send({
       from: "Ally Support <support@allyaquatic.com>",
       to: [email],
@@ -91,7 +99,7 @@ serve(async (req: Request): Promise<Response> => {
                   <!-- Main Content -->
                   <tr>
                     <td style="padding: 40px;">
-                      <h2 style="margin: 0 0 16px 0; color: #333333; font-size: 22px;">Hi ${name},</h2>
+                      <h2 style="margin: 0 0 16px 0; color: #333333; font-size: 22px;">Hi ${safeName},</h2>
                       <p style="margin: 0 0 24px 0; color: #666666; font-size: 16px; line-height: 1.6;">
                         Thank you for reaching out! We've received your support request and our team is on it.
                       </p>
@@ -109,14 +117,14 @@ serve(async (req: Request): Promise<Response> => {
                                 <td style="padding-bottom: 16px; text-align: right;">
                                   <span style="color: #999999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Priority</span>
                                   <p style="margin: 4px 0 0 0;">
-                                    <span style="display: inline-block; background-color: ${priorityColor}; color: #ffffff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${priority}</span>
+                                    <span style="display: inline-block; background-color: ${priorityColor}; color: #ffffff; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${safePriority}</span>
                                   </p>
                                 </td>
                               </tr>
                               <tr>
                                 <td colspan="2">
                                   <span style="color: #999999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Message</span>
-                                  <p style="margin: 8px 0 0 0; color: #666666; font-size: 14px; line-height: 1.5; font-style: italic;">"${messagePreview.length > 150 ? messagePreview.substring(0, 150) + '...' : messagePreview}"</p>
+                                  <p style="margin: 8px 0 0 0; color: #666666; font-size: 14px; line-height: 1.5; font-style: italic;">"${safePreview}"</p>
                                 </td>
                               </tr>
                             </table>

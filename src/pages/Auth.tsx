@@ -13,6 +13,7 @@ import logo from '@/assets/logo.png';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/lib/utils';
 import { useRateLimit } from '@/hooks/useRateLimit';
+import { logger } from '@/lib/logger';
 
 const passwordSchema = z.string()
   .min(8, 'Password must be at least 8 characters')
@@ -172,7 +173,7 @@ export default function Auth() {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Auth timeout check failed:', error);
+        logger.error('Auth timeout check failed:', error);
         if (mounted) {
           setIsAuthenticating(false);
           setIsLoading(false);
@@ -277,14 +278,17 @@ export default function Auth() {
           // Use auth state change listener to ensure user is fully created
           const createReferral = async (userId: string) => {
             try {
-              await supabase.from('referrals').insert({
+              const { error: refInsertError } = await supabase.from('referrals').insert({
                 referrer_id: referralData.referrerId,
                 referee_id: userId,
                 referral_code_id: referralData.referralCodeId,
                 status: 'pending',
               });
+              if (refInsertError) {
+                logger.error('Failed to create referral record:', refInsertError);
+              }
             } catch (refError) {
-              console.error('Failed to create referral record:', refError);
+              logger.error('Failed to create referral record:', refError);
             }
           };
           

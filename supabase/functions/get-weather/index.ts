@@ -83,14 +83,14 @@ serve(async (req) => {
   try {
     const { latitude, longitude } = await req.json();
 
-    if (!latitude || !longitude) {
+    if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
+        !isFinite(latitude) || !isFinite(longitude) ||
+        latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return new Response(
-        JSON.stringify({ error: 'Latitude and longitude are required' }),
+        JSON.stringify({ error: 'Valid latitude (-90 to 90) and longitude (-180 to 180) are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    console.log('Fetching weather for:', latitude, longitude);
 
     // Fetch weather data from Open-Meteo
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
@@ -251,8 +251,6 @@ serve(async (req) => {
       moonPhase,
     };
 
-    console.log('Weather fetched successfully');
-
     return new Response(
       JSON.stringify(weatherData),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -260,7 +258,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error fetching weather:', error);
     return new Response(
-      JSON.stringify({ error: 'Failed to fetch weather data', details: String(error) }),
+      JSON.stringify({ error: 'Failed to fetch weather data' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
