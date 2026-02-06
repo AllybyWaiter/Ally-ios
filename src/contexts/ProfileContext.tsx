@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { setUserContext } from '@/lib/sentry';
 import { UnitSystem } from '@/lib/unitConversions';
@@ -40,6 +40,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [longestStreak, setLongestStreak] = useState<number | null>(null);
   const [lastTestDate, setLastTestDate] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  // Track if a fetch is in progress to prevent concurrent fetches
+  const isFetchingRef = useRef(false);
 
   const fetchUserProfile = useCallback(async (userId: string, retryCount = 0) => {
     try {
@@ -126,9 +128,14 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState !== 'visible' || !user || !isInitialAuthComplete) return;
-      
+
+      // Prevent concurrent fetches
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
       const recoveryTimeout = setTimeout(() => {
         setProfileLoading(false);
+        isFetchingRef.current = false;
         // Don't default to false on visibility recovery - preserve existing state
       }, 1500);
 
@@ -137,6 +144,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       } finally {
         clearTimeout(recoveryTimeout);
         setProfileLoading(false);
+        isFetchingRef.current = false;
       }
     };
 

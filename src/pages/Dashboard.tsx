@@ -91,9 +91,13 @@ export default function Dashboard() {
     [hasOnlyPools, hasMixed]
   );
 
-  // Hard maximum loading timeout
+  // Hard maximum loading timeout with stale closure prevention
   useEffect(() => {
+    let isCancelled = false;
+
     const maxLoadingTimeout = setTimeout(() => {
+      if (isCancelled) return;
+
       if (loading && user && !dataFetched) {
         loadAquariums(user.id);
       } else if (loading && user && onboardingCompleted === null) {
@@ -102,7 +106,11 @@ export default function Dashboard() {
         setLoading(false);
       }
     }, 4000);
-    return () => clearTimeout(maxLoadingTimeout);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(maxLoadingTimeout);
+    };
   }, [user, dataFetched, onboardingCompleted, loading, loadAquariums, setLoading]);
 
   // iOS PWA wake-up recovery - soft refresh with cooldown

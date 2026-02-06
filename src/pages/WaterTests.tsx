@@ -25,7 +25,7 @@ import type { UnitSystem } from "@/lib/unitConversions";
 const WaterTests = () => {
   const [searchParams] = useSearchParams();
   const urlAquariumId = searchParams.get('aquariumId');
-  const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(urlAquariumId);
+  const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
   const [trendsOpen, setTrendsOpen] = useState(false);
   const { t } = useTranslation();
   const { units } = useProfileContext();
@@ -48,13 +48,24 @@ const WaterTests = () => {
   });
 
   // Auto-select aquarium from URL param or first available
+  // Also validates that current selection still exists (handles async deletion)
   useEffect(() => {
     if (aquariums && aquariums.length > 0) {
+      // Check if URL param aquarium exists
       if (urlAquariumId && aquariums.some(a => a.id === urlAquariumId)) {
         setSelectedAquariumId(urlAquariumId);
-      } else if (!selectedAquariumId) {
+      }
+      // Check if current selection still exists, otherwise reset to first
+      else if (selectedAquariumId && !aquariums.some(a => a.id === selectedAquariumId)) {
         setSelectedAquariumId(aquariums[0].id);
       }
+      // No selection yet, select first
+      else if (!selectedAquariumId) {
+        setSelectedAquariumId(aquariums[0].id);
+      }
+    } else if (aquariums && aquariums.length === 0) {
+      // All aquariums deleted, clear selection
+      setSelectedAquariumId(null);
     }
   }, [aquariums, urlAquariumId, selectedAquariumId]);
 
