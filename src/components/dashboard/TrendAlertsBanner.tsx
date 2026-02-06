@@ -64,12 +64,6 @@ export function TrendAlertsBanner() {
     staleTime: 30000,
   });
 
-  // Handle error state silently - this is a non-critical feature
-  if (isError) {
-    console.error('Failed to fetch trend alerts:', error);
-    return null;
-  }
-
   const dismissMutation = useMutation({
     mutationFn: dismissAlert,
     onMutate: async (alertId) => {
@@ -92,6 +86,12 @@ export function TrendAlertsBanner() {
       queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.alerts(user?.id || '') });
     },
   });
+
+  // Handle error state silently - this is a non-critical feature
+  if (isError) {
+    console.error('Failed to fetch trend alerts:', error);
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -116,7 +116,6 @@ export function TrendAlertsBanner() {
   const remainingCount = alerts.length - displayedAlerts.length;
 
   // Check if any alerts are AI-powered
-  const hasAIAnalyzedAlerts = alerts.some(a => a.analysis_model === 'ai');
   const hasRuleOnlyAlerts = alerts.every(a => a.analysis_model === 'rule' || !a.analysis_model);
 
   return (

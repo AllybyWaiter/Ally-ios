@@ -1,18 +1,15 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, ReferenceArea } from "recharts";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
-import { useTranslation } from 'react-i18next';
 import { formatDecimal } from '@/lib/formatters';
 import { 
   fahrenheitToCelsius, 
-  getTemperatureUnit,
-  formatParameter
+  getTemperatureUnit
 } from "@/lib/unitConversions";
 import { queryKeys } from "@/lib/queryKeys";
 import { fetchWaterTestsForChart } from "@/infrastructure/queries";
@@ -61,14 +58,33 @@ interface WaterTestChartsProps {
     name: string;
     type: string;
   };
+  selectedParameter?: string;
+  onSelectedParameterChange?: (param: string) => void;
 }
 
 type DateRange = "7d" | "30d" | "90d" | "1y" | "all";
 
-export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
+export const WaterTestCharts = ({
+  aquarium,
+  selectedParameter: selectedParameterProp,
+  onSelectedParameterChange,
+}: WaterTestChartsProps) => {
   const { units } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>("30d");
-  const [selectedParameter, setSelectedParameter] = useState<string>("pH");
+  const [internalSelectedParameter, setInternalSelectedParameter] = useState<string>("pH");
+  const isControlled = typeof selectedParameterProp === "string";
+  const selectedParameter = selectedParameterProp ?? internalSelectedParameter;
+  const setSelectedParameter = useCallback(
+    (value: string) => {
+      if (onSelectedParameterChange) {
+        onSelectedParameterChange(value);
+      }
+      if (!isControlled) {
+        setInternalSelectedParameter(value);
+      }
+    },
+    [isControlled, onSelectedParameterChange]
+  );
 
   const { data: chartData, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.waterTests.charts(aquarium.id, dateRange),
@@ -121,15 +137,42 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
 
   // Memoize available parameters extraction
   const availableParameters = useMemo(() => {
-    if (!chartData || chartData.length === 0) return [];
-    return Array.from(
-      new Set(
-        chartData.flatMap((d: Record<string, unknown>) =>
+    const extracted = chartData && chartData.length > 0
+      ? chartData.flatMap((d: Record<string, unknown>) =>
           Object.keys(d).filter((k) => k !== "date" && k !== "fullDate" && !k.endsWith("_unit"))
         )
-      )
-    );
-  }, [chartData]);
+      : [];
+
+    const unique = Array.from(new Set(extracted));
+
+    // Keep externally selected parameter selectable even when chart data is sparse.
+    if (selectedParameter && !unique.includes(selectedParameter)) {
+      unique.push(selectedParameter);
+    }
+
+    return unique;
+  }, [chartData, selectedParameter]);
+
+  useEffect(() => {
+    if (!availableParameters.length) return;
+
+    if (!selectedParameter) {
+      setSelectedParameter(availableParameters[0]);
+      return;
+    }
+
+    if (!availableParameters.includes(selectedParameter)) {
+      const normalizedSelection = selectedParameter.trim().toLowerCase();
+      const caseInsensitiveMatch = availableParameters.find(
+        (param) => param.trim().toLowerCase() === normalizedSelection
+      );
+
+      // Canonicalize minor casing differences (e.g., "ph" -> "pH").
+      if (caseInsensitiveMatch) {
+        setSelectedParameter(caseInsensitiveMatch);
+      }
+    }
+  }, [availableParameters, selectedParameter, setSelectedParameter]);
   
   // Memoize parameter unit computation
   const parameterUnit = useMemo(() => {
@@ -246,9 +289,9 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-16">
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData}>
+            <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 24 }}>
               {/* Ideal range (green shaded area) */}
               {parameterRange && (
                 <ReferenceArea 
@@ -302,7 +345,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
                   return [`${formatDecimal(value, 2)} ${parameterUnit}`, selectedParameter];
                 }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: 12 }} />
               <Line
                 type="monotone"
                 dataKey={selectedParameter}
@@ -316,7 +359,7 @@ export const WaterTestCharts = ({ aquarium }: WaterTestChartsProps) => {
           
           {/* Range Legend */}
           {parameterRange && (
-            <div className="flex gap-4 mt-4 text-sm text-muted-foreground justify-center flex-wrap">
+            <div className="flex gap-4 mt-6 text-sm text-muted-foreground justify-center flex-wrap">
               <div className="flex items-center gap-1.5">
                 <div className="w-4 h-3 bg-green-500/20 border border-green-500/50 rounded-sm"></div>
                 <span>Ideal Range</span>

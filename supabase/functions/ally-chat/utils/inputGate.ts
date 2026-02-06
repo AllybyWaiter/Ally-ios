@@ -29,6 +29,12 @@ interface InputValidationResult {
   gateInstructions?: string;
 }
 
+interface AquaticScopeResult {
+  isInScope: boolean;
+  redirectMessage?: string;
+  reason?: string;
+}
+
 // Keywords that indicate dosing/treatment intent
 const POOL_DOSING_KEYWORDS = [
   'add chlorine', 'shock', 'balance', 'dose', 'how much', 'dosage',
@@ -83,6 +89,25 @@ const AQUARIUM_TREATMENT_REQUIREMENTS = {
 const SALTWATER_ADDITIONAL = {
   salinity: ['salinity', 'sg', 'specific gravity', 'ppt']
 };
+
+const AQUATIC_DOMAIN_KEYWORDS = [
+  'aquatic', 'aquarium', 'tank', 'fish', 'reef', 'coral', 'freshwater', 'saltwater', 'brackish',
+  'pond', 'koi', 'goldfish', 'ammonia', 'nitrite', 'nitrate', 'ph', 'alkalinity', 'kh', 'gh',
+  'salinity', 'specific gravity', 'sg', 'filter', 'skimmer', 'heater', 'co2', 'dosing',
+  'chlorine', 'bromine', 'cyanuric', 'cya', 'pool', 'spa', 'hot tub', 'pump'
+];
+
+const SOFT_INTERACTION_PATTERNS = [
+  /^(hi|hello|hey|yo|sup|what'?s up)[!.?\s]*$/i,
+  /^(thanks|thank you|thx|ok|okay|got it|sounds good|cool|nice)[!.?\s]*$/i,
+  /^(yes|yeah|yep|no|nope|sure|go ahead|continue|more|retry|again)[!.?\s]*$/i,
+  /^(help|assist me|can you help)[!.?\s]*$/i,
+];
+
+function hasAquaticKeyword(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return AQUATIC_DOMAIN_KEYWORDS.some(keyword => normalized.includes(keyword));
+}
 
 /**
  * Detect if the conversation is about dosing or treatment
@@ -294,5 +319,52 @@ export function validateRequiredInputs(
     detectedInputs,
     requiresGate,
     gateInstructions: requiresGate ? generateGateInstructions(conversationType, missingInputs) : undefined
+  };
+}
+
+/**
+ * Enforce aquatics-only scope for Ally chat.
+ * Allows short follow-ups during an active aquatics conversation.
+ */
+export function validateAquaticScope(messages: Message[]): AquaticScopeResult {
+  const userMessages = messages.filter(m => m.role === 'user');
+  const lastUserMessage = userMessages[userMessages.length - 1];
+
+  if (!lastUserMessage) {
+    return { isInScope: true };
+  }
+
+  if (lastUserMessage.imageUrl) {
+    return { isInScope: true };
+  }
+
+  const lastText = (lastUserMessage.content || '').trim().toLowerCase();
+  if (!lastText) {
+    return { isInScope: true };
+  }
+
+  const recentUserText = userMessages
+    .slice(-4)
+    .map(m => (m.content || '').toLowerCase())
+    .join(' ');
+
+  const lastIsAquatic = hasAquaticKeyword(lastText);
+  const recentHasAquaticContext = hasAquaticKeyword(recentUserText);
+  const isSoftInteraction = SOFT_INTERACTION_PATTERNS.some(pattern => pattern.test(lastText));
+
+  if (lastIsAquatic) {
+    return { isInScope: true };
+  }
+
+  // Keep normal back-and-forth flowing once the user is already in aquatics context
+  if (recentHasAquaticContext && (isSoftInteraction || lastText.split(/\s+/).length <= 6)) {
+    return { isInScope: true };
+  }
+
+  return {
+    isInScope: false,
+    reason: 'off_topic',
+    redirectMessage:
+      "I can only help with aquatics topics: aquariums, pools, spas, and ponds. Ask me about water chemistry, livestock health, equipment, maintenance, or dosing."
   };
 }

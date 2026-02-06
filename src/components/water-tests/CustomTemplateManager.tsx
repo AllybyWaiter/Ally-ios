@@ -98,6 +98,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: TemplateFormData }) => {
+      if (!user) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("custom_parameter_templates")
         .update({
@@ -106,7 +107,8 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
           parameters: data.parameters as any,
           is_default: data.isDefault,
         })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user.id);
 
       if (error) throw error;
     },
@@ -124,7 +126,8 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("custom_parameter_templates").delete().eq("id", id);
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase.from("custom_parameter_templates").delete().eq("id", id).eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {

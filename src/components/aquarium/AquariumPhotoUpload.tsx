@@ -139,6 +139,10 @@ export function AquariumPhotoUpload({
             </div>
           )}
 
+          <p className="text-xs text-muted-foreground">
+            Tip: Landscape photos (around 16:9) fit best as cover banners.
+          </p>
+
           <div className="space-y-2">
             <Label htmlFor="caption">Caption (optional)</Label>
             <Input

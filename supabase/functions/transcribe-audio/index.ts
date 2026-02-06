@@ -78,8 +78,14 @@ serve(async (req) => {
     logger.info('Processing audio transcription', {
       audioSize: audio.length,
     });
-    
-    const binaryAudio = processBase64Chunks(audio);
+
+    let binaryAudio: Uint8Array;
+    try {
+      binaryAudio = processBase64Chunks(audio);
+    } catch (e) {
+      logger.warn('Invalid base64 audio data', { error: String(e) });
+      return validationErrorResponse([{ field: 'audio', message: 'Invalid base64-encoded audio data' }], req);
+    }
     
     const formData = new FormData();
     const blob = new Blob([binaryAudio], { type: 'audio/webm' });

@@ -17,12 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAquariumHealthScore } from "@/hooks/useAquariumHealthScore";
 import { fetchAllWaterTests } from "@/infrastructure/queries/waterTests";
 import { useProfileContext } from "@/contexts/ProfileContext";
-import type { UnitSystem } from "@/lib/unitConversions";
 
 const WaterTests = () => {
   const [searchParams] = useSearchParams();
   const urlAquariumId = searchParams.get('aquariumId');
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
+  const [selectedParameter, setSelectedParameter] = useState<string>("pH");
   const { t } = useTranslation();
   const { units } = useProfileContext();
 
@@ -100,7 +100,8 @@ const WaterTests = () => {
     setSelectedAquariumId(aquarium.id);
   };
 
-  const handleParameterClick = (_paramName: string) => {
+  const handleParameterClick = (paramName: string) => {
+    setSelectedParameter(paramName);
     // Scroll to trends section when parameter clicked
     document.getElementById('trends-section')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -186,12 +187,16 @@ const WaterTests = () => {
         </SectionErrorBoundary>
 
         {/* Trends Section */}
-        <div id="trends-section" className="pb-24">
+        <div id="trends-section" className="pb-[calc(13rem+env(safe-area-inset-bottom))] md:pb-24">
           <h2 className="text-lg font-semibold mb-4">{t('waterTests.trends')}</h2>
           <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
             <Suspense fallback={<WaterTestChartsSkeleton />}>
               {selectedAquarium && (
-                <WaterTestCharts aquarium={selectedAquarium} />
+                <WaterTestCharts
+                  aquarium={selectedAquarium}
+                  selectedParameter={selectedParameter}
+                  onSelectedParameterChange={setSelectedParameter}
+                />
               )}
             </Suspense>
           </SectionErrorBoundary>

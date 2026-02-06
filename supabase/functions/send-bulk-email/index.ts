@@ -1,13 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getCorsHeaders, escapeHtml } from "../_shared/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 interface BulkEmailRequest {
   emails: string[];
@@ -17,9 +13,11 @@ interface BulkEmailRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const cors = getCorsHeaders(req);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
   }
 
   try {
@@ -28,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 401, headers: { "Content-Type": "application/json", ...cors } }
       );
     }
 
@@ -44,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 401, headers: { "Content-Type": "application/json", ...cors } }
       );
     }
 
@@ -58,16 +56,26 @@ const handler = async (req: Request): Promise<Response> => {
     if (!isAdmin) {
       return new Response(
         JSON.stringify({ error: "Admin access required" }),
-        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 403, headers: { "Content-Type": "application/json", ...cors } }
       );
     }
 
-    const { emails, subject, message, fromName = "AquaAlly" }: BulkEmailRequest = await req.json();
+    let body: BulkEmailRequest;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...cors } }
+      );
+    }
+
+    const { emails, subject, message, fromName = "AquaAlly" } = body;
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return new Response(
         JSON.stringify({ error: "No email addresses provided" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 400, headers: { "Content-Type": "application/json", ...cors } }
       );
     }
 
@@ -76,14 +84,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (emails.length > MAX_EMAILS_PER_REQUEST) {
       return new Response(
         JSON.stringify({ error: `Maximum ${MAX_EMAILS_PER_REQUEST} emails per request` }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 400, headers: { "Content-Type": "application/json", ...cors } }
       );
     }
 
     if (!subject || !message) {
       return new Response(
         JSON.stringify({ error: "Subject and message are required" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        { status: 400, headers: { "Content-Type": "application/json", ...cors } }
       );
     }
 
@@ -93,16 +101,16 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (let i = 0; i < emails.length; i += batchSize) {
       const batch = emails.slice(i, i + batchSize);
-      
+
       const promises = batch.map(async (email) => {
         try {
           await resend.emails.send({
             from: "Ally <support@allyaquatic.com>",
             to: [email],
-            subject,
+            subject: escapeHtml(subject),
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                ${message.split('\n').map(line => `<p>${line}</p>`).join('')}
+                ${message.split('\n').map(line => `<p>${escapeHtml(line)}</p>`).join('')}
                 <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;" />
                 <p style="color: #666; font-size: 12px;">
                   You're receiving this email because you're a registered user of AquaAlly.
@@ -131,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
       }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...cors },
       }
     );
   } catch (error: any) {
@@ -140,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: error.message || "Internal server error" }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...cors },
       }
     );
   }

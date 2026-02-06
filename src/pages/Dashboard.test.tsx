@@ -15,9 +15,17 @@ import {
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>{children}</BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {children}
+    </BrowserRouter>
   </QueryClientProvider>
 );
+
+const renderDashboard = () => render(<Dashboard />, { wrapper });
+const getAddAquariumButton = () =>
+  screen.getByRole('button', {
+    name: /add aquarium|dashboard\.addaquarium|dashboard\.addwaterbody|dashboard\.addpool/i,
+  });
 
 // Mock hooks
 vi.mock('@/hooks/useAuth', () => ({
@@ -44,16 +52,23 @@ vi.mock('@/hooks/usePullToRefresh', () => ({
 const mockLoadAquariums = vi.fn();
 const mockDeleteAquarium = vi.fn();
 const mockSetLoading = vi.fn();
+const mockAquarium = createMockAquarium();
 
 vi.mock('@/components/dashboard', async () => {
   const actual = await vi.importActual('@/components/dashboard');
   return {
     ...actual,
+    WeatherStatsCard: () => <div data-testid="weather-stats-card">Weather Stats</div>,
     useDashboardData: () => ({
       loading: false,
       setLoading: mockSetLoading,
       dataFetched: true,
-      aquariums: [createMockAquarium()],
+      aquariums: [mockAquarium],
+      aquariumsOnly: [mockAquarium],
+      poolsOnly: [],
+      hasOnlyAquariums: true,
+      hasOnlyPools: false,
+      hasMixed: false,
       upcomingTaskCount: 3,
       totalVolume: 50,
       activeCount: 1,
@@ -62,6 +77,15 @@ vi.mock('@/components/dashboard', async () => {
     }),
   };
 });
+
+vi.mock('@/components/dashboard/DashboardHeroBanner', () => ({
+  DashboardBackground: () => <div data-testid="dashboard-background" />,
+  DashboardGreeting: () => (
+    <div role="status" aria-live="polite">
+      <h2>Good evening</h2>
+    </div>
+  ),
+}));
 
 // Mock components
 vi.mock('@/components/AppHeader', () => ({
@@ -105,47 +129,50 @@ describe('Dashboard', () => {
   it('renders loading skeleton when auth is loading', () => {
     mockUseAuth.mockReturnValue({ ...defaultMockAuth, loading: true });
     
-    render(<Dashboard />);
+    renderDashboard();
     
     expect(screen.getByTestId('dashboard-skeleton')).toBeInTheDocument();
   });
 
-  it('renders dashboard title and subtitle', () => {
-    render(<Dashboard />);
+  it('renders dashboard greeting and stats overview', () => {
+    renderDashboard();
     
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Manage your aquariums')).toBeInTheDocument();
+    expect(screen.getByText(/good (morning|afternoon|evening)/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', {
+        name: /dashboard\.totalaquariums|total aquariums/i,
+      })
+    ).toBeInTheDocument();
   });
 
   it('renders app header', () => {
-    render(<Dashboard />);
+    renderDashboard();
     
     expect(screen.getByTestId('app-header')).toBeInTheDocument();
   });
 
   it('displays aquarium cards when data is loaded', () => {
-    render(<Dashboard />);
+    renderDashboard();
     
     expect(screen.getByText('Test Aquarium')).toBeInTheDocument();
   });
 
   it('shows add aquarium button', () => {
-    render(<Dashboard />);
+    renderDashboard();
     
-    expect(screen.getByText(/add aquarium/i)).toBeInTheDocument();
+    expect(getAddAquariumButton()).toBeInTheDocument();
   });
 
   it('opens aquarium dialog when add button is clicked', async () => {
     const user = userEvent.setup();
     
-    render(<Dashboard />);
+    renderDashboard();
     
-    const addButton = screen.getByText(/add aquarium/i);
+    const addButton = getAddAquariumButton();
     await user.click(addButton);
     
-    // Dialog should be in the DOM (it may be controlled by state)
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /add aquarium/i })).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
   });
 
@@ -155,17 +182,17 @@ describe('Dashboard', () => {
       canCreateAquarium: vi.fn().mockReturnValue(false),
     });
     
-    render(<Dashboard />);
+    renderDashboard();
     
     // The button should still be visible but clicking shows a toast
-    const addButton = screen.getByText(/add aquarium/i);
+    const addButton = getAddAquariumButton();
     expect(addButton).toBeInTheDocument();
   });
 
   it('shows delete confirmation dialog when delete is clicked', async () => {
     const user = userEvent.setup();
     
-    render(<Dashboard />);
+    renderDashboard();
     
     // Find and click the delete button in aquarium card
     const deleteButtons = screen.getAllByRole('button');
@@ -182,34 +209,16 @@ describe('Dashboard', () => {
     }
   });
 
-  it('shows preferences onboarding when not completed', () => {
+  it('shows preferences onboarding when not completed', async () => {
     mockUseAuth.mockReturnValue({ 
       ...defaultMockAuth, 
       onboardingCompleted: false,
     });
     
-    // Need to mock the dashboard data to not show loading
-    vi.doMock('@/components/dashboard', async () => {
-      const actual = await vi.importActual('@/components/dashboard');
-      return {
-        ...actual,
-        useDashboardData: () => ({
-          loading: false,
-          setLoading: mockSetLoading,
-          dataFetched: false,
-          aquariums: [],
-          upcomingTaskCount: 0,
-          totalVolume: 0,
-          activeCount: 0,
-          loadAquariums: mockLoadAquariums,
-          deleteAquarium: mockDeleteAquarium,
-        }),
-      };
+    renderDashboard();
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('preferences-onboarding')).toBeInTheDocument();
     });
-    
-    render(<Dashboard />);
-    
-    // The component should show preferences onboarding when onboardingCompleted is false
-    // This is controlled by internal state based on useEffect
   });
 });

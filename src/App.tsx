@@ -13,6 +13,7 @@ import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import ScrollToTop from "@/components/ScrollToTop";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { ToastNavigationCleanup } from "@/components/ToastNavigationCleanup";
 import { lazy, Suspense, ComponentType } from "react";
 import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
 import { SkipToContent } from "@/components/SkipToContent";
@@ -85,6 +86,7 @@ const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"));
 const WaterTests = lazyWithRetry(() => import("./pages/WaterTests"));
 const TaskCalendar = lazyWithRetry(() => import("./pages/TaskCalendar"));
 const Settings = lazyWithRetry(() => import("./pages/Settings"));
+const Pricing = lazyWithRetry(() => import("./pages/Pricing"));
 const AllyChat = lazyWithRetry(() => import("./pages/AllyChat"));
 const Weather = lazyWithRetry(() => import("./pages/Weather"));
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/PrivacyPolicy"));
@@ -117,6 +119,7 @@ const App = () => (
                 <BrowserRouter>
                   <SkipToContent />
                   <ScrollToTop />
+                  <ToastNavigationCleanup />
                   <MobileBottomNav />
                   <main id="main-content">
                   <Routes>
@@ -181,6 +184,18 @@ const App = () => (
                         <PageErrorBoundary pageName="Settings" featureArea="settings">
                           <Suspense fallback={<FormSkeleton />}>
                             <Settings />
+                          </Suspense>
+                        </PageErrorBoundary>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/pricing"
+                    element={
+                      <ProtectedRoute>
+                        <PageErrorBoundary pageName="Pricing" featureArea="settings">
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <Pricing />
                           </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>

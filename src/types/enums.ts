@@ -53,6 +53,8 @@ export const WaterBodyType = {
   BRACKISH: 'brackish',
   POND: 'pond',
   POOL: 'pool',
+  POOL_CHLORINE: 'pool_chlorine',
+  POOL_SALTWATER: 'pool_saltwater',
   SPA: 'spa',
   HOT_TUB: 'hot_tub',
 } as const;
@@ -64,6 +66,8 @@ export const WATER_BODY_TYPES = Object.values(WaterBodyType);
 /** Pool/Spa types - used for conditional UI logic */
 export const POOL_TYPES: WaterBodyType[] = [
   WaterBodyType.POOL,
+  WaterBodyType.POOL_CHLORINE,
+  WaterBodyType.POOL_SALTWATER,
   WaterBodyType.SPA,
   WaterBodyType.HOT_TUB,
 ];

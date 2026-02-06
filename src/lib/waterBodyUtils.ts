@@ -37,7 +37,9 @@ export function formatWaterBodyType(type: string, t: (key: string) => string): s
  * Check if a water body type is a pool or spa
  */
 export function isPoolType(type: string): boolean {
-  return checkIsPoolType(type.toLowerCase());
+  if (!type) return false;
+  const normalizedType = type.toLowerCase();
+  return checkIsPoolType(normalizedType) || normalizedType.startsWith('pool_');
 }
 
 /**
@@ -48,7 +50,7 @@ export function getWaterBodyCategory(type: string): WaterBodyCategory {
   if (lowerType === WaterBodyType.SPA || lowerType === WaterBodyType.HOT_TUB) {
     return WaterBodyCategory.SPA;
   }
-  if (lowerType === WaterBodyType.POOL) {
+  if (isPoolType(lowerType)) {
     return WaterBodyCategory.POOL;
   }
   return WaterBodyCategory.AQUARIUM;

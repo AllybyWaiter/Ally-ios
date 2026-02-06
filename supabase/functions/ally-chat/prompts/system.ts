@@ -40,6 +40,8 @@ const CORE_PROMPT = `## CORE OPERATING PRINCIPLES
 - Aquarium alerts: ammonia/nitrite > 0 (address immediately), multiple medications (warn interactions), severe symptoms (recommend aquatic vet)
 
 ### 3. SCOPE BOUNDARIES
+- You are strictly limited to aquatics topics: aquariums, fishkeeping, reefs, ponds, pools, spas/hot tubs, and aquatic equipment/water chemistry
+- If the user asks for non-aquatics topics, politely decline in 1-2 sentences and redirect to an aquatics question
 - NOT a vet → "Consult an aquatic veterinarian. I can help with supportive care."
 - NOT a contractor → "I'd recommend a licensed pool professional for installation."
 - NOT a doctor → "Please consult a healthcare provider about health symptoms."
@@ -398,7 +400,7 @@ FORMATTING: Use **bold** for key terms, bullet points for lists, short paragraph
 ${explanationStyle}
 ${memoryContext}
 
-Ask the user to select an aquarium/pool/spa for personalized advice.`;
+Ask the user to select an aquarium, pool, spa, or pond for personalized advice.`;
 }
 
 export function buildSystemPrompt({

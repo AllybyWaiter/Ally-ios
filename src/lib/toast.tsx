@@ -41,6 +41,15 @@ const ToastIcon = ({ type }: { type: ToastType }) => {
   }
 };
 
+const scheduleDismissFallback = (toastId: string | number, duration: number) => {
+  // Guard against stale toasts on iOS/webview by enforcing a hard dismiss.
+  if (!Number.isFinite(duration) || duration <= 0) return;
+
+  setTimeout(() => {
+    sonnerToast.dismiss(toastId);
+  }, duration + 400);
+};
+
 const createToast = (type: ToastType, title: string, options?: ToastOptions) => {
   const duration = options?.duration ?? TOAST_DURATIONS[type];
   
@@ -53,7 +62,7 @@ const createToast = (type: ToastType, title: string, options?: ToastOptions) => 
     triggerHaptic("medium");
   }
   
-  return sonnerToast(title, {
+  const toastId = sonnerToast(title, {
     description: options?.description,
     duration,
     icon: <ToastIcon type={type} />,
@@ -62,6 +71,9 @@ const createToast = (type: ToastType, title: string, options?: ToastOptions) => 
       onClick: options.action.onClick,
     } : undefined,
   });
+
+  scheduleDismissFallback(toastId, duration);
+  return toastId;
 };
 
 export const toast = {

@@ -887,7 +887,16 @@ const Settings = () => {
                 {portalLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Opening...</> : <><ExternalLink className="h-4 w-4 mr-2" />Manage Subscription</>}
               </Button>
             )}
-            <Button variant="ghost" onClick={() => navigate('/pricing')} className="w-full text-muted-foreground">Compare All Plans</Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setActiveSection(null);
+                navigate('/pricing');
+              }}
+              className="w-full text-muted-foreground"
+            >
+              Compare All Plans
+            </Button>
             <Button variant="ghost" onClick={handleRestorePurchases} disabled={portalLoading} className="w-full">
               {portalLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Restoring...</> : 'Restore Purchases'}
             </Button>

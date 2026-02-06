@@ -30,13 +30,13 @@ serve(async (req) => {
     }, logger);
 
     if (!rateLimit.allowed) {
-      return rateLimitExceededResponse(rateLimit);
+      return rateLimitExceededResponse(rateLimit, req);
     }
 
     // Simple in memory cache to reduce external calls
     if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
       logger.debug("Returning cached radar frames");
-      return createSuccessResponse({ source: "cache", data: cached.data });
+      return createSuccessResponse({ source: "cache", data: cached.data }, 200, req);
     }
 
     logger.info("Fetching radar frames");
@@ -54,7 +54,7 @@ serve(async (req) => {
       return createErrorResponse(
         new Error("Failed to fetch radar data"),
         logger,
-        { status: 502 }
+        { status: 502, request: req }
       );
     }
 
@@ -62,8 +62,8 @@ serve(async (req) => {
     cached = { data, cachedAt: Date.now() };
 
     logger.info("Radar frames fetched");
-    return createSuccessResponse({ source: "live", data });
+    return createSuccessResponse({ source: "live", data }, 200, req);
   } catch (error) {
-    return createErrorResponse(error, logger, { status: 500 });
+    return createErrorResponse(error, logger, { status: 500, request: req });
   }
 });

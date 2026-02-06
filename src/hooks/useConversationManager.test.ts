@@ -309,10 +309,10 @@ describe('useConversationManager', () => {
   });
 
   describe('getSelectedAquariumName', () => {
-    it('should return "General Advice" for general selection', () => {
+    it('should return "Aquatics Advice" for general selection', () => {
       const { result } = renderHook(() => useConversationManager('user-123'));
       
-      expect(result.current.getSelectedAquariumName()).toBe('General Advice');
+      expect(result.current.getSelectedAquariumName()).toBe('Aquatics Advice');
     });
 
     it('should return aquarium name when selected', async () => {

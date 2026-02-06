@@ -50,8 +50,12 @@ export function PhotoUploadSection({
       </p>
 
       {!photoPreview ? (
-        <div className="flex gap-2" role="group" aria-labelledby="photo-analysis-heading">
-          <label className="flex-1">
+        <div
+          className="flex flex-col gap-2 min-[560px]:flex-row"
+          role="group"
+          aria-labelledby="photo-analysis-heading"
+        >
+          <label className="block w-full min-w-0 min-[560px]:flex-1">
             <input
               type="file"
               accept="image/*"
@@ -59,14 +63,19 @@ export function PhotoUploadSection({
               className="hidden"
               aria-label="Choose photo from device"
             />
-            <Button type="button" variant="outline" className="w-full" asChild>
-              <span>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-auto min-h-11 w-full min-w-0 justify-center whitespace-normal px-3 text-center"
+              asChild
+            >
+              <span className="inline-flex w-full min-w-0 items-center justify-center">
                 <Upload className="h-4 w-4 mr-2" aria-hidden="true" />
                 Choose Photo
               </span>
             </Button>
           </label>
-          <label className="flex-1">
+          <label className="block w-full min-w-0 min-[560px]:flex-1">
             <input
               type="file"
               accept="image/*"
@@ -75,8 +84,12 @@ export function PhotoUploadSection({
               className="hidden"
               aria-label="Take photo with camera"
             />
-            <Button type="button" className="w-full" asChild>
-              <span>
+            <Button
+              type="button"
+              className="h-auto min-h-11 w-full min-w-0 justify-center whitespace-normal px-3 text-center"
+              asChild
+            >
+              <span className="inline-flex w-full min-w-0 items-center justify-center">
                 <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
                 Take Photo
               </span>

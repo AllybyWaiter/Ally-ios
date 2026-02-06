@@ -1,24 +1,26 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger } from '../_shared/logger.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
   const logger = createLogger('validate-referral-code');
 
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
-    const { code, referee_email } = await req.json();
+    let body: { code?: string; referee_email?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return createErrorResponse('Invalid JSON body', logger, { status: 400, request: req });
+    }
+
+    const { code, referee_email } = body;
 
     if (!code) {
-      return createErrorResponse('Referral code is required', logger, { status: 400 });
+      return createErrorResponse('Referral code is required', logger, { status: 400, request: req });
     }
 
     const supabaseAdmin = createClient(
@@ -36,7 +38,7 @@ Deno.serve(async (req) => {
 
     if (codeError || !referralCode) {
       logger.warn('Invalid referral code', { code });
-      return createErrorResponse('Invalid or expired referral code', logger, { status: 404 });
+      return createErrorResponse('Invalid or expired referral code', logger, { status: 404, request: req });
     }
 
     // Get referrer's name for display
@@ -51,7 +53,7 @@ Deno.serve(async (req) => {
       const { data: referrerAuth } = await supabaseAdmin.auth.admin.getUserById(referralCode.user_id);
       if (referrerAuth?.user?.email?.toLowerCase() === referee_email.toLowerCase()) {
         logger.warn('Self-referral attempt blocked', { code, referee_email });
-        return createErrorResponse('You cannot use your own referral code', logger, { status: 400 });
+        return createErrorResponse('You cannot use your own referral code', logger, { status: 400, request: req });
       }
     }
 
@@ -62,9 +64,9 @@ Deno.serve(async (req) => {
       referral_code_id: referralCode.id,
       referrer_id: referralCode.user_id,
       referrer_name: referrerProfile?.name || 'A friend',
-    });
+    }, 200, req);
   } catch (error) {
     logger.error('Failed to validate referral code', error);
-    return createErrorResponse(error, logger, { status: 500 });
+    return createErrorResponse(error, logger, { status: 500, request: req });
   }
 });
