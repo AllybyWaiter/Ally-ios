@@ -54,9 +54,9 @@ export function useConversationManager(userId: string | null) {
     }
   }, [userId]);
 
-  const fetchConversations = useCallback(async () => {
-    if (!userId) return;
-    
+  const fetchConversations = useCallback(async (): Promise<Conversation[]> => {
+    if (!userId) return [];
+
     try {
       const { data, error } = await supabase
         .from('chat_conversations')
@@ -72,14 +72,18 @@ export function useConversationManager(userId: string | null) {
           description: 'Failed to load chat history',
           variant: 'destructive',
         });
-        return;
+        return [];
       }
 
       if (data) {
-        setConversations(data as Conversation[]);
+        const typed = data as Conversation[];
+        setConversations(typed);
+        return typed;
       }
+      return [];
     } catch (error) {
       logger.error('Failed to fetch conversations:', error);
+      return [];
     }
   }, [userId, toast]);
 
@@ -94,40 +98,58 @@ export function useConversationManager(userId: string | null) {
 
   const pinConversation = useCallback(async (conversationId: string) => {
     if (!userId) return;
-    
-    const conversation = conversations.find(c => c.id === conversationId);
-    if (!conversation) return;
-    
-    const newPinnedState = !conversation.is_pinned;
-    
+
     try {
+      // Fetch fresh conversation state from DB to avoid stale closure issues
+      const { data: currentConv, error: fetchError } = await supabase
+        .from('chat_conversations')
+        .select('is_pinned')
+        .eq('id', conversationId)
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !currentConv) {
+        logger.error('Failed to fetch conversation:', fetchError);
+        toast({ title: 'Error', description: 'Conversation not found', variant: 'destructive' });
+        return;
+      }
+
+      const newPinnedState = !currentConv.is_pinned;
+
       const { error } = await supabase
         .from('chat_conversations')
         .update({ is_pinned: newPinnedState })
         .eq('id', conversationId)
         .eq('user_id', userId);
 
-      if (!error) {
-        await fetchConversations();
+      if (error) {
+        logger.error('Failed to pin conversation:', error);
+        toast({ title: 'Error', description: 'Failed to update conversation', variant: 'destructive' });
+        return;
       }
+      await fetchConversations();
     } catch (error) {
       logger.error('Failed to pin conversation:', error);
+      toast({ title: 'Error', description: 'Failed to update conversation', variant: 'destructive' });
     }
-  }, [userId, conversations, fetchConversations]);
+  }, [userId, fetchConversations, toast]);
 
   const renameConversation = useCallback(async (conversationId: string, newTitle: string) => {
     if (!userId || !newTitle.trim()) return;
-    
+
     const { error } = await supabase
       .from('chat_conversations')
       .update({ title: newTitle.trim() })
       .eq('id', conversationId)
       .eq('user_id', userId);
 
-    if (!error) {
-      await fetchConversations();
+    if (error) {
+      logger.error('Failed to rename conversation:', error);
+      toast({ title: 'Error', description: 'Failed to rename conversation', variant: 'destructive' });
+      return;
     }
-  }, [userId, fetchConversations]);
+    await fetchConversations();
+  }, [userId, fetchConversations, toast]);
 
   const bulkDeleteConversations = useCallback(async (conversationIds: string[]) => {
     if (!userId || conversationIds.length === 0) return;
@@ -339,7 +361,7 @@ export function useConversationManager(userId: string | null) {
     }
 
     return conversationId;
-  }, [userId, currentConversationId, selectedAquarium, fetchConversations]);
+  }, [userId, currentConversationId, selectedAquarium, fetchConversations, toast]);
 
   const saveAssistantMessage = useCallback(async (content: string) => {
     if (!currentConversationId) return;
@@ -391,18 +413,27 @@ export function useConversationManager(userId: string | null) {
       }
 
       // Update the edited message
-      await supabase
+      const { error: updateError } = await supabase
         .from('chat_messages')
         .update({ content: newContent })
         .eq('id', messageToUpdate.id);
 
+      if (updateError) {
+        logger.error('Failed to update message:', updateError);
+        return;
+      }
+
       // Delete subsequent messages
       const messagesToDelete = existingMessages.slice(messageIndex + 1);
       if (messagesToDelete.length > 0) {
-        await supabase
+        const { error: deleteError } = await supabase
           .from('chat_messages')
           .delete()
           .in('id', messagesToDelete.map(m => m.id));
+
+        if (deleteError) {
+          logger.error('Failed to delete subsequent messages:', deleteError);
+        }
       }
     }
   }, [currentConversationId]);

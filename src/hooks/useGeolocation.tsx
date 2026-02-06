@@ -165,14 +165,22 @@ export function useGeolocation() {
     });
 
     if (user?.id) {
-      await supabase
-        .from('profiles')
-        .update({
-          latitude: null,
-          longitude: null,
-          weather_enabled: false,
-        })
-        .eq('user_id', user.id);
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            latitude: null,
+            longitude: null,
+            weather_enabled: false,
+          })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Failed to clear location in profile:', error);
+        }
+      } catch (err) {
+        console.error('Error clearing location:', err);
+      }
     }
   }, [user?.id]);
 

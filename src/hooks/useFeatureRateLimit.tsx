@@ -272,9 +272,12 @@ export const useFeatureRateLimit = (endpoint: string) => {
   };
 
   const trackUsage = async (feature: string, subscriptionTier: string) => {
+    // Guard against null user (shouldn't happen but defensive coding)
+    if (!user?.id) return;
+
     try {
       await supabase.from('activity_logs').insert({
-        user_id: user!.id,
+        user_id: user.id,
         action_type: 'feature_usage',
         action_details: {
           feature,

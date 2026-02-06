@@ -95,10 +95,27 @@ export const useVoiceRecording = () => {
         try {
           const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
-          // Convert blob to base64
+          // Convert blob to base64 with timeout safeguard
           const reader = new FileReader();
+          let readerSettled = false;
+
+          // Timeout safeguard - ensure promise settles even if FileReader hangs
+          const readerTimeout = setTimeout(() => {
+            if (!readerSettled) {
+              readerSettled = true;
+              console.error('FileReader timeout');
+              if (!isAbortedRef.current) {
+                setIsProcessing(false);
+                toast.error('Audio processing timed out');
+              }
+              resolve(null);
+            }
+          }, 30000); // 30 second timeout
 
           reader.onerror = () => {
+            if (readerSettled) return;
+            readerSettled = true;
+            clearTimeout(readerTimeout);
             console.error('FileReader error:', reader.error);
             if (!isAbortedRef.current) {
               setIsProcessing(false);
@@ -107,6 +124,9 @@ export const useVoiceRecording = () => {
           };
 
           reader.onabort = () => {
+            if (readerSettled) return;
+            readerSettled = true;
+            clearTimeout(readerTimeout);
             if (!isAbortedRef.current) {
               setIsProcessing(false);
               resolve(null);
@@ -114,6 +134,10 @@ export const useVoiceRecording = () => {
           };
 
           reader.onloadend = async () => {
+            if (readerSettled) return;
+            readerSettled = true;
+            clearTimeout(readerTimeout);
+
             if (isAbortedRef.current) return;
 
             const resultString = reader.result as string;

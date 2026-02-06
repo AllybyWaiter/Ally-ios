@@ -110,10 +110,16 @@ function getImagePaths(slot: TimeSlot, weather: WeatherCondition | null, weather
 }
 
 function getGreeting(slot: TimeSlot, weather: WeatherCondition | null, weatherEnabled: boolean): string {
-  if (weatherEnabled && weather) {
-    return WEATHER_GREETINGS[weather]?.[slot] || TIME_SLOTS[slot].greeting;
+  // Validate slot exists in TIME_SLOTS
+  const defaultGreeting = TIME_SLOTS[slot]?.greeting || 'Hello';
+
+  if (weatherEnabled && weather && isValidWeatherCondition(weather)) {
+    const weatherGreetings = WEATHER_GREETINGS[weather];
+    if (weatherGreetings && slot in weatherGreetings) {
+      return weatherGreetings[slot] || defaultGreeting;
+    }
   }
-  return TIME_SLOTS[slot].greeting;
+  return defaultGreeting;
 }
 
 export function useTimeOfDay(): TimeOfDayInfo {
