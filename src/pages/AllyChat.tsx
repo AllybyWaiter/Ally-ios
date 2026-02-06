@@ -199,11 +199,16 @@ const AllyChat = () => {
 
   const handleMicClick = async () => {
     if (isRecording) {
-      const text = await stopRecording();
-      if (text) {
-        setInput(prev => prev ? `${prev} ${text}` : text);
-        setWasVoiceInput(true);
-        setAutoSendPending(true);
+      try {
+        const text = await stopRecording();
+        if (text) {
+          setInput(prev => prev ? `${prev} ${text}` : text);
+          setWasVoiceInput(true);
+          setAutoSendPending(true);
+        }
+      } catch (error) {
+        logger.error('Voice recording failed:', error);
+        toast({ title: "Recording error", description: "Failed to process voice recording.", variant: "destructive" });
       }
     } else {
       await startRecording();
@@ -1113,7 +1118,7 @@ const AllyChat = () => {
                           if (conversationMode) {
                             setConversationMode(false);
                             stopSpeaking();
-                            if (isRecording) stopRecording();
+                            if (isRecording) stopRecording().catch(() => {});
                           } else {
                             setConversationMode(true);
                             setWasVoiceInput(true);

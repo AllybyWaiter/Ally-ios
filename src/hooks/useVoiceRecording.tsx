@@ -138,7 +138,10 @@ export const useVoiceRecording = () => {
             readerSettled = true;
             clearTimeout(readerTimeout);
 
-            if (isAbortedRef.current) return;
+            if (isAbortedRef.current) {
+              resolve(null);
+              return;
+            }
 
             const resultString = reader.result as string;
             const splitResult = resultString.split(',');
@@ -157,14 +160,20 @@ export const useVoiceRecording = () => {
                 body: { audio: base64Audio }
               });
 
-              if (isAbortedRef.current) return;
+              if (isAbortedRef.current) {
+                resolve(null);
+                return;
+              }
               if (error) throw error;
 
               setIsProcessing(false);
               toast.success('Transcription complete');
               resolve(data.text);
             } catch (error) {
-              if (isAbortedRef.current) return;
+              if (isAbortedRef.current) {
+                resolve(null);
+                return;
+              }
               console.error('Transcription error:', error);
               toast.error('Failed to transcribe audio');
               setIsProcessing(false);
@@ -174,7 +183,10 @@ export const useVoiceRecording = () => {
 
           reader.readAsDataURL(audioBlob);
         } catch (error) {
-          if (isAbortedRef.current) return;
+          if (isAbortedRef.current) {
+            resolve(null);
+            return;
+          }
           console.error('Error processing audio:', error);
           toast.error('Failed to process audio');
           setIsProcessing(false);
