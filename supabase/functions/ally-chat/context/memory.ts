@@ -122,12 +122,29 @@ export async function buildMemoryContext(
     };
   }
 
+  // Resolve aquarium names for tank-specific memories
+  const aquariumIds = [...new Set(memoryData.filter((m) => m.aquarium_id).map((m) => m.aquarium_id))];
+  const aquariumNames: Record<string, string> = {};
+  if (aquariumIds.length > 0) {
+    const { data: aquariums } = await supabase
+      .from('aquariums')
+      .select('id, name')
+      .in('id', aquariumIds);
+    if (aquariums) {
+      aquariums.forEach((a: { id: string; name: string }) => {
+        aquariumNames[a.id] = a.name;
+      });
+    }
+  }
+
   // Group by category (falling back to memory_key for old data)
   const groupedMemories: Record<string, string[]> = {};
   memoryData.forEach((m) => {
     const key = m.category || m.memory_key || 'other';
     if (!groupedMemories[key]) groupedMemories[key] = [];
-    const scope = m.aquarium_id ? ' [tank-specific]' : '';
+    const scope = m.aquarium_id
+      ? ` [${aquariumNames[m.aquarium_id] || 'tank-specific'}]`
+      : '';
     const relevance = m.similarity ? ` (${Math.round(m.similarity * 100)}% relevant)` : '';
     groupedMemories[key].push(
       `${m.memory_value}${m.water_type && m.water_type !== 'universal' ? ` (${m.water_type} only)` : ''}${scope}${relevance}`

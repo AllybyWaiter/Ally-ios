@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2 } from "lucide-react";
+import { Brain, Plus, Pencil, Trash2, Droplets, Fish, Waves, Globe, Loader2, Container } from "lucide-react";
 
 interface Memory {
   id: string;
@@ -25,6 +25,12 @@ interface Memory {
   created_at: string;
   updated_at: string;
   aquarium_id: string | null;
+}
+
+interface Aquarium {
+  id: string;
+  name: string;
+  type: string;
 }
 
 const MEMORY_CATEGORIES = [
@@ -56,9 +62,11 @@ export default function MemoryManager() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterWaterType, setFilterWaterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [filterAquarium, setFilterAquarium] = useState("all");
 
   // Add/Edit dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -67,12 +75,14 @@ export default function MemoryManager() {
     memory_key: "other",
     memory_value: "",
     water_type: "universal",
+    aquarium_id: "" as string,
   });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchMemories();
+      fetchAquariums();
     }
   }, [user]);
 
@@ -101,6 +111,25 @@ export default function MemoryManager() {
     }
   };
 
+  const fetchAquariums = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('aquariums')
+        .select('id, name, type')
+        .eq('user_id', user.id)
+        .order('name');
+      setAquariums(data || []);
+    } catch {
+      // Non-critical — memories still work without aquarium names
+    }
+  };
+
+  const getAquariumName = (aquariumId: string | null): string | null => {
+    if (!aquariumId) return null;
+    return aquariums.find(a => a.id === aquariumId)?.name || null;
+  };
+
   const handleOpenDialog = (memory?: Memory) => {
     if (memory) {
       setEditingMemory(memory);
@@ -108,6 +137,7 @@ export default function MemoryManager() {
         memory_key: memory.memory_key,
         memory_value: memory.memory_value,
         water_type: memory.water_type || "universal",
+        aquarium_id: memory.aquarium_id || "",
       });
     } else {
       setEditingMemory(null);
@@ -115,6 +145,7 @@ export default function MemoryManager() {
         memory_key: "other",
         memory_value: "",
         water_type: "universal",
+        aquarium_id: "",
       });
     }
     setDialogOpen(true);
@@ -133,6 +164,7 @@ export default function MemoryManager() {
             memory_key: formData.memory_key,
             memory_value: formData.memory_value.trim(),
             water_type: formData.water_type === "universal" ? null : formData.water_type,
+            aquarium_id: formData.aquarium_id || null,
           })
           .eq('id', editingMemory.id);
 
@@ -147,6 +179,7 @@ export default function MemoryManager() {
             memory_key: formData.memory_key,
             memory_value: formData.memory_value.trim(),
             water_type: formData.water_type === "universal" ? null : formData.water_type,
+            aquarium_id: formData.aquarium_id || null,
             source: "manual",
             confidence: "confirmed",
           });
@@ -200,7 +233,10 @@ export default function MemoryManager() {
       m.water_type === filterWaterType;
     const memoryCategory = m.category || m.memory_key;
     const categoryMatch = filterCategory === "all" || memoryCategory === filterCategory;
-    return waterTypeMatch && categoryMatch;
+    const aquariumMatch = filterAquarium === "all" ||
+      (filterAquarium === "global" && m.aquarium_id === null) ||
+      m.aquarium_id === filterAquarium;
+    return waterTypeMatch && categoryMatch && aquariumMatch;
   });
 
   const groupedMemories = filteredMemories.reduce((acc, memory) => {
@@ -293,6 +329,27 @@ export default function MemoryManager() {
                     </SelectContent>
                   </Select>
                 </div>
+                {aquariums.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Applies to</Label>
+                    <Select
+                      value={formData.aquarium_id || "global"}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, aquarium_id: value === "global" ? "" : value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="global">🌐 All tanks (global)</SelectItem>
+                        {aquariums.map(aq => (
+                          <SelectItem key={aq.id} value={aq.id}>
+                            🐠 {aq.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>What should Ally remember?</Label>
                   <Input
@@ -341,6 +398,22 @@ export default function MemoryManager() {
               ))}
             </SelectContent>
           </Select>
+          {aquariums.length > 0 && (
+            <Select value={filterAquarium} onValueChange={setFilterAquarium}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tank" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tanks</SelectItem>
+                <SelectItem value="global">Global (all tanks)</SelectItem>
+                {aquariums.map(aq => (
+                  <SelectItem key={aq.id} value={aq.id}>
+                    {aq.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Memory List */}
@@ -373,8 +446,16 @@ export default function MemoryManager() {
                         >
                           <div className="flex-1 min-w-0">
                             <p className="text-sm">{memory.memory_value}</p>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                               {getWaterTypeBadge(memory.water_type)}
+                              {memory.aquarium_id ? (
+                                <Badge variant="outline" className="text-xs gap-1">
+                                  <Container className="h-3 w-3" />
+                                  {getAquariumName(memory.aquarium_id) || "Linked tank"}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">All tanks</Badge>
+                              )}
                               {memory.source === "conversation" && (
                                 <Badge variant="outline" className="text-xs">From chat</Badge>
                               )}
