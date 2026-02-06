@@ -12,27 +12,39 @@ export const useSessionMonitor = () => {
   const { toast } = useToast();
   const lastVisibilityCheck = useRef<number>(0);
   const isCheckingRef = useRef<boolean>(false);
+  // Queue a pending check if one is requested during an ongoing check
+  const pendingCheckRef = useRef<boolean>(false);
 
   const checkAndRefreshSession = useCallback(async (isVisibilityChange = false) => {
-    // Prevent concurrent checks
-    if (isCheckingRef.current) return;
+    // If already checking, queue a pending check instead of dropping
+    if (isCheckingRef.current) {
+      pendingCheckRef.current = true;
+      return;
+    }
     isCheckingRef.current = true;
     
     try {
-      // Create a timeout promise for quick response
-      const timeoutPromise = new Promise<Awaited<ReturnType<typeof supabase.auth.getSession>>>((resolve) => {
-        setTimeout(() => resolve({ data: { session: null }, error: null }),
-          isVisibilityChange ? VISIBILITY_REFRESH_TIMEOUT : 5000
-        );
+      // Create a timeout promise that rejects so we can distinguish it from a real null session
+      const timeoutMs = isVisibilityChange ? VISIBILITY_REFRESH_TIMEOUT : 5000;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Session check timed out')), timeoutMs);
       });
 
       const sessionPromise = supabase.auth.getSession();
 
-      const { data: { session }, error } = await Promise.race([
-        sessionPromise,
-        timeoutPromise
-      ]);
-      
+      let session;
+      let error;
+      try {
+        ({ data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]));
+      } catch (raceError) {
+        // Timeout fired before getSession resolved — skip logout logic
+        addBreadcrumb('Session check timed out', 'auth', { timeoutMs }, FeatureArea.AUTH);
+        return;
+      }
+
       if (error) {
         console.error('Session check error:', error);
         addBreadcrumb('Session check failed', 'auth', { error: error.message }, FeatureArea.AUTH);
@@ -101,6 +113,13 @@ export const useSessionMonitor = () => {
       console.error('Session monitor error:', error);
     } finally {
       isCheckingRef.current = false;
+
+      // Process any pending check that was queued during this check
+      if (pendingCheckRef.current) {
+        pendingCheckRef.current = false;
+        // Use setTimeout to avoid synchronous recursion
+        setTimeout(() => checkAndRefreshSession(false), 100);
+      }
     }
   }, [toast]);
 

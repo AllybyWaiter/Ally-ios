@@ -59,7 +59,9 @@ export default function Auth() {
     setView(newView);
   };
   const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
-  
+  const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const validationRequestIdRef = useRef<number>(0);
+
   const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -80,31 +82,46 @@ export default function Auth() {
     }
   }, [searchParams]);
 
-  const validateReferralCode = async (code: string) => {
-    if (!code || code.length < 10) return;
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('validate-referral-code', {
-        body: { code },
-      });
+  const validateReferralCode = (code: string) => {
+    // Clear previous timeout to debounce rapid typing
+    if (validationTimeoutRef.current) {
+      clearTimeout(validationTimeoutRef.current);
+    }
 
-      if (error || !data?.valid) {
+    if (!code || code.length < 10) return;
+
+    // Debounce validation by 500ms
+    validationTimeoutRef.current = setTimeout(async () => {
+      const requestId = ++validationRequestIdRef.current;
+
+      try {
+        const { data, error } = await supabase.functions.invoke('validate-referral-code', {
+          body: { code },
+        });
+
+        // Ignore stale responses from previous requests
+        if (requestId !== validationRequestIdRef.current) return;
+
+        if (error || !data?.valid) {
+          setReferrerName('');
+          setReferralData(null);
+          setErrors(prev => ({ ...prev, referralCode: 'Invalid referral code' }));
+          return;
+        }
+
+        setReferrerName(data.referrer_name || 'a friend');
+        setReferralData({
+          referralCodeId: data.referral_code_id,
+          referrerId: data.referrer_id,
+        });
+        setErrors(prev => ({ ...prev, referralCode: '' }));
+      } catch {
+        // Ignore stale responses
+        if (requestId !== validationRequestIdRef.current) return;
         setReferrerName('');
         setReferralData(null);
-        setErrors(prev => ({ ...prev, referralCode: 'Invalid referral code' }));
-        return;
       }
-
-      setReferrerName(data.referrer_name || 'a friend');
-      setReferralData({
-        referralCodeId: data.referral_code_id,
-        referrerId: data.referrer_id,
-      });
-      setErrors(prev => ({ ...prev, referralCode: '' }));
-    } catch {
-      setReferrerName('');
-      setReferralData(null);
-    }
+    }, 500);
   };
 
   const { isRateLimited, checkRateLimit, resetRateLimit } = useRateLimit({
@@ -276,11 +293,20 @@ export default function Auth() {
             if (event === 'SIGNED_IN' && session?.user) {
               createReferral(session.user.id);
               subscription.unsubscribe();
+              subscriptionRef.current = null;
             }
           });
-          
-          // Store subscription cleanup for unmount (moved to useEffect cleanup)
+
+          // Store subscription cleanup for unmount
           subscriptionRef.current = subscription;
+
+          // Auto-cleanup subscription after 10 seconds to prevent memory leak
+          setTimeout(() => {
+            if (subscriptionRef.current === subscription) {
+              subscription.unsubscribe();
+              subscriptionRef.current = null;
+            }
+          }, 10000);
         }
 
         toast({

@@ -185,7 +185,7 @@ export default function AquariumDetail() {
               <span>{formatVolume(aquarium.volume_gallons, units)}</span>
             )}
             {aquarium.setup_date && (
-              <span>Setup: {safeFormatDate(aquarium.setup_date, "PPP")}</span>
+              <span>Setup: {safeFormatDate(aquarium.setup_date, "PPP") || 'Unknown'}</span>
             )}
             {!aquarium.location_name && (
               <button
