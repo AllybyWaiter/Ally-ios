@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 
 // Map Open-Meteo weather codes to simplified conditions
 function mapWeatherCode(code: number): string {
@@ -76,9 +72,8 @@ function getPressureTrend(hourlyPressure: number[]): 'rising' | 'falling' | 'ste
 
 serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     const { latitude, longitude } = await req.json();
@@ -88,7 +83,7 @@ serve(async (req) => {
         latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       return new Response(
         JSON.stringify({ error: 'Valid latitude (-90 to 90) and longitude (-180 to 180) are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -253,13 +248,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(weatherData),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error fetching weather:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to fetch weather data' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

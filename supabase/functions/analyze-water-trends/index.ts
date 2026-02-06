@@ -274,13 +274,37 @@ serve(async (req) => {
   const logger = createLogger('analyze-water-trends');
 
   try {
+    // ========== AUTHENTICATION FIRST ==========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      logger.warn('Missing authorization header');
+      return createErrorResponse('Authentication required', logger, { status: 401 });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Create user-scoped client to verify auth
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      logger.warn('Authentication failed', { error: authError?.message });
+      return createErrorResponse('Authentication failed', logger, { status: 401 });
+    }
+
+    // Use authenticated user's ID, not from request body
+    const userId = user.id;
+    logger.info('User authenticated', { userId });
+
     const body = await req.json();
-    const { aquariumId, userId } = body;
+    const { aquariumId } = body;
 
     // Input validation
     const errors = collectErrors(
-      validateUuid(aquariumId, 'aquariumId'),
-      validateUuid(userId, 'userId')
+      validateUuid(aquariumId, 'aquariumId')
     );
 
     if (errors.length > 0) {
@@ -288,8 +312,21 @@ serve(async (req) => {
       return validationErrorResponse(errors);
     }
 
+    // ========== VERIFY USER OWNS THIS AQUARIUM ==========
+    const { data: aquariumCheck, error: ownerError } = await supabaseAuth
+      .from('aquariums')
+      .select('id, user_id')
+      .eq('id', aquariumId)
+      .eq('user_id', userId)
+      .single();
+
+    if (ownerError || !aquariumCheck) {
+      logger.warn('Aquarium access denied', { aquariumId, userId });
+      return createErrorResponse('Aquarium not found or access denied', logger, { status: 404 });
+    }
+
     // Rate limiting (10 requests per minute)
-    const identifier = extractIdentifier(req);
+    const identifier = extractIdentifier(req, userId);
     const rateLimitResult = checkRateLimit({
       maxRequests: 10,
       windowMs: 60 * 1000,
@@ -300,11 +337,11 @@ serve(async (req) => {
       return rateLimitExceededResponse(rateLimitResult);
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // ========== NOW USE SERVICE ROLE FOR DATA ACCESS ==========
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    logger.info('Fetching water test data for trend analysis', { aquariumId });
+    logger.info('Fetching water test data for trend analysis', { aquariumId, userId });
 
     // Fetch aquarium to get type
     const { data: aquarium } = await supabase

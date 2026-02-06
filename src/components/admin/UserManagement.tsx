@@ -59,47 +59,9 @@ export default function UserManagement() {
   const [suspensionReason, setSuspensionReason] = useState('');
   const [suspensionDuration, setSuspensionDuration] = useState<string>('7');
 
-  useEffect(() => {
-    fetchUsers();
-    
-    // Set up realtime subscription for new users
-    const channel = supabase
-      .channel('profiles-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles'
-        },
-        () => {
-          // Refresh the user list when any profile changes
-          fetchUsers();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  // Filter users based on debounced search
-  const filteredUsers = useMemo(() => {
-    if (!debouncedSearch) {
-      return users;
-    }
-    const searchLower = debouncedSearch.toLowerCase();
-    return users.filter(user =>
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.name?.toLowerCase().includes(searchLower) ||
-      user.subscription_tier?.toLowerCase().includes(searchLower)
-    );
-  }, [debouncedSearch, users]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
-    
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -115,7 +77,50 @@ export default function UserManagement() {
       setUsers(data || []);
     }
     setIsLoading(false);
-  };
+  }, [toast]);
+
+  const fetchUsersRef = useRef(fetchUsers);
+  useEffect(() => {
+    fetchUsersRef.current = fetchUsers;
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    fetchUsers();
+
+    // Set up realtime subscription for new users
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          // Refresh the user list when any profile changes
+          fetchUsersRef.current();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchUsers]);
+
+  // Filter users based on debounced search
+  const filteredUsers = useMemo(() => {
+    if (!debouncedSearch) {
+      return users;
+    }
+    const searchLower = debouncedSearch.toLowerCase();
+    return users.filter(user =>
+      user.email?.toLowerCase().includes(searchLower) ||
+      user.name?.toLowerCase().includes(searchLower) ||
+      user.subscription_tier?.toLowerCase().includes(searchLower)
+    );
+  }, [debouncedSearch, users]);
 
   const handleEditUser = useCallback((user: UserProfile) => {
     setEditingUser({ ...user });

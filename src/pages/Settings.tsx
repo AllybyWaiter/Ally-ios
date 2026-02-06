@@ -408,7 +408,18 @@ const Settings = () => {
       });
       if (error) throw new Error(error.message);
       if (data?.url) {
-        window.location.href = data.url;
+        try {
+          const redirectUrl = new URL(data.url);
+          if (!redirectUrl.hostname.endsWith('stripe.com')) {
+            toast({ title: "Invalid Redirect", description: "Unexpected redirect URL. Please try again.", variant: "destructive" });
+            setPortalLoading(false);
+            return;
+          }
+          window.location.href = data.url;
+        } catch {
+          toast({ title: "Invalid URL", description: "Received an invalid URL. Please try again.", variant: "destructive" });
+          setPortalLoading(false);
+        }
         return;
       }
       if (data?.error === 'no_subscription') {

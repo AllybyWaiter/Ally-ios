@@ -567,7 +567,7 @@ const AllyChat = () => {
   // Keep sendMessage ref up to date to avoid stale closures in auto-send
   useEffect(() => {
     sendMessageRef.current = sendMessage;
-  });
+  }, [sendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

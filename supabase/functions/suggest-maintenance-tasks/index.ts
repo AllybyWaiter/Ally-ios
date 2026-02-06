@@ -155,6 +155,29 @@ serve(async (req) => {
   const logger = createLogger('suggest-maintenance-tasks');
 
   try {
+    // ========== AUTHENTICATION FIRST ==========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      logger.warn('Missing authorization header');
+      return createErrorResponse('Authentication required', logger, { status: 401 });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+    // Create user-scoped client to verify auth
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      logger.warn('Authentication failed', { error: authError?.message });
+      return createErrorResponse('Authentication failed', logger, { status: 401 });
+    }
+
+    logger.info('User authenticated', { userId: user.id });
+
     const body = await req.json();
     const { aquariumId } = body;
 
@@ -168,8 +191,21 @@ serve(async (req) => {
       return validationErrorResponse(errors);
     }
 
+    // ========== VERIFY USER OWNS THIS AQUARIUM ==========
+    const { data: aquariumCheck, error: ownerError } = await supabaseAuth
+      .from('aquariums')
+      .select('id, user_id')
+      .eq('id', aquariumId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (ownerError || !aquariumCheck) {
+      logger.warn('Aquarium access denied', { aquariumId, userId: user.id });
+      return createErrorResponse('Aquarium not found or access denied', logger, { status: 404 });
+    }
+
     // Rate limiting (5 requests per minute - AI intensive)
-    const identifier = extractIdentifier(req);
+    const identifier = extractIdentifier(req, user.id);
     const rateLimitResult = checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 1000,
@@ -180,13 +216,13 @@ serve(async (req) => {
       return rateLimitExceededResponse(rateLimitResult);
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // ========== NOW USE SERVICE ROLE FOR DATA FETCH ==========
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    logger.info('Fetching aquarium data', { aquariumId });
+    logger.info('Fetching aquarium data', { aquariumId, userId: user.id });
 
     // Fetch aquarium details
     const { data: aquarium } = await supabase

@@ -13,6 +13,7 @@ import {
   extractIdentifier,
   createErrorResponse,
   createSuccessResponse,
+  escapeHtml,
 } from "../_shared/mod.ts";
 
 const handler = async (req: Request): Promise<Response> => {
@@ -22,6 +23,41 @@ const handler = async (req: Request): Promise<Response> => {
   const logger = createLogger('send-announcement');
 
   try {
+    // ========== AUTHENTICATION FIRST ==========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      logger.warn('Missing authorization header');
+      return createErrorResponse('Authentication required', logger, { status: 401 });
+    }
+
+    // Create user-scoped client to verify auth
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      logger.warn('Authentication failed', { error: authError?.message });
+      return createErrorResponse('Authentication failed', logger, { status: 401 });
+    }
+
+    // ========== ADMIN CHECK IMMEDIATELY ==========
+    const { data: roles } = await supabaseAuth
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+
+    const isAdmin = roles?.some(r => r.role === "admin" || r.role === "super_admin");
+    if (!isAdmin) {
+      logger.warn('Non-admin attempted to send announcement', { userId: user.id });
+      return createErrorResponse('Admin access required', logger, { status: 403 });
+    }
+
+    logger.info('Admin authenticated', { userId: user.id });
+
+    // ========== NOW PROCEED WITH SERVICE ROLE FOR OPERATIONS ==========
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
     const supabaseClient = createClient(
@@ -48,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Rate limiting (5 announcements per minute - prevent spam)
-    const identifier = extractIdentifier(req);
+    const identifier = extractIdentifier(req, user.id);
     const rateLimitResult = checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 1000,
@@ -59,7 +95,7 @@ const handler = async (req: Request): Promise<Response> => {
       return rateLimitExceededResponse(rateLimitResult);
     }
 
-    logger.info('Processing announcement', { announcementId });
+    logger.info('Processing announcement', { announcementId, adminId: user.id });
 
     // Fetch announcement details
     const { data: announcement, error: announcementError } = await supabaseClient

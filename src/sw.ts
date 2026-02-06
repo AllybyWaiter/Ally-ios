@@ -12,10 +12,10 @@ declare let self: ServiceWorkerGlobalScope;
 // Service workers can't import from app modules, so we use a simple inline check
 const isDev = self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1';
 const swLog = {
-  log: (...args: unknown[]) => { if (isDev) swLog.log(...args); },
+  log: (...args: unknown[]) => { if (isDev) console.log(...args); },
   debug: (...args: unknown[]) => { if (isDev) console.debug(...args); },
   warn: (...args: unknown[]) => { if (isDev) console.warn(...args); },
-  error: (...args: unknown[]) => swLog.error(...args), // Always log errors
+  error: (...args: unknown[]) => console.error(...args), // Always log errors
 };
 
 // Cache version - increment to force cache invalidation on iOS PWA

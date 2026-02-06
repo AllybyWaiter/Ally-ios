@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 
 // Helper to mask IP addresses for privacy (show only first two octets)
 const maskIpAddress = (ip: string | null): string | null => {
@@ -17,16 +13,15 @@ const maskIpAddress = (ip: string | null): string | null => {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -40,7 +35,7 @@ Deno.serve(async (req) => {
     if (authError || !user) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -117,8 +112,8 @@ Deno.serve(async (req) => {
       JSON.stringify(exportData, null, 2),
       { 
         status: 200, 
-        headers: { 
-          ...corsHeaders, 
+        headers: {
+          ...getCorsHeaders(req),
           'Content-Type': 'application/json',
           'Content-Disposition': `attachment; filename="ally-data-export-${new Date().toISOString().split('T')[0]}.json"`
         } 
@@ -128,7 +123,7 @@ Deno.serve(async (req) => {
     console.error('Export error:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to export data' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

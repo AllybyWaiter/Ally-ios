@@ -1,18 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 
 // GDPR-compliant IP address retention period (90 days)
 const RETENTION_DAYS = 90;
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   const requestId = crypto.randomUUID().slice(0, 8);
   console.log(JSON.stringify({
@@ -23,8 +18,28 @@ Deno.serve(async (req) => {
   }));
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // ========== SERVICE-ROLE AUTH ==========
+    // This is a scheduled GDPR function — only callable by cron/admin
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error(JSON.stringify({ requestId, error: 'Missing authorization header' }));
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    if (!supabaseServiceKey || token !== supabaseServiceKey) {
+      console.error(JSON.stringify({ requestId, error: 'Invalid service role key' }));
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
@@ -117,7 +132,7 @@ Deno.serve(async (req) => {
     console.log(JSON.stringify(summary));
 
     return new Response(JSON.stringify(summary), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -129,7 +144,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
     });
   }
 });

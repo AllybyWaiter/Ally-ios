@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { logger } from "@/lib/logger";
+import { sanitizeInput } from "@/lib/utils";
 
 interface Message {
   role: "user" | "assistant";
@@ -295,11 +296,8 @@ export function useConversationManager(userId: string | null) {
     // Create new conversation if needed
     if (!conversationId) {
       // Smart title generation: use first sentence or truncate at word boundary
-      // Sanitize to prevent XSS - strip HTML tags and special chars
-      const sanitizedContent = userMessage.content
-        .replace(/<[^>]*>/g, '') // Strip HTML tags
-        .replace(/[<>"'&]/g, '') // Remove special chars that could be XSS vectors
-        .trim();
+      // Sanitize to prevent XSS using shared DOMPurify-backed utility
+      const sanitizedContent = sanitizeInput(userMessage.content);
       const firstSentence = sanitizedContent.split(/[.!?]/)[0]?.trim() || sanitizedContent;
       const title = firstSentence.length > 50
         ? firstSentence.slice(0, 47).replace(/\s+\S*$/, '') + "..."

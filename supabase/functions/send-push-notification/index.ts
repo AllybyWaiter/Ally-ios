@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 
 interface PushPayload {
   userId: string;
@@ -453,21 +449,41 @@ async function sendWebPush(
 // ============= Main Handler =============
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   const requestId = crypto.randomUUID().slice(0, 8);
   console.log(JSON.stringify({ requestId, message: 'send-push-notification started' }));
 
   try {
+    // ========== SERVICE-ROLE AUTH ==========
+    // This function is internal-only (called by scheduled-notifications and send-announcement)
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error(JSON.stringify({ requestId, error: 'Missing authorization header' }));
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!serviceRoleKey || token !== serviceRoleKey) {
+      console.error(JSON.stringify({ requestId, error: 'Invalid service role key' }));
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
     const payload: PushPayload = await req.json();
     const { userId, title, body, tag, url, notificationType, referenceId, actions, requireInteraction } = payload;
 
     if (!userId || !title || !body) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: userId, title, body' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -479,7 +495,7 @@ serve(async (req) => {
       console.error(JSON.stringify({ requestId, error: 'VAPID keys not configured' }));
       return new Response(
         JSON.stringify({ error: 'Push notifications not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -511,26 +527,26 @@ serve(async (req) => {
         console.log(JSON.stringify({ requestId, message: 'Push disabled for user', userId }));
         return new Response(
           JSON.stringify({ sent: false, reason: 'push_disabled' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
       if (notificationType === 'task_reminder' && !prefs.task_reminders_enabled) {
         return new Response(
           JSON.stringify({ sent: false, reason: 'category_disabled' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
       if (notificationType === 'water_alert' && !prefs.water_alerts_enabled) {
         return new Response(
           JSON.stringify({ sent: false, reason: 'category_disabled' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
       if (notificationType === 'announcement' && !prefs.announcements_enabled) {
         return new Response(
           JSON.stringify({ sent: false, reason: 'category_disabled' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
 
@@ -550,7 +566,7 @@ serve(async (req) => {
           console.log(JSON.stringify({ requestId, message: 'Quiet hours active (UTC)', userId, currentTime, start, end }));
           return new Response(
             JSON.stringify({ sent: false, reason: 'quiet_hours' }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
           );
         }
       }
@@ -569,7 +585,7 @@ serve(async (req) => {
         console.log(JSON.stringify({ requestId, message: 'Duplicate notification', referenceId }));
         return new Response(
           JSON.stringify({ sent: false, reason: 'duplicate' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -583,7 +599,7 @@ serve(async (req) => {
       console.log(JSON.stringify({ requestId, message: 'No subscriptions found', userId }));
       return new Response(
         JSON.stringify({ sent: false, reason: 'no_subscriptions' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -678,13 +694,13 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ sent: true, successCount, total: subscriptions.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error(JSON.stringify({ requestId, error: 'Unexpected error', message: error instanceof Error ? error.message : String(error) }));
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

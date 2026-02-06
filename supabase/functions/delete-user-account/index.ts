@@ -1,19 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createLogger } from "../_shared/logger.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 
 serve(async (req) => {
   const logger = createLogger('delete-user-account');
-  
+
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     // Get auth header
@@ -22,7 +17,7 @@ serve(async (req) => {
       logger.warn('Missing authorization header');
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -49,7 +44,7 @@ serve(async (req) => {
       logger.error('Auth error', userError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -146,6 +141,10 @@ serve(async (req) => {
       'profiles',
     ];
 
+    // Tables that MUST be deleted before removing the auth user
+    const criticalTables = ['profiles', 'activity_logs', 'login_history', 'push_subscriptions'];
+    const failedDeletions: string[] = [];
+
     for (const table of tablesToDelete) {
       try {
         const { error } = await supabaseAdmin
@@ -153,41 +152,53 @@ serve(async (req) => {
           .delete()
           .eq('user_id', userId);
         if (error) {
-          logger.warn(`${table} deletion`, { error: error.message });
+          logger.error(`${table} deletion failed`, { error: error.message });
+          failedDeletions.push(table);
         } else {
           logger.info(`Deleted from ${table}`);
         }
       } catch (err) {
-        logger.warn(`Skipping ${table}`, { error: String(err) });
+        logger.error(`${table} deletion threw`, { error: String(err) });
+        failedDeletions.push(table);
       }
+    }
+
+    // Abort auth deletion if any critical table failed
+    const criticalFailures = failedDeletions.filter(t => criticalTables.includes(t));
+    if (criticalFailures.length > 0) {
+      logger.error('Critical table deletions failed, aborting auth deletion', { criticalFailures, allFailures: failedDeletions });
+      return new Response(
+        JSON.stringify({ error: 'Account deletion failed: could not remove critical user data', failedTables: criticalFailures }),
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
     }
 
     // Finally, delete the auth user
     const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (deleteUserError) {
-      console.error('Error deleting auth user:', deleteUserError);
+      logger.error('Error deleting auth user', { error: deleteUserError.message });
       return new Response(
         JSON.stringify({ error: 'Failed to delete authentication record' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Account deletion completed');
+    logger.info('Account deletion completed', { failedNonCritical: failedDeletions });
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Account and all associated data have been permanently deleted' 
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-    console.error('Delete account error:', error);
+    logger.error('Delete account error', { error: errorMessage });
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }
 });

@@ -2,18 +2,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@17.7.0?target=deno';
 import { createLogger } from '../_shared/logger.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
   const logger = createLogger('apply-referral-reward');
 
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     const stripeKey = Deno.env.get('STRIPE_API_KEY');
@@ -108,7 +103,7 @@ Deno.serve(async (req) => {
     });
 
     // Update referral status
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from('referrals')
       .update({
         status: 'rewarded',
@@ -116,6 +111,13 @@ Deno.serve(async (req) => {
         rewarded_at: new Date().toISOString(),
       })
       .eq('id', referral.id);
+
+    if (updateError) {
+      logger.warn('Failed to update referral status (coupons already created)', {
+        referral_id: referral.id,
+        error: updateError.message,
+      });
+    }
 
     // Create reward records for both users
     const expiresAt = new Date();

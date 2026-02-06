@@ -90,7 +90,7 @@ serve(async (req) => {
     );
 
     logger.info('Attempting auth', {
-      tokenPreview: token.slice(0, 20) + '...',
+      hasToken: !!token,
       supabaseUrl: Deno.env.get('SUPABASE_URL')?.slice(0, 30),
       hasAnonKey: !!Deno.env.get('SUPABASE_ANON_KEY')
     });

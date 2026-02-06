@@ -2,12 +2,8 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 // Input validation schema
 const ttsSchema = z.object({
@@ -19,9 +15,8 @@ serve(async (req) => {
   const logger = createLogger('elevenlabs-tts');
 
   // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     // Rate limiting - 10 requests per minute per IP
@@ -36,7 +31,7 @@ serve(async (req) => {
       logger.warn('Rate limit exceeded', { clientIP });
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded. Please wait before trying again.' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 429, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
       );
     }
 
@@ -90,7 +85,7 @@ serve(async (req) => {
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: 'TTS rate limit exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 429, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
         );
       }
       
@@ -102,7 +97,7 @@ serve(async (req) => {
 
     return new Response(audioBuffer, {
       headers: {
-        ...corsHeaders,
+        ...getCorsHeaders(req),
         'Content-Type': 'audio/mpeg',
       },
     });

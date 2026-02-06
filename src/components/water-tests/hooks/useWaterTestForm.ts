@@ -155,11 +155,15 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage
+        const urlData = supabase.storage
           .from('water-test-photos')
           .getPublicUrl(fileName);
 
-        uploadedPhotoUrl = publicUrl;
+        if (!urlData?.data?.publicUrl) {
+          throw new Error('Failed to retrieve public URL for uploaded photo');
+        }
+
+        uploadedPhotoUrl = urlData.data.publicUrl;
       }
 
       // Create water test entry
