@@ -251,13 +251,21 @@ const AllyChat = () => {
   // Handle prefilled messages from navigation (e.g., "Ask Ally" from alerts)
   useEffect(() => {
     const state = location.state as { prefillMessage?: string; context?: Record<string, unknown> } | null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     if (state?.prefillMessage && !input) {
       setInput(state.prefillMessage);
       // Clear the state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
       // Auto-send after a brief delay
-      setTimeout(() => setAutoSendPending(true), 300);
+      timeoutId = setTimeout(() => setAutoSendPending(true), 300);
     }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [location.state, input]);
 
   const initializeChat = async () => {

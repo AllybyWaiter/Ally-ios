@@ -88,10 +88,24 @@ export default function BlogEditor() {
   }, [featuredImagePreview]);
 
   useEffect(() => {
-    fetchCategories();
-    if (isEditing) {
-      fetchPost();
-    }
+    let isMounted = true;
+
+    const initializeEditor = async () => {
+      try {
+        await fetchCategories();
+        if (isEditing && isMounted) {
+          await fetchPost();
+        }
+      } catch (error) {
+        console.error('Failed to initialize editor:', error);
+      }
+    };
+
+    initializeEditor();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const fetchCategories = async () => {

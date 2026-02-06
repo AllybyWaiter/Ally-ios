@@ -431,7 +431,16 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   }, [latitude, longitude]);
 
   // Animation loop - pause when tab is hidden to save CPU
+  // Use ref to track visibility listener for proper cleanup
+  const visibilityListenerRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
+    // Always clean up previous listener first to prevent accumulation
+    if (visibilityListenerRef.current) {
+      document.removeEventListener('visibilitychange', visibilityListenerRef.current);
+      visibilityListenerRef.current = null;
+    }
+
     if (isPlaying && frames.length > 0) {
       const handleVisibilityChange = () => {
         if (document.hidden && intervalRef.current) {
@@ -443,24 +452,23 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
           }, 500);
         }
       };
-      
+
+      visibilityListenerRef.current = handleVisibilityChange;
       document.addEventListener('visibilitychange', handleVisibilityChange);
-      
+
       intervalRef.current = window.setInterval(() => {
         setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
       }, 500);
-
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-        }
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
     }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (visibilityListenerRef.current) {
+        document.removeEventListener('visibilitychange', visibilityListenerRef.current);
+        visibilityListenerRef.current = null;
       }
     };
   }, [isPlaying, frames.length]);

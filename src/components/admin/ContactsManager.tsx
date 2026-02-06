@@ -186,11 +186,15 @@ export function ContactsManager() {
     // For now, just open mailto - in production, use edge function
     const mailtoUrl = `mailto:${selectedContact.email}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyMessage)}`;
     window.open(mailtoUrl, '_blank');
-    
-    // Update status to resolved
-    await updateStatus(selectedContact.id, 'resolved');
-    
-    toast({ title: 'Reply opened in email client' });
+
+    // Update status to resolved with error handling
+    try {
+      await updateStatus(selectedContact.id, 'resolved');
+      toast({ title: 'Reply opened in email client' });
+    } catch (error) {
+      console.error('Failed to update contact status:', error);
+      toast({ title: 'Reply opened', description: 'But failed to update status', variant: 'destructive' });
+    }
     setReplyDialogOpen(false);
   };
 

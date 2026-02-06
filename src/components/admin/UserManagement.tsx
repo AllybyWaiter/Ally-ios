@@ -641,11 +641,11 @@ export default function UserManagement() {
               <CardDescription>View and manage user profiles, track activity, and perform bulk operations</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                onClick={fetchUsers} 
-                variant="outline" 
+              <Button
+                onClick={fetchUsers}
+                variant="outline"
                 size="sm"
-                disabled={loading}
+                disabled={isLoading}
               >
                 <Activity className="mr-2 h-4 w-4" />
                 Refresh
