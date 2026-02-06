@@ -19,6 +19,25 @@ export const ThemeWrapper = ({ children }: ThemeWrapperProps) => {
   useEffect(() => {
     if (!auth.loading && auth.themePreference && mounted) {
       setTheme(auth.themePreference);
+
+      // Force immediate DOM update for Capacitor/iOS WebView
+      const root = document.documentElement;
+      if (auth.themePreference === 'dark') {
+        root.classList.add('dark');
+        root.style.colorScheme = 'dark';
+      } else if (auth.themePreference === 'light') {
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+      } else if (auth.themePreference === 'system') {
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (systemDark) {
+          root.classList.add('dark');
+          root.style.colorScheme = 'dark';
+        } else {
+          root.classList.remove('dark');
+          root.style.colorScheme = 'light';
+        }
+      }
     }
   }, [auth.themePreference, auth.loading, setTheme, mounted]);
 

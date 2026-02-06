@@ -14,6 +14,7 @@ interface SettingsRowProps {
   external?: boolean;
   rightElement?: React.ReactNode;
   className?: string;
+  variant?: 'default' | 'destructive';
 }
 
 export function SettingsRow({
@@ -27,6 +28,7 @@ export function SettingsRow({
   external,
   rightElement,
   className,
+  variant = 'default',
 }: SettingsRowProps) {
   const content = (
     <>
@@ -35,7 +37,10 @@ export function SettingsRow({
           <Icon className="h-4 w-4" />
         </div>
         <div className="text-left min-w-0 flex-1">
-          <span className="font-medium text-sm">{label}</span>
+          <span className={cn(
+            "font-medium text-sm",
+            variant === 'destructive' && "text-destructive"
+          )}>{label}</span>
           {description && <p className="text-xs text-muted-foreground truncate">{description}</p>}
         </div>
       </div>

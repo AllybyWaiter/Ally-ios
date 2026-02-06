@@ -15,7 +15,6 @@ const passwordSchema = z.string()
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -28,8 +27,8 @@ import {
   ArrowLeft, User, Lock, Trash2, Moon, Sun, Monitor,
   Globe, Shield, Crown, Brain, MapPin,
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
-  Mail, ChevronRight, Settings as SettingsIcon, BookOpen, Sparkles, Loader2,
-  Palette, Ruler, Cloud, Bluetooth, Waves
+  Mail, ChevronRight, BookOpen, Sparkles, Loader2,
+  Palette, Ruler, Cloud, Bluetooth, Waves, LogOut
 } from "lucide-react";
 import NotificationSettings from "@/components/settings/NotificationSettings";
 import { useTheme } from "next-themes";
@@ -570,204 +569,185 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="account" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 h-12 p-1 bg-background/60 backdrop-blur-md border border-border/30 rounded-xl">
-            <TabsTrigger value="account" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm py-2.5 text-muted-foreground data-[state=active]:text-foreground transition-all">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline text-sm font-medium">Account</span>
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm py-2.5 text-muted-foreground data-[state=active]:text-foreground transition-all">
-              <SettingsIcon className="h-4 w-4" />
-              <span className="hidden sm:inline text-sm font-medium">Prefs</span>
-            </TabsTrigger>
-            <TabsTrigger value="support" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm py-2.5 text-muted-foreground data-[state=active]:text-foreground transition-all">
-              <HelpCircle className="h-4 w-4" />
-              <span className="hidden sm:inline text-sm font-medium">Help</span>
-            </TabsTrigger>
-            <TabsTrigger value="legal" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm py-2.5 text-muted-foreground data-[state=active]:text-foreground transition-all">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline text-sm font-medium">Legal</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Settings Sections */}
+        <div className="space-y-6">
+          {/* ACCOUNT */}
+          <SettingsSection title="Account">
+            <SettingsRow
+              icon={Shield}
+              iconClassName="bg-secondary/10 text-secondary"
+              label="Security"
+              description="Password and protection"
+              onClick={() => setActiveSection('security')}
+            />
+            <SettingsRow
+              icon={Crown}
+              iconClassName="bg-amber-500/10 text-amber-500"
+              label="Subscription"
+              value={<Badge variant="secondary" className="text-xs">{(effectiveSubscriptionTier || 'FREE').toUpperCase()}</Badge>}
+              onClick={() => setActiveSection('subscription')}
+            />
+          </SettingsSection>
 
-          {/* ACCOUNT TAB */}
-          <TabsContent value="account" className="space-y-6">
-            <SettingsSection title="Account Settings">
-              <SettingsRow 
-                icon={Shield} 
-                iconClassName="bg-secondary/10 text-secondary" 
-                label="Security" 
-                description="Password and protection"
-                onClick={() => setActiveSection('security')}
-              />
-              <SettingsRow
-                icon={Crown}
-                iconClassName="bg-amber-500/10 text-amber-500"
-                label="Subscription"
-                value={<Badge variant="secondary" className="text-xs">{(effectiveSubscriptionTier || 'FREE').toUpperCase()}</Badge>}
-                onClick={() => setActiveSection('subscription')}
-              />
-              <SettingsRow 
-                icon={Download} 
-                iconClassName="bg-primary/10 text-primary" 
-                label="Data & Privacy"
-                description="Export and manage data"
-                onClick={() => setActiveSection('data')}
-              />
-            </SettingsSection>
-          </TabsContent>
-
-          {/* PREFERENCES TAB */}
-          <TabsContent value="preferences" className="space-y-6">
-            <SettingsSection title="Display">
-              {/* Theme - Inline */}
-              <div className="px-4 py-3.5">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-                    <Palette className="h-4 w-4 text-secondary" />
-                  </div>
-                  <span className="font-medium text-sm">Appearance</span>
+          {/* PREFERENCES */}
+          <SettingsSection title="Preferences">
+            {/* Theme - Inline */}
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                  <Palette className="h-4 w-4 text-secondary" />
                 </div>
-                <div className="flex gap-2 ml-11">
-                  {(['light', 'dark', 'system'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => handleThemeChange(t)}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
-                        selectedTheme === t ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"
-                      )}
-                    >
-                      {t === 'light' && <Sun className="h-3.5 w-3.5" />}
-                      {t === 'dark' && <Moon className="h-3.5 w-3.5" />}
-                      {t === 'system' && <Monitor className="h-3.5 w-3.5" />}
-                      <span className="capitalize">{t}</span>
-                    </button>
-                  ))}
-                </div>
+                <span className="font-medium text-sm">Appearance</span>
               </div>
-              <SettingsRow 
-                icon={Globe} 
-                iconClassName="bg-accent/10 text-accent" 
-                label="Language & Region"
-                value={<span className="text-sm text-muted-foreground">{i18n.language.toUpperCase()}</span>}
-                onClick={() => setActiveSection('language')}
-              />
-              <SettingsRow 
-                icon={Ruler} 
-                iconClassName="bg-primary/10 text-primary" 
-                label="Units"
-                value={<span className="text-sm text-muted-foreground capitalize">{units}</span>}
-                onClick={() => setActiveSection('units')}
-              />
-            </SettingsSection>
-
-            <SettingsSection title="Features">
-              <SettingsRow 
-                icon={Cloud} 
-                iconClassName="bg-primary/10 text-primary" 
-                label="Weather Dashboard"
-                description="Show weather-aware content"
-                rightElement={<Switch checked={weatherEnabled} onCheckedChange={handleToggleWeather} />}
-              />
-              <SettingsRow 
-                icon={MapPin} 
-                iconClassName="bg-secondary/10 text-secondary" 
-                label="Weather Settings"
-                description="Location and display options"
-                onClick={() => setActiveSection('weather')}
-              />
-              <SettingsRow 
-                icon={Bell} 
-                iconClassName="bg-accent/10 text-accent" 
-                label="Notifications"
-                description="Alerts and reminders"
-                onClick={() => setActiveSection('notifications')}
-              />
-              <SettingsRow 
-                icon={Brain} 
-                iconClassName="bg-primary/10 text-primary" 
-                label="AI Memory"
-                description="What Ally remembers"
-                onClick={() => setActiveSection('memory')}
-              />
-              <SettingsRow
-                icon={Sparkles}
-                iconClassName="bg-green-500/10 text-green-500"
-                label="Refer Friends"
-                description="Earn free months of Plus"
-                onClick={() => setActiveSection('referrals')}
-              />
-            </SettingsSection>
-
-            <SettingsSection title="Devices">
-              <SettingsRow
-                icon={Waves}
-                iconClassName="bg-blue-500/10 text-blue-500"
-                label="Ally Wand"
-                description="BLE water testing wand"
-                onClick={() => setActiveSection('ally-wand')}
-                rightElement={
-                  <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">
-                    BLE
-                  </Badge>
-                }
-              />
-            </SettingsSection>
-          </TabsContent>
-
-          {/* SUPPORT TAB */}
-          <TabsContent value="support" className="space-y-6">
-            <SettingsSection>
-              <SettingsRow icon={BookOpen} iconClassName="bg-primary/10 text-primary" label="Help Center" description="Tutorials and guides" href="/help" />
-              <SettingsRow icon={HelpCircle} iconClassName="bg-secondary/10 text-secondary" label="FAQ" description="Common questions" href="/faq" />
-              <SettingsRow icon={Mail} iconClassName="bg-accent/10 text-accent" label="Contact Us" description="Get in touch" href="/contact" />
-              <SettingsRow icon={Star} iconClassName="bg-amber-500/10 text-amber-500" label="Rate on App Store" description="Love the app? Review us" onClick={handleRateApp} rightElement={<ExternalLink className="h-5 w-5 text-muted-foreground" />} />
-              <SettingsRow icon={MessageSquare} iconClassName="bg-green-500/10 text-green-500" label="Send Feedback" description="Share your thoughts" href="/contact?type=feedback" />
-            </SettingsSection>
-          </TabsContent>
-
-          {/* LEGAL TAB */}
-          <TabsContent value="legal" className="space-y-6">
-            <SettingsSection title="Documents">
-              <SettingsRow icon={Shield} iconClassName="bg-primary/10 text-primary" label="Privacy Policy" description="How we handle your data" href="/privacy" />
-              <SettingsRow icon={FileText} iconClassName="bg-secondary/10 text-secondary" label="Terms of Service" description="Rules and guidelines" href="/terms" />
-              <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Policy" description="How we use cookies" href="/cookies" />
-              <SettingsRow icon={FileText} iconClassName="bg-muted-foreground/10 text-muted-foreground" label="Subprocessors" description="Third party providers" href="/subprocessors" />
-            </SettingsSection>
-
-            <SettingsSection title="Privacy Controls">
-              <SettingsRow icon={Brain} iconClassName="bg-primary/10 text-primary" label="AI Transparency" description="How we use AI" href="/legal/ai-transparency" />
-              <SettingsRow icon={Shield} iconClassName="bg-secondary/10 text-secondary" label="Privacy Rights" description="Your data rights" href="/legal/privacy-rights" />
-              <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Preferences" description="Manage cookies" href="/legal/cookie-preferences" />
-            </SettingsSection>
-
-            <SettingsSection title="Danger Zone">
-              <SettingsRow 
-                icon={Trash2} 
-                iconClassName="bg-destructive/10 text-destructive" 
-                label="Delete Account"
-                description="Permanently delete your account"
-                onClick={() => setActiveSection('delete-account')}
-              />
-            </SettingsSection>
-
-            {/* App Info */}
-            <div className="rounded-xl bg-background/80 backdrop-blur-lg border border-border/30 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">Ally by WA.I.TER</p>
-                  <p className="text-xs text-muted-foreground">Version {APP_VERSION}</p>
-                </div>
-                <Badge variant="secondary" className="text-xs">Closed Beta</Badge>
+              <div className="flex gap-2 ml-11">
+                {(['light', 'dark', 'system'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => handleThemeChange(t)}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5",
+                      selectedTheme === t ? "bg-primary text-primary-foreground" : "bg-muted/50 hover:bg-muted"
+                    )}
+                  >
+                    {t === 'light' && <Sun className="h-3.5 w-3.5" />}
+                    {t === 'dark' && <Moon className="h-3.5 w-3.5" />}
+                    {t === 'system' && <Monitor className="h-3.5 w-3.5" />}
+                    <span className="capitalize">{t}</span>
+                  </button>
+                ))}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                © {new Date().getFullYear()} WA.I.TER. All rights reserved.
-              </p>
             </div>
-          </TabsContent>
-        </Tabs>
+            <SettingsRow
+              icon={Globe}
+              iconClassName="bg-accent/10 text-accent"
+              label="Language & Region"
+              value={<span className="text-sm text-muted-foreground">{i18n.language.toUpperCase()}</span>}
+              onClick={() => setActiveSection('language')}
+            />
+            <SettingsRow
+              icon={Ruler}
+              iconClassName="bg-primary/10 text-primary"
+              label="Units"
+              value={<span className="text-sm text-muted-foreground capitalize">{units}</span>}
+              onClick={() => setActiveSection('units')}
+            />
+          </SettingsSection>
+
+          {/* FEATURES */}
+          <SettingsSection title="Features">
+            <SettingsRow
+              icon={Cloud}
+              iconClassName="bg-primary/10 text-primary"
+              label="Weather Dashboard"
+              description="Show weather-aware content"
+              rightElement={<Switch checked={weatherEnabled} onCheckedChange={handleToggleWeather} />}
+            />
+            <SettingsRow
+              icon={MapPin}
+              iconClassName="bg-secondary/10 text-secondary"
+              label="Weather Settings"
+              description="Location and display options"
+              onClick={() => setActiveSection('weather')}
+            />
+            <SettingsRow
+              icon={Bell}
+              iconClassName="bg-accent/10 text-accent"
+              label="Notifications"
+              description="Alerts and reminders"
+              onClick={() => setActiveSection('notifications')}
+            />
+            <SettingsRow
+              icon={Brain}
+              iconClassName="bg-primary/10 text-primary"
+              label="AI Memory"
+              description="What Ally remembers"
+              onClick={() => setActiveSection('memory')}
+            />
+            <SettingsRow
+              icon={Sparkles}
+              iconClassName="bg-green-500/10 text-green-500"
+              label="Refer Friends"
+              description="Earn free months of Plus"
+              onClick={() => setActiveSection('referrals')}
+            />
+          </SettingsSection>
+
+          {/* DEVICES */}
+          <SettingsSection title="Devices">
+            <SettingsRow
+              icon={Waves}
+              iconClassName="bg-blue-500/10 text-blue-500"
+              label="Ally Wand"
+              description="BLE water testing wand"
+              onClick={() => setActiveSection('ally-wand')}
+              rightElement={
+                <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30">
+                  BLE
+                </Badge>
+              }
+            />
+          </SettingsSection>
+
+          {/* SUPPORT */}
+          <SettingsSection title="Support">
+            <SettingsRow icon={BookOpen} iconClassName="bg-primary/10 text-primary" label="Help Center" description="Tutorials and guides" href="/help" />
+            <SettingsRow icon={HelpCircle} iconClassName="bg-secondary/10 text-secondary" label="FAQ" description="Common questions" href="/faq" />
+            <SettingsRow icon={Mail} iconClassName="bg-accent/10 text-accent" label="Contact Us" description="Get in touch" href="/contact" />
+            <SettingsRow icon={Star} iconClassName="bg-amber-500/10 text-amber-500" label="Rate on App Store" description="Love the app? Review us" onClick={handleRateApp} rightElement={<ExternalLink className="h-5 w-5 text-muted-foreground" />} />
+            <SettingsRow icon={MessageSquare} iconClassName="bg-green-500/10 text-green-500" label="Send Feedback" description="Share your thoughts" href="/contact?type=feedback" />
+          </SettingsSection>
+
+          {/* LEGAL */}
+          <SettingsSection title="Legal">
+            <SettingsRow icon={Shield} iconClassName="bg-primary/10 text-primary" label="Privacy Policy" description="How we handle your data" href="/privacy" />
+            <SettingsRow icon={FileText} iconClassName="bg-secondary/10 text-secondary" label="Terms of Service" description="Rules and guidelines" href="/terms" />
+            <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Policy" description="How we use cookies" href="/cookies" />
+            <SettingsRow icon={FileText} iconClassName="bg-muted-foreground/10 text-muted-foreground" label="Subprocessors" description="Third party providers" href="/subprocessors" />
+            <SettingsRow icon={Brain} iconClassName="bg-primary/10 text-primary" label="AI Transparency" description="How we use AI" href="/legal/ai-transparency" />
+            <SettingsRow icon={Shield} iconClassName="bg-secondary/10 text-secondary" label="Privacy Rights" description="Your data rights" href="/legal/privacy-rights" />
+            <SettingsRow icon={FileText} iconClassName="bg-accent/10 text-accent" label="Cookie Preferences" description="Manage cookies" href="/legal/cookie-preferences" />
+          </SettingsSection>
+
+          {/* ACCOUNT ACTIONS */}
+          <SettingsSection title="Account Actions">
+            <SettingsRow
+              icon={Download}
+              iconClassName="bg-primary/10 text-primary"
+              label="Export Data"
+              description="Download your data"
+              onClick={() => setActiveSection('data')}
+            />
+            <SettingsRow
+              icon={LogOut}
+              iconClassName="bg-destructive/10 text-destructive"
+              label="Sign Out"
+              variant="destructive"
+              onClick={signOut}
+            />
+            <SettingsRow
+              icon={Trash2}
+              iconClassName="bg-destructive/10 text-destructive"
+              label="Delete Account"
+              description="Permanently delete your account"
+              variant="destructive"
+              onClick={() => setActiveSection('delete-account')}
+            />
+          </SettingsSection>
+
+          {/* App Info Footer */}
+          <div className="mx-4 sm:mx-0 rounded-xl bg-background/80 backdrop-blur-lg border border-border/50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Ally by WA.I.TER</p>
+                <p className="text-xs text-muted-foreground">Version {APP_VERSION}</p>
+              </div>
+              <Badge variant="secondary" className="text-xs">Closed Beta</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              © {new Date().getFullYear()} WA.I.TER. All rights reserved.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Detail Sheets */}
