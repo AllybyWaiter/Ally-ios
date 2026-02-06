@@ -2,11 +2,8 @@ import { useState, Suspense, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronDown } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { useTranslation } from "react-i18next";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
 import { WaterTestCharts } from "@/components/water-tests/WaterTestCharts";
 import { WaterQualityHero } from "@/components/water-tests/WaterQualityHero";
 import { QuickLogSection } from "@/components/water-tests/QuickLogSection";
@@ -26,7 +23,6 @@ const WaterTests = () => {
   const [searchParams] = useSearchParams();
   const urlAquariumId = searchParams.get('aquariumId');
   const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
-  const [trendsOpen, setTrendsOpen] = useState(false);
   const { t } = useTranslation();
   const { units } = useProfileContext();
 
@@ -95,15 +91,14 @@ const WaterTests = () => {
     setSelectedAquariumId(aquarium.id);
   };
 
-  const handleParameterClick = (paramName: string) => {
-    // Open trends section when parameter clicked
-    setTrendsOpen(true);
+  const handleParameterClick = (_paramName: string) => {
+    // Scroll to trends section when parameter clicked
+    document.getElementById('trends-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleTestClick = (_testId: string) => {
-    // TODO: Implement detail view in future iteration
-    // For now, clicking a test scrolls to trends section
-    setTrendsOpen(true);
+    // Scroll to trends section when test clicked
+    document.getElementById('trends-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   if (aquariumsLoading) {
@@ -181,27 +176,17 @@ const WaterTests = () => {
           />
         </SectionErrorBoundary>
 
-        {/* Collapsible Trends Section */}
-        <Collapsible open={trendsOpen} onOpenChange={setTrendsOpen} className="mb-24">
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-between py-4 min-h-[56px]"
-            >
-              <span className="text-base font-medium">{t('waterTests.trends')}</span>
-              <ChevronDown className={`w-5 h-5 transition-transform ${trendsOpen ? 'rotate-180' : ''}`} />
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4 pb-20">
-            <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
-              <Suspense fallback={<WaterTestChartsSkeleton />}>
-                {selectedAquarium && (
-                  <WaterTestCharts aquarium={selectedAquarium} />
-                )}
-              </Suspense>
-            </SectionErrorBoundary>
-          </CollapsibleContent>
-        </Collapsible>
+        {/* Trends Section */}
+        <div id="trends-section" className="pb-24">
+          <h2 className="text-lg font-semibold mb-4">{t('waterTests.trends')}</h2>
+          <SectionErrorBoundary fallbackTitle="Failed to load charts" featureArea={FeatureArea.WATER_TESTS}>
+            <Suspense fallback={<WaterTestChartsSkeleton />}>
+              {selectedAquarium && (
+                <WaterTestCharts aquarium={selectedAquarium} />
+              )}
+            </Suspense>
+          </SectionErrorBoundary>
+        </div>
       </div>
     </div>
   );
