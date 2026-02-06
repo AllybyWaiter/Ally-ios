@@ -161,7 +161,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         });
       }
     } catch (err) {
-      const error = err as Error;
+      const error = err instanceof Error ? err : new Error(String(err));
       console.error('Error analyzing photo:', error);
 
       const errorMessage = error.message || 'Unable to analyze the photo';
