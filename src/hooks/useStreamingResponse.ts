@@ -4,6 +4,7 @@ import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { ensureFreshSession } from "@/lib/sessionUtils";
 
 interface Message {
   role: "user" | "assistant";
@@ -77,6 +78,8 @@ export function useStreamingResponse() {
     // Get access token - use retry token if provided, otherwise get from session
     let accessToken = retryToken;
     if (!accessToken) {
+      // Ensure session is fresh before reading (critical for iOS PWA)
+      await ensureFreshSession();
       const session = await supabase.auth.getSession();
       if (!session.data.session) {
         toast({

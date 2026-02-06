@@ -425,8 +425,8 @@ serve(async (req) => {
         } catch {
           toolExecutions.push({
             toolName: toolCall.function.name,
-            success: true,
-            message: `${toolCall.function.name} completed`,
+            success: false,
+            message: `${toolCall.function.name} failed to process result`,
           });
         }
       });

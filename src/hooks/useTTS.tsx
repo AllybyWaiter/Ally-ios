@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { ensureFreshSession } from '@/lib/sessionUtils';
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -66,7 +67,8 @@ export const useTTS = () => {
     setSpeakingMessageId(messageId);
 
     try {
-      // Get the user's session for authenticated TTS requests
+      // Ensure session is fresh before reading (critical for iOS PWA)
+      await ensureFreshSession();
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
