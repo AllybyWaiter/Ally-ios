@@ -73,11 +73,12 @@ function calculateWaterTestScore(tests: WaterTestWithParams[]): number {
   if (!tests || tests.length === 0) return 30; // No tests = low score
   
   const recentTest = tests[0];
-  const daysSinceTest = Math.floor(
-    (Date.now() - new Date(recentTest.test_date).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  
-  // Penalize for old tests
+  const testTime = new Date(recentTest.test_date).getTime();
+  const daysSinceTest = Number.isNaN(testTime)
+    ? Infinity
+    : Math.floor((Date.now() - testTime) / (1000 * 60 * 60 * 24));
+
+  // Penalize for old tests (invalid dates treated as very old)
   let recencyScore = 100;
   if (daysSinceTest > 14) recencyScore = 50;
   else if (daysSinceTest > 7) recencyScore = 75;

@@ -168,8 +168,15 @@ serve(async (req) => {
     // Wait for aquarium context (was started in parallel with profile fetch)
     const aquariumResult = await aquariumPromise;
 
+    // Extract conversation context from the last few user messages for semantic memory search
+    const userMessages = messages
+      .filter((m: { role: string }) => m.role === 'user')
+      .slice(-3)
+      .map((m: { content: string }) => m.content)
+      .join(' ');
+
     // Now fetch memory context (depends on aquarium waterType) — available to all users
-    const memoryResult = await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType, aquariumId);
+    const memoryResult = await buildMemoryContext(supabase, authUser.id, aquariumResult.waterType, aquariumId, userMessages);
 
     // Validate required inputs for dosing/treatment conversations
     const inputValidation = validateRequiredInputs(

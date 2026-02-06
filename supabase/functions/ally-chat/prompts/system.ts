@@ -268,9 +268,20 @@ NOTE: This user is on the free plan. You can save memories, but other tools (equ
 
   return `TOOL USAGE RULES:
 
-You have access to tools for saving memories, managing equipment/livestock/plants, logging water tests, creating tasks, calculating pool volume, checking fish compatibility, and showing water data cards. Tool schemas describe each tool's purpose and parameters.
+You have access to tools for saving memories, managing equipment/livestock/plants, logging water tests, creating tasks, calculating pool volume, checking fish compatibility, showing water data cards, and searching the knowledge base. Tool schemas describe each tool's purpose and parameters.
 
 ${aquariumId ? `Current aquarium ID: ${aquariumId}` : 'No aquarium selected. Ask user to select one for task/livestock/equipment actions.'}
+
+**KNOWLEDGE BASE SEARCH:**
+Use search_knowledge when you need detailed expert information to answer questions accurately. The knowledge base contains:
+- Water chemistry guides (nitrogen cycle, pH, reef parameters)
+- Disease diagnosis and treatment protocols
+- Equipment comparisons and recommendations
+- Pool and spa maintenance guides
+- Planted tank care (CO2, deficiencies)
+- Species care guides
+
+Proactively search when questions involve: disease symptoms, dosing calculations, equipment selection, troubleshooting problems, or technical topics. This gives you access to verified, detailed information.
 
 **CONFIRMATION REQUIRED (CRITICAL):**
 For ALL write operations, you MUST:

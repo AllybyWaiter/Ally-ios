@@ -14,6 +14,7 @@ import { executeLogWaterTest, executeShowWaterData } from './handlers/waterTests
 import { executeAddLivestock, executeUpdateLivestock, executeAddPlant, executeUpdatePlant } from './handlers/livestock.ts';
 import { executeCalculatePoolVolume } from './handlers/poolVolume.ts';
 import { executeCheckFishCompatibility } from './handlers/compatibility.ts';
+import { executeSearchKnowledge } from './handlers/knowledge.ts';
 
 interface ToolCall {
   id: string;
@@ -90,6 +91,9 @@ export async function executeToolCalls(
         break;
       case 'show_water_data':
         result = await executeShowWaterData(supabase, functionArgs, toolCall.id, logger);
+        break;
+      case 'search_knowledge':
+        result = await executeSearchKnowledge(supabase, functionArgs, toolCall.id, logger);
         break;
       default:
         logger.error('Unknown tool', { toolName: functionName });

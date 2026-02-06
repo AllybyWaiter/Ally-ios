@@ -47,20 +47,20 @@ export function useDashboardData() {
       return data || [];
     } catch (error: unknown) {
       console.error('Error loading aquariums:', error);
-      
+
       const errorMessage = error instanceof Error ? error.message : 'Failed to load aquariums';
-      const isNetworkError = errorMessage.toLowerCase().includes('network') || 
+      const isNetworkError = errorMessage.toLowerCase().includes('network') ||
                              errorMessage.toLowerCase().includes('fetch');
-      
+
       toast({
         title: isNetworkError ? 'Network Error' : t('common.error'),
-        description: isNetworkError 
+        description: isNetworkError
           ? 'Unable to connect. Please check your internet connection.'
           : t('dashboard.failedToLoad'),
         variant: 'destructive',
       });
-      
-      return [];
+
+      return undefined;
     } finally {
       setLoading(false);
     }
@@ -106,9 +106,9 @@ export function useDashboardData() {
   // Separate aquariums from pools/spas
   const aquariumsOnly = useMemo(() => aquariums.filter(a => !isPoolType(a.type)), [aquariums]);
   const poolsOnly = useMemo(() => aquariums.filter(a => isPoolType(a.type)), [aquariums]);
-  const hasOnlyAquariums = aquariumsOnly.length > 0 && poolsOnly.length === 0;
-  const hasOnlyPools = poolsOnly.length > 0 && aquariumsOnly.length === 0;
-  const hasMixed = aquariumsOnly.length > 0 && poolsOnly.length > 0;
+  const hasOnlyAquariums = useMemo(() => aquariumsOnly.length > 0 && poolsOnly.length === 0, [aquariumsOnly, poolsOnly]);
+  const hasOnlyPools = useMemo(() => poolsOnly.length > 0 && aquariumsOnly.length === 0, [aquariumsOnly, poolsOnly]);
+  const hasMixed = useMemo(() => aquariumsOnly.length > 0 && poolsOnly.length > 0, [aquariumsOnly, poolsOnly]);
 
   return {
     loading,

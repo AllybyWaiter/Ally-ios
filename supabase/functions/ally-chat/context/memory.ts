@@ -2,44 +2,94 @@
  * User Memory Context Builder
  *
  * Fetches and formats user memories for AI context.
- * Supports aquarium-scoped memories and category grouping.
+ * Supports semantic search with embeddings and aquarium-scoped memories.
  */
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { generateEmbedding, formatEmbeddingForPostgres } from '../../_shared/embeddings.ts';
 
 export interface MemoryContext {
   context: string;
   memories: any[];
 }
 
+/**
+ * Search memories semantically based on conversation context
+ */
+async function searchMemoriesSemantic(
+  supabase: SupabaseClient,
+  userId: string,
+  queryText: string,
+  aquariumId?: string,
+  limit: number = 20
+): Promise<any[]> {
+  try {
+    const embeddingResult = await generateEmbedding(queryText);
+    const queryEmbedding = formatEmbeddingForPostgres(embeddingResult.embedding);
+
+    const { data, error } = await supabase.rpc('search_memories_semantic', {
+      p_user_id: userId,
+      p_query_embedding: queryEmbedding,
+      p_aquarium_id: aquariumId || null,
+      p_limit: limit
+    });
+
+    if (error || !data) {
+      return [];
+    }
+
+    // Filter to only include reasonably relevant memories (>40% similarity)
+    return data.filter((m: { similarity: number }) => m.similarity > 0.4);
+  } catch {
+    return [];
+  }
+}
+
 export async function buildMemoryContext(
   supabase: SupabaseClient,
   userId: string,
   waterType: string,
-  aquariumId?: string
+  aquariumId?: string,
+  conversationContext?: string
 ): Promise<MemoryContext> {
-  // Fetch user memories — include global + aquarium-specific
-  let query = supabase
-    .from('user_memories')
-    .select('*')
-    .eq('user_id', userId)
-    .or(`water_type.eq.${waterType.replace(/[.,()%_\\]/g, '')},water_type.eq.universal,water_type.is.null`)
-    .order('updated_at', { ascending: false })
-    .limit(50);
+  let memoryData: any[] = [];
 
-  // If aquarium selected, include both global and aquarium-specific memories
-  if (aquariumId) {
-    query = supabase
+  // If we have conversation context, try semantic search first
+  if (conversationContext && conversationContext.length > 10) {
+    memoryData = await searchMemoriesSemantic(
+      supabase,
+      userId,
+      conversationContext,
+      aquariumId,
+      30
+    );
+  }
+
+  // Fallback to traditional query if semantic search returned nothing
+  if (memoryData.length === 0) {
+    let query = supabase
       .from('user_memories')
       .select('*')
       .eq('user_id', userId)
       .or(`water_type.eq.${waterType.replace(/[.,()%_\\]/g, '')},water_type.eq.universal,water_type.is.null`)
-      .or(`aquarium_id.eq.${aquariumId},aquarium_id.is.null`)
       .order('updated_at', { ascending: false })
       .limit(50);
-  }
 
-  const { data: memoryData } = await query;
+    // If aquarium selected, include both global and aquarium-specific memories
+    if (aquariumId) {
+      query = supabase
+        .from('user_memories')
+        .select('*')
+        .eq('user_id', userId)
+        .or(`water_type.eq.${waterType.replace(/[.,()%_\\]/g, '')},water_type.eq.universal,water_type.is.null`)
+        .or(`aquarium_id.eq.${aquariumId},aquarium_id.is.null`)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+    }
+
+    const { data } = await query;
+    memoryData = data || [];
+  }
 
   // Fetch user's hemisphere for seasonal context
   const { data: profile } = await supabase
@@ -78,8 +128,9 @@ export async function buildMemoryContext(
     const key = m.category || m.memory_key || 'other';
     if (!groupedMemories[key]) groupedMemories[key] = [];
     const scope = m.aquarium_id ? ' [tank-specific]' : '';
+    const relevance = m.similarity ? ` (${Math.round(m.similarity * 100)}% relevant)` : '';
     groupedMemories[key].push(
-      `${m.memory_value}${m.water_type && m.water_type !== 'universal' ? ` (${m.water_type} only)` : ''}${scope}`
+      `${m.memory_value}${m.water_type && m.water_type !== 'universal' ? ` (${m.water_type} only)` : ''}${scope}${relevance}`
     );
   });
 

@@ -373,6 +373,44 @@ export const tools = [
         additionalProperties: false
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_knowledge",
+      description: "Search the expert knowledge base for detailed information about aquarium care, pool/spa maintenance, water chemistry, fish diseases, equipment, and more. Use this when you need specific technical information to give accurate advice. Examples: 'ich treatment protocols', 'reef tank calcium dosing', 'pool shock treatment guide', 'planted tank CO2 levels', 'betta fish care requirements'.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Natural language search query describing what information you need"
+          },
+          water_types: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: ["freshwater", "saltwater", "reef", "pool", "spa"]
+            },
+            description: "Filter results to specific water types. Omit to search all."
+          },
+          categories: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: ["fish_care", "water_chemistry", "disease", "equipment", "pool", "spa", "plants", "coral", "cycling", "maintenance"]
+            },
+            description: "Filter results to specific categories. Omit to search all."
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of results to return. Default 5."
+          }
+        },
+        required: ["query"],
+        additionalProperties: false
+      }
+    }
   }
 ];
 
