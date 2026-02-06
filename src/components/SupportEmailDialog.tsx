@@ -76,6 +76,7 @@ export const SupportEmailDialog = ({ open, onOpenChange }: SupportEmailDialogPro
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
           body: JSON.stringify({ message: validatedData.message }),

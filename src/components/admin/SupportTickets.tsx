@@ -181,6 +181,7 @@ const SupportTickets = () => {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${authToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           },
           body: JSON.stringify({
             ticketContent: initialMessage,
