@@ -114,7 +114,9 @@ const AllySupportChat = () => {
               assistantMessage += content;
               setMessages(prev => {
                 const newMessages = [...prev];
+                const lastMsg = newMessages[newMessages.length - 1];
                 newMessages[newMessages.length - 1] = {
+                  ...lastMsg,
                   role: "assistant",
                   content: assistantMessage,
                 };
@@ -141,7 +143,9 @@ const AllySupportChat = () => {
               assistantMessage += content;
               setMessages(prev => {
                 const newMessages = [...prev];
+                const lastMsg = newMessages[newMessages.length - 1];
                 newMessages[newMessages.length - 1] = {
+                  ...lastMsg,
                   role: "assistant",
                   content: assistantMessage,
                 };

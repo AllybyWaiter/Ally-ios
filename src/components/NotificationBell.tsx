@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { queryKeys } from '@/lib/queryKeys';
+import { logger } from '@/lib/logger';
 
 interface Announcement {
   id: string;
@@ -79,7 +80,7 @@ export default function NotificationBell() {
     queryKey: queryKeys.user.notifications(user?.id || ''),
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_notifications')
         .select(`
           id,
@@ -94,6 +95,10 @@ export default function NotificationBell() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20);
+      if (error) {
+        logger.error('Failed to fetch notifications:', error);
+        return [];
+      }
       return (data || []) as Announcement[];
     },
     enabled: !!user,
@@ -104,12 +109,16 @@ export default function NotificationBell() {
     queryKey: queryKeys.user.notificationHistory(user?.id || ''),
     queryFn: async () => {
       if (!user) return [];
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('notification_log')
         .select('id, notification_type, title, body, sent_at')
         .eq('user_id', user.id)
         .order('sent_at', { ascending: false })
         .limit(50);
+      if (error) {
+        logger.error('Failed to fetch notification history:', error);
+        return [];
+      }
       return (data || []) as NotificationLog[];
     },
     enabled: !!user,
@@ -131,7 +140,7 @@ export default function NotificationBell() {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: queryKeys.user.notifications(user?.id || '') });
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      logger.error('Failed to mark notification as read:', error);
     }
   };
 
@@ -148,7 +157,7 @@ export default function NotificationBell() {
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: queryKeys.user.notifications(user?.id || '') });
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      logger.error('Failed to mark all notifications as read:', error);
     }
   };
 

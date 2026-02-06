@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, Send, Sparkles, Lightbulb, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { getErrorMessage } from "@/lib/errorUtils";
+import { logger } from "@/lib/logger";
 
 interface Ticket {
   id: string;
@@ -153,11 +154,14 @@ const SupportTickets = () => {
     setSuggestedReplies([]);
     
     try {
-      const { data: messagesData } = await supabase
+      const { data: messagesData, error: messagesError } = await supabase
         .from('support_messages')
         .select('*')
         .eq('ticket_id', ticket.id)
         .order('created_at', { ascending: true });
+      if (messagesError) {
+        logger.error('Failed to fetch ticket messages:', messagesError);
+      }
 
       const initialMessage = messagesData?.[0]?.message || '';
       
@@ -166,7 +170,7 @@ const SupportTickets = () => {
       const authToken = sessionData.session?.access_token;
       
       if (!authToken) {
-        console.warn('No auth token available for ticket reply suggestions');
+        logger.warn('No auth token available for ticket reply suggestions');
         return;
       }
       
@@ -189,7 +193,7 @@ const SupportTickets = () => {
       const { templates } = await response.json();
       setSuggestedReplies(templates || []);
     } catch (error) {
-      console.error("Failed to fetch suggestions:", error);
+      logger.error("Failed to fetch suggestions:", error);
     } finally {
       setIsLoadingSuggestions(false);
     }

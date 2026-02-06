@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/drawer';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PLAN_DEFINITIONS, getPaidPlans } from '@/lib/planConstants';
 import { useRevenueCat } from '@/hooks/useRevenueCat';
@@ -86,7 +87,7 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
         });
       }
     } catch (error) {
-      console.error('Restore error:', error);
+      logger.error('Restore error:', error);
       toast({
         title: 'Restore failed',
         description: 'Unable to restore purchases. Please try again.',
@@ -155,7 +156,7 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
           }
         }
       } catch (error) {
-        console.error('Purchase error:', error);
+        logger.error('Purchase error:', error);
         if ((error as Error).message !== 'Purchase cancelled') {
           toast({
             title: 'Unable to complete purchase',
@@ -184,12 +185,17 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
       if (error) throw error;
 
       if (data?.url) {
+        // Validate checkout URL to prevent open redirect
+        const checkoutUrl = new URL(data.url);
+        if (!checkoutUrl.hostname.endsWith('stripe.com')) {
+          throw new Error('Invalid checkout URL');
+        }
         window.location.href = data.url;
       } else {
         throw new Error('No checkout URL returned');
       }
     } catch (error: unknown) {
-      console.error('Checkout error:', error);
+      logger.error('Checkout error:', error);
       toast({
         title: 'Unable to start checkout',
         description: 'Please try again later or contact support.',

@@ -260,14 +260,19 @@ export function usePushNotifications() {
 
       const subscriptionJson = subscription.toJSON();
 
+      // Validate subscription fields before saving
+      if (!subscriptionJson.endpoint || !subscriptionJson.keys?.p256dh || !subscriptionJson.keys?.auth) {
+        throw new Error('Push subscription is missing required fields');
+      }
+
       // Save subscription to database (upsert to handle existing subscriptions)
       const { error } = await supabase
         .from('push_subscriptions')
         .upsert({
           user_id: user.id,
-          endpoint: subscriptionJson.endpoint!,
-          p256dh: subscriptionJson.keys!.p256dh,
-          auth: subscriptionJson.keys!.auth,
+          endpoint: subscriptionJson.endpoint,
+          p256dh: subscriptionJson.keys.p256dh,
+          auth: subscriptionJson.keys.auth,
           user_agent: navigator.userAgent,
         }, {
           onConflict: 'user_id,endpoint'

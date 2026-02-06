@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { subDays, startOfDay, format } from 'date-fns';
+import { logger } from '@/lib/logger';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -91,6 +92,12 @@ export function useAdminDashboardStats() {
         supabase.from('ai_feedback').select('id, rating'),
       ]);
 
+      // Log any query errors (don't throw — partial stats are better than none)
+      const results = [usersResult, usersLastMonth, aquariumsResult, aquariumsLastMonth, waterTestsResult, waterTestsLastMonth, ticketsResult, waitlistResult, feedbackResult];
+      for (const res of results) {
+        if (res.error) logger.error('Admin stats query error:', res.error);
+      }
+
       const totalUsers = usersResult.count || 0;
       const newUsers = usersLastMonth.count || 0;
       const userGrowth = totalUsers > 0 ? Math.round((newUsers / totalUsers) * 100) : 0;
@@ -166,6 +173,11 @@ export function useAdminTrendData() {
           .order('created_at', { ascending: true }),
       ]);
 
+      // Log any errors
+      for (const res of [usersData, waterTestsData, aquariumsData, messagesData]) {
+        if (res.error) logger.error('Admin trend query error:', res.error);
+      }
+
       // Group by date
       const dateMap = new Map<string, TrendDataPoint>();
       
@@ -239,6 +251,10 @@ export function useAdminPendingActions() {
           .order('updated_at', { ascending: false })
           .limit(5),
       ]);
+
+      for (const res of [ticketsResult, contactsResult, betaResult, blogResult]) {
+        if (res.error) logger.error('Admin pending actions query error:', res.error);
+      }
 
       const actions: PendingAction[] = [];
 
@@ -330,6 +346,10 @@ export function useAdminRecentActivity() {
           .order('created_at', { ascending: false })
           .limit(5),
       ]);
+
+      for (const res of [usersResult, ticketsResult, blogResult, aquariumsResult, waterTestsResult]) {
+        if (res.error) logger.error('Admin activity query error:', res.error);
+      }
 
       const activities: RecentActivity[] = [];
 

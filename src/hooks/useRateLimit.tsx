@@ -29,57 +29,57 @@ export const useRateLimit = ({
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [resetTime, setResetTime] = useState<number | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Use ref to track rate limit state synchronously (avoids race condition)
-  const isLimitedRef = useRef(false);
+  // Ref mirrors attempts state for synchronous reads in rapid successive calls
+  const attemptsRef = useRef<number[]>([]);
 
   const checkRateLimit = useCallback((): boolean => {
     const now = Date.now();
 
-    // Calculate synchronously to avoid race condition
-    const currentAttempts = attempts.filter(
+    // Read from ref to get the latest value even between renders
+    const recentAttempts = attemptsRef.current.filter(
       (timestamp) => now - timestamp < windowMs
     );
 
-    if (currentAttempts.length >= maxAttempts) {
-      const oldestAttempt = Math.min(...currentAttempts);
-      const timeUntilReset = windowMs - (now - oldestAttempt);
+    if (recentAttempts.length >= maxAttempts) {
+      const oldestAttempt = Math.min(...recentAttempts);
+      const resetDelay = windowMs - (now - oldestAttempt);
 
-      isLimitedRef.current = true;
+      attemptsRef.current = recentAttempts;
+      setAttempts(recentAttempts);
       setIsRateLimited(true);
-      setResetTime(now + timeUntilReset);
-      setAttempts(currentAttempts);
+      setResetTime(now + resetDelay);
 
       if (onLimitExceeded) {
         onLimitExceeded();
       }
 
-      // Auto-reset after window expires
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
 
       timeoutRef.current = setTimeout(() => {
-        isLimitedRef.current = false;
+        attemptsRef.current = [];
+        setAttempts([]);
         setIsRateLimited(false);
         setResetTime(null);
-        setAttempts([]);
-      }, timeUntilReset);
+      }, resetDelay);
 
       return false; // Rate limited
     }
 
     // Not limited - add current attempt
-    isLimitedRef.current = false;
-    setAttempts([...currentAttempts, now]);
+    const newAttempts = [...recentAttempts, now];
+    attemptsRef.current = newAttempts;
+    setAttempts(newAttempts);
     return true;
-  }, [attempts, maxAttempts, windowMs, onLimitExceeded]);
+  }, [maxAttempts, windowMs, onLimitExceeded]);
 
   const resetRateLimit = useCallback(() => {
+    attemptsRef.current = [];
     setAttempts([]);
     setIsRateLimited(false);
     setResetTime(null);
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
