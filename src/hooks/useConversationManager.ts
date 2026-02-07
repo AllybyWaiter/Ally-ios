@@ -43,20 +43,23 @@ export function useConversationManager(userId: string | null) {
 
   const fetchAquariums = useCallback(async () => {
     if (!userId) return;
+    try {
+      const { data, error } = await supabase
+        .from('aquariums')
+        .select('id, name, type')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-    const { data, error } = await supabase
-      .from('aquariums')
-      .select('id, name, type')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      if (error) {
+        logger.error('Failed to fetch aquariums:', error);
+        return;
+      }
 
-    if (error) {
+      if (data) {
+        setAquariums(data);
+      }
+    } catch (error) {
       logger.error('Failed to fetch aquariums:', error);
-      return;
-    }
-
-    if (data) {
-      setAquariums(data);
     }
   }, [userId]);
 
@@ -198,12 +201,6 @@ export function useConversationManager(userId: string | null) {
       throw error;
     }
 
-    // Sanitize conversation title for use as filename
-    const sanitizedTitle = conversation.title
-      .replace(/[/\\?%*:|"<>]/g, '-') // Replace invalid filename chars
-      .replace(/\s+/g, '_') // Replace spaces with underscores
-      .slice(0, 100); // Limit length
-    
     // Format as Markdown
     let markdown = `# ${conversation.title}\n\n`;
     markdown += `*Exported on ${format(new Date(), 'MMMM d, yyyy h:mm a')}*\n\n`;
@@ -250,8 +247,13 @@ export function useConversationManager(userId: string | null) {
 
       setCurrentConversationId(conversationId);
 
-      // Update selected aquarium from conversation
-      const conv = conversations.find(c => c.id === conversationId);
+      // Update selected aquarium from conversation.
+      // Fall back to a fresh fetch when local state is stale.
+      let conv = conversations.find(c => c.id === conversationId);
+      if (!conv) {
+        const refreshed = await fetchConversations();
+        conv = refreshed.find(c => c.id === conversationId);
+      }
       if (conv) {
         setSelectedAquarium(conv.aquarium_id || "general");
       }
@@ -263,7 +265,7 @@ export function useConversationManager(userId: string | null) {
     logger.warn('Loaded conversation with no messages:', conversationId);
     setCurrentConversationId(null); // Don't keep stale ID
     return [createInitialMessage()];
-  }, [conversations, toast]);
+  }, [conversations, toast, fetchConversations]);
 
   const startNewConversation = useCallback((): Message[] => {
     setCurrentConversationId(null);

@@ -8,7 +8,7 @@ interface ThemeWrapperProps {
 
 export const ThemeWrapper = ({ children }: ThemeWrapperProps) => {
   const auth = useAuth();
-  const { setTheme, resolvedTheme } = useTheme();
+  const { setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // Prevent hydration mismatch by only rendering after mount

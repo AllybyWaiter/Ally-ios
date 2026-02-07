@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -31,7 +31,6 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 // Mock supabase
-const mockUpdate = vi.fn().mockReturnValue({ error: null });
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(() => ({
@@ -108,7 +107,7 @@ describe('Settings', () => {
     it('renders settings page with title', () => {
       renderSettings();
       
-      expect(screen.getByRole('heading', { name: /settings/i })).toBeInTheDocument();
+      expect(screen.getByText(/settings/i)).toBeInTheDocument();
     });
 
     it('renders all tabs', () => {

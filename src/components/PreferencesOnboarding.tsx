@@ -23,7 +23,6 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
   const [step, setStep] = useState(initialStep >= 1 && initialStep <= 7 ? initialStep : 1);
   const [isLoading, setIsLoading] = useState(false);
   const [permissionLoading, setPermissionLoading] = useState(false);
-  const [vapidRetryCount, setVapidRetryCount] = useState(0);
   const { toast } = useToast();
   const { setTheme } = useTheme();
   const { i18n, t } = useTranslation();
@@ -135,7 +134,6 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
           if (error) {
             logger.error(`VAPID fetch attempt ${retries + 1} failed:`, error);
             retries++;
-            setVapidRetryCount(retries);
             if (retries <= maxRetries) {
               await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
             }

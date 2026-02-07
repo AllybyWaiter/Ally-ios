@@ -35,7 +35,9 @@ describe('useConversationManager', () => {
 
       vi.mocked(supabase.from).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
+          }),
         }),
       } as any);
 
@@ -51,7 +53,9 @@ describe('useConversationManager', () => {
     it('should handle empty aquariums', async () => {
       vi.mocked(supabase.from).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
         }),
       } as any);
 
@@ -74,7 +78,11 @@ describe('useConversationManager', () => {
 
       vi.mocked(supabase.from).mockReturnValue({
         select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+            }),
+          }),
         }),
       } as any);
 
@@ -128,7 +136,11 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+                }),
+              }),
             }),
           } as any;
         }
@@ -180,7 +192,9 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             delete: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({ error: null }),
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({ error: null }),
+              }),
             }),
             select: vi.fn().mockReturnValue({
               order: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -219,7 +233,9 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             delete: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({ error: null }),
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({ error: null }),
+              }),
             }),
             select: vi.fn().mockReturnValue({
               order: vi.fn().mockResolvedValue({ data: [], error: null }),
@@ -320,11 +336,29 @@ describe('useConversationManager', () => {
         { id: 'aq-1', name: 'Reef Tank', type: 'saltwater' },
       ];
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'aquariums') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
+              }),
+            }),
+          } as any;
+        }
+        if (table === 'chat_conversations') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  order: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            }),
+          } as any;
+        }
+        return {} as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       

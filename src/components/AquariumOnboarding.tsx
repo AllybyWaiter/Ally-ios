@@ -36,7 +36,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const { t } = useTranslation();
 
   // Location detection
-  const { latitude, longitude, locationName, loading: locationLoading, detectLocation, clearDetectedLocation } = useLocationDetection();
+  const { latitude, longitude, locationName, loading: locationLoading, detectLocation } = useLocationDetection();
   const [locationConfirmed, setLocationConfirmed] = useState<boolean | null>(null);
   const locationDetectionAttempted = useRef(false);
 
