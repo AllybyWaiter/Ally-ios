@@ -20,6 +20,7 @@ export interface PlanFeatures {
   hasTeamDashboards: boolean;
   hasAPIIntegrations: boolean;
   hasPrioritySupport: boolean;
+  hasConversationMode: boolean;
 }
 
 export interface PlanRateLimits {
@@ -75,6 +76,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       hasTeamDashboards: false,
       hasAPIIntegrations: false,
       hasPrioritySupport: false,
+      hasConversationMode: false,
     },
     rateLimits: {
       waterTestPhoto: { maxRequests: 5, windowMs: HOUR_MS },
@@ -111,6 +113,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       hasTeamDashboards: false,
       hasAPIIntegrations: false,
       hasPrioritySupport: false,
+      hasConversationMode: false,
     },
     rateLimits: {
       waterTestPhoto: { maxRequests: 10, windowMs: HOUR_MS },
@@ -153,6 +156,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       hasTeamDashboards: false,
       hasAPIIntegrations: false,
       hasPrioritySupport: false,
+      hasConversationMode: true,
     },
     rateLimits: {
       waterTestPhoto: { maxRequests: 25, windowMs: HOUR_MS },
@@ -178,6 +182,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       'Smart scheduling',
       'Equipment tracking',
       'Custom notifications',
+      'Hands-free voice conversation',
     ],
   },
   gold: {
@@ -198,6 +203,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       hasTeamDashboards: false,
       hasAPIIntegrations: false,
       hasPrioritySupport: false,
+      hasConversationMode: true,
     },
     rateLimits: {
       waterTestPhoto: { maxRequests: 100, windowMs: HOUR_MS },
@@ -245,6 +251,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       hasTeamDashboards: true,
       hasAPIIntegrations: true,
       hasPrioritySupport: true,
+      hasConversationMode: true,
     },
     rateLimits: {
       waterTestPhoto: { maxRequests: 1000, windowMs: HOUR_MS },
@@ -285,6 +292,7 @@ export const PLAN_DEFINITIONS: Record<PlanTier, PlanDefinition> = {
       hasTeamDashboards: true,
       hasAPIIntegrations: true,
       hasPrioritySupport: true,
+      hasConversationMode: true,
     },
     rateLimits: {
       waterTestPhoto: { maxRequests: 1000, windowMs: HOUR_MS },

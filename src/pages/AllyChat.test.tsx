@@ -8,15 +8,54 @@ const mockGetUser = vi.fn().mockResolvedValue({
   data: { user: { id: 'test-user-id', email: 'test@example.com' } } 
 });
 
-const mockSupabaseFrom = vi.fn().mockReturnValue({
-  select: vi.fn().mockReturnThis(),
-  insert: vi.fn().mockReturnThis(),
-  update: vi.fn().mockReturnThis(),
-  delete: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  order: vi.fn().mockReturnThis(),
-  single: vi.fn().mockResolvedValue({ data: null, error: null }),
+const mockAquariums = [
+  createMockAquarium({ id: 'test-aquarium-id', name: 'Test Aquarium' }),
+];
+
+const mockConversations = [
+  createMockConversation({
+    id: 'test-conversation-id',
+    title: 'Test Conversation',
+    aquarium_id: 'test-aquarium-id',
+  }),
+];
+
+const createThenable = <T,>(result: T) => ({
+  then: (
+    onFulfilled?: ((value: T) => unknown) | null,
+    onRejected?: ((reason: unknown) => unknown) | null
+  ) => Promise.resolve(result).then(onFulfilled ?? undefined, onRejected ?? undefined),
+  catch: (onRejected?: ((reason: unknown) => unknown) | null) =>
+    Promise.resolve(result).catch(onRejected ?? undefined),
+  finally: (onFinally?: (() => void) | null) =>
+    Promise.resolve(result).finally(onFinally ?? undefined),
 });
+
+const createQueryBuilder = (result: { data: unknown; error: unknown }) => {
+  const singleResult = {
+    data: Array.isArray(result.data) ? (result.data[0] ?? null) : result.data,
+    error: result.error,
+  };
+
+  const builder: Record<string, unknown> = {};
+  const orderChain: Record<string, unknown> = {};
+
+  orderChain.order = vi.fn(() => orderChain);
+  Object.assign(orderChain, createThenable(result));
+
+  builder.select = vi.fn(() => builder);
+  builder.insert = vi.fn(() => builder);
+  builder.update = vi.fn(() => builder);
+  builder.delete = vi.fn(() => builder);
+  builder.eq = vi.fn(() => builder);
+  builder.in = vi.fn(() => builder);
+  builder.order = vi.fn(() => orderChain);
+  builder.single = vi.fn().mockResolvedValue(singleResult);
+  builder.maybeSingle = vi.fn().mockResolvedValue(singleResult);
+  Object.assign(builder, createThenable(result));
+
+  return builder;
+};
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
@@ -28,42 +67,15 @@ vi.mock('@/integrations/supabase/client', () => ({
     },
     from: (table: string) => {
       if (table === 'aquariums') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          order: vi.fn().mockResolvedValue({ 
-            data: [createMockAquarium()], 
-            error: null 
-          }),
-        };
+        return createQueryBuilder({ data: mockAquariums, error: null });
       }
       if (table === 'chat_conversations') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          insert: vi.fn().mockReturnThis(),
-          update: vi.fn().mockReturnThis(),
-          delete: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          order: vi.fn().mockResolvedValue({ 
-            data: [createMockConversation()], 
-            error: null 
-          }),
-          single: vi.fn().mockResolvedValue({ 
-            data: createMockConversation(), 
-            error: null 
-          }),
-        };
+        return createQueryBuilder({ data: mockConversations, error: null });
       }
       if (table === 'chat_messages') {
-        return {
-          select: vi.fn().mockReturnThis(),
-          insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-          eq: vi.fn().mockReturnThis(),
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
-          in: vi.fn().mockReturnThis(),
-          delete: vi.fn().mockResolvedValue({ data: null, error: null }),
-        };
+        return createQueryBuilder({ data: [], error: null });
       }
-      return mockSupabaseFrom(table);
+      return createQueryBuilder({ data: [], error: null });
     },
   },
 }));
@@ -91,20 +103,18 @@ vi.mock('@/components/TypingIndicator', () => ({
   TypingIndicator: () => <div data-testid="typing-indicator">Typing...</div>,
 }));
 
-vi.mock('@/components/chat/VirtualizedConversationList', () => ({
-  VirtualizedConversationList: ({ 
-    conversations, 
-    onLoadConversation, 
-    onDeleteConversation 
+vi.mock('@/components/chat/ChatHistorySidebar', () => ({
+  ChatHistorySidebar: ({
+    conversations,
+    onLoadConversation,
   }: {
     conversations: { id: string; title: string }[];
     onLoadConversation: (id: string) => void;
-    onDeleteConversation: (id: string, e: React.MouseEvent) => void;
   }) => (
     <div data-testid="conversation-list">
-      {conversations.map((conv: { id: string; title: string }) => (
-        <button 
-          key={conv.id} 
+      {conversations.map((conv) => (
+        <button
+          key={conv.id}
           onClick={() => onLoadConversation(conv.id)}
           data-testid={`conversation-${conv.id}`}
         >
@@ -115,9 +125,38 @@ vi.mock('@/components/chat/VirtualizedConversationList', () => ({
   ),
 }));
 
+vi.mock('@/components/chat/VirtualizedMessageList', () => ({
+  VirtualizedMessageList: ({
+    messages,
+  }: {
+    messages: Array<{ id?: string; role: string; content: string }>;
+  }) => (
+    <div data-testid="message-list">
+      {messages.map((message, index) => (
+        <div key={message.id ?? index}>{message.content}</div>
+      ))}
+    </div>
+  ),
+}));
+
 // Mock use-mobile hook
 vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
+}));
+
+vi.mock('@/hooks/usePlanLimits', () => ({
+  usePlanLimits: () => ({
+    limits: {
+      hasReasoningModel: true,
+    },
+  }),
+}));
+
+vi.mock('@/hooks/useSuggestedQuestions', () => ({
+  useSuggestedQuestions: () => ({
+    suggestions: [],
+    hasAlerts: false,
+  }),
 }));
 
 // Import after mocks
@@ -136,7 +175,7 @@ describe('AllyChat', () => {
     
     await waitFor(() => {
       // Look for the input area
-      expect(screen.getByPlaceholderText(/ask ally/i) || 
+      expect(screen.getByPlaceholderText(/message ally/i) || 
              screen.getByRole('textbox')).toBeInTheDocument();
     });
   });
@@ -228,10 +267,7 @@ describe('AllyChat', () => {
     render(<AllyChat />);
     
     await waitFor(() => {
-      const newConvButton = screen.getByRole('button', { name: /new/i }) ||
-                            screen.getAllByRole('button').find(btn => 
-                              btn.querySelector('[class*="Plus"]'));
-      expect(newConvButton || screen.getAllByRole('button').length > 0).toBeTruthy();
+      expect(screen.getByRole('button', { name: /new conversation/i })).toBeInTheDocument();
     });
   });
 
@@ -267,7 +303,10 @@ describe('AllyChat - Conversation Management', () => {
   });
 
   it('renders conversation list', async () => {
+    const user = userEvent.setup();
     render(<AllyChat />);
+
+    await user.click(screen.getByRole('button', { name: /open chat history/i }));
     
     await waitFor(() => {
       expect(screen.getByTestId('conversation-list')).toBeInTheDocument();
@@ -278,6 +317,8 @@ describe('AllyChat - Conversation Management', () => {
     const user = userEvent.setup();
     
     render(<AllyChat />);
+
+    await user.click(screen.getByRole('button', { name: /open chat history/i }));
     
     await waitFor(() => {
       expect(screen.getByTestId('conversation-list')).toBeInTheDocument();
@@ -286,9 +327,10 @@ describe('AllyChat - Conversation Management', () => {
     const conversationButton = screen.getByTestId('conversation-test-conversation-id');
     await user.click(conversationButton);
     
-    // Conversation should be loaded (messages fetched)
-    // This would trigger a state change in the real component
-    expect(conversationButton).toBeInTheDocument();
+    await waitFor(() => {
+      // Selecting a conversation closes the history sheet
+      expect(screen.queryByTestId('conversation-list')).not.toBeInTheDocument();
+    });
   });
 });
 

@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MentionInput, parseMentions, type MentionItem, type MentionInputRef } from "@/components/chat/MentionInput";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,8 +21,6 @@ import {
   Square,
   ChevronDown,
   Lock,
-  Brain,
-  Zap,
   ArrowLeft,
   RotateCcw,
   StopCircle,
@@ -41,6 +39,9 @@ import { compressImage, validateImageFile } from "@/lib/imageCompression";
 import { useVoiceRecording } from "@/hooks/useVoiceRecording";
 import { useTTS } from "@/hooks/useTTS";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { useVAD } from "@/hooks/useVAD";
+import { useWakeLock } from "@/hooks/useWakeLock";
+import { playListeningChime, playConfirmationTone } from "@/lib/audioUtils";
 import { copyToClipboard } from "@/lib/clipboard";
 import { triggerHaptic } from "@/hooks/useHaptics";
 import { logger } from "@/lib/logger";
@@ -57,10 +58,19 @@ interface Message {
   dataCards?: DataCardPayload[];
 }
 
-import { MODEL_OPTIONS, type ModelType, type ModelOption } from '@/lib/constants';
+import { MODEL_OPTIONS, type ModelType } from '@/lib/constants';
 
 // Persist last conversation ID for session continuity (user-scoped)
 const getLastConversationKey = (userId: string) => `ally_last_conversation_${userId}`;
+
+function parseVoiceCommand(text: string): 'stop' | 'cancel' | 'repeat' | 'new_chat' | null {
+  const n = text.toLowerCase().trim();
+  if (/^(stop|exit|quit|end conversation|goodbye|bye)[.!,]?$/.test(n)) return 'stop';
+  if (/^(cancel|never ?mind|forget it)[.!,]?$/.test(n)) return 'cancel';
+  if (/^(repeat that|say that again|what did you say)[.!,]?$/.test(n)) return 'repeat';
+  if (/^(new chat|start over|new conversation)[.!,]?$/.test(n)) return 'new_chat';
+  return null;
+}
 
 const AllyChat = () => {
   const navigate = useNavigate();
@@ -81,7 +91,7 @@ const AllyChat = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [lastError, setLastError] = useState<{ message: string; userMessage: Message } | null>(null);
-  const [streamStartTime, setStreamStartTime] = useState<number | null>(null);
+  const [, setStreamStartTime] = useState<number | null>(null);
   const [conversationMode, setConversationMode] = useState(false);
   const inputRef = useRef<MentionInputRef>(null);
   const conversationModeRef = useRef(false);
@@ -107,7 +117,16 @@ const AllyChat = () => {
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
   const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
   const { limits } = usePlanLimits();
-  
+  const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
+
+  // VAD silence handler ref — defined below, used by useVAD
+  const handleVADSilenceRef = useRef<() => void>(() => {});
+
+  const { hasSpeechStarted, startMonitoring, stopMonitoring } = useVAD(
+    { silenceThreshold: 12, silenceDuration: 1500, minRecordingDuration: 500 },
+    { onSilenceDetected: () => handleVADSilenceRef.current() }
+  );
+
   // Context-aware suggested questions
   const { suggestions, hasAlerts } = useSuggestedQuestions({
     selectedAquariumId: conversationManager.selectedAquarium === 'general' ? null : conversationManager.selectedAquarium,
@@ -116,6 +135,81 @@ const AllyChat = () => {
   });
 
   const canUseThinking = limits.hasReasoningModel;
+
+  // Wake lock: keep screen on during conversation mode
+  useEffect(() => {
+    if (conversationMode) requestWakeLock();
+    else releaseWakeLock();
+  }, [conversationMode, requestWakeLock, releaseWakeLock]);
+
+  // Start recording with VAD monitoring and audio cue
+  const startRecordingWithVAD = useCallback(async () => {
+    await startRecording((stream) => {
+      playListeningChime();
+      startMonitoring(stream);
+    });
+  }, [startRecording, startMonitoring]);
+
+  // Execute voice commands detected via VAD
+  const executeVoiceCommand = useCallback((command: 'stop' | 'cancel' | 'repeat' | 'new_chat') => {
+    switch (command) {
+      case 'stop':
+        setConversationMode(false);
+        stopSpeaking();
+        break;
+      case 'cancel':
+        // Cancel — just restart listening without sending
+        if (conversationModeRef.current) startRecordingWithVAD();
+        break;
+      case 'repeat': {
+        // Re-read the last assistant message
+        const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant');
+        if (lastAssistant?.content) {
+          speak(lastAssistant.content, `repeat-${Date.now()}`, () => {
+            if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
+              startRecordingWithVAD();
+            }
+          });
+        } else if (conversationModeRef.current) {
+          startRecordingWithVAD();
+        }
+        break;
+      }
+      case 'new_chat':
+        setMessages(conversationManager.startNewConversation());
+        setLastError(null);
+        if (userId) localStorage.removeItem(getLastConversationKey(userId));
+        if (conversationModeRef.current) startRecordingWithVAD();
+        break;
+    }
+  }, [stopSpeaking, messages, speak, startRecordingWithVAD, conversationManager, userId]);
+
+  // VAD silence handler — auto-stops recording when user pauses speaking
+  const handleVADSilence = useCallback(async () => {
+    if (!isRecordingRef.current) return;
+    stopMonitoring();
+    playConfirmationTone();
+
+    const text = await stopRecording();
+    if (text) {
+      const command = parseVoiceCommand(text);
+      if (command) {
+        executeVoiceCommand(command);
+        return;
+      }
+      setInput(prev => prev ? `${prev} ${text}` : text);
+      setWasVoiceInput(true);
+      setAutoSendPending(true);
+    } else {
+      // Empty transcription — restart listening if still in conversation mode
+      if (conversationModeRef.current) startRecordingWithVAD();
+    }
+  }, [stopRecording, stopMonitoring, startRecordingWithVAD, executeVoiceCommand]);
+
+  // Keep handleVADSilence ref in sync
+  useEffect(() => {
+    handleVADSilenceRef.current = handleVADSilence;
+  }, [handleVADSilence]);
 
   // Factory for streaming callbacks — eliminates duplication across send, retry, and edit flows
   const createStreamCallbacks = useCallback((options: {
@@ -359,7 +453,7 @@ const AllyChat = () => {
         setIsCompressing(false);
       };
       reader.readAsDataURL(compressedFile);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to compress image",
@@ -384,12 +478,15 @@ const AllyChat = () => {
     setStreamStartTime(null);
     if (conversationMode) {
       setConversationMode(false);
+      stopMonitoring();
+      stopSpeaking();
+      if (isRecording) stopRecording();
     }
     toast({
       title: "Stopped",
       description: "Response generation was stopped.",
     });
-  }, [abort, toast, conversationMode]);
+  }, [abort, toast, conversationMode, stopMonitoring, stopSpeaking, isRecording, stopRecording]);
 
   // Retry last failed message
   const handleRetry = useCallback(async () => {
@@ -426,7 +523,10 @@ const AllyChat = () => {
             logger.error("Stream error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to get response";
             setLastError({ message: errorMessage, userMessage });
-            if (conversationModeRef.current) setConversationMode(false);
+            if (conversationModeRef.current) {
+              setConversationMode(false);
+              stopMonitoring();
+            }
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
         })
@@ -436,13 +536,17 @@ const AllyChat = () => {
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
       setLastError({ message: errorMessage, userMessage });
       setMessages(prev => prev.slice(0, -1));
+      if (conversationModeRef.current) {
+        setConversationMode(false);
+        stopMonitoring();
+      }
       triggerHaptic('error');
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
       setStreamStartTime(null);
     }
-  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks]);
+  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, userId]);
 
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
@@ -497,7 +601,7 @@ const AllyChat = () => {
     const currentAquariumContext = conversationManager.selectedAquarium;
 
     try {
-      const fullContent = await streamResponse(
+      await streamResponse(
         [...messages, userMessage],
         conversationManager.getAquariumIdForApi(),
         selectedModel,
@@ -517,7 +621,7 @@ const AllyChat = () => {
               const messageId = `auto-${Date.now()}`;
               speak(content, messageId, () => {
                 if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
-                  startRecording();
+                  startRecordingWithVAD();
                 }
               });
             }
@@ -526,7 +630,10 @@ const AllyChat = () => {
             logger.error("Stream error:", error);
             const errorMessage = error instanceof Error ? error.message : "Failed to get response";
             setLastError({ message: errorMessage, userMessage });
-            if (conversationModeRef.current) setConversationMode(false);
+            if (conversationModeRef.current) {
+              setConversationMode(false);
+              stopMonitoring();
+            }
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
         })
@@ -534,11 +641,15 @@ const AllyChat = () => {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
       logger.error("Chat error:", errorMessage, error);
-      
+
       // Store error for retry
       setLastError({ message: errorMessage, userMessage });
+      if (conversationModeRef.current) {
+        setConversationMode(false);
+        stopMonitoring();
+      }
       triggerHaptic('error');
-      
+
       // Show specific toast for rate limits or payment issues
       if (errorMessage.includes("rate limit") || errorMessage.includes("Rate limit")) {
         toast({
@@ -618,15 +729,14 @@ const AllyChat = () => {
 
     setIsLoading(true);
 
-    const currentAquariumName = conversationManager.getSelectedAquariumName();
-    const currentAquariumContext = conversationManager.selectedAquarium;
-
     try {
       await streamResponse(
         newMessages,
         conversationManager.getAquariumIdForApi(),
         selectedModel,
         createStreamCallbacks({
+          aquariumContext: conversationManager.selectedAquarium,
+          aquariumName: conversationManager.getSelectedAquariumName(),
           onStreamEnd: async (content) => {
             if (conversationManager.currentConversationId) {
               await conversationManager.saveAssistantMessage(content);
@@ -727,7 +837,7 @@ const AllyChat = () => {
               }
             }}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Open chat history">
                   <History className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -819,6 +929,7 @@ const AllyChat = () => {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
+            aria-label="New conversation"
             onClick={handleStartNewConversation}
           >
             <Plus className="h-5 w-5" />
@@ -932,7 +1043,9 @@ const AllyChat = () => {
                   className="h-6 px-2 text-xs"
                   onClick={() => {
                     setConversationMode(false);
+                    stopMonitoring();
                     stopSpeaking();
+                    if (isRecording) stopRecording();
                   }}
                 >
                   Exit
@@ -951,7 +1064,9 @@ const AllyChat = () => {
                 {isRecording ? (
                   <>
                     <div className="h-2 w-2 rounded-full bg-destructive recording-pulse" />
-                    {conversationMode ? "Listening... Tap mic to pause" : "Recording... Tap mic to stop"}
+                    {conversationMode
+                      ? (hasSpeechStarted ? "Hearing you... will send when you pause" : "Listening... speak when ready")
+                      : "Recording... Tap mic to stop"}
                   </>
                 ) : (
                   <>
@@ -1096,26 +1211,34 @@ const AllyChat = () => {
                         variant={conversationMode ? "default" : "ghost"}
                         size="icon"
                         className={cn(
-                          "h-8 w-8 rounded-full",
+                          "h-12 w-12 rounded-full relative",
                           conversationMode && "bg-primary text-primary-foreground"
                         )}
                         onClick={() => {
+                          if (!limits.hasConversationMode) {
+                            toast({ title: "Plus membership required", description: "Upgrade to use hands-free conversation mode." });
+                            return;
+                          }
                           if (conversationMode) {
                             setConversationMode(false);
+                            stopMonitoring();
                             stopSpeaking();
                             if (isRecording) stopRecording();
                           } else {
                             setConversationMode(true);
                             setWasVoiceInput(true);
-                            startRecording();
+                            startRecordingWithVAD();
                           }
                         }}
                         disabled={isLoading || isProcessing}
                       >
                         <MessageSquare className={cn(
-                          "h-4 w-4",
+                          "h-5 w-5",
                           conversationMode && "animate-pulse"
                         )} />
+                        {!limits.hasConversationMode && (
+                          <Lock className="h-3 w-3 absolute -top-0.5 -right-0.5 text-muted-foreground" />
+                        )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
