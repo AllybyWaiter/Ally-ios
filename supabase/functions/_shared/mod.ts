@@ -10,6 +10,7 @@ export {
   validationErrorResponse,
   collectErrors,
   escapeHtml,
+  timingSafeEqual,
   type ValidationError,
   type ValidationResult,
 } from './validation.ts';

@@ -145,13 +145,34 @@ serve(async (req) => {
   const logger = createLogger('analyze-water-trends-ai');
 
   try {
+    // ========== AUTHENTICATION ==========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      logger.warn('Missing authorization header');
+      return createErrorResponse('Authentication required', logger, { status: 401 });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !authUser) {
+      logger.warn('Authentication failed', { error: authError?.message });
+      return createErrorResponse('Authentication failed', logger, { status: 401 });
+    }
+
+    // Use authenticated user ID — never trust client-supplied userId
+    const userId = authUser.id;
+
     const body = await req.json();
-    const { aquariumId, userId } = body;
+    const { aquariumId } = body;
 
     // Input validation
     const errors = collectErrors(
       validateUuid(aquariumId, 'aquariumId'),
-      validateUuid(userId, 'userId')
     );
 
     if (errors.length > 0) {
@@ -160,7 +181,7 @@ serve(async (req) => {
     }
 
     // Rate limiting
-    const identifier = extractIdentifier(req);
+    const identifier = extractIdentifier(req, userId);
     const rateLimitResult = checkRateLimit({
       maxRequests: 10,
       windowMs: 60 * 1000,
@@ -187,11 +208,12 @@ serve(async (req) => {
 
     logger.info('Checking AI alert access', { tier: subscriptionTier, hasAccess: hasAIAlertAccess });
 
-    // Fetch aquarium data
+    // Fetch aquarium data — verify the authenticated user owns this aquarium
     const { data: aquarium } = await supabase
       .from('aquariums')
       .select('type, name, volume_gallons, setup_date')
       .eq('id', aquariumId)
+      .eq('user_id', userId)
       .single();
 
     if (!aquarium) {

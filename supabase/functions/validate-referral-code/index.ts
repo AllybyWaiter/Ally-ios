@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createLogger } from '../_shared/logger.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
 import { handleCors } from '../_shared/cors.ts';
+import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/mod.ts';
 
 Deno.serve(async (req) => {
   const logger = createLogger('validate-referral-code');
@@ -10,6 +11,18 @@ Deno.serve(async (req) => {
   if (corsResponse) return corsResponse;
 
   try {
+    // Rate limiting — prevent brute-force of referral codes
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 5,
+      windowMs: 60 * 1000,
+      identifier: `referral-validate:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
     let body: { code?: string; referee_email?: string };
     try {
       body = await req.json();

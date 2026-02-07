@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useAuthContext } from './AuthContext';
 import { fetchRolesAndPermissions as fetchRolesAndPermissionsFromDAL } from '@/infrastructure/queries/permissions';
+import { logger } from '@/lib/logger';
 
 interface PermissionsContextType {
   isAdmin: boolean;
@@ -32,7 +33,7 @@ export const PermissionsProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(userIsAdmin);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('🔴 Permissions: Fetch error:', message);
+      logger.error('Permissions: Fetch error:', message);
       setRoles([]);
       setPermissions([]);
       setIsAdmin(false);

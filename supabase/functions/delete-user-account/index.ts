@@ -49,6 +49,15 @@ serve(async (req) => {
     }
 
     const userId = user.id;
+    // Validate userId is a UUID before using in .or() filters (defense-in-depth)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      logger.error('Invalid user ID format', { userId });
+      return new Response(
+        JSON.stringify({ error: 'Invalid user ID' }),
+        { status: 400, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
     logger.setUserId(userId);
     logger.info('Starting account deletion');
 
@@ -59,8 +68,9 @@ serve(async (req) => {
     const { data: conversations } = await supabaseAdmin
       .from('chat_conversations')
       .select('id')
-      .eq('user_id', userId);
-    
+      .eq('user_id', userId)
+      .limit(10000);
+
     if (conversations && conversations.length > 0) {
       const conversationIds = conversations.map(c => c.id);
       const { error: messagesError } = await supabaseAdmin
@@ -83,8 +93,9 @@ serve(async (req) => {
     const { data: waterTests } = await supabaseAdmin
       .from('water_tests')
       .select('id')
-      .eq('user_id', userId);
-    
+      .eq('user_id', userId)
+      .limit(10000);
+
     if (waterTests && waterTests.length > 0) {
       const testIds = waterTests.map(t => t.id);
       const { error: paramsError } = await supabaseAdmin
@@ -99,8 +110,9 @@ serve(async (req) => {
     const { data: aquariums } = await supabaseAdmin
       .from('aquariums')
       .select('id')
-      .eq('user_id', userId);
-    
+      .eq('user_id', userId)
+      .limit(10000);
+
     if (aquariums && aquariums.length > 0) {
       const aquariumIds = aquariums.map(a => a.id);
 
@@ -149,7 +161,8 @@ serve(async (req) => {
     const { data: referrals } = await supabaseAdmin
       .from('referrals')
       .select('id')
-      .or(`referrer_id.eq.${userId},referee_id.eq.${userId}`);
+      .or(`referrer_id.eq.${userId},referee_id.eq.${userId}`)
+      .limit(10000);
 
     if (referrals && referrals.length > 0) {
       const referralIds = referrals.map(r => r.id);

@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
+import { timingSafeEqual } from '../_shared/validation.ts';
 
 // GDPR-compliant IP address retention period (90 days)
 const RETENTION_DAYS = 90;
@@ -31,7 +32,7 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    if (!supabaseServiceKey || token !== supabaseServiceKey) {
+    if (!supabaseServiceKey || !timingSafeEqual(token, supabaseServiceKey)) {
       console.error(JSON.stringify({ requestId, error: 'Invalid service role key' }));
       return new Response(
         JSON.stringify({ error: 'Invalid authorization' }),

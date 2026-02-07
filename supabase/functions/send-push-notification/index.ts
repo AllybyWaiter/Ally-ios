@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
+import { timingSafeEqual } from '../_shared/validation.ts';
 
 interface PushPayload {
   userId: string;
@@ -469,7 +470,7 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!serviceRoleKey || token !== serviceRoleKey) {
+    if (!serviceRoleKey || !timingSafeEqual(token, serviceRoleKey)) {
       console.error(JSON.stringify({ requestId, error: 'Invalid service role key' }));
       return new Response(
         JSON.stringify({ error: 'Invalid authorization' }),

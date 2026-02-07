@@ -164,6 +164,26 @@ export function collectErrors(...errors: (ValidationError | null)[]): Validation
   return errors.filter((e): e is ValidationError => e !== null);
 }
 
+// Constant-time string comparison to prevent timing attacks on secret values
+export function timingSafeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const bufA = encoder.encode(a);
+  const bufB = encoder.encode(b);
+  if (bufA.length !== bufB.length) {
+    // Compare against self to keep constant time, then return false
+    let dummy = 0;
+    for (let i = 0; i < bufA.length; i++) {
+      dummy |= bufA[i] ^ bufA[i];
+    }
+    return false && dummy === 0;
+  }
+  let result = 0;
+  for (let i = 0; i < bufA.length; i++) {
+    result |= bufA[i] ^ bufB[i];
+  }
+  return result === 0;
+}
+
 // HTML entity escaping for safe embedding in HTML templates (emails, etc.)
 export function escapeHtml(str: string): string {
   return str

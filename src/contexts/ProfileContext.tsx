@@ -125,6 +125,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.id, isInitialAuthComplete, fetchUserProfile, clearProfile]);
 
   // Visibility-based recovery for iOS PWA
+  const recoveryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState !== 'visible' || !user || !isInitialAuthComplete) return;
@@ -133,7 +135,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       if (isFetchingRef.current) return;
       isFetchingRef.current = true;
 
-      const recoveryTimeout = setTimeout(() => {
+      recoveryTimeoutRef.current = setTimeout(() => {
         setProfileLoading(false);
         // Don't reset isFetchingRef here — only the finally block should do that
         // to prevent concurrent fetches if the first hasn't completed
@@ -142,14 +144,23 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       try {
         await fetchUserProfile(user.id);
       } finally {
-        clearTimeout(recoveryTimeout);
+        if (recoveryTimeoutRef.current) {
+          clearTimeout(recoveryTimeoutRef.current);
+          recoveryTimeoutRef.current = null;
+        }
         setProfileLoading(false);
         isFetchingRef.current = false;
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (recoveryTimeoutRef.current) {
+        clearTimeout(recoveryTimeoutRef.current);
+        recoveryTimeoutRef.current = null;
+      }
+    };
   }, [user?.id, isInitialAuthComplete, fetchUserProfile]);
 
   const refreshProfile = useCallback(async () => {

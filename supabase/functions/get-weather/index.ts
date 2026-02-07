@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
+import { checkRateLimit, rateLimitExceededResponse, extractIdentifier, createLogger } from '../_shared/mod.ts';
 
 // Map Open-Meteo weather codes to simplified conditions
 function mapWeatherCode(code: number): string {
@@ -75,7 +76,21 @@ serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  const logger = createLogger('get-weather');
+
   try {
+    // Rate limiting — prevent abuse of external API calls
+    const identifier = extractIdentifier(req);
+    const rateLimitResult = checkRateLimit({
+      maxRequests: 15,
+      windowMs: 60 * 1000,
+      identifier: `weather:${identifier}`,
+    }, logger);
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitExceededResponse(rateLimitResult);
+    }
+
     const { latitude, longitude } = await req.json();
 
     if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
