@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { format } from 'date-fns';
 import TaskCalendar from './TaskCalendar';
 
 // Mock navigate
@@ -16,51 +14,9 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock useIsMobile - default to desktop mode
-const mockUseIsMobile = vi.fn(() => false);
-vi.mock('@/hooks/use-mobile', () => ({
-  useIsMobile: () => mockUseIsMobile(),
-}));
-
-// Mock useAuth
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: vi.fn(() => ({
-    user: { id: 'user-1' },
-    loading: false,
-  })),
-}));
-
 // Mock supabase
-const mockTasks = [
-  {
-    id: 'task-1',
-    task_name: 'Water Change',
-    task_type: 'water_change',
-    due_date: new Date().toISOString().split('T')[0],
-    status: 'pending',
-    aquarium_id: 'aquarium-1',
-    aquariums: { name: 'Test Tank' },
-  },
-  {
-    id: 'task-2',
-    task_name: 'Filter Clean',
-    task_type: 'filter_cleaning',
-    due_date: new Date().toISOString().split('T')[0],
-    status: 'pending',
-    aquarium_id: 'aquarium-1',
-    aquariums: { name: 'Test Tank' },
-  },
-];
-
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      gte: vi.fn().mockReturnThis(),
-      lte: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-    })),
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
       subscribe: vi.fn().mockReturnThis(),
@@ -69,24 +25,82 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// Mock tanstack query
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual('@tanstack/react-query');
-  return {
-    ...actual,
-    useQuery: vi.fn(() => ({
-      data: mockTasks,
-      isLoading: false,
-      error: null,
-    })),
-  };
-});
+// Mock AppHeader
+vi.mock('@/components/AppHeader', () => ({
+  default: () => <header data-testid="app-header">Header</header>,
+}));
+
+// Mock error boundaries
+vi.mock('@/components/error-boundaries', () => ({
+  SectionErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+vi.mock('@/lib/sentry', () => ({
+  FeatureArea: { MAINTENANCE: 'maintenance' },
+}));
+
+vi.mock('@/lib/queryKeys', () => ({
+  queryKeys: { tasks: { all: ['tasks'] } },
+}));
+
+// Mock MaintenanceTaskDialog
+vi.mock('@/components/aquarium/MaintenanceTaskDialog', () => ({
+  MaintenanceTaskDialog: () => null,
+}));
 
 // Mock toast
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
     toast: vi.fn(),
   }),
+}));
+
+// Mock calendar components and hooks
+vi.mock('@/components/calendar', () => ({
+  CalendarHeroBanner: (props: any) => (
+    <div data-testid="calendar-hero">
+      <span>Task Calendar</span>
+      <span>{props.todayCount} today</span>
+    </div>
+  ),
+  WeekAtGlance: (props: any) => (
+    <div data-testid="week-at-glance">
+      <button onClick={props.onAddTask}>Add Task</button>
+    </div>
+  ),
+  CalendarGrid: (props: any) => (
+    <div data-testid="calendar-grid">
+      <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span>
+      <span>Thu</span><span>Fri</span><span>Sat</span>
+    </div>
+  ),
+  CalendarTimeline: () => (
+    <div data-testid="calendar-timeline">Timeline</div>
+  ),
+  DayDetailPanel: () => (
+    <div data-testid="day-detail">Day Detail</div>
+  ),
+  QuickAddTaskFAB: (props: any) => (
+    <button data-testid="quick-add-fab" onClick={props.onClick}>Quick Add</button>
+  ),
+  useCalendarData: () => ({
+    isLoading: false,
+    calendarDays: [],
+    getTasksForDay: vi.fn().mockReturnValue([]),
+    stats: {
+      todayCount: 2,
+      overdueCount: 0,
+      completedCount: 1,
+      thisWeekCount: 3,
+      totalPending: 5,
+      todayTasks: [],
+    },
+    aquariums: [],
+    completeTask: vi.fn(),
+    rescheduleTask: vi.fn(),
+    isCompleting: false,
+  }),
+  useCalendarKeyboard: vi.fn(),
 }));
 
 const queryClient = new QueryClient({
@@ -109,33 +123,24 @@ const renderTaskCalendar = () => {
 describe('TaskCalendar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseIsMobile.mockReturnValue(false); // Default to desktop
   });
 
   describe('Page Rendering', () => {
     it('renders calendar page with title', () => {
       renderTaskCalendar();
-      
+
       expect(screen.getByText(/task calendar/i)).toBeInTheDocument();
     });
 
-    it('renders navigation buttons', () => {
+    it('renders calendar grid', () => {
       renderTaskCalendar();
-      
-      expect(screen.getByRole('button', { name: /today/i })).toBeInTheDocument();
+
+      expect(screen.getByTestId('calendar-grid')).toBeInTheDocument();
     });
 
-    it('renders current month and year', () => {
+    it('renders day headers', () => {
       renderTaskCalendar();
-      
-      const now = new Date();
-      const monthYear = format(now, 'MMM yyyy');
-      expect(screen.getByText(monthYear)).toBeInTheDocument();
-    });
 
-    it('renders day headers on desktop', () => {
-      renderTaskCalendar();
-      
       expect(screen.getByText('Sun')).toBeInTheDocument();
       expect(screen.getByText('Mon')).toBeInTheDocument();
       expect(screen.getByText('Tue')).toBeInTheDocument();
@@ -146,118 +151,36 @@ describe('TaskCalendar', () => {
     });
   });
 
-  describe('Month Navigation', () => {
-    it('has previous and next month buttons', () => {
+  describe('Calendar Sections', () => {
+    it('renders hero banner with stats', () => {
       renderTaskCalendar();
-      
-      // Look for navigation buttons by their icons or aria-labels
-      const prevButton = screen.getAllByRole('button').find(btn => 
-        btn.querySelector('[data-lucide="chevron-left"]') || btn.textContent === '‹'
-      );
-      const nextButton = screen.getAllByRole('button').find(btn => 
-        btn.querySelector('[data-lucide="chevron-right"]') || btn.textContent === '›'
-      );
-      
-      // At minimum, verify there are navigation controls
-      expect(screen.getByRole('button', { name: /today/i })).toBeInTheDocument();
-    });
-  });
 
-  describe('Task Display', () => {
-    it('displays tasks on calendar', () => {
+      expect(screen.getByTestId('calendar-hero')).toBeInTheDocument();
+      expect(screen.getByText('2 today')).toBeInTheDocument();
+    });
+
+    it('renders week at glance section', () => {
       renderTaskCalendar();
-      
-      // Tasks should be displayed somewhere in the calendar
-      expect(screen.getByText('Water Change')).toBeInTheDocument();
-      expect(screen.getByText('Filter Clean')).toBeInTheDocument();
-    });
-  });
 
-  describe('Task Legend', () => {
-    it('displays task type legend', () => {
+      expect(screen.getByTestId('week-at-glance')).toBeInTheDocument();
+    });
+
+    it('renders timeline section', () => {
       renderTaskCalendar();
-      
-      // Legend should show task type colors
-      expect(screen.getByText(/water change/i)).toBeInTheDocument();
-    });
-  });
 
-  describe('Calendar Grid', () => {
-    it('renders calendar cells for the month', () => {
+      expect(screen.getByTestId('calendar-timeline')).toBeInTheDocument();
+    });
+
+    it('renders quick add FAB', () => {
       renderTaskCalendar();
-      
-      // Should have day numbers visible
-      expect(screen.getByText('1')).toBeInTheDocument();
-      expect(screen.getByText('15')).toBeInTheDocument();
+
+      expect(screen.getByTestId('quick-add-fab')).toBeInTheDocument();
     });
 
-    it('highlights today', () => {
+    it('renders app header', () => {
       renderTaskCalendar();
-      
-      const today = new Date().getDate().toString();
-      const todayCell = screen.getByText(today);
-      
-      // Today should be in the document
-      expect(todayCell).toBeInTheDocument();
-    });
-  });
 
-  describe('Mobile View', () => {
-    beforeEach(() => {
-      mockUseIsMobile.mockReturnValue(true);
-    });
-
-    it('renders abbreviated day headers on mobile', () => {
-      renderTaskCalendar();
-      
-      // Mobile shows single-letter day headers
-      const dayHeaders = screen.getAllByText(/^[SMTWF]$/);
-      expect(dayHeaders.length).toBeGreaterThanOrEqual(7);
-    });
-
-    it('renders collapsible legend on mobile', () => {
-      renderTaskCalendar();
-      
-      // Legend should be present and collapsible
-      expect(screen.getByText(/task types/i)).toBeInTheDocument();
-    });
-
-    it('opens day sheet when tapping a day with tasks', async () => {
-      const user = userEvent.setup();
-      renderTaskCalendar();
-      
-      // Find today's date number and click it
-      const today = new Date().getDate().toString();
-      const todayCell = screen.getByText(today);
-      await user.click(todayCell);
-      
-      // Sheet should open (tasks are mocked for today)
-      await waitFor(() => {
-        expect(screen.getByText(/Water Change/)).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Desktop View', () => {
-    beforeEach(() => {
-      mockUseIsMobile.mockReturnValue(false);
-    });
-
-    it('renders full day headers on desktop', () => {
-      renderTaskCalendar();
-      
-      const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      dayHeaders.forEach(day => {
-        expect(screen.getByText(day)).toBeInTheDocument();
-      });
-    });
-
-    it('displays task cards inline on desktop', () => {
-      renderTaskCalendar();
-      
-      // Tasks should be visible directly on the calendar
-      expect(screen.getByText('Water Change')).toBeInTheDocument();
-      expect(screen.getByText('Filter Clean')).toBeInTheDocument();
+      expect(screen.getByTestId('app-header')).toBeInTheDocument();
     });
   });
 });

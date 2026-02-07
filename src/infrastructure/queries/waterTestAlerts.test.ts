@@ -9,7 +9,18 @@ import {
 } from './waterTestAlerts';
 import { supabase } from '@/integrations/supabase/client';
 
-vi.mock('@/integrations/supabase/client');
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
+    },
+  },
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+}));
 
 describe('waterTestAlerts DAL', () => {
   beforeEach(() => {
@@ -199,8 +210,17 @@ describe('waterTestAlerts DAL', () => {
 
       const mockChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+        eq: vi.fn().mockReturnThis(),
       };
+      // Second eq call resolves the chain
+      let eqCallCount = 0;
+      mockChain.eq.mockImplementation(() => {
+        eqCallCount++;
+        if (eqCallCount % 2 === 0) {
+          return Promise.resolve({ data: mockData, error: null });
+        }
+        return mockChain;
+      });
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await getAlertCountsBySeverity('user-1');
@@ -211,8 +231,16 @@ describe('waterTestAlerts DAL', () => {
     it('should return zero counts on error', async () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: null, error: { message: 'Fetch failed' } }),
+        eq: vi.fn().mockReturnThis(),
       };
+      let eqCallCount = 0;
+      mockChain.eq.mockImplementation(() => {
+        eqCallCount++;
+        if (eqCallCount % 2 === 0) {
+          return Promise.resolve({ data: null, error: { message: 'Fetch failed' } });
+        }
+        return mockChain;
+      });
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await getAlertCountsBySeverity('user-1');
@@ -223,8 +251,16 @@ describe('waterTestAlerts DAL', () => {
     it('should return zero counts when no alerts exist', async () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        eq: vi.fn().mockReturnThis(),
       };
+      let eqCallCount = 0;
+      mockChain.eq.mockImplementation(() => {
+        eqCallCount++;
+        if (eqCallCount % 2 === 0) {
+          return Promise.resolve({ data: [], error: null });
+        }
+        return mockChain;
+      });
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await getAlertCountsBySeverity('user-1');
@@ -241,8 +277,16 @@ describe('waterTestAlerts DAL', () => {
 
       const mockChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+        eq: vi.fn().mockReturnThis(),
       };
+      let eqCallCount = 0;
+      mockChain.eq.mockImplementation(() => {
+        eqCallCount++;
+        if (eqCallCount % 2 === 0) {
+          return Promise.resolve({ data: mockData, error: null });
+        }
+        return mockChain;
+      });
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await getAlertCountsBySeverity('user-1');

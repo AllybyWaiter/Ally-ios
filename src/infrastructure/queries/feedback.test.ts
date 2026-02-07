@@ -21,7 +21,7 @@ describe('feedback DAL', () => {
 
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockFeedback, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockFeedback, error: null }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
@@ -39,7 +39,7 @@ describe('feedback DAL', () => {
     it('should throw error on failure', async () => {
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Insert failed' } }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Insert failed' } }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);

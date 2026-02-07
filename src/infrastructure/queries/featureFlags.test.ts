@@ -116,7 +116,7 @@ describe('featureFlags DAL', () => {
 
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockFlag, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockFlag, error: null }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
@@ -149,7 +149,7 @@ describe('featureFlags DAL', () => {
 
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockFlag, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockFlag, error: null }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
@@ -175,7 +175,7 @@ describe('featureFlags DAL', () => {
     it('should throw error on failure', async () => {
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Insert failed' } }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Insert failed' } }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
@@ -194,7 +194,7 @@ describe('featureFlags DAL', () => {
       const mockUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: mockFlag, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: mockFlag, error: null }),
           }),
         }),
       });
@@ -210,7 +210,7 @@ describe('featureFlags DAL', () => {
       const mockUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
           }),
         }),
       });
@@ -302,7 +302,7 @@ describe('featureFlags DAL', () => {
 
       const mockUpsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockOverride, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: mockOverride, error: null }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ upsert: mockUpsert } as any);
@@ -319,7 +319,7 @@ describe('featureFlags DAL', () => {
     it('should throw error on failure', async () => {
       const mockUpsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Upsert failed' } }),
+          maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Upsert failed' } }),
         }),
       });
       vi.mocked(supabase.from).mockReturnValue({ upsert: mockUpsert } as any);

@@ -11,7 +11,7 @@ describe('getParameterTemplates', () => {
     it('should include basic parameters', () => {
       const templates = getParameterTemplates('freshwater');
       const templateNames = templates.map(t => t.name);
-      expect(templateNames).toContain('Basic');
+      expect(templateNames).toContain('Freshwater Standard');
     });
 
     it('should have proper structure for each template', () => {
@@ -60,10 +60,10 @@ describe('getParameterTemplates', () => {
   });
 
   describe('unknown aquarium type', () => {
-    it('should return freshwater templates for unknown type', () => {
+    it('should return default basic templates for unknown type', () => {
       const templates = getParameterTemplates('unknown-type');
-      const freshwaterTemplates = getParameterTemplates('freshwater');
-      expect(templates).toEqual(freshwaterTemplates);
+      expect(templates.length).toBeGreaterThan(0);
+      expect(templates[0].name).toBe('Basic Parameters');
     });
   });
 });
@@ -141,13 +141,13 @@ describe('validateParameter', () => {
   });
 
   describe('saltwater-specific validation', () => {
-    it('should validate Salinity in normal range', () => {
-      const result = validateParameter('Salinity', 35, 'saltwater');
+    it('should validate Salinity in normal SG range', () => {
+      const result = validateParameter('Salinity', 1.025, 'saltwater');
       expect(result.isValid).toBe(true);
     });
 
     it('should validate extremely low salinity as invalid for saltwater', () => {
-      const result = validateParameter('Salinity', 5, 'saltwater');
+      const result = validateParameter('Salinity', 0.5, 'saltwater');
       expect(result.isValid).toBe(false);
     });
   });

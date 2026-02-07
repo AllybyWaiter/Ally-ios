@@ -115,11 +115,14 @@ describe('plants DAL', () => {
   });
 
   describe('createPlant', () => {
+    const testAquariumId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    const testUserId = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
+
     it('should create plant with required fields', async () => {
       const mockPlant = {
         id: 'pl-1',
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Java Fern',
         species: 'Microsorum pteropus',
       };
@@ -132,8 +135,8 @@ describe('plants DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       const result = await createPlant({
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Java Fern',
         species: 'Microsorum pteropus',
       });
@@ -161,8 +164,8 @@ describe('plants DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await createPlant({
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Anubias',
         species: 'Anubias barteri',
         placement: 'foreground',
@@ -189,8 +192,8 @@ describe('plants DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await expect(createPlant({
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Plant',
         species: 'Species',
       })).rejects.toEqual({ message: 'Insert failed' });

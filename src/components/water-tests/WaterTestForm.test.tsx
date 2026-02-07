@@ -106,6 +106,48 @@ vi.mock('./CustomTemplateManager', () => ({
   CustomTemplateManager: () => null,
 }));
 
+// Mock react-i18next since component uses useTranslation
+vi.mock('react-i18next', () => ({
+  useTranslation: () => {
+    const translations: Record<string, string> = {
+      'waterTests.parameterTemplate': 'Parameter Template',
+      'waterTests.manageTemplates': 'Manage Templates',
+      'waterTests.saveTest': 'Save Test',
+      'waterTests.tagsPlaceholder': 'Add tags...',
+      'waterTests.templateDescription': 'Select a template to configure parameters',
+      'waterTests.systemTemplates': 'System Templates',
+      'waterTests.myCustomTemplates': 'My Custom Templates',
+      'waterTests.custom': 'Custom',
+      'aquarium.notes': 'Notes',
+      'aquarium.notesPlaceholder': 'Add notes...',
+      'common.optional': 'Optional',
+      'common.loading': 'Loading...',
+      'common.viewPricing': 'View Pricing',
+      'waterTests.upgradeTitle': 'Upgrade Required',
+      'waterTests.upgradeDescription': 'Upgrade for custom templates',
+      'waterTests.plusPlan': 'Plus Plan',
+      'waterTests.plusDescription': 'Create custom templates',
+      'waterTests.goldPlan': 'Gold Plan',
+      'waterTests.goldDescription': 'Unlimited templates',
+    };
+    return {
+      t: (key: string, opts?: any) => translations[key] || opts?.defaultValue || key,
+      i18n: { language: 'en' },
+    };
+  },
+}));
+
+// Mock waterBodyUtils
+vi.mock('@/lib/waterBodyUtils', () => ({
+  formatWaterBodyType: (type: string) => type,
+  isPoolType: () => false,
+}));
+
+// Mock WaterWandSection
+vi.mock('./WaterWandSection', () => ({
+  WaterWandSection: () => <div data-testid="water-wand-section">Water Wand</div>,
+}));
+
 describe('WaterTestForm', () => {
   const defaultAquarium = {
     id: 'test-aquarium-id',
