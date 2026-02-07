@@ -260,7 +260,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     logger.error('Delete account error', { error: errorMessage });
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Account deletion failed' }),
       { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
     );
   }

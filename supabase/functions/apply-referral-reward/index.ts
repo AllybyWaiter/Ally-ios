@@ -71,9 +71,36 @@ Deno.serve(async (req) => {
       return createSuccessResponse({ message: 'No pending referral', rewarded: false });
     }
 
+    // Claim the referral with an optimistic lock before creating Stripe coupons
+    // This prevents double coupon creation from concurrent requests
+    const { data: updateData, error: updateError } = await supabaseAdmin
+      .from('referrals')
+      .update({
+        status: 'rewarded',
+        qualified_at: new Date().toISOString(),
+        rewarded_at: new Date().toISOString(),
+      })
+      .eq('id', referral.id)
+      .eq('status', 'pending')
+      .select();
+
+    if (updateError) {
+      logger.warn('Failed to update referral status', {
+        referral_id: referral.id,
+        error: updateError.message,
+      });
+      return createErrorResponse('Failed to process referral', logger, { status: 500 });
+    }
+
+    // If no rows were updated, another request already processed this referral
+    if (!updateData || updateData.length === 0) {
+      logger.info('Referral already processed by concurrent request', { referral_id: referral.id });
+      return createSuccessResponse({ message: 'Referral already processed', rewarded: false });
+    }
+
     // Get Plus monthly price for coupon value (100% off for 1 month)
     const plusMonthlyPrice = Deno.env.get('STRIPE_PRICE_PLUS_MONTHLY');
-    
+
     // Create Stripe coupons for both referrer and referee
     const referrerCoupon = await stripe.coupons.create({
       percent_off: 100,
@@ -97,27 +124,10 @@ Deno.serve(async (req) => {
       },
     });
 
-    logger.info('Created Stripe coupons', { 
-      referrerCouponId: referrerCoupon.id, 
-      refereeCouponId: refereeCoupon.id 
+    logger.info('Created Stripe coupons', {
+      referrerCouponId: referrerCoupon.id,
+      refereeCouponId: refereeCoupon.id
     });
-
-    // Update referral status
-    const { error: updateError } = await supabaseAdmin
-      .from('referrals')
-      .update({
-        status: 'rewarded',
-        qualified_at: new Date().toISOString(),
-        rewarded_at: new Date().toISOString(),
-      })
-      .eq('id', referral.id);
-
-    if (updateError) {
-      logger.warn('Failed to update referral status (coupons already created)', {
-        referral_id: referral.id,
-        error: updateError.message,
-      });
-    }
 
     // Create reward records for both users
     const expiresAt = new Date();

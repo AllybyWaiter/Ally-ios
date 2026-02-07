@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCors, getCorsHeaders, securityHeaders } from '../_shared/cors.ts';
+import { timingSafeEqual } from '../_shared/validation.ts';
 
 interface NWSAlert {
   id: string;
@@ -167,8 +168,27 @@ serve(async (req) => {
   console.log(JSON.stringify({ requestId, message: 'scheduled-notifications started', time: new Date().toISOString() }));
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    // ========== SERVICE-ROLE AUTH ==========
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error(JSON.stringify({ requestId, error: 'Missing authorization header' }));
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...getCorsHeaders(req), ...securityHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    if (!supabaseServiceKey || !timingSafeEqual(token, supabaseServiceKey)) {
+      console.error(JSON.stringify({ requestId, error: 'Invalid service role key' }));
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { ...getCorsHeaders(req), ...securityHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const now = new Date();
@@ -182,7 +202,8 @@ serve(async (req) => {
       .from('notification_preferences')
       .select('user_id, reminder_hours_before')
       .eq('push_enabled', true)
-      .eq('task_reminders_enabled', true);
+      .eq('task_reminders_enabled', true)
+      .limit(5000);
 
     if (usersError) {
       console.error(JSON.stringify({ requestId, error: 'Failed to fetch users', message: usersError.message }));
@@ -227,7 +248,7 @@ serve(async (req) => {
           .eq('user_id', userPref.user_id)
           .eq('notification_type', 'task_reminder')
           .eq('reference_id', task.id)
-          .single();
+          .maybeSingle();
 
         if (existingLog) continue;
 
@@ -274,7 +295,8 @@ serve(async (req) => {
       .from('notification_preferences')
       .select('user_id')
       .eq('push_enabled', true)
-      .eq('water_alerts_enabled', true);
+      .eq('water_alerts_enabled', true)
+      .limit(5000);
 
     if (!alertUsersError && alertUsers) {
       // Find recent alerts (last 15 minutes) that haven't been notified
@@ -309,7 +331,7 @@ serve(async (req) => {
             .eq('user_id', userPref.user_id)
             .eq('notification_type', 'water_alert')
             .eq('reference_id', alert.id)
-            .single();
+            .maybeSingle();
 
           if (existingLog) continue;
 
@@ -351,7 +373,8 @@ serve(async (req) => {
       .from('notification_preferences')
       .select('user_id')
       .eq('push_enabled', true)
-      .eq('health_alerts_enabled', true);
+      .eq('health_alerts_enabled', true)
+      .limit(5000);
 
     if (!healthUsersError && healthUsers) {
       console.log(JSON.stringify({ requestId, message: `Processing health alerts for ${healthUsers.length} users` }));
@@ -422,7 +445,7 @@ serve(async (req) => {
             .eq('notification_type', 'health_alert')
             .eq('reference_id', notificationRefId)
             .gte('sent_at', oneDayAgo.toISOString())
-            .single();
+            .maybeSingle();
 
           if (existingLog) {
             console.log(JSON.stringify({ 
@@ -494,7 +517,8 @@ serve(async (req) => {
       .from('notification_preferences')
       .select('user_id')
       .eq('push_enabled', true)
-      .eq('weather_alerts_enabled', true);
+      .eq('weather_alerts_enabled', true)
+      .limit(5000);
 
     if (!weatherUsersError && weatherUsers) {
       for (const userPref of weatherUsers) {
@@ -503,7 +527,7 @@ serve(async (req) => {
           .from('profiles')
           .select('latitude, longitude, weather_enabled')
           .eq('user_id', userPref.user_id)
-          .single();
+          .maybeSingle();
 
         if (profileError || !profile?.weather_enabled || !profile?.latitude || !profile?.longitude) {
           continue;
@@ -526,7 +550,7 @@ serve(async (req) => {
             .select('id')
             .eq('user_id', userPref.user_id)
             .eq('alert_id', alertId)
-            .single();
+            .maybeSingle();
 
           if (existingNotification) continue;
 
@@ -554,13 +578,16 @@ serve(async (req) => {
               console.error(JSON.stringify({ requestId, error: 'Weather push invoke failed', message: sendError.message, alertId }));
             } else {
               // Record that we sent this alert
-              await supabase.from('weather_alerts_notified').insert({
+              const { error: insertError } = await supabase.from('weather_alerts_notified').insert({
                 user_id: userPref.user_id,
                 alert_id: alertId,
                 severity: props.severity,
                 headline: props.headline || props.event,
                 expires_at: props.expires,
               });
+              if (insertError) {
+                console.warn(JSON.stringify({ requestId, warning: 'Failed to insert weather_alerts_notified', error: insertError.message, alertId }));
+              }
 
               weatherNotificationsSent++;
               console.log(JSON.stringify({ requestId, message: 'Weather notification sent', alertId }));

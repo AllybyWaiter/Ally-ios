@@ -253,8 +253,19 @@ export default function BlogEditor() {
         }
         
         const [hours, minutes] = scheduleTime.split(':');
+        const parsedHours = parseInt(hours, 10);
+        const parsedMinutes = parseInt(minutes, 10);
+        if (isNaN(parsedHours) || isNaN(parsedMinutes)) {
+          toast({
+            title: 'Error',
+            description: 'Invalid schedule time format',
+            variant: 'destructive',
+          });
+          setSaving(false);
+          return;
+        }
         const scheduledDateTime = new Date(scheduleDate);
-        scheduledDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+        scheduledDateTime.setHours(parsedHours, parsedMinutes, 0, 0);
 
         if (scheduledDateTime <= new Date()) {
           toast({

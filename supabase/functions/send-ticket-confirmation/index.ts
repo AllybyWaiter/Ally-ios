@@ -3,6 +3,7 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 import { createLogger } from "../_shared/logger.ts";
 import { escapeHtml } from "../_shared/validation.ts";
 import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
+import { timingSafeEqual } from '../_shared/validation.ts';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -52,6 +53,26 @@ serve(async (req: Request): Promise<Response> => {
   if (corsResponse) return corsResponse;
 
   try {
+    // ========== SERVICE-ROLE AUTH ==========
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.warn('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    if (!supabaseServiceKey || !timingSafeEqual(token, supabaseServiceKey)) {
+      logger.warn('Invalid service role key');
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) } }
+      );
+    }
+
     const { name, email, ticketId, priority, messagePreview }: TicketConfirmationRequest = await req.json();
 
     logger.info('Sending ticket confirmation', { email, ticketId, priority });
@@ -191,7 +212,7 @@ serve(async (req: Request): Promise<Response> => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     logger.error("Error sending ticket confirmation", { error: errorMessage });
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Failed to send confirmation' }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },

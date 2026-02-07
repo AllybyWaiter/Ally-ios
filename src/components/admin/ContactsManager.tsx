@@ -184,7 +184,7 @@ export function ContactsManager() {
     if (!selectedContact) return;
 
     // For now, just open mailto - in production, use edge function
-    const mailtoUrl = `mailto:${selectedContact.email}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyMessage)}`;
+    const mailtoUrl = `mailto:${encodeURIComponent(selectedContact.email)}?subject=${encodeURIComponent(replySubject)}&body=${encodeURIComponent(replyMessage)}`;
     window.open(mailtoUrl, '_blank');
 
     // Update status to resolved with error handling

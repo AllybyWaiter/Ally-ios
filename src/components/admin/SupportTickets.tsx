@@ -111,7 +111,8 @@ const SupportTickets = () => {
   // Send reply mutation
   const sendReplyMutation = useMutation({
     mutationFn: async ({ ticketId, message }: { ticketId: string; message: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       if (!user) throw new Error('Not authenticated');
 
       const { error } = await supabase

@@ -176,7 +176,7 @@ export const MaintenanceTaskDialog = ({
           .from("maintenance_tasks")
           .select("*, aquariums!inner(user_id)")
           .eq("id", taskId)
-          .eq("aquariums.user_id", (await supabase.auth.getUser()).data.user?.id)
+          .eq("aquariums.user_id", (await supabase.auth.getUser()).data?.user?.id ?? '')
           .maybeSingle();
 
         if (error) {

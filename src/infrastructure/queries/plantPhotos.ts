@@ -26,6 +26,9 @@ export async function fetchPlantPhotos(plantId: string): Promise<PlantPhoto[]> {
   return data || [];
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
 export async function uploadPlantPhoto(
   plantId: string,
   userId: string,
@@ -33,8 +36,11 @@ export async function uploadPlantPhoto(
   caption?: string,
   takenAt?: string
 ): Promise<PlantPhoto> {
+  if (file.size > MAX_FILE_SIZE) throw new Error('File too large (max 10MB)');
+  if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
+
   await ensureFreshSession();
-  
+
   // Get file extension with fallback to jpg
   const fileExt = file.name.split('.').pop() || 'jpg';
   const fileName = `${userId}/${plantId}/${Date.now()}.${fileExt}`;

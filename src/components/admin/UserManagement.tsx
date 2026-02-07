@@ -200,7 +200,8 @@ export default function UserManagement() {
       .map(u => u.email);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
       if (!session) {
         toast({
           title: 'Error',

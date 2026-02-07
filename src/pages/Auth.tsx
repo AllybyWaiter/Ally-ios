@@ -163,9 +163,10 @@ export default function Auth() {
       
       // Fallback: check session directly and force navigate
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
         if (!mounted) return;
-        
+
         if (session?.user) {
           navigate('/dashboard');
         } else {

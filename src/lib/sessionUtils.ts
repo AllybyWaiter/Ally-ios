@@ -90,6 +90,7 @@ export async function getSession() {
  * Returns null if no session exists
  */
 export async function getCurrentUser() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data } = await supabase.auth.getSession();
+  const session = data?.session;
   return session?.user ?? null;
 }

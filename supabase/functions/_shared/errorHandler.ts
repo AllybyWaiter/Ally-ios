@@ -31,7 +31,7 @@ export function createErrorResponse(
   logger?.error(message, error);
 
   const responseBody: Record<string, unknown> = {
-    error: message,
+    error: status >= 500 ? 'An unexpected error occurred' : message,
     type: errorName,
   };
 

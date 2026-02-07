@@ -131,7 +131,8 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
   // Create test mutation
   const createTestMutation = useMutation({
     mutationFn: async ({ photoFile, currentPhotoUrl }: { photoFile: File | null; currentPhotoUrl: string | null }) => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
       if (!authUser) throw new Error('Not authenticated');
 
       const validEntries = getValidParameterEntries();

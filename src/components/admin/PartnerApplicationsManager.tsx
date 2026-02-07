@@ -682,7 +682,7 @@ export function PartnerApplicationsManager() {
               variant="outline"
               onClick={() => {
                 if (selectedApplication) {
-                  window.open(`mailto:${selectedApplication.email}?subject=Partner Application`, '_blank');
+                  window.open(`mailto:${encodeURIComponent(selectedApplication.email)}?subject=Partner Application`, '_blank');
                 }
               }}
             >

@@ -67,7 +67,8 @@ export const useTTS = () => {
 
     try {
       // Get the user's session for authenticated TTS requests
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
 
       if (!session?.access_token) {
         throw new Error('Authentication required for text-to-speech');

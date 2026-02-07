@@ -217,7 +217,8 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
 
   const handlePhotoFeedback = async (rating: 'positive' | 'negative') => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const authUser = data?.user;
       if (!authUser) return;
 
       const contextData: Json = {

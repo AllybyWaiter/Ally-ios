@@ -226,8 +226,14 @@ export async function fetchMonthlyTestCount(userId: string) {
   return count || 0;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
 // Upload photo for water test with retry logic
 export async function uploadWaterTestPhoto(userId: string, file: File, maxRetries = 2) {
+  if (file.size > MAX_FILE_SIZE) throw new Error('File too large (max 10MB)');
+  if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
+
   const parts = file.name.split('.');
   const fileExt = parts.length > 1 ? parts.pop() : 'jpg'; // Default to jpg if no extension
   const fileName = `${userId}/${Date.now()}.${fileExt}`;

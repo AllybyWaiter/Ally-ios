@@ -34,7 +34,8 @@ export const FeedbackButtons = ({
 
     setIsSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       if (!user) {
         toast.error("Please sign in to provide feedback");
         return;

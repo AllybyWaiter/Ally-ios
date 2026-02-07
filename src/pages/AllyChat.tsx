@@ -270,7 +270,8 @@ const AllyChat = () => {
 
   const initializeChat = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       if (!user) {
         navigate("/auth");
         return;

@@ -45,7 +45,8 @@ export default function ResetPassword() {
   // Check if user has a valid recovery session
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
       setIsValidSession(!!session);
       
       if (!session) {

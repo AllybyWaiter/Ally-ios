@@ -14,10 +14,10 @@ export function cn(...inputs: ClassValue[]) {
 export function sanitizeInput(input: string): string {
   return input
     .trim()
+    // Remove script tags and their content (must run before generic HTML tag stripping)
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     // Remove any HTML tags
     .replace(/<[^>]*>/g, '')
-    // Remove script tags content
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     // Remove potentially dangerous protocols
     .replace(/javascript:/gi, '')
     .replace(/\bdata:/gi, '')

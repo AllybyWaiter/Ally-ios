@@ -94,6 +94,13 @@ export const RoleManager = () => {
 
       // Fetch all user roles for these profiles
       const userIds = profiles?.map(p => p.user_id) || [];
+
+      // Guard against empty array — .in() with [] returns ALL rows
+      if (userIds.length === 0) {
+        setUsers([]);
+        return;
+      }
+
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role')

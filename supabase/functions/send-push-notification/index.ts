@@ -521,7 +521,7 @@ serve(async (req) => {
       .from('notification_preferences')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (prefs) {
       if (!prefs.push_enabled) {
@@ -580,7 +580,7 @@ serve(async (req) => {
         .eq('user_id', userId)
         .eq('notification_type', notificationType || 'general')
         .eq('reference_id', referenceId)
-        .single();
+        .maybeSingle();
 
       if (existingLog) {
         console.log(JSON.stringify({ requestId, message: 'Duplicate notification', referenceId }));
@@ -680,7 +680,7 @@ serve(async (req) => {
 
     // Always log successful notifications for delivery history
     if (successCount > 0) {
-      await supabase
+      const { error: logError } = await supabase
         .from('notification_log')
         .insert({
           user_id: userId,
@@ -689,6 +689,9 @@ serve(async (req) => {
           title,
           body,
         });
+      if (logError) {
+        console.warn(JSON.stringify({ requestId, warning: 'Failed to insert notification_log', error: logError.message }));
+      }
     }
 
     console.log(JSON.stringify({ requestId, message: 'Push complete', successCount, total: subscriptions.length }));

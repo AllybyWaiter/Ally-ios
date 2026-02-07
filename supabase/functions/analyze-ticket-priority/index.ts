@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
   corsHeaders,
   handleCors,
+  getCorsHeaders,
   createLogger,
   validateString,
   collectErrors,
@@ -12,6 +13,7 @@ import {
   handleAIGatewayError,
   createErrorResponse,
   createSuccessResponse,
+  timingSafeEqual,
 } from "../_shared/mod.ts";
 
 serve(async (req) => {
@@ -21,6 +23,26 @@ serve(async (req) => {
   const logger = createLogger('analyze-ticket-priority');
 
   try {
+    // ========== SERVICE-ROLE AUTH ==========
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.warn('Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseServiceKey || !timingSafeEqual(token, supabaseServiceKey)) {
+      logger.warn('Invalid service role key');
+      return new Response(
+        JSON.stringify({ error: 'Invalid authorization' }),
+        { status: 401, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
+    }
+
     const body = await req.json();
     const { message } = body;
 

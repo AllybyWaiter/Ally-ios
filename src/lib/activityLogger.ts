@@ -85,7 +85,8 @@ export const logActivity = async ({
   userId,
 }: LogActivityParams): Promise<void> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
     const userIdToLog = userId || user?.id;
 
     if (!userIdToLog) {

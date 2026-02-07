@@ -64,6 +64,9 @@ export async function fetchAllAquariumPhotos(aquariumId: string) {
 }
 
 // Upload a photo
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
 export async function uploadAquariumPhoto(
   aquariumId: string,
   userId: string,
@@ -71,6 +74,9 @@ export async function uploadAquariumPhoto(
   caption?: string,
   takenAt?: string
 ) {
+  if (file.size > MAX_FILE_SIZE) throw new Error('File too large (max 10MB)');
+  if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
+
   const parts = file.name.split('.');
   const fileExt = parts.length > 1 ? parts.pop() : 'jpg';
   const fileName = `${userId}/${aquariumId}/${Date.now()}.${fileExt}`;
