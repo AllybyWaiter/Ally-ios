@@ -48,7 +48,12 @@ export const useVoiceRecording = () => {
     };
   }, []);
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(async (onStreamReady?: (stream: MediaStream) => void) => {
+    // Guard against being called while already recording — prevents orphaned streams
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      return;
+    }
+
     try {
       // Check for browser support
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -75,6 +80,9 @@ export const useVoiceRecording = () => {
 
       // Store stream reference for cleanup
       streamRef.current = stream;
+
+      // Notify caller (e.g. VAD) that the stream is ready
+      onStreamReady?.(stream);
 
       // Build MediaRecorder options with detected format
       const options: MediaRecorderOptions = {};
@@ -108,6 +116,10 @@ export const useVoiceRecording = () => {
         resolve(null);
         return;
       }
+
+      // Capture this session's stream locally so the onstop handler doesn't
+      // accidentally kill a new stream started via a subsequent startRecording call
+      const sessionStream = streamRef.current;
 
       // Track if promise was already settled to prevent double resolution
       let promiseSettled = false;
@@ -227,10 +239,13 @@ export const useVoiceRecording = () => {
           resolve(null);
         }
 
-        // Stop all tracks and clear stream ref
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-          streamRef.current = null;
+        // Stop all tracks for THIS session's stream (captured locally to avoid
+        // killing a new stream that may have been started via startRecording)
+        if (sessionStream) {
+          sessionStream.getTracks().forEach(track => track.stop());
+          if (streamRef.current === sessionStream) {
+            streamRef.current = null;
+          }
         }
       };
 
