@@ -203,10 +203,7 @@ const MessageContent = memo(({
         </div>
       )}
       
-      <div className={cn(
-        "flex-1 space-y-1 min-w-0 overflow-hidden",
-        message.role === "user" && "flex flex-col items-end"
-      )}>
+      <div className="flex-1 space-y-1 min-w-0 overflow-hidden">
         <div className="relative group/message">
           {message.role === "assistant" ? (
             <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
@@ -296,7 +293,7 @@ const MessageContent = memo(({
                     />
                   )}
                   {message.content && (
-                    <p className="text-sm leading-relaxed text-primary ml-auto max-w-[85%]">
+                    <p className="text-sm leading-relaxed text-primary ml-auto max-w-[85%] min-w-[180px] text-left w-fit">
                       {mentionsToDisplay(message.content)}
                     </p>
                   )}
