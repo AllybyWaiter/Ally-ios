@@ -293,7 +293,7 @@ const MessageContent = memo(({
                     />
                   )}
                   {message.content && (
-                    <p className="text-sm leading-relaxed text-primary ml-auto max-w-[85%] min-w-[180px] text-left w-fit">
+                    <p className="text-sm leading-relaxed text-primary ml-auto max-w-[85%] text-left">
                       {mentionsToDisplay(message.content)}
                     </p>
                   )}
