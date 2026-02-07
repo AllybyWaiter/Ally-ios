@@ -29,6 +29,13 @@ vi.mock('@/contexts/ProfileContext', () => ({
   useProfileContext: () => ({ units: 'imperial' }),
 }));
 
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1' },
+    loading: false,
+  }),
+}));
+
 vi.mock('@/hooks/useAquariumHealthScore', () => ({
   useAquariumHealthScore: () => ({
     score: 90,
