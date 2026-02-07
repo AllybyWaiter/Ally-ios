@@ -576,11 +576,14 @@ const AllyChat = () => {
     }
   };
 
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const copyMessage = useCallback(async (content: string, index: number) => {
     const success = await copyToClipboard(content);
     if (success) {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), 2000);
+      copyTimeoutRef.current = setTimeout(() => setCopiedIndex(null), 2000);
     }
   }, []);
 
@@ -905,7 +908,7 @@ const AllyChat = () => {
                 hasAlerts={hasAlerts}
                 onSelectQuestion={(question) => {
                   setInput(question);
-                  setTimeout(() => sendMessage(), 100);
+                  setTimeout(() => sendMessageRef.current(), 100);
                 }}
               />
             </motion.div>

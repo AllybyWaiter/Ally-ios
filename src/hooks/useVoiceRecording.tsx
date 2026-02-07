@@ -2,6 +2,27 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+/**
+ * Detects the best supported audio MIME type for the current browser.
+ * iOS Safari requires audio/mp4, while Chrome/Firefox prefer audio/webm.
+ */
+function getSupportedMimeType(): { mimeType: string; extension: string } {
+  const types = [
+    { mimeType: 'audio/mp4', extension: 'm4a' },      // iOS Safari native
+    { mimeType: 'audio/webm', extension: 'webm' },    // Chrome/Firefox
+    { mimeType: 'audio/ogg', extension: 'ogg' },      // Firefox fallback
+  ];
+
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type.mimeType)) {
+      return type;
+    }
+  }
+
+  // Fallback - let browser pick default
+  return { mimeType: '', extension: 'wav' };
+}
+
 export const useVoiceRecording = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -9,6 +30,7 @@ export const useVoiceRecording = () => {
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const isAbortedRef = useRef(false); // Track if component unmounted
+  const mimeTypeRef = useRef<{ mimeType: string; extension: string } | null>(null);
 
   // Cleanup function to stop all media tracks
   useEffect(() => {
@@ -28,19 +50,39 @@ export const useVoiceRecording = () => {
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      // Check for browser support
+      if (!navigator.mediaDevices?.getUserMedia) {
+        toast.error('Voice recording not supported in this browser');
+        return;
+      }
+      if (!window.MediaRecorder) {
+        toast.error('MediaRecorder not supported');
+        return;
+      }
+
+      // Detect supported format before starting
+      const formatInfo = getSupportedMimeType();
+      mimeTypeRef.current = formatInfo;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
-          sampleRate: 16000,
-        } 
+          sampleRate: { ideal: 16000 },  // Use 'ideal' - iOS rejects 'exact'
+          echoCancellation: true,
+          noiseSuppression: true,
+        }
       });
-      
+
       // Store stream reference for cleanup
       streamRef.current = stream;
-      
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      });
+
+      // Build MediaRecorder options with detected format
+      const options: MediaRecorderOptions = {};
+      if (formatInfo.mimeType) {
+        options.mimeType = formatInfo.mimeType;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options);
       
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
@@ -93,7 +135,8 @@ export const useVoiceRecording = () => {
         setIsProcessing(true);
 
         try {
-          const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          const audioMimeType = mimeTypeRef.current?.mimeType || 'audio/webm';
+          const audioBlob = new Blob(chunksRef.current, { type: audioMimeType });
 
           // Convert blob to base64 with timeout safeguard
           const reader = new FileReader();
@@ -154,7 +197,10 @@ export const useVoiceRecording = () => {
 
             try {
               const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-                body: { audio: base64Audio }
+                body: {
+                  audio: base64Audio,
+                  format: mimeTypeRef.current?.extension || 'webm'
+                }
               });
 
               if (isAbortedRef.current) return;

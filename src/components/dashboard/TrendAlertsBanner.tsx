@@ -206,8 +206,8 @@ export function TrendAlertsBanner() {
                   {/* Affected inhabitants */}
                   {isAIPowered && alert.affected_inhabitants && alert.affected_inhabitants.length > 0 && (
                     <div className="flex gap-1 mt-2 flex-wrap">
-                      {alert.affected_inhabitants.map((name, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
+                      {alert.affected_inhabitants.map((name) => (
+                        <Badge key={name} variant="outline" className="text-xs">
                           {name}
                         </Badge>
                       ))}

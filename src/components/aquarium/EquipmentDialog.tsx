@@ -148,7 +148,7 @@ export const EquipmentDialog = ({
           .from("equipment")
           .select("id, aquariums!inner(user_id)")
           .eq("id", equipment.id)
-          .eq("aquariums.user_id", user!.id)
+          .eq("aquariums.user_id", user?.id ?? '')
           .maybeSingle();
 
         if (verifyError) throw verifyError;

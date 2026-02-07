@@ -102,7 +102,11 @@ export default function UserManagement() {
           fetchUsersRef.current();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Realtime subscription error for profiles-changes');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

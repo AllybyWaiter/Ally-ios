@@ -43,12 +43,17 @@ export function useConversationManager(userId: string | null) {
 
   const fetchAquariums = useCallback(async () => {
     if (!userId) return;
-    
-    const { data } = await supabase
+
+    const { data, error } = await supabase
       .from('aquariums')
       .select('id, name, type')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
+
+    if (error) {
+      logger.error('Failed to fetch aquariums:', error);
+      return;
+    }
 
     if (data) {
       setAquariums(data);
@@ -149,7 +154,11 @@ export function useConversationManager(userId: string | null) {
       toast({ title: 'Error', description: 'Failed to rename conversation', variant: 'destructive' });
       return;
     }
-    await fetchConversations();
+    try {
+      await fetchConversations();
+    } catch (e) {
+      logger.error('Failed to refresh conversations after rename:', e);
+    }
   }, [userId, fetchConversations, toast]);
 
   const bulkDeleteConversations = useCallback(async (conversationIds: string[]) => {

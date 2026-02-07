@@ -51,7 +51,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { audio } = body;
+    const { audio, format = 'webm' } = body;
 
     // Input validation
     const errors = collectErrors(
@@ -77,6 +77,7 @@ serve(async (req) => {
 
     logger.info('Processing audio transcription', {
       audioSize: audio.length,
+      format,
     });
 
     let binaryAudio: Uint8Array;
@@ -87,9 +88,19 @@ serve(async (req) => {
       return validationErrorResponse([{ field: 'audio', message: 'Invalid base64-encoded audio data' }], req);
     }
     
+    // Map format extension to proper MIME type for OpenAI Whisper
+    const mimeTypes: Record<string, string> = {
+      'm4a': 'audio/mp4',
+      'mp4': 'audio/mp4',
+      'webm': 'audio/webm',
+      'ogg': 'audio/ogg',
+      'wav': 'audio/wav',
+    };
+
+    const mimeType = mimeTypes[format] || 'audio/webm';
     const formData = new FormData();
-    const blob = new Blob([binaryAudio], { type: 'audio/webm' });
-    formData.append('file', blob, 'audio.webm');
+    const blob = new Blob([binaryAudio], { type: mimeType });
+    formData.append('file', blob, `audio.${format}`);
     formData.append('model', 'whisper-1');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {

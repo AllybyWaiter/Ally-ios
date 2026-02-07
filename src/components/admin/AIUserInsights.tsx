@@ -77,23 +77,27 @@ export default function AIUserInsights() {
       if (profilesError) throw profilesError;
 
       // Get chat message counts per user
-      const { data: conversations } = await supabase
+      const { data: conversations, error: convError } = await supabase
         .from('chat_conversations')
         .select('user_id');
-      
-      const { data: messages } = await supabase
+      if (convError) console.error('Failed to fetch conversations:', convError.message);
+
+      const { data: messages, error: msgError } = await supabase
         .from('chat_messages')
         .select('conversation_id');
+      if (msgError) console.error('Failed to fetch messages:', msgError.message);
 
       // Get memory counts per user
-      const { data: memories } = await supabase
+      const { data: memories, error: memError } = await supabase
         .from('user_memories')
         .select('user_id');
+      if (memError) console.error('Failed to fetch memories:', memError.message);
 
       // Get feedback counts per user
-      const { data: feedback } = await supabase
+      const { data: feedback, error: fbError } = await supabase
         .from('ai_feedback')
         .select('user_id, rating');
+      if (fbError) console.error('Failed to fetch feedback:', fbError.message);
 
       // Build conversation to user mapping
       const conversationUserMap: Record<string, string> = {};

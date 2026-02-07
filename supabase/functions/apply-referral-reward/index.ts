@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     expiresAt.setDate(expiresAt.getDate() + 90);
 
     // Referrer reward
-    await supabaseAdmin
+    const { error: referrerRewardError } = await supabaseAdmin
       .from('referral_rewards')
       .insert({
         user_id: referral.referrer_id,
@@ -136,8 +136,15 @@ Deno.serve(async (req) => {
         expires_at: expiresAt.toISOString(),
       });
 
+    if (referrerRewardError) {
+      logger.error('Failed to insert referrer reward', {
+        referral_id: referral.id,
+        error: referrerRewardError.message,
+      });
+    }
+
     // Referee reward (apply immediately if possible)
-    await supabaseAdmin
+    const { error: refereeRewardError } = await supabaseAdmin
       .from('referral_rewards')
       .insert({
         user_id: referee_id,
@@ -148,6 +155,13 @@ Deno.serve(async (req) => {
         stripe_coupon_id: refereeCoupon.id,
         expires_at: expiresAt.toISOString(),
       });
+
+    if (refereeRewardError) {
+      logger.error('Failed to insert referee reward', {
+        referral_id: referral.id,
+        error: refereeRewardError.message,
+      });
+    }
 
     logger.info('Referral rewards created successfully', { 
       referral_id: referral.id,

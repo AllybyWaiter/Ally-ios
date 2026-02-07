@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       activityLogsResult,
       loginHistoryResult
     ] = await Promise.all([
-      supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+      supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('aquariums').select('*').eq('user_id', user.id),
       supabase.from('water_tests').select('*, test_parameters(*)').eq('user_id', user.id),
       supabase.from('livestock').select('*').eq('user_id', user.id),
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
       supabase.from('maintenance_tasks').select('*, aquariums!inner(user_id)').eq('aquariums.user_id', user.id),
       supabase.from('user_memories').select('*').eq('user_id', user.id),
       supabase.from('chat_conversations').select('*, chat_messages(*)').eq('user_id', user.id),
-      supabase.from('notification_preferences').select('*').eq('user_id', user.id).single(),
+      supabase.from('notification_preferences').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('activity_logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1000),
       supabase.from('login_history').select('*').eq('user_id', user.id).order('login_at', { ascending: false }).limit(1000)
     ]);

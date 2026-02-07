@@ -169,7 +169,7 @@ Generate 3 professional reply templates using the suggest_replies tool.`;
     
     // Fallback to content parsing if no tool calls
     if (templates.length === 0) {
-      const content = data.choices[0]?.message?.content;
+      const content = data.choices?.[0]?.message?.content;
       
       if (content) {
         try {

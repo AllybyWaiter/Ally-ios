@@ -5,7 +5,7 @@
  * with haptic feedback integration.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useHaptics } from './useHaptics';
 
 interface UseLongPressOptions {
@@ -93,6 +93,16 @@ export function useLongPress({
   const onMouseLeave = useCallback(() => {
     cancel(false);
   }, [cancel]);
+
+  // Clear pending timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     onTouchStart,

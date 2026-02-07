@@ -67,21 +67,27 @@ export async function buildMemoryContext(
 
   // Fallback to traditional query if semantic search returned nothing
   if (memoryData.length === 0) {
+    // Whitelist valid water types to prevent PostgREST filter injection
+    const validWaterTypes = ['freshwater', 'saltwater', 'brackish', 'pond', 'pool', 'spa', 'reef', 'planted', 'universal'];
+    const safeWaterType = validWaterTypes.includes(waterType.toLowerCase()) ? waterType.toLowerCase() : 'freshwater';
+
     let query = supabase
       .from('user_memories')
       .select('*')
       .eq('user_id', userId)
-      .or(`water_type.eq.${waterType.replace(/[.,()%_\\]/g, '')},water_type.eq.universal,water_type.is.null`)
+      .or(`water_type.eq.${safeWaterType},water_type.eq.universal,water_type.is.null`)
       .order('updated_at', { ascending: false })
       .limit(50);
 
     // If aquarium selected, include both global and aquarium-specific memories
-    if (aquariumId) {
+    // Validate aquariumId is a UUID to prevent PostgREST filter injection
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (aquariumId && uuidRegex.test(aquariumId)) {
       query = supabase
         .from('user_memories')
         .select('*')
         .eq('user_id', userId)
-        .or(`water_type.eq.${waterType.replace(/[.,()%_\\]/g, '')},water_type.eq.universal,water_type.is.null`)
+        .or(`water_type.eq.${safeWaterType},water_type.eq.universal,water_type.is.null`)
         .or(`aquarium_id.eq.${aquariumId},aquarium_id.is.null`)
         .order('updated_at', { ascending: false })
         .limit(50);

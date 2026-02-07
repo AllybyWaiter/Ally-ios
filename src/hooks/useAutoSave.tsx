@@ -90,7 +90,7 @@ export const useAutoSave = <T,>({
 
     // Set new timeout for auto-save
     timeoutRef.current = setTimeout(() => {
-      saveNow();
+      void saveNow();
     }, delay);
 
     return () => {

@@ -120,10 +120,13 @@ export const MaintenanceTaskDialog = ({
   // Load equipment for the aquarium
   useEffect(() => {
     const loadEquipment = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("equipment")
         .select("id, name, equipment_type")
         .eq("aquarium_id", aquariumId);
+      if (error) {
+        console.error('Failed to load equipment:', error.message);
+      }
       setEquipment(data || []);
     };
     if (open) {
@@ -169,12 +172,16 @@ export const MaintenanceTaskDialog = ({
   useEffect(() => {
     const loadTask = async () => {
       if (mode === "edit" && taskId) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("maintenance_tasks")
           .select("*, aquariums!inner(user_id)")
           .eq("id", taskId)
           .eq("aquariums.user_id", (await supabase.auth.getUser()).data.user?.id)
           .maybeSingle();
+
+        if (error) {
+          console.error('Failed to load task:', error.message);
+        }
 
         if (data) {
           form.reset({

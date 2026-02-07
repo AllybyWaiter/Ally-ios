@@ -57,7 +57,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
     refetch: refetchOverrides
   } = useQuery({
     queryKey: queryKeys.featureFlags.userOverrides(user?.id ?? ''),
-    queryFn: () => fetchUserOverrides(user!.id),
+    queryFn: () => fetchUserOverrides(user?.id ?? ''),
     staleTime: 30000,
     enabled: !!user,
   });

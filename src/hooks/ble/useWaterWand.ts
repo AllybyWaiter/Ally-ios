@@ -504,7 +504,9 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
       // Disconnect on unmount
       const deviceId = connectedDeviceIdRef.current;
       if (deviceId) {
-        BleClient.disconnect(deviceId).catch(() => {});
+        BleClient.disconnect(deviceId).catch((err) => {
+          logger.warn('[WaterWand] Cleanup disconnect error:', err);
+        });
       }
     };
   }, []);

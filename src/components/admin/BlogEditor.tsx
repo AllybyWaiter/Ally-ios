@@ -217,11 +217,15 @@ export default function BlogEditor() {
       throw uploadError;
     }
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: urlData } = supabase.storage
       .from('blog-images')
       .getPublicUrl(filePath);
 
-    return publicUrl;
+    if (!urlData?.publicUrl) {
+      throw new Error('Failed to retrieve public URL for uploaded image');
+    }
+
+    return urlData.publicUrl;
   };
 
   const handleSave = async (publish: boolean = false, schedule: boolean = false) => {

@@ -41,6 +41,7 @@ export function useCalendarGestures({
   const { light } = useHaptics();
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!e.touches.length) return;
     const touch = e.touches[0];
     swipeStateRef.current = {
       startX: touch.clientX,
@@ -51,12 +52,12 @@ export function useCalendarGestures({
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     // Prevent scroll while swiping horizontally
-    if (!swipeStateRef.current) return;
-    
+    if (!swipeStateRef.current || !e.touches.length) return;
+
     const touch = e.touches[0];
     const deltaX = touch.clientX - swipeStateRef.current.startX;
     const deltaY = touch.clientY - swipeStateRef.current.startY;
-    
+
     // If horizontal movement is greater, prevent default
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
       e.preventDefault();
@@ -64,7 +65,7 @@ export function useCalendarGestures({
   }, []);
 
   const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!swipeStateRef.current) return;
+    if (!swipeStateRef.current || !e.changedTouches.length) return;
 
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - swipeStateRef.current.startX;
@@ -140,6 +141,7 @@ export function useSwipeableTask({
   const { medium } = useHaptics();
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!e.touches.length) return;
     const touch = e.touches[0];
     swipeStateRef.current = {
       startX: touch.clientX,
@@ -150,7 +152,7 @@ export function useSwipeableTask({
   }, []);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!swipeStateRef.current) return;
+    if (!swipeStateRef.current || !e.touches.length) return;
 
     const touch = e.touches[0];
     const deltaX = touch.clientX - swipeStateRef.current.startX;

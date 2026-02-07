@@ -79,6 +79,12 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
           setPhotoPreview(reader.result as string);
         }
       };
+      reader.onerror = () => {
+        console.error('FileReader error reading compressed file');
+        if (isMountedRef.current) {
+          toast.error('Failed to read image file');
+        }
+      };
       reader.readAsDataURL(compressedFile);
     } catch (error) {
       console.error('Compression error:', error);
@@ -93,6 +99,12 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
       reader.onloadend = () => {
         if (isMountedRef.current) {
           setPhotoPreview(reader.result as string);
+        }
+      };
+      reader.onerror = () => {
+        console.error('FileReader error reading original file');
+        if (isMountedRef.current) {
+          toast.error('Failed to read image file');
         }
       };
       reader.readAsDataURL(file);

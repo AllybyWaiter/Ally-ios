@@ -84,6 +84,10 @@ export function ReferralRewards() {
       if (error) throw error;
 
       if (data?.url) {
+        const checkoutUrl = new URL(data.url);
+        if (!checkoutUrl.hostname.endsWith('stripe.com')) {
+          throw new Error('Invalid checkout URL');
+        }
         window.location.href = data.url;
       } else {
         throw new Error('No checkout URL returned');

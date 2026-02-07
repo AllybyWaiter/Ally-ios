@@ -1,11 +1,16 @@
 /**
  * Fish Species Data Access Layer
- * 
+ *
  * Queries for fish species compatibility data.
  */
 
 import { supabase } from '@/integrations/supabase/client';
 import type { FishSpecies } from '@/lib/fishCompatibility';
+
+/** Escape special characters for PostgREST ILIKE/filter values */
+function escapePostgrestValue(value: string): string {
+  return value.replace(/[%_\\,().]/g, '\\$&');
+}
 
 /**
  * Search for fish species by name (common or scientific)
@@ -15,10 +20,11 @@ export async function searchFishSpecies(
   waterType?: string,
   limit: number = 10
 ): Promise<FishSpecies[]> {
+  const escaped = escapePostgrestValue(query);
   let queryBuilder = supabase
     .from('fish_species')
     .select('*')
-    .or(`common_name.ilike.%${query}%,scientific_name.ilike.%${query}%`)
+    .or(`common_name.ilike.%${escaped}%,scientific_name.ilike.%${escaped}%`)
     .limit(limit);
 
   if (waterType) {
@@ -47,10 +53,11 @@ export async function searchFishSpecies(
  * Get fish species by exact name match
  */
 export async function getFishSpeciesByName(name: string): Promise<FishSpecies | null> {
+  const escaped = escapePostgrestValue(name);
   const { data, error } = await supabase
     .from('fish_species')
     .select('*')
-    .or(`common_name.ilike.${name},scientific_name.ilike.${name}`)
+    .or(`common_name.ilike.${escaped},scientific_name.ilike.${escaped}`)
     .limit(1)
     .maybeSingle();
 
@@ -64,10 +71,11 @@ export async function getFishSpeciesByName(name: string): Promise<FishSpecies | 
 export async function getFishSpeciesByNames(names: string[]): Promise<FishSpecies[]> {
   if (names.length === 0) return [];
   
-  // Build OR conditions for each name
-  const conditions = names.map(name => 
-    `common_name.ilike.${name},scientific_name.ilike.${name}`
-  ).join(',');
+  // Build OR conditions for each name (escaped for PostgREST safety)
+  const conditions = names.map(name => {
+    const escaped = escapePostgrestValue(name);
+    return `common_name.ilike.${escaped},scientific_name.ilike.${escaped}`;
+  }).join(',');
 
   const { data, error } = await supabase
     .from('fish_species')
@@ -150,9 +158,11 @@ export async function getCompatibleSpecies(
     queryBuilder = queryBuilder.lte('min_tank_gallons', tankGallons);
   }
 
-  // Exclude species already in tank
+  // Exclude species already in tank (escape each name for PostgREST safety)
   if (existingSpeciesNames.length > 0) {
-    const lowerNames = existingSpeciesNames.map(n => n.toLowerCase());
+    const lowerNames = existingSpeciesNames.map(n =>
+      `"${n.toLowerCase().replace(/"/g, '""')}"`
+    );
     queryBuilder = queryBuilder.not('common_name', 'in', `(${lowerNames.join(',')})`);
   }
 

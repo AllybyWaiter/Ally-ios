@@ -102,6 +102,10 @@ if (!envValidation.isValid) {
         const crashMarker = sessionStorage.getItem('ally_crash_recovery');
         if (crashMarker) {
           const crashTime = parseInt(crashMarker, 10);
+          if (isNaN(crashTime)) {
+            sessionStorage.removeItem('ally_crash_recovery');
+            return true;
+          }
           const timeSinceCrash = Date.now() - crashTime;
           
           if (timeSinceCrash < 30000) {

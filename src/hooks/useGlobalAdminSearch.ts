@@ -36,16 +36,17 @@ export function useGlobalAdminSearch() {
     setLoading(true);
     const allResults: SearchResult[] = [];
 
-    // Escape special LIKE/ILIKE characters to prevent wildcard injection
-    const escaped = searchQuery.replace(/[%_\\]/g, '\\$&');
+    // Escape special LIKE/ILIKE characters AND PostgREST filter syntax to prevent injection
+    const escaped = searchQuery.replace(/[%_\\,().]/g, '\\$&');
 
     try {
       // Search users - only search on text columns (email, name), not UUIDs
-      const { data: users } = await supabase
+      const { data: users, error: usersError } = await supabase
         .from('profiles')
         .select('user_id, email, name')
         .or(`email.ilike.%${escaped}%,name.ilike.%${escaped}%`)
         .limit(5);
+      if (usersError) logger.error('Admin search: profiles query failed', usersError);
 
       if (users) {
         allResults.push(...users.map(u => ({
@@ -57,11 +58,12 @@ export function useGlobalAdminSearch() {
       }
 
       // Search tickets - only search on text columns (subject, email), not UUIDs
-      const { data: tickets } = await supabase
+      const { data: tickets, error: ticketsError } = await supabase
         .from('support_tickets')
         .select('id, subject, email, status')
         .or(`subject.ilike.%${escaped}%,email.ilike.%${escaped}%`)
         .limit(5);
+      if (ticketsError) logger.error('Admin search: tickets query failed', ticketsError);
 
       if (tickets) {
         allResults.push(...tickets.map(t => ({
@@ -73,11 +75,12 @@ export function useGlobalAdminSearch() {
       }
 
       // Search blog posts - only search on text columns (title), not UUIDs
-      const { data: posts } = await supabase
+      const { data: posts, error: postsError } = await supabase
         .from('blog_posts')
         .select('id, title, status, slug')
         .ilike('title', `%${escaped}%`)
         .limit(5);
+      if (postsError) logger.error('Admin search: blog_posts query failed', postsError);
 
       if (posts) {
         allResults.push(...posts.map(p => ({
@@ -90,11 +93,12 @@ export function useGlobalAdminSearch() {
       }
 
       // Search contacts - only search on text columns, not UUIDs
-      const { data: contacts } = await supabase
+      const { data: contacts, error: contactsError } = await supabase
         .from('contacts')
         .select('id, name, email, subject')
         .or(`name.ilike.%${escaped}%,email.ilike.%${escaped}%,subject.ilike.%${escaped}%`)
         .limit(5);
+      if (contactsError) logger.error('Admin search: contacts query failed', contactsError);
 
       if (contacts) {
         allResults.push(...contacts.map(c => ({
@@ -106,11 +110,12 @@ export function useGlobalAdminSearch() {
       }
 
       // Search waitlist - only search on text columns (email), not UUIDs
-      const { data: waitlist } = await supabase
+      const { data: waitlist, error: waitlistError } = await supabase
         .from('waitlist')
         .select('id, email')
         .ilike('email', `%${escaped}%`)
         .limit(5);
+      if (waitlistError) logger.error('Admin search: waitlist query failed', waitlistError);
 
       if (waitlist) {
         allResults.push(...waitlist.map(w => ({
@@ -122,11 +127,12 @@ export function useGlobalAdminSearch() {
       }
 
       // Search announcements - only search on text columns (title), not UUIDs
-      const { data: announcements } = await supabase
+      const { data: announcements, error: announcementsError } = await supabase
         .from('announcements')
         .select('id, title, status')
         .ilike('title', `%${escaped}%`)
         .limit(5);
+      if (announcementsError) logger.error('Admin search: announcements query failed', announcementsError);
 
       if (announcements) {
         allResults.push(...announcements.map(a => ({

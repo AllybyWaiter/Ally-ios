@@ -45,16 +45,20 @@ export async function uploadPlantPhoto(
 
   if (uploadError) throw uploadError;
 
-  const { data: { publicUrl } } = supabase.storage
+  const { data: urlData } = supabase.storage
     .from('plant-photos')
     .getPublicUrl(fileName);
+
+  if (!urlData?.publicUrl) {
+    throw new Error('Failed to retrieve public URL for uploaded photo');
+  }
 
   const { data, error } = await supabase
     .from('plant_photos')
     .insert({
       plant_id: plantId,
       user_id: userId,
-      photo_url: publicUrl,
+      photo_url: urlData.publicUrl,
       caption: caption || null,
       taken_at: takenAt || new Date().toISOString().split('T')[0],
     })

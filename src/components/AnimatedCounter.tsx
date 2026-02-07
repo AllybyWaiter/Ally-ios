@@ -34,6 +34,12 @@ export default function AnimatedCounter({
 
     if (diff === 0) return;
 
+    // Guard against zero duration to prevent Infinity/NaN
+    if (duration <= 0) {
+      setDisplayValue(endValue);
+      return;
+    }
+
     const animate = (timestamp: number) => {
       if (!startTimeRef.current) {
         startTimeRef.current = timestamp;

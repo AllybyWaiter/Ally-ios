@@ -93,6 +93,10 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
       if (error) throw error;
 
       if (data?.url) {
+        const checkoutUrl = new URL(data.url);
+        if (!checkoutUrl.hostname.endsWith('stripe.com')) {
+          throw new Error('Invalid checkout URL');
+        }
         // Don't reset state here - we're redirecting away
         window.location.href = data.url;
         return; // Early return to prevent finally block from running

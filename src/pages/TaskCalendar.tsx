@@ -66,7 +66,11 @@ export default function TaskCalendar() {
           queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Realtime subscription error for calendar-tasks-changes');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

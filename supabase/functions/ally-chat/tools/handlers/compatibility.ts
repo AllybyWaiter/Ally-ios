@@ -61,12 +61,21 @@ export async function executeCheckFishCompatibility(
     const livestock = existingLivestock || [];
 
     // 3. Look up the species in our database
-    // Sanitize species name for PostgREST filter safety
-    const safeName = args.species_name.replace(/[.,()%_\\]/g, '');
+    // Sanitize species name: strip all non-alphanumeric/space/hyphen characters for PostgREST filter safety
+    const safeName = args.species_name.replace(/[^a-zA-Z0-9 \-]/g, '').trim();
+    if (!safeName) {
+      return {
+        tool_call_id: toolCallId,
+        role: 'tool',
+        content: JSON.stringify({ success: false, error: 'Invalid species name' })
+      };
+    }
+    // Escape ILIKE wildcards so user input like "a%" doesn't match unintended rows
+    const ilikeSafeName = safeName.replace(/%/g, '\\%').replace(/_/g, '\\_');
     const { data: speciesData, error: speciesError } = await supabase
       .from('fish_species')
       .select('*')
-      .or(`common_name.ilike.%${safeName}%,scientific_name.ilike.%${safeName}%`)
+      .or(`common_name.ilike.%${ilikeSafeName}%,scientific_name.ilike.%${ilikeSafeName}%`)
       .limit(1)
       .maybeSingle();
 
@@ -96,10 +105,12 @@ export async function executeCheckFishCompatibility(
     let existingSpeciesData: FishSpeciesRecord[] = [];
 
     if (existingSpeciesNames.length > 0) {
-      // Sanitize names for PostgREST filter safety
+      // Sanitize names: strip all non-alphanumeric/space/hyphen characters for PostgREST filter safety
       const conditions = existingSpeciesNames.map(name => {
-        const safe = name.replace(/[.,()%_\\]/g, '');
-        return `common_name.ilike.${safe},scientific_name.ilike.${safe}`;
+        const safe = name.replace(/[^a-zA-Z0-9 \-]/g, '').trim();
+        // Escape ILIKE wildcards
+        const ilikeSafe = safe.replace(/%/g, '\\%').replace(/_/g, '\\_');
+        return `common_name.ilike.${ilikeSafe},scientific_name.ilike.${ilikeSafe}`;
       }).join(',');
 
       const { data: speciesResults } = await supabase

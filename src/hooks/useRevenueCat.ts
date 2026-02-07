@@ -127,18 +127,22 @@ export function useRevenueCat(): UseRevenueCatReturn {
     if (!isNative || !isInitialized) return;
 
     const unsubscribe = addCustomerInfoUpdateListener(async (info) => {
-      logger.log('useRevenueCat: Customer info update received from listener');
-      logger.log('useRevenueCat: Active entitlements from listener:', Object.keys(info.entitlements.active));
-      setCustomerInfo(info);
+      try {
+        logger.log('useRevenueCat: Customer info update received from listener');
+        logger.log('useRevenueCat: Active entitlements from listener:', Object.keys(info.entitlements.active));
+        setCustomerInfo(info);
 
-      // Update entitlement status
-      const hasPro = await hasProAccess();
-      setIsPro(hasPro);
-      logger.log('useRevenueCat: hasPro from listener:', hasPro);
+        // Update entitlement status
+        const hasPro = await hasProAccess();
+        setIsPro(hasPro);
+        logger.log('useRevenueCat: hasPro from listener:', hasPro);
 
-      const tier = await getSubscriptionTier();
-      logger.log('useRevenueCat: tier from listener:', tier);
-      setSubscriptionTier(tier);
+        const tier = await getSubscriptionTier();
+        logger.log('useRevenueCat: tier from listener:', tier);
+        setSubscriptionTier(tier);
+      } catch (error) {
+        logger.error('Failed to process customer info update:', error);
+      }
     });
 
     return unsubscribe;

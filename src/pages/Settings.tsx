@@ -285,7 +285,7 @@ const Settings = () => {
     }
     const passwordValidation = passwordSchema.safeParse(newPassword);
     if (!passwordValidation.success) {
-      toast({ title: "Invalid password", description: passwordValidation.error.errors[0].message, variant: "destructive" });
+      toast({ title: "Invalid password", description: passwordValidation.error.errors[0]?.message || "Please check your password.", variant: "destructive" });
       return;
     }
     setIsLoading(true);

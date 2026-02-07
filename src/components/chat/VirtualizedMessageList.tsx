@@ -207,10 +207,7 @@ const MessageContent = memo(({
         "flex-1 space-y-1 min-w-0 overflow-hidden",
         message.role === "user" && "flex flex-col items-end"
       )}>
-        <div className={cn(
-          "relative group/message",
-          message.role === "user" ? "text-right" : "text-left"
-        )}>
+        <div className="relative group/message">
           {message.role === "assistant" ? (
             <div className="prose prose-sm dark:prose-invert max-w-none break-words text-foreground prose-headings:font-semibold prose-headings:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:my-2 prose-li:my-1 prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:bg-muted prose-pre:border prose-pre:border-border">
               {/* Tool execution feedback shown before content */}
@@ -281,13 +278,13 @@ const MessageContent = memo(({
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-col items-end gap-2 max-w-[85%]">
+                <div className="space-y-2">
                   {/* Image thumbnail if present */}
                   {message.imageUrl && (
                     <img
                       src={message.imageUrl}
                       alt="Attached photo"
-                      className="max-h-48 max-w-full rounded-lg border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                      className="max-h-48 max-w-[85%] ml-auto rounded-lg border border-border object-contain cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => {
                         // Validate URL before opening to prevent XSS via javascript: URLs
                         const url = message.imageUrl || '';
@@ -299,9 +296,9 @@ const MessageContent = memo(({
                     />
                   )}
                   {message.content && (
-                    <div className="inline-block max-w-full break-words">
-                      <p className="text-sm leading-relaxed text-primary">{mentionsToDisplay(message.content)}</p>
-                    </div>
+                    <p className="text-sm leading-relaxed text-primary ml-auto max-w-[85%]">
+                      {mentionsToDisplay(message.content)}
+                    </p>
                   )}
                 </div>
               )}

@@ -39,7 +39,8 @@ export function DashboardStats({
   // Parse volume for animated counter
   const volumeFormatted = formatVolume(totalVolume, units);
   const volumeMatch = volumeFormatted.match(/^([\d,.]+)\s*(.*)$/);
-  const volumeNumber = volumeMatch ? parseFloat(volumeMatch[1].replace(',', '')) : totalVolume;
+  const parsedVolume = volumeMatch ? parseFloat(volumeMatch[1].replace(',', '')) : totalVolume;
+  const volumeNumber = isNaN(parsedVolume) ? 0 : parsedVolume;
   const volumeUnit = volumeMatch ? ` ${volumeMatch[2]}` : '';
 
   // Use fixed animation delays for consistent behavior

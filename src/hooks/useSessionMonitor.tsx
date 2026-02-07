@@ -15,6 +15,7 @@ export const useSessionMonitor = () => {
   const isCheckingRef = useRef<boolean>(false);
   // Queue a pending check if one is requested during an ongoing check
   const pendingCheckRef = useRef<boolean>(false);
+  const pendingVisibilityRef = useRef<boolean>(false);
 
   // Keep toast ref current without causing callback recreation
   useEffect(() => {
@@ -25,6 +26,8 @@ export const useSessionMonitor = () => {
     // If already checking, queue a pending check instead of dropping
     if (isCheckingRef.current) {
       pendingCheckRef.current = true;
+      // Preserve the visibility change flag if any queued check was a visibility change
+      if (isVisibilityChange) pendingVisibilityRef.current = true;
       return;
     }
     isCheckingRef.current = true;
@@ -123,8 +126,10 @@ export const useSessionMonitor = () => {
       // Process any pending check that was queued during this check
       if (pendingCheckRef.current) {
         pendingCheckRef.current = false;
+        const wasVisibilityChange = pendingVisibilityRef.current;
+        pendingVisibilityRef.current = false;
         // Use setTimeout to avoid synchronous recursion
-        setTimeout(() => checkAndRefreshSession(false), 100);
+        setTimeout(() => checkAndRefreshSession(wasVisibilityChange), 100);
       }
     }
   }, []);

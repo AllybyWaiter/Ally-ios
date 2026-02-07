@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -318,6 +318,18 @@ export function useStreamingResponse() {
     setIsStreaming(false);
     // Reset accumulated content to prevent stale data on next stream
     assistantMessageRef.current = "";
+  }, []);
+
+  // Cleanup on unmount: abort any in-flight stream and clear timeout
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+    };
   }, []);
 
   return {

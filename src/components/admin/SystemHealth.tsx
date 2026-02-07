@@ -77,7 +77,10 @@ export function SystemHealth() {
       const buckets = ['blog-images', 'water-test-photos', 'livestock-photos', 'plant-photos'];
       const bucketResults = await Promise.all(
         buckets.map(async (bucket) => {
-          const { data } = await supabase.storage.from(bucket).list('', { limit: 1000 });
+          const { data, error: storageError } = await supabase.storage.from(bucket).list('', { limit: 1000 });
+          if (storageError) {
+            console.error(`Storage list error for ${bucket}:`, storageError.message);
+          }
           return {
             bucket,
             count: data?.length || 0,

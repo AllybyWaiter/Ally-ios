@@ -112,14 +112,15 @@ const SupportTickets = () => {
   const sendReplyMutation = useMutation({
     mutationFn: async ({ ticketId, message }: { ticketId: string; message: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      
+      if (!user) throw new Error('Not authenticated');
+
       const { error } = await supabase
         .from('support_messages')
         .insert({
           ticket_id: ticketId,
           sender_type: 'admin',
           message,
-          sender_user_id: user?.id
+          sender_user_id: user.id
         });
 
       if (error) throw error;
@@ -189,6 +190,11 @@ const SupportTickets = () => {
           }),
         }
       );
+
+      if (!response.ok) {
+        logger.error('Suggest ticket reply failed', { status: response.status });
+        return;
+      }
 
       const { templates } = await response.json();
       setSuggestedReplies(templates || []);

@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    const { data: targetUsers, error: usersError } = await query;
+    const { data: targetUsers, error: usersError } = await query.limit(10000);
 
     if (usersError) {
       logger.error('Failed to fetch target users', { error: usersError.message });
