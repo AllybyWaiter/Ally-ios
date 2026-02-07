@@ -32,6 +32,15 @@ export const useTTS = () => {
   }, []);
 
   const speak = useCallback(async (text: string, messageId: string, onEnded?: () => void) => {
+    // Prevent double-fire of onEnded across multiple error/completion paths
+    let onEndedCalled = false;
+    const safeOnEnded = () => {
+      if (!onEndedCalled) {
+        onEndedCalled = true;
+        onEnded?.();
+      }
+    };
+
     // If already speaking this message, stop it (use refs to avoid stale closure)
     if (speakingMessageIdRef.current === messageId && isSpeakingRef.current) {
       stop();
@@ -105,7 +114,7 @@ export const useTTS = () => {
           URL.revokeObjectURL(audioUrlRef.current);
           audioUrlRef.current = null;
         }
-        onEnded?.();
+        safeOnEnded();
       };
 
       audio.onerror = (e) => {
@@ -118,6 +127,7 @@ export const useTTS = () => {
           URL.revokeObjectURL(audioUrlRef.current);
           audioUrlRef.current = null;
         }
+        safeOnEnded();
       };
 
       setIsGenerating(false);
@@ -130,6 +140,11 @@ export const useTTS = () => {
         toast.error('Audio playback failed - try tapping again');
         setIsSpeaking(false);
         setSpeakingMessageId(null);
+        if (audioUrlRef.current) {
+          URL.revokeObjectURL(audioUrlRef.current);
+          audioUrlRef.current = null;
+        }
+        safeOnEnded();
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -138,6 +153,7 @@ export const useTTS = () => {
       setIsGenerating(false);
       setIsSpeaking(false);
       setSpeakingMessageId(null);
+      safeOnEnded();
     }
   }, [stop]);
 

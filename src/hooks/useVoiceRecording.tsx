@@ -30,6 +30,7 @@ export const useVoiceRecording = () => {
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const isAbortedRef = useRef(false); // Track if component unmounted
+  const isStartingRef = useRef(false); // Prevent concurrent startRecording calls
   const mimeTypeRef = useRef<{ mimeType: string; extension: string } | null>(null);
 
   // Cleanup function to stop all media tracks
@@ -53,14 +54,21 @@ export const useVoiceRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       return;
     }
+    // Guard against concurrent calls during async getUserMedia
+    if (isStartingRef.current) {
+      return;
+    }
+    isStartingRef.current = true;
 
     try {
       // Check for browser support
       if (!navigator.mediaDevices?.getUserMedia) {
+        isStartingRef.current = false;
         toast.error('Voice recording not supported in this browser');
         return;
       }
       if (!window.MediaRecorder) {
+        isStartingRef.current = false;
         toast.error('MediaRecorder not supported');
         return;
       }
@@ -103,8 +111,10 @@ export const useVoiceRecording = () => {
 
       mediaRecorder.start();
       setIsRecording(true);
+      isStartingRef.current = false;
       toast.success('Recording started');
     } catch (error) {
+      isStartingRef.current = false;
       console.error('Error starting recording:', error);
       toast.error('Failed to start recording. Please check microphone permissions.');
     }

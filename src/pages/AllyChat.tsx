@@ -63,6 +63,8 @@ import { MODEL_OPTIONS, type ModelType } from '@/lib/constants';
 // Persist last conversation ID for session continuity (user-scoped)
 const getLastConversationKey = (userId: string) => `ally_last_conversation_${userId}`;
 
+const MAX_EMPTY_TRANSCRIPTIONS = 3;
+
 function parseVoiceCommand(text: string): 'stop' | 'cancel' | 'repeat' | 'new_chat' | null {
   const n = text.toLowerCase().trim();
   if (/^(stop|exit|quit|end conversation|goodbye|bye)[.!,]?$/.test(n)) return 'stop';
@@ -101,6 +103,7 @@ const AllyChat = () => {
   const pendingToolExecutionsRef = useRef<ToolExecution[]>([]);
   const pendingDataCardsRef = useRef<DataCardPayload[]>([]);
   const isSubmittingRef = useRef(false); // Prevent double submission
+  const emptyTranscriptionCountRef = useRef(0); // Track consecutive empty transcriptions
 
   const { isStreaming, streamResponse, abort } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
@@ -192,6 +195,7 @@ const AllyChat = () => {
 
     const text = await stopRecording();
     if (text) {
+      emptyTranscriptionCountRef.current = 0;
       const command = parseVoiceCommand(text);
       if (command) {
         executeVoiceCommand(command);
@@ -201,10 +205,20 @@ const AllyChat = () => {
       setWasVoiceInput(true);
       setAutoSendPending(true);
     } else {
-      // Empty transcription — restart listening if still in conversation mode
-      if (conversationModeRef.current) startRecordingWithVAD();
+      // Empty transcription — retry up to MAX_EMPTY_TRANSCRIPTIONS then exit
+      if (conversationModeRef.current) {
+        emptyTranscriptionCountRef.current += 1;
+        if (emptyTranscriptionCountRef.current >= MAX_EMPTY_TRANSCRIPTIONS) {
+          emptyTranscriptionCountRef.current = 0;
+          setConversationMode(false);
+          stopMonitoring();
+          toast({ title: "Couldn't hear you", description: "Conversation mode exited after no speech was detected." });
+        } else {
+          startRecordingWithVAD();
+        }
+      }
     }
-  }, [stopRecording, stopMonitoring, startRecordingWithVAD, executeVoiceCommand]);
+  }, [stopRecording, stopMonitoring, startRecordingWithVAD, executeVoiceCommand, toast]);
 
   // Keep handleVADSilence ref in sync
   useEffect(() => {
@@ -553,7 +567,7 @@ const AllyChat = () => {
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
     if (isSubmittingRef.current) return;
-    if ((!input.trim() && !pendingPhoto) || isLoading) return;
+    if ((!input.trim() && !pendingPhoto) || isLoading || isRecording) return;
 
     // Set ref immediately to prevent double-click before state updates
     isSubmittingRef.current = true;
@@ -1229,6 +1243,7 @@ const AllyChat = () => {
                             stopSpeaking();
                             if (isRecording) stopRecording();
                           } else {
+                            emptyTranscriptionCountRef.current = 0;
                             setConversationMode(true);
                             setWasVoiceInput(true);
                             startRecordingWithVAD();
@@ -1265,7 +1280,7 @@ const AllyChat = () => {
               ) : (
                 <Button
                   onClick={sendMessage}
-                  disabled={(!input.trim() && !pendingPhoto) || isLoading}
+                  disabled={(!input.trim() && !pendingPhoto) || isLoading || isRecording}
                   size="icon"
                   className="h-10 w-10 rounded-full"
                 >
