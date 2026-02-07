@@ -67,8 +67,8 @@ export function QuickActionsBar({ onNavigate, onRefresh }: QuickActionsBarProps)
   const handleGrantRandomBeta = async () => {
     setIsGrantingBeta(true);
     try {
-      const { data } = await supabase.auth.getUser();
-      const user = data?.user;
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase.rpc('grant_random_beta_access', {

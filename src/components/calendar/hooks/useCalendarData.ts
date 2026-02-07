@@ -27,8 +27,8 @@ export function useCalendarData({ currentMonth, filters }: UseCalendarDataOption
   const { data: tasks = [], isLoading, error } = useQuery({
     queryKey: queryKeys.tasks.calendar(format(currentMonth, 'yyyy-MM')),
     queryFn: async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data?.user;
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
       if (!user) return [];
 
       const monthStart = startOfMonth(currentMonth);
