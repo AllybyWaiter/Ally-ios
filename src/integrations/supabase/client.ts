@@ -5,12 +5,29 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Safe storage adapter that wraps localStorage in try-catch
+// Prevents crashes in Safari Private Browsing, quota exceeded, or restricted contexts
+const safeStorageAdapter = {
+  getItem: (key: string): string | null => {
+    try { return localStorage.getItem(key); }
+    catch { return null; }
+  },
+  setItem: (key: string, value: string): void => {
+    try { localStorage.setItem(key, value); }
+    catch { /* quota exceeded or private browsing */ }
+  },
+  removeItem: (key: string): void => {
+    try { localStorage.removeItem(key); }
+    catch { /* ignore */ }
+  },
+};
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: safeStorageAdapter,
     persistSession: true,
     autoRefreshToken: true,
   }

@@ -135,8 +135,8 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
 
       const recoveryTimeout = setTimeout(() => {
         setProfileLoading(false);
-        isFetchingRef.current = false;
-        // Don't default to false on visibility recovery - preserve existing state
+        // Don't reset isFetchingRef here — only the finally block should do that
+        // to prevent concurrent fetches if the first hasn't completed
       }, 1500);
 
       try {

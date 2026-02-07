@@ -103,14 +103,40 @@ serve(async (req) => {
     
     if (aquariums && aquariums.length > 0) {
       const aquariumIds = aquariums.map(a => a.id);
-      
+
+      // Delete aquarium photos (has aquarium_id FK, must be before aquariums)
+      const { error: photosError } = await supabaseAdmin
+        .from('aquarium_photos')
+        .delete()
+        .in('aquarium_id', aquariumIds);
+      if (photosError) logger.warn('aquarium_photos deletion', { error: photosError.message });
+      else logger.info('Deleted aquarium_photos');
+
+      // Clean up aquarium-photos storage bucket
+      for (const aquariumId of aquariumIds) {
+        try {
+          const { data: files } = await supabaseAdmin.storage
+            .from('aquarium-photos')
+            .list(aquariumId);
+          if (files && files.length > 0) {
+            const filePaths = files.map(f => `${aquariumId}/${f.name}`);
+            await supabaseAdmin.storage
+              .from('aquarium-photos')
+              .remove(filePaths);
+            logger.info('Deleted storage files', { aquariumId, count: filePaths.length });
+          }
+        } catch (storageErr) {
+          logger.warn('Storage cleanup failed', { aquariumId, error: String(storageErr) });
+        }
+      }
+
       const { error: tasksError } = await supabaseAdmin
         .from('maintenance_tasks')
         .delete()
         .in('aquarium_id', aquariumIds);
       if (tasksError) logger.warn('maintenance_tasks deletion', { error: tasksError.message });
       else logger.info('Deleted maintenance_tasks');
-      
+
       const { error: equipError } = await supabaseAdmin
         .from('equipment')
         .delete()
@@ -118,6 +144,30 @@ serve(async (req) => {
       if (equipError) logger.warn('equipment deletion', { error: equipError.message });
       else logger.info('Deleted equipment');
     }
+
+    // Delete referral_rewards (references referral_id FK, must be before referrals)
+    const { data: referrals } = await supabaseAdmin
+      .from('referrals')
+      .select('id')
+      .or(`referrer_id.eq.${userId},referee_id.eq.${userId}`);
+
+    if (referrals && referrals.length > 0) {
+      const referralIds = referrals.map(r => r.id);
+      const { error: rewardsError } = await supabaseAdmin
+        .from('referral_rewards')
+        .delete()
+        .in('referral_id', referralIds);
+      if (rewardsError) logger.warn('referral_rewards deletion', { error: rewardsError.message });
+      else logger.info('Deleted referral_rewards');
+    }
+
+    // Delete referrals (user can be referrer or referee)
+    const { error: referralsError } = await supabaseAdmin
+      .from('referrals')
+      .delete()
+      .or(`referrer_id.eq.${userId},referee_id.eq.${userId}`);
+    if (referralsError) logger.warn('referrals deletion', { error: referralsError.message });
+    else logger.info('Deleted referrals');
 
     // 5. Delete tables with direct user_id reference (no dependencies)
     const tablesToDelete = [

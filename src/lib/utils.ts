@@ -20,7 +20,7 @@ export function sanitizeInput(input: string): string {
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     // Remove potentially dangerous protocols
     .replace(/javascript:/gi, '')
-    .replace(/data:/gi, '')
+    .replace(/\bdata:/gi, '')
     .replace(/vbscript:/gi, '')
     // Remove null bytes
     .replace(/\0/g, '')

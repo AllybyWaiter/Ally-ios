@@ -1,6 +1,5 @@
 import { useRef, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
@@ -230,23 +229,19 @@ export function useStreamingResponse() {
     callbacks.onStreamStart();
 
     // Update function - sends tokens immediately for smooth typewriter
+    // Content is raw markdown from SSE stream; react-markdown handles sanitization at render time
     const updateContent = (content: string) => {
-      // Sanitize content to prevent XSS using DOMPurify
-      const sanitized = DOMPurify.sanitize(content, {
-        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'code', 'pre', 'ul', 'ol', 'li', 'blockquote', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-        ALLOWED_ATTR: ['href'],
-        ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-      });
-
       const now = Date.now();
+      assistantMessageRef.current += content;
       // Throttle updates to ~60fps to avoid excessive re-renders
       if (now - lastUpdateRef.current >= UPDATE_INTERVAL) {
-        assistantMessageRef.current += sanitized;
         lastUpdateRef.current = now;
         callbacks.onToken(assistantMessageRef.current);
       } else {
-        // Buffer very rapid tokens
-        assistantMessageRef.current += sanitized;
+        // Schedule a render for buffered tokens so final tokens don't visually jump
+        requestAnimationFrame(() => {
+          callbacks.onToken(assistantMessageRef.current);
+        });
       }
     };
 

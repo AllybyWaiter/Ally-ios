@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(safetyTimeout);
     };
 
-    // Set up auth state listener
+    // Set up auth state listener — single source of truth (per Supabase docs)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
@@ -64,45 +64,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else if (!session) {
           clearUserContext();
         }
-      }
-    );
 
-    // Check for existing session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (error) {
-          logger.error('🔴 Auth: Error getting session:', error);
+        // INITIAL_SESSION fires once when the listener is set up with the current session
+        if (event === 'INITIAL_SESSION') {
           setLoading(false);
           setIsInitialAuthComplete(true);
           clearSafetyTimeout();
-          return;
         }
-
-        setSession(session);
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          setUserContext(session.user.id, session.user.email, undefined);
-        }
-
-        setLoading(false);
-        setIsInitialAuthComplete(true);
-        clearSafetyTimeout();
-      } catch (error) {
-        logger.error('🔴 Auth: Exception in initializeAuth:', error);
-        if (mounted) {
-          setLoading(false);
-          setIsInitialAuthComplete(true);
-        }
-        clearSafetyTimeout();
       }
-    };
-
-    initializeAuth();
+    );
 
     return () => {
       mounted = false;

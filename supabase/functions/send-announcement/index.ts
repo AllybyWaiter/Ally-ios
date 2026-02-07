@@ -153,8 +153,8 @@ const handler = async (req: Request): Promise<Response> => {
             subject: announcement.title,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #333;">${announcement.title}</h1>
-                <p style="color: #666; line-height: 1.6;">${announcement.message}</p>
+                <h1 style="color: #333;">${escapeHtml(announcement.title)}</h1>
+                <p style="color: #666; line-height: 1.6;">${escapeHtml(announcement.message)}</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
                 <p style="color: #999; font-size: 12px;">
                   You received this announcement because you are a valued member of our community.
@@ -200,7 +200,7 @@ const handler = async (req: Request): Promise<Response> => {
           await supabaseClient.functions.invoke('send-push-notification', {
             body: {
               userId: user.user_id,
-              title: `📢 ${announcement.title}`,
+              title: `📢 ${escapeHtml(announcement.title)}`,
               body: announcement.message.slice(0, 100) + (announcement.message.length > 100 ? '...' : ''),
               tag: `announcement-${announcementId}`,
               url: '/dashboard',

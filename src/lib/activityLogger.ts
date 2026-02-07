@@ -64,6 +64,21 @@ const flushQueue = async () => {
   }
 };
 
+// Flush queue when app is backgrounded (iOS PWA suspends here) or tab is closing
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      flushQueue();
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    flushQueue();
+  });
+}
+
 export const logActivity = async ({
   actionType,
   actionDetails,
