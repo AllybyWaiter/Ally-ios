@@ -38,7 +38,7 @@ export async function executeCalculatePoolVolume(
     // Calculate surface area based on shape
     let surfaceArea: number;
     switch (args.shape) {
-      case 'round':
+      case 'round': {
         if (!args.diameter_ft) {
           return {
             tool_call_id: toolCallId,
@@ -49,6 +49,7 @@ export async function executeCalculatePoolVolume(
         const radius = args.diameter_ft / 2;
         surfaceArea = Math.PI * radius * radius;
         break;
+      }
 
       case 'oval':
         if (!args.length_ft || !args.width_ft) {

@@ -81,7 +81,7 @@ export async function generateEmbeddings(texts: string[]): Promise<EmbeddingResu
 
   const data = await response.json();
 
-  return data.data.map((item: any, index: number) => ({
+  return data.data.map((item: { embedding: number[] }) => ({
     embedding: item.embedding,
     tokens: Math.floor(data.usage.total_tokens / texts.length), // Approximate per-text
   }));

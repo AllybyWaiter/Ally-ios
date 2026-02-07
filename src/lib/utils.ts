@@ -22,8 +22,8 @@ export function sanitizeInput(input: string): string {
     .replace(/javascript:/gi, '')
     .replace(/\bdata:/gi, '')
     .replace(/vbscript:/gi, '')
-    // Remove null bytes
-    .replace(/\0/g, '')
+    // Remove null bytes (replace with space so adjacent words stay separated)
+    .replace(/\0/g, ' ')
     // Normalize whitespace
     .replace(/\s+/g, ' ')
     .trim();

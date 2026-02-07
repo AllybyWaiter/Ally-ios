@@ -10,7 +10,7 @@ import { getWaterType } from '../tools/index.ts';
 export interface AquariumContext {
   context: string;
   waterType: string;
-  aquariumData: any;
+  aquariumData: Record<string, unknown> | null;
 }
 
 export async function buildAquariumContext(
@@ -68,11 +68,11 @@ ${aquarium.notes ? `- Notes: ${aquarium.notes}` : ''}
 
 Recent Water Tests (${waterTests?.length || 0} total):
 ${waterTests && waterTests.length > 0 
-  ? waterTests.slice(0, 5).map((test: any) => {
+  ? waterTests.slice(0, 5).map((test: Record<string, unknown>) => {
       const testDate = new Date(test.test_date);
       const daysAgo = Math.floor((Date.now() - testDate.getTime()) / (1000 * 60 * 60 * 24));
       const dateStr = testDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const params = test.test_parameters?.map((p: any) => 
+      const params = test.test_parameters?.map((p: Record<string, unknown>) => 
         `${p.parameter_name}: ${p.value}${p.unit || ''} (${p.status || 'unknown'})`
       ).join(', ') || 'No parameters recorded';
       return `  - ${dateStr} (${daysAgo} days ago): ${params}`;
@@ -81,22 +81,22 @@ ${waterTests && waterTests.length > 0
 
 Equipment (${aquarium.equipment?.length || 0} total):
 ${aquarium.equipment && aquarium.equipment.length > 0 
-  ? aquarium.equipment.map((e: any) => `  - ${e.name} (${e.equipment_type})${e.brand ? ', Brand: ' + e.brand : ''}${e.model ? ', Model: ' + e.model : ''}${e.maintenance_interval_days ? ', Maintenance every ' + e.maintenance_interval_days + ' days' : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')
+  ? aquarium.equipment.map((e: Record<string, unknown>) => `  - ${e.name} (${e.equipment_type})${e.brand ? ', Brand: ' + e.brand : ''}${e.model ? ', Model: ' + e.model : ''}${e.maintenance_interval_days ? ', Maintenance every ' + e.maintenance_interval_days + ' days' : ''}${e.notes ? ', Notes: ' + e.notes : ''}`).join('\n')
   : '  None added yet'}
 
 Livestock (${livestock?.length || 0} total):
 ${livestock && livestock.length > 0 
-  ? livestock.map((l: any) => `  - ${l.quantity}x ${l.species} (${l.name}) - Category: ${l.category}, Health: ${l.health_status}${l.notes ? ', Notes: ' + l.notes : ''}`).join('\n')
+  ? livestock.map((l: Record<string, unknown>) => `  - ${l.quantity}x ${l.species} (${l.name}) - Category: ${l.category}, Health: ${l.health_status}${l.notes ? ', Notes: ' + l.notes : ''}`).join('\n')
   : '  None added yet'}
 
 Plants (${plants?.length || 0} total):
 ${plants && plants.length > 0
-  ? plants.map((p: any) => `  - ${p.quantity}x ${p.species} (${p.name}) - Placement: ${p.placement}, Condition: ${p.condition}${p.notes ? ', Notes: ' + p.notes : ''}`).join('\n')
+  ? plants.map((p: Record<string, unknown>) => `  - ${p.quantity}x ${p.species} (${p.name}) - Placement: ${p.placement}, Condition: ${p.condition}${p.notes ? ', Notes: ' + p.notes : ''}`).join('\n')
   : '  None added yet'}
 
 Active Trend Alerts (${alerts?.length || 0}):
 ${alerts && alerts.length > 0
-  ? alerts.map((a: any) => `  - [${a.severity.toUpperCase()}] ${a.parameter_name}: ${a.message}`).join('\n')
+  ? alerts.map((a: Record<string, unknown>) => `  - [${a.severity.toUpperCase()}] ${a.parameter_name}: ${a.message}`).join('\n')
   : '  No active alerts'}
 `;
 

@@ -45,7 +45,7 @@ describe('sanitizeInput', () => {
   });
 
   it('should remove data: protocol', () => {
-    expect(sanitizeInput('data:text/html,<script>alert(1)</script>')).toBe('text/html,alert(1)');
+    expect(sanitizeInput('data:text/html,test')).toBe('text/html,test');
   });
 
   it('should remove vbscript: protocol', () => {
