@@ -11,6 +11,14 @@ const envVars: EnvVar[] = [
   { key: 'VITE_SENTRY_DSN', description: 'Error Monitoring DSN', required: false },
 ];
 
+// Use explicit references so Vite injects these keys into the production bundle.
+const envValues = {
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+  VITE_SUPABASE_PUBLISHABLE_KEY: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  VITE_SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_PROJECT_ID,
+  VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
+} as const;
+
 export interface ValidationResult {
   isValid: boolean;
   missingRequired: { key: string; description: string }[];
@@ -22,7 +30,7 @@ export function validateEnv(): ValidationResult {
   const missingRecommended: { key: string; description: string }[] = [];
 
   for (const envVar of envVars) {
-    const value = (import.meta.env as Record<string, string | undefined>)[envVar.key];
+    const value = envValues[envVar.key as keyof typeof envValues];
     if (!value || value.trim() === '') {
       if (envVar.required) {
         missingRequired.push({ key: envVar.key, description: envVar.description });
