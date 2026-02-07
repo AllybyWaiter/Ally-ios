@@ -106,7 +106,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
   }
 
   return (
-    <div className="space-y-6 pb-[calc(13rem+env(safe-area-inset-bottom))] md:pb-6">
+    <div className="space-y-6 pb-[calc(11rem+env(safe-area-inset-bottom))] md:pb-6">
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
