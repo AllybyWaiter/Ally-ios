@@ -526,6 +526,7 @@ const AllyChat = () => {
             if (conversationModeRef.current) {
               setConversationMode(false);
               stopMonitoring();
+              stopSpeaking();
             }
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
@@ -539,6 +540,7 @@ const AllyChat = () => {
       if (conversationModeRef.current) {
         setConversationMode(false);
         stopMonitoring();
+        stopSpeaking();
       }
       triggerHaptic('error');
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
@@ -546,7 +548,7 @@ const AllyChat = () => {
       setIsLoading(false);
       setStreamStartTime(null);
     }
-  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, userId]);
+  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, stopSpeaking, userId]);
 
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
@@ -633,6 +635,7 @@ const AllyChat = () => {
             if (conversationModeRef.current) {
               setConversationMode(false);
               stopMonitoring();
+              stopSpeaking();
             }
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
@@ -647,6 +650,7 @@ const AllyChat = () => {
       if (conversationModeRef.current) {
         setConversationMode(false);
         stopMonitoring();
+        stopSpeaking();
       }
       triggerHaptic('error');
 
