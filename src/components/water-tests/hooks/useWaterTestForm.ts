@@ -10,6 +10,7 @@ import { useAutoSave } from '@/hooks/useAutoSave';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { queryKeys } from '@/lib/queryKeys';
 import { triggerTrendAnalysis } from '@/infrastructure/queries/waterTestAlerts';
+import { logger } from '@/lib/logger';
 
 interface AiDetectedParam {
   value: number;
@@ -236,7 +237,8 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
         }
 
         if (corrections.length > 0) {
-          await supabase.from('photo_analysis_corrections').insert(corrections);
+          const { error: correctionsError } = await supabase.from('photo_analysis_corrections').insert(corrections);
+          if (correctionsError) logger.error('Failed to save AI correction data:', correctionsError);
         }
       }
 

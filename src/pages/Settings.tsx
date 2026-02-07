@@ -345,6 +345,7 @@ const Settings = () => {
         headers: { Authorization: `Bearer ${sessionData.session.access_token}` }
       });
       if (response.error) throw response.error;
+      if (!response.data) throw new Error('No data received');
       const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

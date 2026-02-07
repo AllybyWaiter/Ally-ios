@@ -29,6 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getErrorMessage } from '@/lib/errorUtils';
+import { logger } from '@/lib/logger';
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -97,8 +98,7 @@ export const RoleManager = () => {
 
       // Guard against empty array — .in() with [] returns ALL rows
       if (userIds.length === 0) {
-        setUsers([]);
-        return;
+        return { users: [], totalCount: 0 };
       }
 
       const { data: userRoles, error: rolesError } = await supabase
@@ -197,10 +197,12 @@ export const RoleManager = () => {
       }
 
       // Check permissions for assigning admin/super_admin roles
-      const { data: currentUserRoles } = await supabase
+      const { data: currentUserRoles, error: rolesCheckError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.id);
+
+      if (rolesCheckError) throw rolesCheckError;
 
       const isSuperAdmin = currentUserRoles?.some((r) => r.role === 'super_admin');
 
@@ -220,7 +222,7 @@ export const RoleManager = () => {
       if (insertError) throw insertError;
 
       // Log the role change for audit
-      await supabase.from('role_audit_log').insert({
+      const { error: auditError } = await supabase.from('role_audit_log').insert({
         admin_user_id: currentUser.id,
         target_user_id: userId,
         action: 'assign_role',
@@ -228,6 +230,7 @@ export const RoleManager = () => {
         new_roles: [...userRoles, role],
         reason: reason || 'No reason provided'
       });
+      if (auditError) logger.error('Failed to write audit log for role assignment:', auditError);
     },
     onSuccess: () => {
       toast.success(`${selectedRole} role assigned successfully`);
@@ -246,10 +249,12 @@ export const RoleManager = () => {
       if (!currentUser) throw new Error('Not authenticated');
 
       // Check permissions for removing admin/super_admin roles
-      const { data: currentUserRoles } = await supabase
+      const { data: currentUserRoles, error: rolesCheckError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.id);
+
+      if (rolesCheckError) throw rolesCheckError;
 
       const isSuperAdmin = currentUserRoles?.some((r) => r.role === 'super_admin');
 
@@ -284,7 +289,7 @@ export const RoleManager = () => {
       if (deleteError) throw deleteError;
 
       // Log the role change for audit
-      await supabase.from('role_audit_log').insert({
+      const { error: auditError } = await supabase.from('role_audit_log').insert({
         admin_user_id: currentUser.id,
         target_user_id: userId,
         action: 'remove_role',
@@ -292,6 +297,7 @@ export const RoleManager = () => {
         new_roles: userRoles.filter(r => r !== role),
         reason: reason || 'No reason provided'
       });
+      if (auditError) logger.error('Failed to write audit log for role removal:', auditError);
     },
     onSuccess: () => {
       toast.success(`${selectedRole} role removed successfully`);

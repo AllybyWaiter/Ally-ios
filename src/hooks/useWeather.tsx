@@ -338,10 +338,11 @@ export function useWeather() {
           // If moved significantly, update profile silently
           if (distance > LOCATION_CHANGE_THRESHOLD_KM) {
             if (user?.id) {
-              await supabase
+              const { error: updateError } = await supabase
                 .from('profiles')
                 .update({ latitude, longitude })
                 .eq('user_id', user.id);
+              if (updateError) logger.error('Failed to update profile location:', updateError);
             }
             resolve({ lat: latitude, lon: longitude });
           } else {

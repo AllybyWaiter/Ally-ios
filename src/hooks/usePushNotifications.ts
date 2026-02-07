@@ -104,11 +104,15 @@ export function usePushNotifications() {
     async function loadData() {
       try {
         // Load preferences
-        const { data: prefs } = await supabase
+        const { data: prefs, error: prefsError } = await supabase
           .from('notification_preferences')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
+
+        if (prefsError) {
+          logger.error('Failed to load notification preferences:', prefsError);
+        }
 
         if (!isMounted) return;
 
