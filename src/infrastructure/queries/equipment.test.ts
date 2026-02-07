@@ -149,12 +149,14 @@ describe('equipment DAL', () => {
   });
 
   describe('createEquipment', () => {
+    const testAquariumId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
     it('should create equipment with required fields', async () => {
       const mockEquipment = {
         id: 'eq-1',
-        aquarium_id: 'aq-1',
+        aquarium_id: testAquariumId,
         name: 'New Filter',
-        equipment_type: 'filter',
+        equipment_type: 'Filter',
       };
 
       const mockInsert = vi.fn().mockReturnValue({
@@ -165,9 +167,9 @@ describe('equipment DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       const result = await createEquipment({
-        aquarium_id: 'aq-1',
+        aquarium_id: testAquariumId,
         name: 'New Filter',
-        equipment_type: 'filter',
+        equipment_type: 'Filter',
       });
 
       expect(supabase.from).toHaveBeenCalledWith('equipment');
@@ -193,9 +195,9 @@ describe('equipment DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await createEquipment({
-        aquarium_id: 'aq-1',
+        aquarium_id: testAquariumId,
         name: 'Fluval 407',
-        equipment_type: 'filter',
+        equipment_type: 'Filter',
         brand: 'Fluval',
         model: '407',
         install_date: '2025-01-01',
@@ -219,9 +221,9 @@ describe('equipment DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await expect(createEquipment({
-        aquarium_id: 'aq-1',
+        aquarium_id: testAquariumId,
         name: 'Filter',
-        equipment_type: 'filter',
+        equipment_type: 'Filter',
       })).rejects.toEqual({ message: 'Insert failed' });
     });
   });

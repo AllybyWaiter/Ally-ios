@@ -23,30 +23,48 @@ describe('aquariums DAL', () => {
 
   describe('fetchAquariumsWithTaskCounts', () => {
     it('should fetch aquariums with pending task counts', async () => {
-      const mockData = [
-        { id: 'aq-1', name: 'Tank 1', maintenance_tasks: [{ count: 3 }] },
-        { id: 'aq-2', name: 'Tank 2', maintenance_tasks: [{ count: 0 }] },
+      const mockAquariums = [
+        { id: 'aq-1', name: 'Tank 1' },
+        { id: 'aq-2', name: 'Tank 2' },
+      ];
+      const mockTaskCounts = [
+        { aquarium_id: 'aq-1' },
+        { aquarium_id: 'aq-1' },
+        { aquarium_id: 'aq-1' },
       ];
 
-      const mockChain = {
+      const aquariumChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
       };
-      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+      const taskChain = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockTaskCounts, error: null }),
+      };
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'maintenance_tasks') return taskChain as any;
+        return aquariumChain as any;
+      });
 
       const result = await fetchAquariumsWithTaskCounts('user-1');
 
       expect(supabase.from).toHaveBeenCalledWith('aquariums');
-      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
-      expect(result).toEqual(mockData);
+      expect(supabase.from).toHaveBeenCalledWith('maintenance_tasks');
+      expect(result).toEqual([
+        { id: 'aq-1', name: 'Tank 1', maintenance_tasks: [{ count: 3 }] },
+        { id: 'aq-2', name: 'Tank 2', maintenance_tasks: [{ count: 0 }] },
+      ]);
     });
 
     it('should return empty array when no aquariums exist', async () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
@@ -59,7 +77,8 @@ describe('aquariums DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: null, error: { message: 'Fetch failed' } }),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: null, error: { message: 'Fetch failed' } }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
@@ -70,7 +89,8 @@ describe('aquariums DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
@@ -87,7 +107,7 @@ describe('aquariums DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockAquarium, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockAquarium, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
@@ -102,11 +122,11 @@ describe('aquariums DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116', message: 'Not found' } }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
-      await expect(fetchAquarium('invalid-id')).rejects.toEqual({ code: 'PGRST116', message: 'Not found' });
+      await expect(fetchAquarium('invalid-id')).rejects.toThrow('Aquarium not found');
     });
   });
 
@@ -124,7 +144,7 @@ describe('aquariums DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockData, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
@@ -137,12 +157,14 @@ describe('aquariums DAL', () => {
   });
 
   describe('createAquarium', () => {
+    const testUserId = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
+
     it('should create aquarium with required fields', async () => {
       const mockAquarium = {
         id: 'aq-1',
         name: 'New Tank',
         type: 'freshwater',
-        user_id: 'user-1',
+        user_id: testUserId,
       };
 
       const mockInsert = vi.fn().mockReturnValue({
@@ -155,7 +177,7 @@ describe('aquariums DAL', () => {
       const result = await createAquarium({
         name: 'New Tank',
         type: 'freshwater',
-        user_id: 'user-1',
+        user_id: testUserId,
       });
 
       expect(supabase.from).toHaveBeenCalledWith('aquariums');
@@ -182,7 +204,7 @@ describe('aquariums DAL', () => {
       await createAquarium({
         name: 'Big Tank',
         type: 'saltwater',
-        user_id: 'user-1',
+        user_id: testUserId,
         volume_gallons: 100,
         status: 'cycling',
         notes: 'New setup',
@@ -206,7 +228,7 @@ describe('aquariums DAL', () => {
       await expect(createAquarium({
         name: 'Tank',
         type: 'freshwater',
-        user_id: 'user-1',
+        user_id: testUserId,
       })).rejects.toEqual({ message: 'Insert failed' });
     });
   });

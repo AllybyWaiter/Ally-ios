@@ -31,8 +31,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, LineChart, Line, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid, Legend, Tooltip } from 'recharts';
-import { subDays, format, startOfDay, eachDayOfInterval } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid, Tooltip } from 'recharts';
+import { subDays, format, eachDayOfInterval } from 'date-fns';
 import { queryPresets } from '@/lib/queryConfig';
 
 interface FeedbackStats {

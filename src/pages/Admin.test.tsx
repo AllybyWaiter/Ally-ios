@@ -16,12 +16,10 @@ vi.mock('react-router-dom', async () => {
 });
 
 // Mock useAuth with admin permissions
-const mockSignOut = vi.fn();
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
     user: { id: 'admin-1', email: 'admin@example.com' },
-    signOut: mockSignOut,
-    hasPermission: vi.fn((perm: string) => true), // Admin has all permissions
+    hasPermission: vi.fn(() => true),
     hasAnyRole: vi.fn((roles: string[]) => roles.includes('admin')),
     loading: false,
   })),
@@ -30,19 +28,10 @@ vi.mock('@/hooks/useAuth', () => ({
 // Mock supabase
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: vi.fn((table: string) => ({
+    from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockResolvedValue({ error: null }),
-      then: vi.fn((resolve: any) => {
-        if (table === 'waitlist') {
-          resolve({ data: [{ id: '1', email: 'test@example.com', created_at: '2024-01-01' }] });
-        } else if (table === 'contacts') {
-          resolve({ data: [{ id: '1', name: 'Test', email: 'test@example.com', message: 'Hello', status: 'new', created_at: '2024-01-01' }] });
-        }
-        return Promise.resolve();
-      }),
     })),
   },
 }));
@@ -54,7 +43,59 @@ vi.mock('@/hooks/use-toast', () => ({
   }),
 }));
 
-// Mock admin components
+// Mock SectionErrorBoundary
+vi.mock('@/components/error-boundaries', () => ({
+  SectionErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+// Mock sentry
+vi.mock('@/lib/sentry', () => ({
+  FeatureArea: { ADMIN: 'admin' },
+}));
+
+// Mock sidebar UI components
+vi.mock('@/components/ui/sidebar', () => ({
+  SidebarProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SidebarTrigger: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+  SidebarInset: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+
+// Mock AdminSidebar with clickable navigation
+vi.mock('@/components/admin/AdminSidebar', () => ({
+  AdminSidebar: ({ onSectionChange }: { activeSection: string; onSectionChange: (s: string) => void }) => (
+    <nav data-testid="admin-sidebar">
+      <button onClick={() => onSectionChange('users')}>Users</button>
+      <button onClick={() => onSectionChange('feature-flags')}>Feature Flags</button>
+      <button onClick={() => onSectionChange('ai-analytics')}>AI Analytics</button>
+    </nav>
+  ),
+}));
+
+// Mock all admin content components
+vi.mock('@/components/admin/AdminDashboardHome', () => ({
+  AdminDashboardHome: () => <div data-testid="dashboard-home">Dashboard Home</div>,
+}));
+
+vi.mock('@/components/admin/CommandPalette', () => ({
+  CommandPalette: () => null,
+}));
+
+vi.mock('@/components/admin/KeyboardShortcuts', () => ({
+  KeyboardShortcuts: () => null,
+}));
+
+vi.mock('@/components/admin/SystemHealth', () => ({
+  SystemHealth: () => <div data-testid="system-health">System Health</div>,
+}));
+
+vi.mock('@/components/admin/ContactsManager', () => ({
+  ContactsManager: () => <div data-testid="contacts-manager">Contacts Manager</div>,
+}));
+
+vi.mock('@/components/admin/ReferralLeaderboard', () => ({
+  ReferralLeaderboard: () => <div data-testid="referral-leaderboard">Referral Leaderboard</div>,
+}));
+
 vi.mock('@/components/admin/SupportTickets', () => ({
   default: () => <div data-testid="support-tickets">Support Tickets</div>,
 }));
@@ -65,10 +106,6 @@ vi.mock('@/components/admin/UserManagement', () => ({
 
 vi.mock('@/components/admin/AnnouncementManager', () => ({
   default: () => <div data-testid="announcement-manager">Announcement Manager</div>,
-}));
-
-vi.mock('@/components/admin/BlogManager', () => ({
-  default: () => <div data-testid="blog-manager">Blog Manager</div>,
 }));
 
 vi.mock('@/components/admin/RoleManager', () => ({
@@ -87,23 +124,28 @@ vi.mock('@/components/admin/AIAnalytics', () => ({
   default: () => <div data-testid="ai-analytics">AI Analytics</div>,
 }));
 
+vi.mock('@/components/admin/AIUserInsights', () => ({
+  default: () => <div data-testid="ai-user-insights">AI User Insights</div>,
+}));
+
+vi.mock('@/components/admin/AdminMemoryManager', () => ({
+  default: () => <div data-testid="admin-memory-manager">Admin Memory Manager</div>,
+}));
+
+vi.mock('@/components/admin/ConversationAnalytics', () => ({
+  default: () => <div data-testid="conversation-analytics">Conversation Analytics</div>,
+}));
+
+vi.mock('@/components/admin/AIModelSettings', () => ({
+  default: () => <div data-testid="ai-model-settings">AI Model Settings</div>,
+}));
+
+vi.mock('@/components/admin/AIMonitoring', () => ({
+  default: () => <div data-testid="ai-monitoring">AI Monitoring</div>,
+}));
+
 vi.mock('@/components/admin/FeatureFlagManager', () => ({
   default: () => <div data-testid="feature-flag-manager">Feature Flag Manager</div>,
-}));
-
-// Mock formatDate
-vi.mock('@/lib/formatters', () => ({
-  formatDate: () => 'Jan 1, 2024',
-}));
-
-// Mock SectionErrorBoundary
-vi.mock('@/components/error-boundaries', () => ({
-  SectionErrorBoundary: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-// Mock sentry
-vi.mock('@/lib/sentry', () => ({
-  FeatureArea: { ADMIN: 'admin' },
 }));
 
 const queryClient = new QueryClient({
@@ -131,176 +173,97 @@ describe('Admin', () => {
   describe('Page Rendering', () => {
     it('renders admin dashboard title', async () => {
       renderAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText(/admin dashboard/i)).toBeInTheDocument();
       });
     });
 
-    it('displays admin email', async () => {
+    it('renders admin sidebar', async () => {
       renderAdmin();
-      
+
       await waitFor(() => {
-        expect(screen.getByText('admin@example.com')).toBeInTheDocument();
+        expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
       });
     });
 
-    it('renders home and sign out buttons', async () => {
+    it('renders dashboard home by default', async () => {
       renderAdmin();
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /home/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
-      });
-    });
-  });
 
-  describe('Navigation', () => {
-    it('navigates to home when Home button clicked', async () => {
-      const user = userEvent.setup();
-      renderAdmin();
-      
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /home/i })).toBeInTheDocument();
-      });
-      
-      await user.click(screen.getByRole('button', { name: /home/i }));
-      
-      expect(mockNavigate).toHaveBeenCalledWith('/');
-    });
-
-    it('calls signOut when Sign Out button clicked', async () => {
-      const user = userEvent.setup();
-      renderAdmin();
-      
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
-      });
-      
-      await user.click(screen.getByRole('button', { name: /sign out/i }));
-      
-      expect(mockSignOut).toHaveBeenCalled();
-    });
-  });
-
-  describe('Stats Cards', () => {
-    it('renders stats cards', async () => {
-      renderAdmin();
-      
-      await waitFor(() => {
-        expect(screen.getByText(/total waitlist/i)).toBeInTheDocument();
-        expect(screen.getByText(/total contacts/i)).toBeInTheDocument();
-        expect(screen.getByText(/new contacts/i)).toBeInTheDocument();
+        expect(screen.getByTestId('dashboard-home')).toBeInTheDocument();
       });
     });
   });
 
-  describe('Tab Navigation', () => {
-    it('renders tab list with admin tabs', async () => {
+  describe('Section Navigation', () => {
+    it('switches to users section when sidebar clicked', async () => {
+      const user = userEvent.setup();
       renderAdmin();
-      
+
       await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /users/i })).toBeInTheDocument();
-        expect(screen.getByRole('tab', { name: /beta access/i })).toBeInTheDocument();
-        expect(screen.getByRole('tab', { name: /roles/i })).toBeInTheDocument();
-        expect(screen.getByRole('tab', { name: /blog/i })).toBeInTheDocument();
+        expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Users'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user-management')).toBeInTheDocument();
       });
     });
 
-    it('switches to Users tab content', async () => {
+    it('switches to feature flags section', async () => {
       const user = userEvent.setup();
       renderAdmin();
-      
+
       await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /users/i })).toBeInTheDocument();
+        expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
       });
-      
-      await user.click(screen.getByRole('tab', { name: /users/i }));
-      
-      expect(screen.getByTestId('user-management')).toBeInTheDocument();
+
+      await user.click(screen.getByText('Feature Flags'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('feature-flag-manager')).toBeInTheDocument();
+      });
     });
 
-    it('switches to Beta Access tab content', async () => {
+    it('switches to AI analytics section', async () => {
       const user = userEvent.setup();
       renderAdmin();
-      
-      await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /beta access/i })).toBeInTheDocument();
-      });
-      
-      await user.click(screen.getByRole('tab', { name: /beta access/i }));
-      
-      expect(screen.getByTestId('beta-access-manager')).toBeInTheDocument();
-    });
 
-    it('switches to Roles tab content', async () => {
-      const user = userEvent.setup();
-      renderAdmin();
-      
       await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /roles/i })).toBeInTheDocument();
+        expect(screen.getByTestId('admin-sidebar')).toBeInTheDocument();
       });
-      
-      await user.click(screen.getByRole('tab', { name: /roles/i }));
-      
-      expect(screen.getByTestId('role-manager')).toBeInTheDocument();
-    });
 
-    it('switches to Blog tab content', async () => {
-      const user = userEvent.setup();
-      renderAdmin();
-      
-      await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /blog/i })).toBeInTheDocument();
-      });
-      
-      await user.click(screen.getByRole('tab', { name: /blog/i }));
-      
-      expect(screen.getByTestId('blog-manager')).toBeInTheDocument();
-    });
+      await user.click(screen.getByText('AI Analytics'));
 
-    it('switches to AI Analytics tab content', async () => {
-      const user = userEvent.setup();
-      renderAdmin();
-      
       await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /ai analytics/i })).toBeInTheDocument();
+        expect(screen.getByTestId('ai-analytics')).toBeInTheDocument();
       });
-      
-      await user.click(screen.getByRole('tab', { name: /ai analytics/i }));
-      
-      expect(screen.getByTestId('ai-analytics')).toBeInTheDocument();
     });
+  });
 
-    it('switches to Feature Flags tab content', async () => {
+  describe('Header', () => {
+    it('updates header text when section changes', async () => {
       const user = userEvent.setup();
       renderAdmin();
-      
+
       await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /feature flags/i })).toBeInTheDocument();
+        expect(screen.getByText(/admin dashboard/i)).toBeInTheDocument();
       });
-      
-      await user.click(screen.getByRole('tab', { name: /feature flags/i }));
-      
-      expect(screen.getByTestId('feature-flag-manager')).toBeInTheDocument();
+
+      await user.click(screen.getByText('Feature Flags'));
+
+      await waitFor(() => {
+        // Header shows activeSection.replace(/-/g, ' ') = 'feature flags'
+        const heading = screen.getByRole('heading', { level: 1 });
+        expect(heading).toHaveTextContent('feature flags');
+      });
     });
   });
 
   describe('Loading State', () => {
-    it('shows loading spinner initially', () => {
-      // Temporarily mock loading state
-      vi.doMock('@/integrations/supabase/client', () => ({
-        supabase: {
-          from: () => ({
-            select: vi.fn().mockReturnThis(),
-            order: vi.fn().mockReturnThis(),
-            then: () => new Promise(() => {}), // Never resolves
-          }),
-        },
-      }));
-      
-      // This would show loading if we could properly mock the async state
-      // For now, we just verify the component renders
+    it('renders without crashing', () => {
       renderAdmin();
       expect(document.body).toBeTruthy();
     });

@@ -99,6 +99,24 @@ interface WeatherState {
 const CACHE_KEY_PREFIX = 'ally_weather_cache_';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
+type MaybeSingleLikeResult<T> = Promise<{ data: T | null; error: unknown }>;
+
+function maybeSingleCompat<T>(query: {
+  maybeSingle?: () => MaybeSingleLikeResult<T>;
+  single?: () => MaybeSingleLikeResult<T>;
+}): MaybeSingleLikeResult<T> {
+  if (typeof query.maybeSingle === 'function') {
+    return query.maybeSingle();
+  }
+  if (typeof query.single === 'function') {
+    return query.single();
+  }
+  return Promise.resolve({
+    data: null,
+    error: new Error('Supabase query builder missing maybeSingle/single'),
+  });
+}
+
 function getCacheKey(userId: string | undefined): string {
   // Use a unique cache key per user, with a hash for anonymous users based on session
   if (userId) {
@@ -254,11 +272,23 @@ export function useWeather() {
 
         // Fallback to saved profile location
         if (user?.id) {
-          const { data: profile, error: profileError } = await supabase
+          const profileQuery = supabase
             .from('profiles')
             .select('latitude, longitude')
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .eq('user_id', user.id);
+          const { data: profile, error: profileError } = await maybeSingleCompat<{
+            latitude: number | null;
+            longitude: number | null;
+          }>(profileQuery as unknown as {
+            maybeSingle?: () => MaybeSingleLikeResult<{
+              latitude: number | null;
+              longitude: number | null;
+            }>;
+            single?: () => MaybeSingleLikeResult<{
+              latitude: number | null;
+              longitude: number | null;
+            }>;
+          });
           if (profileError) logger.error('Failed to load saved location:', profileError);
 
           if (currentAbortRef.aborted) return;
@@ -281,7 +311,7 @@ export function useWeather() {
   }, [user?.id, fetchWeather]);
 
   // Silently check if user moved significantly and update location if needed
-  const checkAndUpdateLocation = useCallback(async (
+  const _checkAndUpdateLocation = useCallback(async (
     savedLat: number,
     savedLon: number
   ): Promise<{ lat: number; lon: number }> => {
@@ -349,11 +379,26 @@ export function useWeather() {
 
     const loadWeather = async () => {
       try {
-        const { data: profile } = await supabase
+        const profileQuery = supabase
           .from('profiles')
           .select('weather_enabled, latitude, longitude')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('user_id', user.id);
+        const { data: profile } = await maybeSingleCompat<{
+          weather_enabled: boolean | null;
+          latitude: number | null;
+          longitude: number | null;
+        }>(profileQuery as unknown as {
+          maybeSingle?: () => MaybeSingleLikeResult<{
+            weather_enabled: boolean | null;
+            latitude: number | null;
+            longitude: number | null;
+          }>;
+          single?: () => MaybeSingleLikeResult<{
+            weather_enabled: boolean | null;
+            latitude: number | null;
+            longitude: number | null;
+          }>;
+        });
 
         if (!isMounted) return;
 

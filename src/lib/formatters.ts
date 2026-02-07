@@ -29,8 +29,22 @@ export const formatDate = (
   formatStr: string = 'PPP'
 ): string => {
   if (!date) return '';
-  
-  const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+
+  let dateObj: Date;
+  if (typeof date === 'string') {
+    // Parse date-only strings as local dates to avoid UTC day-shift.
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+    } else {
+      dateObj = new Date(date);
+    }
+  } else if (typeof date === 'number') {
+    dateObj = new Date(date);
+  } else {
+    dateObj = date;
+  }
   
   if (!isValid(dateObj)) {
     console.warn('formatDate received invalid date:', date);
@@ -45,7 +59,7 @@ export const formatDate = (
  * Format a date and time according to the user's locale
  */
 export const formatDateTime = (date: Date | string | number): string => {
-  return formatDate(date, 'PPp');
+  return formatDate(date, 'PPPp');
 };
 
 /**
@@ -149,14 +163,13 @@ export const formatPercent = (value: number, decimals: number = 0): string => {
     style: 'percent',
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
-  }).format(value / 100);
+  }).format(value);
 };
 
 /**
  * Format a unit value (e.g., "5 gallons", "10 liters")
  */
 export const formatUnit = (value: number, unit: string): string => {
-  const lang = getCurrentLanguage();
   const formattedNumber = formatNumber(value);
   
   // For now, just append the unit

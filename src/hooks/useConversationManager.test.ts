@@ -4,9 +4,42 @@ import { useConversationManager } from './useConversationManager';
 import { supabase } from '@/integrations/supabase/client';
 import { mockToast } from '@/test/setup';
 
+const createDefaultFromMock = () => ({
+  select: vi.fn().mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      order: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      }),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+    order: vi.fn().mockResolvedValue({ data: [], error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+  }),
+  insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+  update: vi.fn().mockReturnValue({
+    eq: vi.fn().mockResolvedValue({ error: null }),
+  }),
+  delete: vi.fn().mockReturnValue({
+    eq: vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    }),
+  }),
+});
+
+const createConversationsSelectResult = (data: any[]) => ({
+  eq: vi.fn().mockReturnValue({
+    order: vi.fn().mockReturnValue({
+      order: vi.fn().mockResolvedValue({ data, error: null }),
+    }),
+  }),
+});
+
 describe('useConversationManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(supabase.from).mockImplementation(() => createDefaultFromMock() as any);
   });
 
   describe('initialization', () => {
@@ -33,11 +66,18 @@ describe('useConversationManager', () => {
         { id: 'aq-2', name: 'Planted Tank', type: 'freshwater' },
       ];
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'aquariums') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
+              }),
+            }),
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       
@@ -49,11 +89,18 @@ describe('useConversationManager', () => {
     });
 
     it('should handle empty aquariums', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'aquariums') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: [], error: null }),
+              }),
+            }),
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       
@@ -72,11 +119,20 @@ describe('useConversationManager', () => {
         { id: 'conv-2', title: 'Second Chat', updated_at: '2024-01-16', aquarium_id: 'aq-1' },
       ];
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'chat_conversations') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+                }),
+              }),
+            }),
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       
@@ -128,11 +184,15 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  order: vi.fn().mockResolvedValue({ data: mockConversations, error: null }),
+                }),
+              }),
             }),
           } as any;
         }
-        return {} as any;
+        return createDefaultFromMock() as any;
       });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
@@ -155,13 +215,18 @@ describe('useConversationManager', () => {
     });
 
     it('should return initial message when no messages found', async () => {
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({ data: null, error: null }),
-          }),
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'chat_messages') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       
@@ -180,14 +245,14 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             delete: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({ error: null }),
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({ error: null }),
+              }),
             }),
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            }),
+            select: vi.fn().mockReturnValue(createConversationsSelectResult([])),
           } as any;
         }
-        return {} as any;
+        return createDefaultFromMock() as any;
       });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
@@ -219,14 +284,14 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             delete: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({ error: null }),
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockResolvedValue({ error: null }),
+              }),
             }),
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            }),
+            select: vi.fn().mockReturnValue(createConversationsSelectResult([])),
           } as any;
         }
-        return {} as any;
+        return createDefaultFromMock() as any;
       });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
@@ -266,9 +331,7 @@ describe('useConversationManager', () => {
           return {
             insert: mockInsertConv,
             update: mockUpdate,
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({ data: [], error: null }),
-            }),
+            select: vi.fn().mockReturnValue(createConversationsSelectResult([])),
           } as any;
         }
         if (table === 'chat_messages') {
@@ -276,7 +339,7 @@ describe('useConversationManager', () => {
             insert: mockInsertMsg,
           } as any;
         }
-        return {} as any;
+        return createDefaultFromMock() as any;
       });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
@@ -320,11 +383,29 @@ describe('useConversationManager', () => {
         { id: 'aq-1', name: 'Reef Tank', type: 'saltwater' },
       ];
 
-      vi.mocked(supabase.from).mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
-        }),
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'aquariums') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({ data: mockAquariums, error: null }),
+              }),
+            }),
+          } as any;
+        }
+        if (table === 'chat_conversations') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  order: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            }),
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       
@@ -398,15 +479,14 @@ describe('useConversationManager', () => {
         }
         if (table === 'chat_conversations') {
           return {
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({
-                data: [{ id: 'conv-1', title: 'Test', updated_at: '2024-01-15', aquarium_id: null }],
-                error: null,
-              }),
-            }),
+            select: vi.fn().mockReturnValue(
+              createConversationsSelectResult([
+                { id: 'conv-1', title: 'Test', updated_at: '2024-01-15', aquarium_id: null },
+              ])
+            ),
           } as any;
         }
-        return {} as any;
+        return createDefaultFromMock() as any;
       });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
@@ -427,9 +507,15 @@ describe('useConversationManager', () => {
     it('should do nothing without current conversation', async () => {
       const mockUpdate = vi.fn();
       
-      vi.mocked(supabase.from).mockReturnValue({
-        update: mockUpdate,
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'chat_messages') {
+          return {
+            ...createDefaultFromMock(),
+            update: mockUpdate,
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       
@@ -465,15 +551,14 @@ describe('useConversationManager', () => {
         if (table === 'chat_conversations') {
           return {
             update: mockUpdate,
-            select: vi.fn().mockReturnValue({
-              order: vi.fn().mockResolvedValue({
-                data: [{ id: 'conv-1', title: 'Test', updated_at: '2024-01-15', aquarium_id: null }],
-                error: null,
-              }),
-            }),
+            select: vi.fn().mockReturnValue(
+              createConversationsSelectResult([
+                { id: 'conv-1', title: 'Test', updated_at: '2024-01-15', aquarium_id: null },
+              ])
+            ),
           } as any;
         }
-        return {} as any;
+        return createDefaultFromMock() as any;
       });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
@@ -499,9 +584,15 @@ describe('useConversationManager', () => {
     it('should do nothing without current conversation', async () => {
       const mockInsert = vi.fn();
       
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        if (table === 'chat_messages') {
+          return {
+            ...createDefaultFromMock(),
+            insert: mockInsert,
+          } as any;
+        }
+        return createDefaultFromMock() as any;
+      });
 
       const { result } = renderHook(() => useConversationManager('user-123'));
       

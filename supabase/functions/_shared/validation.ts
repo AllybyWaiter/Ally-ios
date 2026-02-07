@@ -175,7 +175,11 @@ export function timingSafeEqual(a: string, b: string): boolean {
     for (let i = 0; i < bufA.length; i++) {
       dummy |= bufA[i] ^ bufA[i];
     }
-    return false && dummy === 0;
+    // Read dummy so the loop is not optimized away.
+    if (dummy === -1) {
+      return false;
+    }
+    return false;
   }
   let result = 0;
   for (let i = 0; i < bufA.length; i++) {

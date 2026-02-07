@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { z } from 'zod';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +24,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } f
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import {
-  ArrowLeft, User, Lock, Trash2, Moon, Sun, Monitor,
+  ArrowLeft, Lock, Trash2, Moon, Sun, Monitor,
   Globe, Shield, Crown, Brain, MapPin,
   Bell, HelpCircle, MessageSquare, Star, Download, FileText, ExternalLink,
   Mail, ChevronRight, ChevronDown, BookOpen, Sparkles, Loader2,
@@ -46,6 +46,24 @@ import { useRevenueCat } from "@/hooks/useRevenueCat";
 
 const APP_VERSION = "1.0.0";
 
+type MaybeSingleLikeResult<T> = Promise<{ data: T | null; error: unknown }>;
+
+function maybeSingleCompat<T>(query: {
+  maybeSingle?: () => MaybeSingleLikeResult<T>;
+  single?: () => MaybeSingleLikeResult<T>;
+}): MaybeSingleLikeResult<T> {
+  if (typeof query.maybeSingle === 'function') {
+    return query.maybeSingle();
+  }
+  if (typeof query.single === 'function') {
+    return query.single();
+  }
+  return Promise.resolve({
+    data: null,
+    error: new Error('Supabase query builder missing maybeSingle/single'),
+  });
+}
+
 const PLAN_FEATURES: Record<string, string[]> = {
   free: ['1 water body', '5 test logs per month', 'Basic AI assistant', 'Task reminders'],
   basic: ['1 water body', '10 test logs per month', 'AI recommendations', 'Basic smart scheduling'],
@@ -58,20 +76,20 @@ const Settings = () => {
   const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut, refreshProfile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const isMobile = useIsMobile();
 
   // RevenueCat for native subscription management
   const {
     isNative: isNativePlatform,
-    isPro,
+    isPro: _isPro,
     subscriptionTier: rcSubscriptionTier,
     restore,
     showCustomerCenter,
     showPaywall,
     refreshCustomerInfo,
-    isLoading: rcLoading
+    isLoading: _rcLoading
   } = useRevenueCat();
 
   // Use RevenueCat tier on native, fallback to auth context tier
@@ -131,11 +149,23 @@ const Settings = () => {
   useEffect(() => {
     const fetchSkillLevel = async () => {
       if (!user) return;
-      const { data, error } = await supabase
+      const profileQuery = supabase
         .from('profiles')
         .select('skill_level, weather_enabled')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .eq('user_id', user.id);
+      const { data, error } = await maybeSingleCompat<{
+        skill_level: string | null;
+        weather_enabled: boolean | null;
+      }>(profileQuery as unknown as {
+        maybeSingle?: () => MaybeSingleLikeResult<{
+          skill_level: string | null;
+          weather_enabled: boolean | null;
+        }>;
+        single?: () => MaybeSingleLikeResult<{
+          skill_level: string | null;
+          weather_enabled: boolean | null;
+        }>;
+      });
       if (error) {
         logger.error('Failed to fetch skill level:', error);
         return;
@@ -240,7 +270,7 @@ const Settings = () => {
       const { error } = await supabase.from('profiles').update({ language_preference: newLanguage }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Language updated", description: "Your language preference has been saved." });
-    } catch (error: unknown) {
+    } catch {
       toast({ title: "Error", description: "Failed to save language preference.", variant: "destructive" });
     }
   };
@@ -252,7 +282,7 @@ const Settings = () => {
       const { error } = await supabase.from('profiles').update({ hemisphere: newHemisphere }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Location updated", description: "Your hemisphere has been saved." });
-    } catch (error: unknown) {
+    } catch {
       toast({ title: "Error", description: "Failed to save hemisphere preference.", variant: "destructive" });
     }
   };
@@ -270,7 +300,7 @@ const Settings = () => {
       const { error } = await supabase.from('profiles').update({ unit_preference: pendingUnitChange }).eq('user_id', user.id);
       if (error) throw error;
       toast({ title: "Units updated", description: "Your unit preference has been saved." });
-    } catch (error: unknown) {
+    } catch {
       toast({ title: "Error", description: "Failed to save unit preference.", variant: "destructive" });
     } finally {
       setShowUnitConfirmDialog(false);

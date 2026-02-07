@@ -103,14 +103,6 @@ function detectConversationType(messages: Message[], waterType: string | null): 
     }
   }
 
-  // Context-free detection
-  if (POOL_DOSING_KEYWORDS.some(kw => combinedText.includes(kw))) {
-    return 'pool_dosing';
-  }
-  if (AQUARIUM_TREATMENT_KEYWORDS.some(kw => combinedText.includes(kw))) {
-    return 'aquarium_treatment';
-  }
-
   return 'general';
 }
 

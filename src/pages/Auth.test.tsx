@@ -30,8 +30,10 @@ vi.mock('@/hooks/useAuth', () => ({
 // Mock useRateLimit
 vi.mock('@/hooks/useRateLimit', () => ({
   useRateLimit: () => ({
+    isRateLimited: false,
     checkRateLimit: vi.fn().mockReturnValue(true),
     getRemainingAttempts: vi.fn().mockReturnValue(5),
+    resetRateLimit: vi.fn(),
   }),
 }));
 
@@ -41,7 +43,14 @@ vi.mock('@/integrations/supabase/client', () => ({
     auth: {
       resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
       getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
     },
+    functions: {
+      invoke: vi.fn().mockResolvedValue({ data: null, error: null }),
+    },
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    }),
     rpc: vi.fn().mockResolvedValue({ data: true, error: null }),
   },
 }));
@@ -51,6 +60,11 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
     toast: vi.fn(),
   }),
+}));
+
+// Mock logger
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
 const queryClient = new QueryClient({
@@ -81,8 +95,8 @@ describe('Auth', () => {
   describe('Login View', () => {
     it('renders login form by default', () => {
       renderAuth();
-      
-      expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
+
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
@@ -91,32 +105,30 @@ describe('Auth', () => {
     it('shows validation error for invalid email', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       const emailInput = screen.getByLabelText(/email/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-      
+
       await user.type(emailInput, 'invalid-email');
-      await user.click(submitButton);
-      
+      // Use fireEvent.submit to bypass native HTML5 email constraint validation
+      fireEvent.submit(emailInput.closest('form')!);
+
       await waitFor(() => {
-        expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+        expect(screen.getByText(/valid email/i)).toBeInTheDocument();
       });
     });
 
-    it('shows validation error for short password', async () => {
+    it('shows validation error for empty password', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/^password$/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
-      
+
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, '123');
       await user.click(submitButton);
-      
+
       await waitFor(() => {
-        expect(screen.getByText(/at least 6 characters/i)).toBeInTheDocument();
+        expect(screen.getByText(/password is required/i)).toBeInTheDocument();
       });
     });
 
@@ -124,15 +136,15 @@ describe('Auth', () => {
       mockSignIn.mockResolvedValue({ error: null });
       const user = userEvent.setup();
       renderAuth();
-      
+
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/^password$/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
-      
+
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
       await user.click(submitButton);
-      
+
       await waitFor(() => {
         expect(mockSignIn).toHaveBeenCalledWith('test@example.com', 'password123');
       });
@@ -141,13 +153,13 @@ describe('Auth', () => {
     it('toggles password visibility', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       const passwordInput = screen.getByLabelText(/^password$/i);
       expect(passwordInput).toHaveAttribute('type', 'password');
-      
-      const toggleButton = screen.getByRole('button', { name: '' });
+
+      const toggleButton = screen.getByRole('button', { name: /show password/i });
       await user.click(toggleButton);
-      
+
       expect(passwordInput).toHaveAttribute('type', 'text');
     });
   });
@@ -156,10 +168,10 @@ describe('Auth', () => {
     it('switches to signup view when link is clicked', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
-      const signupLink = screen.getByText(/create an account/i);
+
+      const signupLink = screen.getByText(/don't have an account/i);
       await user.click(signupLink);
-      
+
       expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
@@ -168,23 +180,23 @@ describe('Auth', () => {
     it('validates password confirmation match', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       // Switch to signup
-      const signupLink = screen.getByText(/create an account/i);
+      const signupLink = screen.getByText(/don't have an account/i);
       await user.click(signupLink);
-      
+
       const nameInput = screen.getByLabelText(/name/i);
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/^password$/i);
       const confirmInput = screen.getByLabelText(/confirm password/i);
-      const submitButton = screen.getByRole('button', { name: /create account/i });
-      
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+
       await user.type(nameInput, 'Test User');
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
-      await user.type(confirmInput, 'differentpassword');
+      await user.type(passwordInput, 'Password123');
+      await user.type(confirmInput, 'Differentpassword1');
       await user.click(submitButton);
-      
+
       await waitFor(() => {
         expect(screen.getByText(/passwords don't match/i)).toBeInTheDocument();
       });
@@ -194,25 +206,25 @@ describe('Auth', () => {
       mockSignUp.mockResolvedValue({ error: null });
       const user = userEvent.setup();
       renderAuth();
-      
+
       // Switch to signup
-      const signupLink = screen.getByText(/create an account/i);
+      const signupLink = screen.getByText(/don't have an account/i);
       await user.click(signupLink);
-      
+
       const nameInput = screen.getByLabelText(/name/i);
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/^password$/i);
       const confirmInput = screen.getByLabelText(/confirm password/i);
-      const submitButton = screen.getByRole('button', { name: /create account/i });
-      
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+
       await user.type(nameInput, 'Test User');
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password123');
-      await user.type(confirmInput, 'password123');
+      await user.type(passwordInput, 'Password123');
+      await user.type(confirmInput, 'Password123');
       await user.click(submitButton);
-      
+
       await waitFor(() => {
-        expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'password123', 'Test User');
+        expect(mockSignUp).toHaveBeenCalledWith('test@example.com', 'Password123', 'Test User');
       });
     });
   });
@@ -221,10 +233,10 @@ describe('Auth', () => {
     it('switches to forgot password view', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       const forgotLink = screen.getByText(/forgot password/i);
       await user.click(forgotLink);
-      
+
       expect(screen.getByRole('heading', { name: /reset password/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /send reset link/i })).toBeInTheDocument();
     });
@@ -232,15 +244,15 @@ describe('Auth', () => {
     it('shows back to sign in link in forgot password view', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       const forgotLink = screen.getByText(/forgot password/i);
       await user.click(forgotLink);
-      
+
       const backLink = screen.getByText(/back to sign in/i);
       expect(backLink).toBeInTheDocument();
-      
+
       await user.click(backLink);
-      expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
   });
 
@@ -248,17 +260,17 @@ describe('Auth', () => {
     it('can navigate from login to signup and back', async () => {
       const user = userEvent.setup();
       renderAuth();
-      
+
       // Start at login
-      expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
-      
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
+
       // Go to signup
-      await user.click(screen.getByText(/create an account/i));
+      await user.click(screen.getByText(/don't have an account/i));
       expect(screen.getByRole('heading', { name: /create account/i })).toBeInTheDocument();
-      
+
       // Go back to login
       await user.click(screen.getByText(/already have an account/i));
-      expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument();
     });
   });
 });

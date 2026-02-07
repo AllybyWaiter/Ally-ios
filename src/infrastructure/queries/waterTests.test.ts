@@ -79,7 +79,7 @@ describe('waterTests DAL', () => {
   });
 
   describe('fetchAllWaterTests', () => {
-    it('should fetch all water tests without limit', async () => {
+    it('should fetch all water tests without explicit limit', async () => {
       const mockData = [
         { id: 'wt-1', test_date: '2025-01-01', test_parameters: [] },
       ];
@@ -87,13 +87,14 @@ describe('waterTests DAL', () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        order: vi.fn().mockResolvedValue({ data: mockData, error: null }),
-        limit: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue({ data: mockData, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await fetchAllWaterTests('aq-1');
 
+      expect(mockChain.limit).toHaveBeenCalledWith(1000);
       expect(result).toEqual(mockData);
     });
 
@@ -233,8 +234,11 @@ describe('waterTests DAL', () => {
   });
 
   describe('createWaterTest', () => {
+    const testAquariumId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    const testUserId = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
+
     it('should create water test with parameters', async () => {
-      const mockTest = { id: 'wt-1', aquarium_id: 'aq-1', user_id: 'user-1' };
+      const mockTest = { id: 'wt-1', aquarium_id: testAquariumId, user_id: testUserId };
 
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -242,7 +246,7 @@ describe('waterTests DAL', () => {
         }),
       });
       const mockParamInsert = vi.fn().mockResolvedValue({ error: null });
-      
+
       vi.mocked(supabase.from).mockImplementation((table: string) => {
         if (table === 'water_tests') {
           return { insert: mockInsert } as any;
@@ -251,7 +255,7 @@ describe('waterTests DAL', () => {
       });
 
       const result = await createWaterTest(
-        { aquarium_id: 'aq-1', user_id: 'user-1' },
+        { aquarium_id: testAquariumId, user_id: testUserId },
         [{ parameter_name: 'pH', value: 7.2, unit: 'pH' }]
       );
 
@@ -261,7 +265,7 @@ describe('waterTests DAL', () => {
     });
 
     it('should create water test without parameters', async () => {
-      const mockTest = { id: 'wt-1', aquarium_id: 'aq-1', user_id: 'user-1' };
+      const mockTest = { id: 'wt-1', aquarium_id: testAquariumId, user_id: testUserId };
 
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -271,7 +275,7 @@ describe('waterTests DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       const result = await createWaterTest(
-        { aquarium_id: 'aq-1', user_id: 'user-1' },
+        { aquarium_id: testAquariumId, user_id: testUserId },
         []
       );
 
@@ -287,7 +291,7 @@ describe('waterTests DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await expect(createWaterTest(
-        { aquarium_id: 'aq-1', user_id: 'user-1' },
+        { aquarium_id: testAquariumId, user_id: testUserId },
         []
       )).rejects.toEqual({ message: 'Insert failed' });
     });
@@ -309,7 +313,7 @@ describe('waterTests DAL', () => {
       });
 
       await expect(createWaterTest(
-        { aquarium_id: 'aq-1', user_id: 'user-1' },
+        { aquarium_id: testAquariumId, user_id: testUserId },
         [{ parameter_name: 'pH', value: 7.2, unit: 'pH' }]
       )).rejects.toEqual({ message: 'Param insert failed' });
     });

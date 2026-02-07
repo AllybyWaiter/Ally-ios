@@ -3,16 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Settings, 
   Zap,
   Shield,
-  Clock,
   AlertTriangle,
   CheckCircle,
   FileText,
@@ -20,7 +17,6 @@ import {
   Camera,
   Sparkles
 } from 'lucide-react';
-import { formatDate } from '@/lib/formatters';
 import { queryPresets } from '@/lib/queryConfig';
 import { PLAN_DEFINITIONS, type PlanTier } from '@/lib/planConstants';
 

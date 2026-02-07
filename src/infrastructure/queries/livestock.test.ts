@@ -115,11 +115,14 @@ describe('livestock DAL', () => {
   });
 
   describe('createLivestock', () => {
+    const testAquariumId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    const testUserId = 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22';
+
     it('should create livestock with required fields', async () => {
       const mockLivestock = {
         id: 'ls-1',
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Nemo',
         species: 'Clownfish',
         category: 'fish',
@@ -133,8 +136,8 @@ describe('livestock DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       const result = await createLivestock({
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Nemo',
         species: 'Clownfish',
         category: 'fish',
@@ -162,8 +165,8 @@ describe('livestock DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await createLivestock({
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Cleaner Shrimp',
         species: 'Lysmata amboinensis',
         category: 'invertebrate',
@@ -189,8 +192,8 @@ describe('livestock DAL', () => {
       vi.mocked(supabase.from).mockReturnValue({ insert: mockInsert } as any);
 
       await expect(createLivestock({
-        aquarium_id: 'aq-1',
-        user_id: 'user-1',
+        aquarium_id: testAquariumId,
+        user_id: testUserId,
         name: 'Fish',
         species: 'Species',
         category: 'fish',
