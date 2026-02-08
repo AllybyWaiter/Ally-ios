@@ -188,26 +188,6 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
     return 'free';
   }
 
-  // Helper to get tier priority (higher = better)
-  const getTierPriority = (tier: SubscriptionTier): number => {
-    switch (tier) {
-      case 'business': return 5;
-      case 'gold': return 4;
-      case 'plus': return 3;
-      case 'basic': return 2;
-      case 'free': return 1;
-      default: return 0;
-    }
-  };
-
-  // Helper to extract tier from product ID
-  const getTierFromProductId = (productId: string): SubscriptionTier => {
-    if (productId.includes('gold')) return 'gold';
-    if (productId.includes('plus')) return 'plus';
-    if (productId.includes('basic')) return 'basic';
-    return 'basic'; // Default for any subscription
-  };
-
   try {
     const customerInfo = await getCustomerInfo();
 
@@ -221,7 +201,7 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
     const activeEntitlements = Object.values(customerInfo.entitlements.active);
     for (const entitlement of activeEntitlements) {
       const tier = getTierFromProductId(entitlement.productIdentifier);
-      if (getTierPriority(tier) > getTierPriority(highestTier)) {
+      if (TIER_PRIORITY[tier] > TIER_PRIORITY[highestTier]) {
         highestTier = tier;
         logger.log('RevenueCat: Found entitlement with tier:', tier, 'from product:', entitlement.productIdentifier);
       }
@@ -232,7 +212,7 @@ export async function getSubscriptionTier(): Promise<SubscriptionTier> {
     if (Array.isArray(activeSubscriptions)) {
       for (const subId of activeSubscriptions) {
         const tier = getTierFromProductId(subId);
-        if (getTierPriority(tier) > getTierPriority(highestTier)) {
+        if (TIER_PRIORITY[tier] > TIER_PRIORITY[highestTier]) {
           highestTier = tier;
           logger.log('RevenueCat: Found subscription with tier:', tier, 'from product:', subId);
         }
@@ -392,7 +372,7 @@ export async function presentPaywall(): Promise<boolean> {
 /**
  * Show native RevenueCat paywall for a specific offering
  */
-export async function presentPaywallForOffering(_offeringIdentifier: string): Promise<boolean> {
+export async function presentPaywallForOffering(offeringIdentifier: string): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) {
     return false;
   }
@@ -401,10 +381,11 @@ export async function presentPaywallForOffering(_offeringIdentifier: string): Pr
     const { RevenueCatUI } = await import('@revenuecat/purchases-capacitor-ui');
     const result = await RevenueCatUI.presentPaywallIfNeeded({
       requiredEntitlementIdentifier: ENTITLEMENT_ID,
+      offeringIdentifier,
     });
     return result.paywallResult === 'PURCHASED' || result.paywallResult === 'RESTORED';
   } catch (error) {
-    logger.error('RevenueCat: Failed to present paywall', error);
+    logger.error('RevenueCat: Failed to present paywall for offering:', offeringIdentifier, error);
     return false;
   }
 }

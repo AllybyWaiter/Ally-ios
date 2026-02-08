@@ -49,8 +49,8 @@ export function playListeningChime(): void {
     gain2.connect(ctx.destination);
     osc2.start(now + 0.1);
     osc2.stop(now + 0.22);
-  } catch {
-    // Fire-and-forget
+  } catch (error) {
+    console.debug('Failed to play listening chime:', error);
   }
 }
 
@@ -75,7 +75,7 @@ export function playConfirmationTone(): void {
     gain.connect(ctx.destination);
     osc.start(now);
     osc.stop(now + 0.17);
-  } catch {
-    // Fire-and-forget
+  } catch (error) {
+    console.debug('Failed to play confirmation tone:', error);
   }
 }

@@ -247,13 +247,10 @@ export function useConversationManager(userId: string | null) {
 
       setCurrentConversationId(conversationId);
 
-      // Update selected aquarium from conversation.
-      // Fall back to a fresh fetch when local state is stale.
-      let conv = conversations.find(c => c.id === conversationId);
-      if (!conv) {
-        const refreshed = await fetchConversations();
-        conv = refreshed.find(c => c.id === conversationId);
-      }
+      // Always fetch fresh conversation list to get the aquarium_id,
+      // since the local `conversations` state may be stale.
+      const refreshed = await fetchConversations();
+      const conv = refreshed.find(c => c.id === conversationId);
       if (conv) {
         setSelectedAquarium(conv.aquarium_id || "general");
       }
@@ -265,7 +262,7 @@ export function useConversationManager(userId: string | null) {
     logger.warn('Loaded conversation with no messages:', conversationId);
     setCurrentConversationId(null); // Don't keep stale ID
     return [createInitialMessage()];
-  }, [conversations, toast, fetchConversations]);
+  }, [toast, fetchConversations]);
 
   const startNewConversation = useCallback((): Message[] => {
     setCurrentConversationId(null);

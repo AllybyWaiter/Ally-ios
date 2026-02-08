@@ -60,7 +60,11 @@ const flushQueue = async () => {
   try {
     await supabase.from('activity_logs').insert(toFlush);
   } catch {
-    // Silently fail - activity logging should not disrupt user experience
+    // Re-queue failed activities (up to max size) so they aren't lost
+    const spaceLeft = MAX_QUEUE_SIZE - activityQueue.length;
+    if (spaceLeft > 0) {
+      activityQueue.unshift(...toFlush.slice(0, spaceLeft));
+    }
   }
 };
 
@@ -75,7 +79,16 @@ if (typeof document !== 'undefined') {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
-    flushQueue();
+    if (activityQueue.length === 0) return;
+    // Use sendBeacon for reliable delivery during page close
+    if (navigator.sendBeacon) {
+      const payload = JSON.stringify(activityQueue);
+      activityQueue = [];
+      flushTimeout = null;
+      navigator.sendBeacon('/api/activity-logs', payload);
+    } else {
+      flushQueue();
+    }
   });
 }
 

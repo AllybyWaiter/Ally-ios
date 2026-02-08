@@ -164,13 +164,32 @@ export function useStreamingResponse() {
       // Handle 401 - try to refresh session and retry automatically (once)
       if (response.status === 401 && !retryToken) {
         logger.log('Session expired, attempting refresh and retry...');
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        logger.log('Refresh result:', {
-          hasSession: !!refreshData?.session,
-          error: refreshError?.message,
-        });
-        if (refreshError || !refreshData.session) {
-          logger.error('Session refresh failed:', refreshError);
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          logger.log('Refresh result:', {
+            hasSession: !!refreshData?.session,
+            error: refreshError?.message,
+          });
+          if (refreshError || !refreshData.session) {
+            logger.error('Session refresh failed:', refreshError);
+            toast({
+              title: "Session expired",
+              description: "Please sign in again to continue.",
+              variant: "destructive",
+            });
+            navigate("/auth");
+            throw new Error("Session expired. Please sign in again.");
+          }
+          // Session refreshed - abort the old controller before retrying with new token
+          logger.log('Session refreshed, retrying with new token...');
+          abortController.abort();
+          return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token);
+        } catch (refreshErr) {
+          // Re-throw our own errors, but catch unexpected refreshSession failures
+          if (refreshErr instanceof Error && refreshErr.message.includes("Session expired")) {
+            throw refreshErr;
+          }
+          logger.error('Unexpected error during session refresh:', refreshErr);
           toast({
             title: "Session expired",
             description: "Please sign in again to continue.",
@@ -179,9 +198,6 @@ export function useStreamingResponse() {
           navigate("/auth");
           throw new Error("Session expired. Please sign in again.");
         }
-        // Session refreshed - retry with the NEW token directly
-        logger.log('Session refreshed, retrying with new token...');
-        return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token);
       }
 
       // If retry also failed with 401, user needs to fully re-authenticate
@@ -279,6 +295,14 @@ export function useStreamingResponse() {
           if (parsed.type === 'data_card' && parsed.card) {
             callbacks.onDataCard?.(parsed.card as DataCardPayload);
             continue;
+          }
+
+          // Check for error responses from the server
+          if (parsed.error) {
+            logger.warn('Stream returned error payload:', parsed.error);
+            callbacks.onError(new Error(typeof parsed.error === 'string' ? parsed.error : parsed.error.message || 'Server error'));
+            streamDone = true;
+            break;
           }
 
           const content = parsed.choices?.[0]?.delta?.content as string | undefined;

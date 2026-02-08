@@ -55,32 +55,33 @@ export function WeatherSettings() {
           // Permission granted, save coordinates and enable weather
           setWeatherEnabled(true);
 
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({
-              weather_enabled: true,
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            })
-            .eq('user_id', user.id);
+          try {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                weather_enabled: true,
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              })
+              .eq('user_id', user.id);
 
-          if (updateError) {
+            if (updateError) throw updateError;
+
+            toast({
+              title: "Weather Enabled",
+              description: "Your dashboard will now show weather-aware content based on your current location.",
+            });
+
+            // Refresh weather to get current data
+            refreshWeather();
+          } catch {
             setWeatherEnabled(false);
             toast({
               title: "Failed to enable weather",
               description: "Could not save your location. Please try again.",
               variant: "destructive",
             });
-            return;
           }
-
-          toast({
-            title: "Weather Enabled",
-            description: "Your dashboard will now show weather-aware content based on your current location.",
-          });
-
-          // Refresh weather to get current data
-          refreshWeather();
         },
         (error) => {
           console.error('Location permission denied:', error);

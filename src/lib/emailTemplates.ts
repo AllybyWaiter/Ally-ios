@@ -53,7 +53,10 @@ export function applyTemplateVariables(
   variables: Record<string, string>
 ): string {
   return Object.entries(variables).reduce(
-    (result, [key, value]) => result.replace(new RegExp(`{{${key}}}`, 'g'), value),
+    (result, [key, value]) => {
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return result.replace(new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g'), value);
+    },
     template
   );
 }

@@ -164,7 +164,26 @@ export async function setAsPrimaryAquariumPhoto(
 }
 
 // Delete photo (with ownership verification)
-export async function deleteAquariumPhoto(photoId: string, userId: string, photoUrl: string) {
+// If the deleted photo is the cover photo, clears primary_photo_url on the aquarium.
+export async function deleteAquariumPhoto(photoId: string, userId: string, photoUrl: string, aquariumId?: string) {
+  // Check if this photo is the primary/cover photo and clear it
+  if (aquariumId) {
+    const { data: aquarium } = await supabase
+      .from('aquariums')
+      .select('primary_photo_url')
+      .eq('id', aquariumId)
+      .eq('user_id', userId)
+      .single();
+
+    if (aquarium?.primary_photo_url === photoUrl) {
+      await supabase
+        .from('aquariums')
+        .update({ primary_photo_url: null })
+        .eq('id', aquariumId)
+        .eq('user_id', userId);
+    }
+  }
+
   // Extract file path from URL
   const urlParts = photoUrl.split('/aquarium-photos/');
   if (urlParts[1]) {

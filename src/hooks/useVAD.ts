@@ -5,6 +5,7 @@ interface VADConfig {
   silenceThreshold?: number;    // RMS below this = silence (default: 12, scale 0-128)
   silenceDuration?: number;     // ms of silence before triggering (default: 1500)
   minRecordingDuration?: number; // ms before VAD activates (default: 500)
+  maxRecordingDuration?: number; // ms before force-firing callback (default: 15000) — prevents stuck recordings
 }
 
 interface VADCallbacks {
@@ -22,6 +23,7 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const silentGainRef = useRef<GainNode | null>(null);
   const callbacksRef = useRef(callbacks);
   const firedRef = useRef(false); // Prevent repeated onSilenceDetected firing
 
@@ -39,6 +41,10 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
       sourceRef.current.disconnect();
       sourceRef.current = null;
     }
+    if (silentGainRef.current) {
+      silentGainRef.current.disconnect();
+      silentGainRef.current = null;
+    }
     analyserRef.current = null;
     speechStartedRef.current = false;
     silenceStartTimeRef.current = null;
@@ -55,6 +61,7 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
     const threshold = config.silenceThreshold ?? 12;
     const silenceDur = config.silenceDuration ?? 1500;
     const minRecording = config.minRecordingDuration ?? 500;
+    const maxRecording = config.maxRecordingDuration ?? 15000;
 
     try {
       const audioContext = getOrCreateAudioContext();
@@ -66,6 +73,14 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
       sourceRef.current = source;
+
+      // iOS Safari requires the audio graph to route to destination for
+      // AnalyserNode to receive data. Use a zero-gain node so nothing is audible.
+      const silentGain = audioContext.createGain();
+      silentGain.gain.value = 0;
+      analyser.connect(silentGain);
+      silentGain.connect(audioContext.destination);
+      silentGainRef.current = silentGain;
 
       recordingStartTimeRef.current = Date.now();
       firedRef.current = false;
@@ -86,6 +101,14 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
 
         const now = Date.now();
         const elapsed = now - (recordingStartTimeRef.current ?? now);
+
+        // Safety: force-fire after maxRecordingDuration to prevent stuck recordings
+        // (e.g. if AudioContext is suspended and no audio data flows)
+        if (elapsed >= maxRecording) {
+          firedRef.current = true;
+          callbacksRef.current.onSilenceDetected();
+          return;
+        }
 
         if (rms > threshold) {
           // Speech detected
@@ -111,7 +134,7 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
     } catch (error) {
       console.error('Failed to start VAD monitoring:', error);
     }
-  }, [config.silenceThreshold, config.silenceDuration, config.minRecordingDuration, stopMonitoring]);
+  }, [config.silenceThreshold, config.silenceDuration, config.minRecordingDuration, config.maxRecordingDuration, stopMonitoring]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -121,6 +144,9 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
       }
       if (sourceRef.current) {
         sourceRef.current.disconnect();
+      }
+      if (silentGainRef.current) {
+        silentGainRef.current.disconnect();
       }
     };
   }, []);

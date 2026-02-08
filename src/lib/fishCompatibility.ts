@@ -120,6 +120,7 @@ function hasPHOverlap(
  * Check if a larger fish might eat a smaller one
  */
 function isPredationRisk(species1: FishSpecies, species2: FishSpecies): boolean {
+  if (!species1.adult_size_inches || !species2.adult_size_inches) return false;
   // If size difference is 3x or more, there's predation risk
   const sizeDiff = species1.adult_size_inches / species2.adult_size_inches;
   if (sizeDiff >= 3 && species1.predator) return true;
@@ -289,8 +290,13 @@ export function checkCompatibility(
     }
 
     // Size difference warning (even without predation)
-    const sizeDiff = newSpecies.adult_size_inches / existingData.adult_size_inches;
-    if ((sizeDiff >= 2 || 1/sizeDiff >= 2) && !isPredationRisk(newSpecies, existingData)) {
+    const sizeDiff = existingData.adult_size_inches > 0
+      ? newSpecies.adult_size_inches / existingData.adult_size_inches
+      : 0;
+    const inverseSizeDiff = newSpecies.adult_size_inches > 0
+      ? existingData.adult_size_inches / newSpecies.adult_size_inches
+      : 0;
+    if ((sizeDiff >= 2 || inverseSizeDiff >= 2) && !isPredationRisk(newSpecies, existingData)) {
       warnings.push({
         type: 'size',
         severity: 'low',

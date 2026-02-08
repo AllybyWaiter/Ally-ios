@@ -14,7 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Plus, Wrench } from "lucide-react";
+import { Loader2, Plus, Wrench, Cog } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import { EquipmentDialog } from "./EquipmentDialog";
 import { EquipmentCard } from "./EquipmentCard";
@@ -119,19 +120,32 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
   if (!equipment || equipment.length === 0) {
     return (
       <>
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Wrench className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">{t('equipment.noEquipmentYet')}</h3>
-            <p className="text-muted-foreground mb-6">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-b from-slate-500/5 via-background to-background"
+        >
+          {/* Decorative background */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-slate-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-4 right-4 opacity-[0.04]">
+            <Cog className="h-32 w-32 text-foreground" />
+          </div>
+
+          <div className="relative px-6 pt-10 pb-12 flex flex-col items-center text-center">
+            <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-slate-500/10 mb-5">
+              <Wrench className="h-8 w-8 text-slate-500 dark:text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold mb-1.5">{t('equipment.noEquipmentYet')}</h3>
+            <p className="text-sm text-muted-foreground max-w-[260px] mb-6">
               {t('equipment.startTracking')}
             </p>
-            <Button onClick={handleAddNew}>
-              <Plus className="w-4 h-4 mr-2" />
+            <Button onClick={handleAddNew} className="rounded-full gap-2 shadow-sm px-6">
+              <Plus className="w-4 h-4" />
               {t('equipment.addEquipment')}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </motion.div>
 
         <EquipmentDialog
           open={dialogOpen}
@@ -144,23 +158,28 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{t('equipment.title')}</h2>
-        <Button onClick={handleAddNew}>
-          <Plus className="w-4 h-4 mr-2" />
+    <div className="space-y-5">
+      <div className="flex justify-end">
+        <Button onClick={handleAddNew} size="sm" className="rounded-full gap-1.5 shadow-sm">
+          <Plus className="w-3.5 h-3.5" />
           {t('equipment.addEquipment')}
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {equipment.map((item) => (
-          <EquipmentCard
+      <div className="grid gap-3 md:grid-cols-2">
+        {equipment.map((item, i) => (
+          <motion.div
             key={item.id}
-            equipment={item}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: i * 0.04 }}
+          >
+            <EquipmentCard
+              equipment={item}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          </motion.div>
         ))}
       </div>
 

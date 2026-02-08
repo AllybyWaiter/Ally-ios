@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   // Location detection
   const { latitude, longitude, locationName, loading: locationLoading, detectLocation } = useLocationDetection();
@@ -380,17 +382,20 @@ export function AquariumOnboarding({ onComplete }: AquariumOnboardingProps) {
                 {errors.volume_gallons && (
                   <p className="text-sm text-destructive">{errors.volume_gallons}</p>
                 )}
-                {(type === 'pool_chlorine' || type === 'pool_saltwater' || type === 'spa') && (
-                  <a
-                    href="/ally?message=Help me calculate how many gallons my pool holds"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
-                  >
-                    <Calculator className="h-3.5 w-3.5" />
-                    {t('aquariumOnboarding.step2.volumeCalculatorHelp')}
-                  </a>
-                )}
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline mt-1"
+                  onClick={() => {
+                    navigate('/ally', {
+                      state: {
+                        prefillMessage: 'I need help figuring out how many gallons my water body holds. Can you walk me through it? I can take photos and share measurements like depth and length.',
+                      },
+                    });
+                  }}
+                >
+                  <Calculator className="h-3.5 w-3.5" />
+                  {t('aquariumOnboarding.step2.volumeCalculatorHelp')}
+                </button>
               </div>
 
               <div className="flex justify-between pt-4">

@@ -432,7 +432,10 @@ export const VirtualizedMessageList = memo(({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 120, // Increased from 80 to reduce scroll jumps with longer messages
     overscan: 5,
-    measureElement: (element) => element.getBoundingClientRect().height,
+    measureElement: (element) => {
+      if (!element.isConnected) return 120; // Fall back to estimate for disconnected elements
+      return element.getBoundingClientRect().height;
+    },
   });
 
   // Smart auto-scroll: only scroll if user is near the bottom
@@ -470,7 +473,7 @@ export const VirtualizedMessageList = memo(({
           if (virtualItem.index === messages.length) {
             return (
               <div
-                key={`loading-${messages.length}`}
+                key="loading-indicator"
                 data-index={virtualItem.index}
                 ref={virtualizer.measureElement}
                 style={{

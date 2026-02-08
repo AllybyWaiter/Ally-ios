@@ -42,11 +42,11 @@ export async function executeSaveMemory(
       });
 
     if (error) {
-      logger.error('Failed to save memory', { error: error.message });
+      logger.error('Failed to save memory', { error: error.message, memoryKey: args.memory_key });
       return {
         tool_call_id: toolCallId,
         role: 'tool',
-        content: JSON.stringify({ success: false, error: 'Failed to save memory' })
+        content: JSON.stringify({ success: false, error: 'Failed to save memory. Please try again.', retryable: true })
       };
     }
 

@@ -30,7 +30,10 @@ export async function ensureFreshSession(): Promise<void> {
     if (sessionError) {
       logger.warn('[Session] Error getting session:', sessionError.message);
       // Attempt refresh even on error
-      await supabase.auth.refreshSession();
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        logger.warn('[Session] Refresh also failed:', refreshError.message);
+      }
       return;
     }
 

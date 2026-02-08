@@ -145,6 +145,7 @@ export const en = {
       },
       statuses: {
         active: "Active",
+        cycling: "Cycling",
         inactive: "Inactive",
         maintenance: "Maintenance",
       },

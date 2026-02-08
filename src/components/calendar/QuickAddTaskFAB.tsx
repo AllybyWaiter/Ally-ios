@@ -4,7 +4,7 @@
  * Floating action button for quick task creation.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ interface QuickAddTaskFABProps {
 export function QuickAddTaskFAB({ onClick, isVisible = true }: QuickAddTaskFABProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
 
   // Track scroll to adjust FAB visibility/position
   useEffect(() => {
@@ -29,18 +31,18 @@ export function QuickAddTaskFAB({ onClick, isVisible = true }: QuickAddTaskFABPr
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Keyboard shortcut (Cmd/Ctrl + N)
+  // Keyboard shortcut (Cmd/Ctrl + N) - uses ref to avoid re-registering on every render
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
         e.preventDefault();
-        onClick();
+        onClickRef.current();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClick]);
+  }, []);
 
   return (
     <AnimatePresence>

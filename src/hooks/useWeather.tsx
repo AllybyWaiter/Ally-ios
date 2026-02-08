@@ -225,10 +225,11 @@ export function useWeather() {
     } catch (err) {
       if (abortFlag.aborted) return null; // Check before state update
       console.error('Failed to fetch weather:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch weather';
       setState(prev => ({
         ...prev,
         loading: false,
-        error: 'Failed to fetch weather',
+        error: errorMsg,
       }));
       return null;
     }
@@ -369,6 +370,13 @@ export function useWeather() {
     };
   }, [user?.id]);
 
+  // Refs to break the dependency cycle: the load effect only depends on user?.id,
+  // and reads the latest function versions through refs.
+  const fetchWeatherRef = useRef(fetchWeather);
+  fetchWeatherRef.current = fetchWeather;
+  const fetchWeatherForCurrentLocationRef = useRef(fetchWeatherForCurrentLocation);
+  fetchWeatherForCurrentLocationRef.current = fetchWeatherForCurrentLocation;
+
   // Load weather on mount if user has weather enabled - prioritize saved location
   useEffect(() => {
     if (!user?.id) {
@@ -377,13 +385,14 @@ export function useWeather() {
     }
 
     let isMounted = true;
+    const userId = user.id;
 
     const loadWeather = async () => {
       try {
         const profileQuery = supabase
           .from('profiles')
           .select('weather_enabled, latitude, longitude')
-          .eq('user_id', user.id);
+          .eq('user_id', userId);
         const { data: profile } = await maybeSingleCompat<{
           weather_enabled: boolean | null;
           latitude: number | null;
@@ -407,7 +416,7 @@ export function useWeather() {
           setState(prev => ({ ...prev, enabled: true }));
 
           // Use cached weather if still valid
-          const cached = getCachedWeather(user?.id);
+          const cached = getCachedWeather(userId);
           if (cached) {
             setState(prev => ({ ...prev, weather: cached, loading: false, initializing: false }));
             return;
@@ -415,11 +424,9 @@ export function useWeather() {
 
           // Use saved profile coordinates if available
           if (profile.latitude && profile.longitude) {
-            // Fetch weather directly without geolocation check
-            await fetchWeather(profile.latitude, profile.longitude);
+            await fetchWeatherRef.current(profile.latitude, profile.longitude);
           } else {
-            // Only request GPS if no saved location exists
-            await fetchWeatherForCurrentLocation();
+            await fetchWeatherForCurrentLocationRef.current();
           }
         }
       } catch (err) {
@@ -436,7 +443,7 @@ export function useWeather() {
     return () => {
       isMounted = false;
     };
-  }, [user?.id, fetchWeather, fetchWeatherForCurrentLocation]);
+  }, [user?.id]);
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(getCacheKey(user?.id));

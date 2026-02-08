@@ -79,16 +79,17 @@ export function DashboardBackground() {
   // Load image with WebP fallback
   useEffect(() => {
     let cancelled = false;
-    
+    let img: HTMLImageElement | null = null;
+
     async function loadImage() {
       setImageLoaded(false);
-      
+
       try {
         const imagePath = await loadImageWithFallback(imagePathWebP, imagePathJpg);
-        
+
         if (!cancelled) {
           // Handle weather variant fallback
-          const img = new Image();
+          img = new Image();
           img.onload = () => {
             if (!cancelled) {
               setCurrentImage(imagePath);
@@ -114,11 +115,18 @@ export function DashboardBackground() {
         }
       }
     }
-    
+
     loadImage();
-    
+
     return () => {
       cancelled = true;
+      // Cancel in-flight image load to prevent memory leaks
+      if (img) {
+        img.onload = null;
+        img.onerror = null;
+        img.src = '';
+        img = null;
+      }
     };
   }, [imagePathWebP, imagePathJpg]);
 

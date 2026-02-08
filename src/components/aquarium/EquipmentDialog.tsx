@@ -175,7 +175,7 @@ export const EquipmentDialog = ({
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + values.maintenance_interval_days);
 
-        await supabase.from("maintenance_tasks").insert({
+        const { error: taskError } = await supabase.from("maintenance_tasks").insert({
           aquarium_id: aquariumId,
           equipment_id: equipmentId,
           task_name: `${values.name} Maintenance`,
@@ -183,6 +183,9 @@ export const EquipmentDialog = ({
           due_date: dueDate.toISOString().split("T")[0],
           status: "pending",
         });
+        if (taskError) {
+          console.warn('Failed to create maintenance task:', taskError.message);
+        }
       }
     },
     onSuccess: () => {

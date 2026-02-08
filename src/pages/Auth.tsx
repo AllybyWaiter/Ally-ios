@@ -60,6 +60,7 @@ export default function Auth() {
     setView(newView);
   };
   const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
+  const autoCleanupTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const validationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const validationRequestIdRef = useRef<number>(0);
 
@@ -148,6 +149,11 @@ export default function Auth() {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
+      }
+      // Clear the auto-cleanup timeout to prevent firing after unmount
+      if (autoCleanupTimeoutRef.current) {
+        clearTimeout(autoCleanupTimeoutRef.current);
+        autoCleanupTimeoutRef.current = null;
       }
     };
   }, [user, navigate]);
@@ -306,11 +312,12 @@ export default function Auth() {
           subscriptionRef.current = subscription;
 
           // Auto-cleanup subscription after 10 seconds to prevent memory leak
-          setTimeout(() => {
+          autoCleanupTimeoutRef.current = setTimeout(() => {
             if (subscriptionRef.current === subscription) {
               subscription.unsubscribe();
               subscriptionRef.current = null;
             }
+            autoCleanupTimeoutRef.current = null;
           }, 10000);
         }
 

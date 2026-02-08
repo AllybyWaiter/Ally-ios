@@ -119,10 +119,10 @@ export async function updateEquipment(
 
 // Delete equipment (with ownership verification via aquarium)
 export async function deleteEquipment(equipmentId: string, userId: string) {
-  // First verify ownership via aquarium relationship
+  // Verify ownership and get the aquarium_id so we can scope the delete
   const { data: existing, error: fetchError } = await supabase
     .from('equipment')
-    .select('id, aquariums!inner(user_id)')
+    .select('id, aquarium_id, aquariums!inner(user_id)')
     .eq('id', equipmentId)
     .eq('aquariums.user_id', userId)
     .maybeSingle();
@@ -130,10 +130,12 @@ export async function deleteEquipment(equipmentId: string, userId: string) {
   if (fetchError) throw fetchError;
   if (!existing) throw new Error('Equipment not found');
 
+  // Include aquarium_id in the delete to prevent TOCTOU race conditions
   const { error } = await supabase
     .from('equipment')
     .delete()
-    .eq('id', equipmentId);
+    .eq('id', equipmentId)
+    .eq('aquarium_id', existing.aquarium_id);
 
   if (error) throw error;
 }

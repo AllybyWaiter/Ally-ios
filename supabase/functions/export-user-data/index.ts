@@ -41,21 +41,8 @@ Deno.serve(async (req) => {
 
     console.log('Data export started');
 
-    // Fetch all user data in parallel - including activity logs and login history for GDPR compliance
-    const [
-      profileResult,
-      aquariumsResult,
-      waterTestsResult,
-      livestockResult,
-      plantsResult,
-      equipmentResult,
-      tasksResult,
-      memoriesResult,
-      conversationsResult,
-      notificationPrefsResult,
-      activityLogsResult,
-      loginHistoryResult
-    ] = await Promise.all([
+    // Fetch all user data in parallel - use allSettled so partial failures don't break the entire export
+    const results = await Promise.allSettled([
       supabase.from('profiles').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('aquariums').select('*').eq('user_id', user.id),
       supabase.from('water_tests').select('*, test_parameters(*)').eq('user_id', user.id),
@@ -70,34 +57,55 @@ Deno.serve(async (req) => {
       supabase.from('login_history').select('*').eq('user_id', user.id).order('login_at', { ascending: false }).limit(1000)
     ]);
 
+    // Helper to safely extract data from allSettled results
+    const getData = (result: PromiseSettledResult<{ data: unknown; error: unknown }>, fallback: unknown = []) => {
+      if (result.status === 'rejected') return fallback;
+      return result.value.data ?? fallback;
+    };
+
+    const [
+      profileResult, aquariumsResult, waterTestsResult, livestockResult,
+      plantsResult, equipmentResult, tasksResult, memoriesResult,
+      conversationsResult, notificationPrefsResult, activityLogsResult, loginHistoryResult
+    ] = results;
+
     // Mask IP addresses in activity logs and login history for privacy
-    const maskedActivityLogs = (activityLogsResult.data || []).map(log => ({
+    const activityData = getData(activityLogsResult, []) as Array<Record<string, unknown>>;
+    const loginData = getData(loginHistoryResult, []) as Array<Record<string, unknown>>;
+
+    const maskedActivityLogs = activityData.map(log => ({
       ...log,
-      ip_address: maskIpAddress(log.ip_address)
+      ip_address: maskIpAddress(log.ip_address as string | null)
     }));
 
-    const maskedLoginHistory = (loginHistoryResult.data || []).map(log => ({
+    const maskedLoginHistory = loginData.map(log => ({
       ...log,
-      ip_address: maskIpAddress(log.ip_address)
+      ip_address: maskIpAddress(log.ip_address as string | null)
     }));
+
+    // Track which tables had errors for transparency
+    const failedTables = results
+      .map((r, i) => r.status === 'rejected' ? ['profiles','aquariums','water_tests','livestock','plants','equipment','maintenance_tasks','user_memories','chat_conversations','notification_preferences','activity_logs','login_history'][i] : null)
+      .filter(Boolean);
 
     const exportData = {
       exportDate: new Date().toISOString(),
       userId: user.id,
       email: user.email,
-      profile: profileResult.data,
-      aquariums: aquariumsResult.data || [],
-      waterTests: waterTestsResult.data || [],
-      livestock: livestockResult.data || [],
-      plants: plantsResult.data || [],
-      equipment: equipmentResult.data || [],
-      maintenanceTasks: tasksResult.data || [],
-      memories: memoriesResult.data || [],
-      conversations: conversationsResult.data || [],
-      notificationPreferences: notificationPrefsResult.data,
+      profile: getData(profileResult, null),
+      aquariums: getData(aquariumsResult),
+      waterTests: getData(waterTestsResult),
+      livestock: getData(livestockResult),
+      plants: getData(plantsResult),
+      equipment: getData(equipmentResult),
+      maintenanceTasks: getData(tasksResult),
+      memories: getData(memoriesResult),
+      conversations: getData(conversationsResult),
+      notificationPreferences: getData(notificationPrefsResult, null),
       // GDPR compliance: include user's activity and login data with masked IPs
       activityLogs: maskedActivityLogs,
       loginHistory: maskedLoginHistory,
+      ...(failedTables.length > 0 && { _partialExportWarning: `Some data could not be exported: ${failedTables.join(', ')}` }),
       // Include data retention notice
       _dataRetentionNotice: {
         ipAddresses: "IP addresses are partially masked for privacy. Full IP addresses are retained for 90 days for security purposes.",

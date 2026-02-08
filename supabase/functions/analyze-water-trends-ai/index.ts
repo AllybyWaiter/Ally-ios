@@ -196,11 +196,15 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Fetch user profile for tier check and preferences
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('subscription_tier, skill_level, hemisphere')
       .eq('user_id', userId)
       .single();
+
+    if (profileError) {
+      logger.error('Failed to fetch profile', { error: profileError.message });
+    }
 
     const subscriptionTier = profile?.subscription_tier || 'free';
     const hasAIAlertAccess = AI_ALERT_TIERS.includes(subscriptionTier);
@@ -208,12 +212,19 @@ serve(async (req) => {
     logger.info('Checking AI alert access', { tier: subscriptionTier, hasAccess: hasAIAlertAccess });
 
     // Fetch aquarium data — verify the authenticated user owns this aquarium
-    const { data: aquarium } = await supabase
+    const { data: aquarium, error: aquariumError } = await supabase
       .from('aquariums')
       .select('type, name, volume_gallons, setup_date')
       .eq('id', aquariumId)
       .eq('user_id', userId)
       .single();
+
+    if (aquariumError) {
+      logger.error('Failed to fetch aquarium', { error: aquariumError.message, code: aquariumError.code });
+      // Distinguish between not-found and other errors
+      const status = aquariumError.code === 'PGRST116' ? 404 : 500;
+      return createErrorResponse(status === 404 ? 'Aquarium not found' : 'Failed to fetch aquarium data', logger, { status });
+    }
 
     if (!aquarium) {
       return createErrorResponse('Aquarium not found', logger, { status: 404 });

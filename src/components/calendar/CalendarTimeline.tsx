@@ -34,14 +34,13 @@ export function CalendarTimeline({
     return () => clearInterval(interval);
   }, []);
 
-  // Filter to today's tasks only
+  // Filter to today's tasks only (depends on currentTime so it updates past midnight)
   const todayTasks = useMemo(() => {
-    const today = new Date();
     return tasks.filter(task => {
       const taskDate = parseISO(task.due_date);
-      return isSameDay(taskDate, today);
+      return isSameDay(taskDate, currentTime);
     });
-  }, [tasks]);
+  }, [tasks, currentTime]);
 
   // Calculate timeline hours (6am to 10pm)
   const timelineHours = useMemo(() => {

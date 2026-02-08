@@ -139,6 +139,7 @@ export function SpeciesSearch({
           placeholder={placeholder}
           disabled={disabled}
           className="pl-9"
+          autoComplete="off"
           role="combobox"
           aria-expanded={showDropdown}
           aria-haspopup="listbox"

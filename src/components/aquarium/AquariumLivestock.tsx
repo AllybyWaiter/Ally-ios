@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Fish, Leaf, Loader2, Bug, Flower2, HelpCircle } from 'lucide-react';
+import { Plus, Fish, Leaf, Loader2, Bug, Flower2, HelpCircle, Waves } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { LivestockDialog } from './LivestockDialog';
 import { PlantDialog } from './PlantDialog';
@@ -206,58 +208,97 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
   }
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="livestock" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="livestock">Animals</TabsTrigger>
-          <TabsTrigger value="plants">Plants</TabsTrigger>
+    <div className="space-y-5">
+      <Tabs defaultValue="livestock" className="space-y-5">
+        <TabsList className="bg-muted/50 p-1 rounded-full">
+          <TabsTrigger value="livestock" className="rounded-full gap-1.5 data-[state=active]:shadow-sm">
+            <Fish className="h-3.5 w-3.5" />
+            Animals
+            {livestock.length > 0 && (
+              <span className="ml-0.5 text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{livestock.length}</span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="plants" className="rounded-full gap-1.5 data-[state=active]:shadow-sm">
+            <Leaf className="h-3.5 w-3.5" />
+            Plants
+            {plants.length > 0 && (
+              <span className="ml-0.5 text-[10px] font-semibold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{plants.length}</span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="livestock" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Livestock</h2>
-              <p className="text-muted-foreground">Track your aquarium inhabitants</p>
-            </div>
-            <Button onClick={handleAddLivestock}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Livestock
-            </Button>
-          </div>
-
+        <TabsContent value="livestock" className="space-y-5">
           {livestock.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Fish className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No livestock yet</h3>
-                <p className="text-muted-foreground mb-4">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-b from-primary/5 via-background to-background"
+            >
+              {/* Decorative background */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-primary/5 rounded-full blur-3xl" />
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-2xl" />
+
+              <div className="relative px-6 pt-10 pb-12 flex flex-col items-center text-center">
+                <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-5">
+                  <Fish className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1.5">No livestock yet</h3>
+                <p className="text-sm text-muted-foreground max-w-[260px] mb-6">
                   Start tracking your fish, invertebrates, and other tank inhabitants
                 </p>
-                <Button onClick={handleAddLivestock}>
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button
+                  onClick={handleAddLivestock}
+                  className="rounded-full gap-2 shadow-sm px-6"
+                >
+                  <Plus className="h-4 w-4" />
                   Add Your First Livestock
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* Subtle wave decoration at bottom */}
+              <div className="flex justify-center pb-4 opacity-[0.08]">
+                <Waves className="h-24 w-full text-primary" />
+              </div>
+            </motion.div>
           ) : (
             <div className="space-y-6">
+              <div className="flex items-center justify-end">
+                <Button
+                  onClick={handleAddLivestock}
+                  size="sm"
+                  className="rounded-full gap-1.5 shadow-sm"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Livestock
+                </Button>
+              </div>
               {Object.entries(groupedLivestock).map(([category, items]) => {
                 const Icon = categoryIcons[category as keyof typeof categoryIcons] || HelpCircle;
                 return (
                   <div key={category}>
-                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 capitalize">
-                      <Icon className="h-5 w-5" />
-                      {category} ({items.length})
-                    </h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {items.map((item) => (
-                        <LivestockCard
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-primary/10">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <h3 className="text-sm font-semibold capitalize">{category}</h3>
+                      <span className="text-xs text-muted-foreground">({items.length})</span>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {items.map((item, i) => (
+                        <motion.div
                           key={item.id}
-                          livestock={item}
-                          onEdit={handleEditLivestock}
-                          onDelete={handleDeleteLivestockClick}
-                          userId={user?.id || ''}
-                        />
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: i * 0.04 }}
+                        >
+                          <LivestockCard
+                            livestock={item}
+                            onEdit={handleEditLivestock}
+                            onDelete={handleDeleteLivestockClick}
+                            userId={user?.id || ''}
+                          />
+                        </motion.div>
                       ))}
                     </div>
                   </div>
@@ -267,51 +308,71 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
           )}
         </TabsContent>
 
-        <TabsContent value="plants" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Plants</h2>
-              <p className="text-muted-foreground">Track your aquarium plants</p>
-            </div>
-            <Button onClick={handleAddPlant}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Plant
-            </Button>
-          </div>
-
+        <TabsContent value="plants" className="space-y-5">
           {plants.length === 0 ? (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Leaf className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No plants yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start tracking your aquatic plants
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-b from-emerald-500/5 via-background to-background"
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-emerald-500/5 rounded-full blur-3xl" />
+
+              <div className="relative px-6 pt-10 pb-12 flex flex-col items-center text-center">
+                <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-500/10 mb-5">
+                  <Leaf className="h-8 w-8 text-emerald-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1.5">No plants yet</h3>
+                <p className="text-sm text-muted-foreground max-w-[240px] mb-6">
+                  Start tracking your aquatic plants and their growth
                 </p>
-                <Button onClick={handleAddPlant}>
-                  <Plus className="mr-2 h-4 w-4" />
+                <Button
+                  onClick={handleAddPlant}
+                  className="rounded-full gap-2 shadow-sm px-6"
+                >
+                  <Plus className="h-4 w-4" />
                   Add Your First Plant
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           ) : (
             <div className="space-y-6">
+              <div className="flex items-center justify-end">
+                <Button
+                  onClick={handleAddPlant}
+                  size="sm"
+                  className="rounded-full gap-1.5 shadow-sm"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Plant
+                </Button>
+              </div>
               {Object.entries(groupedPlants).map(([placement, items]) => {
                 const Icon = placementIcons[placement as keyof typeof placementIcons] || Leaf;
                 return (
                   <div key={placement}>
-                    <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 capitalize">
-                      <Icon className="h-5 w-5" />
-                      {placement} ({items.length})
-                    </h3>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {items.map((item) => (
-                        <PlantCard
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-emerald-500/10">
+                        <Icon className="h-4 w-4 text-emerald-500" />
+                      </div>
+                      <h3 className="text-sm font-semibold capitalize">{placement}</h3>
+                      <span className="text-xs text-muted-foreground">({items.length})</span>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {items.map((item, i) => (
+                        <motion.div
                           key={item.id}
-                          plant={item}
-                          onEdit={handleEditPlant}
-                          onDelete={handleDeletePlantClick}
-                          userId={user?.id || ''}
-                        />
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: i * 0.04 }}
+                        >
+                          <PlantCard
+                            plant={item}
+                            onEdit={handleEditPlant}
+                            onDelete={handleDeletePlantClick}
+                            userId={user?.id || ''}
+                          />
+                        </motion.div>
                       ))}
                     </div>
                   </div>

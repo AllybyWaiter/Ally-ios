@@ -38,6 +38,8 @@ export const aquariumTypeSchema = z.enum([
   'brackish',
   'pond',
   'pool',
+  'pool_chlorine',
+  'pool_saltwater',
   'spa',
   'hot_tub',
 ]);
@@ -61,7 +63,7 @@ export type CreateAquariumInput = z.infer<typeof createAquariumSchema>;
 
 // ==================== Livestock Schemas ====================
 
-export const livestockHealthStatusSchema = z.enum(['healthy', 'sick', 'recovering', 'quarantine']);
+export const livestockHealthStatusSchema = z.enum(['healthy', 'sick', 'recovering', 'quarantine', 'stressed', 'deceased']);
 
 export const livestockCategorySchema = z.enum([
   'fish',

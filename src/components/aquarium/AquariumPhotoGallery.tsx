@@ -42,9 +42,11 @@ export function AquariumPhotoGallery({ aquariumId, aquariumName, userId }: Aquar
 
   const deleteMutation = useMutation({
     mutationFn: ({ photoId, photoUrl }: { photoId: string; photoUrl: string }) =>
-      deleteAquariumPhoto(photoId, userId, photoUrl),
+      deleteAquariumPhoto(photoId, userId, photoUrl, aquariumId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.photos(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.detail(aquariumId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.all });
       toast.success('Photo deleted');
       setPhotoToDelete(null);
       setSelectedIndex(null);

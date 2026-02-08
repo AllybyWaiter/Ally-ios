@@ -3,12 +3,17 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 
+// Minimal silent WAV (44 bytes) used to activate the iOS audio session during a
+// user gesture so that later programmatic audio.play() calls are not blocked.
+const SILENT_WAV = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const unlockedRef = useRef(false);
   // Refs to avoid dependency array issues while still accessing current state
   const isSpeakingRef = useRef(isSpeaking);
   const speakingMessageIdRef = useRef(speakingMessageId);
@@ -29,6 +34,20 @@ export const useTTS = () => {
     }
     setIsSpeaking(false);
     setSpeakingMessageId(null);
+  }, []);
+
+  // Call during a user gesture (e.g. mic button tap) to activate the iOS audio
+  // session. Without this, programmatic audio.play() after an async gap is blocked.
+  const unlock = useCallback(() => {
+    if (unlockedRef.current) return;
+    try {
+      const audio = new Audio(SILENT_WAV);
+      audio.volume = 0.01;
+      const p = audio.play();
+      if (p) p.then(() => { audio.pause(); unlockedRef.current = true; }).catch(() => {});
+    } catch {
+      // Silently fail — non-critical
+    }
   }, []);
 
   const speak = useCallback(async (text: string, messageId: string, onEnded?: () => void) => {
@@ -177,5 +196,6 @@ export const useTTS = () => {
     speakingMessageId,
     speak,
     stop,
+    unlock,
   };
 };

@@ -218,7 +218,11 @@ serve(async (req) => {
 
     // ========== NOW USE SERVICE ROLE FOR DATA FETCH ==========
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      logger.error('OPENAI_API_KEY not configured');
+      return createErrorResponse('AI service not configured', logger, { status: 503 });
+    }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -506,7 +510,7 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
     const userPrompt = `Analyze this ${isPoolOrSpa ? 'pool/spa' : 'aquarium'} and suggest 3-5 specific, actionable maintenance tasks:\n\n${JSON.stringify(context, null, 2)}`;
 
     const aiBody = {
-      model: "google/gemini-2.5-pro",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -553,10 +557,10 @@ Today's date is ${today}. Use this for calculating days since last maintenance a
       temperature: 0.3
     };
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(aiBody),

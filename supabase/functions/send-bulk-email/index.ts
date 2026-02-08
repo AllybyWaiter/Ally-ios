@@ -47,10 +47,18 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Check if user is admin
-    const { data: roles } = await supabase
+    const { data: roles, error: rolesError } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
+
+    if (rolesError) {
+      console.error('Failed to fetch user roles:', rolesError.message);
+      return new Response(
+        JSON.stringify({ error: "Failed to verify admin access" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...cors } }
+      );
+    }
 
     const isAdmin = roles?.some(r => r.role === "admin" || r.role === "super_admin");
     if (!isAdmin) {

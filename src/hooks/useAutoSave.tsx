@@ -88,9 +88,11 @@ export const useAutoSave = <T,>({
       clearTimeout(timeoutRef.current);
     }
 
-    // Set new timeout for auto-save
+    // Set new timeout for auto-save using the latest data via ref
     timeoutRef.current = setTimeout(() => {
-      void saveNow();
+      if (isMountedRef.current) {
+        void saveNow();
+      }
     }, delay);
 
     return () => {

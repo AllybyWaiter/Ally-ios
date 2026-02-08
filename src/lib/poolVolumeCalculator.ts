@@ -153,8 +153,9 @@ export function determineConfidence(
 
   // If user provided adjustments, slightly higher confidence
   const hasAdjustments = adjustments && (
-    adjustments.has_steps || 
-    adjustments.has_bench || 
+    adjustments.has_steps ||
+    adjustments.has_bench ||
+    adjustments.has_sun_shelf ||
     adjustments.water_inches_below_top
   );
 

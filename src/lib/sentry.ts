@@ -153,7 +153,9 @@ export const setUserContext = (userId: string, email?: string, userName?: string
 
 // Helper to clear user context (on logout)
 export const clearUserContext = () => {
-  Sentry.setUser(null);
+  if (sentryInitialized) {
+    Sentry.setUser(null);
+  }
 };
 
 // Helper to add breadcrumb

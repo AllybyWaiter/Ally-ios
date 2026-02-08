@@ -35,8 +35,36 @@ const CATEGORY_DISPLAY: Record<string, string> = {
   equipment_maintenance: "Equipment",
   testing: "Testing",
   feeding: "Feeding",
+  dosing: "Dosing",
+  custom: "Custom",
+  shock_treatment: "Shock Treatment",
+  chemical_balancing: "Chemical Balancing",
+  filter_cleaning: "Filter Cleaning",
+  backwash: "Backwash",
+  skimmer_basket: "Skimmer Basket",
+  vacuuming: "Vacuuming",
+  brush_walls: "Brush Walls",
+  cover_cleaning: "Cover Cleaning",
+  salt_cell_cleaning: "Salt Cell",
+  algae_treatment: "Algae Treatment",
+  drain_refresh: "Drain & Refill",
+  winterize: "Winterize",
+  opening: "Spring Opening",
   other: "Other",
 };
+
+// Valid DB task_type values — map anything unknown to 'custom'
+const VALID_TASK_TYPES = new Set([
+  'water_change', 'equipment_maintenance', 'testing', 'dosing', 'custom',
+  'cleaning', 'feeding', 'other',
+  'shock_treatment', 'chemical_balancing', 'filter_cleaning', 'backwash',
+  'skimmer_basket', 'vacuuming', 'brush_walls', 'cover_cleaning',
+  'salt_cell_cleaning', 'algae_treatment', 'drain_refresh', 'winterize', 'opening',
+]);
+
+function toValidTaskType(category: string): string {
+  return VALID_TASK_TYPES.has(category) ? category : 'custom';
+}
 
 export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
   const { t: _t } = useTranslation();
@@ -59,18 +87,36 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
       if (data?.error) {
         toast({
           title: "Error",
-          description: data.error,
+          description: String(data.error),
           variant: "destructive",
         });
         return;
       }
 
-      setSuggestions(data.suggestions || []);
-      
-      if (data.suggestions?.length > 0) {
+      // Defensive: ensure suggestions is an array of valid objects
+      const raw = Array.isArray(data?.suggestions) ? data.suggestions : [];
+      const validated: TaskSuggestion[] = raw
+        .filter((s: unknown): s is Record<string, unknown> => s != null && typeof s === 'object')
+        .map((s: Record<string, unknown>) => ({
+          title: String(s.title ?? 'Untitled Task'),
+          description: String(s.description ?? ''),
+          priority: (['low', 'medium', 'high'].includes(String(s.priority)) ? String(s.priority) : 'medium') as TaskSuggestion['priority'],
+          category: String(s.category ?? 'other'),
+          recommendedDate: s.recommendedDate ? String(s.recommendedDate) : undefined,
+          reasoning: s.reasoning ? String(s.reasoning) : undefined,
+        }));
+
+      setSuggestions(validated);
+
+      if (validated.length > 0) {
         toast({
           title: "AI Suggestions Ready",
-          description: `Found ${data.suggestions.length} recommended tasks`,
+          description: `Found ${validated.length} recommended tasks`,
+        });
+      } else {
+        toast({
+          title: "No Suggestions",
+          description: "AI couldn't generate suggestions for this tank. Try adding water tests or equipment first.",
         });
       }
     } catch (error: unknown) {
@@ -95,7 +141,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
       await createMaintenanceTask({
         aquarium_id: aquariumId,
         task_name: suggestion.title,
-        task_type: suggestion.category,
+        task_type: toValidTaskType(suggestion.category),
         due_date: dueDate,
         notes: suggestion.reasoning || suggestion.description,
         status: 'pending',
@@ -162,8 +208,8 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
       <div className="space-y-3">
         {suggestions.map((suggestion, index) => (
           <Card key={index} className="p-4 border-l-4" style={{
-            borderLeftColor: suggestion.priority === 'high' ? 'hsl(var(--destructive))' : 
-                            suggestion.priority === 'medium' ? 'hsl(var(--warning))' : 
+            borderLeftColor: suggestion.priority === 'high' ? 'hsl(var(--destructive))' :
+                            suggestion.priority === 'medium' ? '#eab308' :
                             'hsl(var(--primary))'
           }}>
             <div className="flex items-start justify-between gap-3">

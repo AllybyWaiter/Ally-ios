@@ -272,7 +272,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Species Search - only show for new entries */}
             {!livestock && (
-              <div className="space-y-2">
+              <div className="relative z-10 space-y-2 pb-1">
                 <Label>Search Species Database</Label>
                 <SpeciesSearch
                   value={formData.species}
@@ -281,11 +281,13 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
                   aquariumType={aquarium?.type}
                   placeholder="Start typing to search our fish database..."
                 />
-                {getCompatibilityIndicator()}
+                <div className="pt-1">
+                  {getCompatibilityIndicator()}
+                </div>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Common Name *</Label>
                 <Input
@@ -311,7 +313,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
@@ -363,7 +365,7 @@ export function LivestockDialog({ open, onOpenChange, aquariumId, livestock }: L
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date_added">Date Added *</Label>
                 <Input

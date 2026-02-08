@@ -102,14 +102,15 @@ export function SystemHealth() {
           return {
             bucket,
             count: data?.length || 0,
+            hasError: !!storageError,
           };
         })
       );
-      
+
       setStorageUsage(bucketResults);
 
-      // Set health status based on actual query results
-      const hasStorageErrors = bucketResults.some(b => b.count === 0 && buckets.includes(b.bucket));
+      // Only flag as degraded when actual query errors occurred (empty buckets are normal)
+      const hasStorageErrors = bucketResults.some(b => b.hasError);
       setSystemStatus({
         database: hasDbErrors ? 'degraded' : 'healthy',
         auth: 'healthy',

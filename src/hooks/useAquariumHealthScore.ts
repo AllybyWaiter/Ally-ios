@@ -135,9 +135,9 @@ function calculateMaintenanceScore(tasks: MaintenanceTask[]): number {
   
   // Score based on completion rate and overdue tasks
   const completionRate = tasks.length > 0 ? (completed / tasks.length) * 100 : 80;
-  const overduepenalty = Math.min(overdue * 15, 60);
-  
-  return Math.max(0, Math.min(100, completionRate - overduepenalty));
+  const overduePenalty = Math.min(overdue * 15, 60);
+
+  return Math.max(0, Math.min(100, completionRate - overduePenalty));
 }
 
 function calculateConsistencyScore(tests: WaterTestWithParams[], tasks: MaintenanceTask[]): number {

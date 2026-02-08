@@ -2,6 +2,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { addBreadcrumb, FeatureArea } from '@/lib/sentry';
+import { logger } from '@/lib/logger';
 
 const SESSION_CHECK_INTERVAL = 60000; // Check every minute
 const SESSION_REFRESH_THRESHOLD = 5 * 60 * 1000; // Refresh if less than 5 minutes remaining
@@ -11,7 +12,6 @@ const VISIBILITY_REFRESH_TIMEOUT = 2000; // Quick timeout for visibility change 
 export const useSessionMonitor = () => {
   const { toast } = useToast();
   const toastRef = useRef(toast);
-  const _lastVisibilityCheck = useRef<number>(0);
   const isCheckingRef = useRef<boolean>(false);
   // Queue a pending check if one is requested during an ongoing check
   const pendingCheckRef = useRef<boolean>(false);
@@ -55,7 +55,7 @@ export const useSessionMonitor = () => {
       }
 
       if (error) {
-        console.error('Session check error:', error);
+        logger.error('Session check error:', error);
         addBreadcrumb('Session check failed', 'auth', { error: error.message }, FeatureArea.AUTH);
         return;
       }
@@ -98,7 +98,7 @@ export const useSessionMonitor = () => {
         const { error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {
-          console.error('Session refresh error:', refreshError);
+          logger.error('Session refresh error:', refreshError);
           addBreadcrumb('Session refresh failed', 'auth', { error: refreshError.message }, FeatureArea.AUTH);
           
           toastRef.current({
@@ -119,7 +119,7 @@ export const useSessionMonitor = () => {
         });
       }
     } catch (error) {
-      console.error('Session monitor error:', error);
+      logger.error('Session monitor error:', error);
     } finally {
       isCheckingRef.current = false;
 

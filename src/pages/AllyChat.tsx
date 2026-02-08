@@ -41,7 +41,7 @@ import { useTTS } from "@/hooks/useTTS";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { useVAD } from "@/hooks/useVAD";
 import { useWakeLock } from "@/hooks/useWakeLock";
-import { playListeningChime, playConfirmationTone } from "@/lib/audioUtils";
+import { getOrCreateAudioContext, playListeningChime, playConfirmationTone } from "@/lib/audioUtils";
 import { copyToClipboard } from "@/lib/clipboard";
 import { triggerHaptic } from "@/hooks/useHaptics";
 import { logger } from "@/lib/logger";
@@ -118,7 +118,7 @@ const AllyChat = () => {
           aq.type?.includes('salt') || aq.type?.includes('reef') ? 'water' as const : 'fish' as const,
   }));
   const { isRecording, isProcessing, startRecording, stopRecording } = useVoiceRecording();
-  const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking } = useTTS();
+  const { isSpeaking, isGenerating: isGeneratingTTS, speakingMessageId, speak, stop: stopSpeaking, unlock: unlockTTS } = useTTS();
   const { limits } = usePlanLimits();
   const { request: requestWakeLock, release: releaseWakeLock } = useWakeLock();
 
@@ -147,11 +147,17 @@ const AllyChat = () => {
 
   // Start recording with VAD monitoring and audio cue
   const startRecordingWithVAD = useCallback(async () => {
+    // Pre-warm AudioContext and unlock HTML5 Audio while still in user gesture
+    // context. iOS requires both to be activated during a user gesture — after
+    // the await getUserMedia below, the gesture context is lost.
+    getOrCreateAudioContext();
+    unlockTTS();
+
     await startRecording((stream) => {
       playListeningChime();
       startMonitoring(stream);
     });
-  }, [startRecording, startMonitoring]);
+  }, [startRecording, startMonitoring, unlockTTS]);
 
   // Execute voice commands detected via VAD
   const executeVoiceCommand = useCallback((command: 'stop' | 'cancel' | 'repeat' | 'new_chat') => {
@@ -314,6 +320,9 @@ const AllyChat = () => {
         setAutoSendPending(true);
       }
     } else {
+      // Unlock TTS audio session during user gesture so autoplay works
+      // after transcription completes and AI responds
+      unlockTTS();
       await startRecording();
     }
   };
@@ -573,10 +582,7 @@ const AllyChat = () => {
     if (isSubmittingRef.current) return;
     if ((!input.trim() && !pendingPhoto) || isLoading || isRecording) return;
 
-    // Set ref immediately to prevent double-click before state updates
-    isSubmittingRef.current = true;
-
-    // Validate input length to prevent memory issues
+    // Validate input length before setting the submission guard
     const MAX_INPUT_LENGTH = 10000;
     if (input.length > MAX_INPUT_LENGTH) {
       toast({
@@ -584,9 +590,11 @@ const AllyChat = () => {
         description: `Please keep messages under ${MAX_INPUT_LENGTH.toLocaleString()} characters.`,
         variant: "destructive",
       });
-      isSubmittingRef.current = false;
       return;
     }
+
+    // Set ref immediately to prevent double-click before state updates
+    isSubmittingRef.current = true;
 
     // Clear any previous error
     setLastError(null);
@@ -698,10 +706,12 @@ const AllyChat = () => {
     }
   };
 
-  // Keep sendMessage ref up to date to avoid stale closures in auto-send
-  useEffect(() => {
-    sendMessageRef.current = sendMessage;
-  }, [sendMessage]);
+  // Keep sendMessage ref up to date to avoid stale closures in auto-send.
+  // IMPORTANT: This must be a synchronous assignment during render (not a useEffect)
+  // so the ref is current BEFORE the auto-send effect fires. Effects run in
+  // declaration order, and the auto-send effect (above) would read a stale ref
+  // if this were a useEffect declared after it.
+  sendMessageRef.current = sendMessage;
 
   const handleKeyPress = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

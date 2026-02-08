@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -224,19 +225,44 @@ export function WaterQualityHero({
       </motion.div>
 
       <Dialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('waterTests.alertDetailsTitle')}</DialogTitle>
-            <DialogDescription>{t('waterTests.alertDetailsDescription')}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+        <DialogContent className={cn(
+          "sm:max-w-md p-0 gap-0 overflow-hidden",
+          criticalAlerts.length > 0
+            ? "bg-gradient-to-b from-destructive/8 to-background"
+            : "bg-gradient-to-b from-amber-500/8 to-background"
+        )}>
+          {/* Header */}
+          <div className="px-5 pt-5 pb-4">
+            <DialogHeader className="space-y-1.5">
+              <div className="flex items-center gap-2.5">
+                <div className={cn(
+                  "flex items-center justify-center h-9 w-9 rounded-full",
+                  criticalAlerts.length > 0
+                    ? "bg-destructive/15 text-destructive"
+                    : "bg-amber-500/15 text-amber-500"
+                )}>
+                  <AlertTriangle className="h-4.5 w-4.5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-base">{t('waterTests.alertDetailsTitle')}</DialogTitle>
+                  <DialogDescription className="text-xs mt-0.5">{t('waterTests.alertDetailsDescription')}</DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+          </div>
+
+          {/* Alert cards */}
+          <div className="px-5 pb-5 space-y-3 max-h-[50vh] overflow-y-auto">
             {attentionAlerts.map((alert) => {
               const isCritical = alert.status === 'critical';
               const formattedValue = formatAlertValue(alert.value);
 
               return (
-                <div
+                <motion.div
                   key={`${alert.parameter}-${alert.status}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
                   role="button"
                   tabIndex={0}
                   onClick={() => handleAlertClick(alert.parameter)}
@@ -246,33 +272,42 @@ export function WaterQualityHero({
                       handleAlertClick(alert.parameter);
                     }
                   }}
-                  className="w-full text-left rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer"
+                  className={cn(
+                    "w-full text-left rounded-xl p-3.5 transition-all cursor-pointer",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    "active:scale-[0.98]",
+                    isCritical
+                      ? "bg-destructive/5 border border-destructive/20 hover:bg-destructive/10"
+                      : "bg-amber-500/5 border border-amber-500/20 hover:bg-amber-500/10"
+                  )}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium text-sm text-foreground truncate">{alert.parameter}</p>
+                      <p className="font-semibold text-sm text-foreground">{alert.parameter}</p>
                       {formattedValue && (
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {t('waterTests.latestReading')}: {formattedValue} {alert.unit || ''}
+                          {t('waterTests.latestReading')}: <span className="font-medium text-foreground/70">{formattedValue} {alert.unit || ''}</span>
                         </p>
                       )}
                     </div>
                     <Badge
-                      className={
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5",
                         isCritical
-                          ? 'bg-destructive/15 text-destructive border-destructive/30'
-                          : 'bg-warning/20 text-warning border-warning/30'
-                      }
+                          ? 'bg-destructive/10 text-destructive border-destructive/30'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                      )}
                     >
                       {isCritical ? t('waterTests.critical') : t('waterTests.warning')}
                     </Badge>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex gap-2">
                     <Button
                       type="button"
                       size="sm"
-                      variant="outline"
-                      className="h-8"
+                      variant="ghost"
+                      className="h-8 rounded-full text-xs font-medium bg-background/60 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-background/80"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleAlertClick(alert.parameter);
@@ -283,17 +318,17 @@ export function WaterQualityHero({
                     <Button
                       type="button"
                       size="sm"
-                      className="h-8"
+                      className="h-8 rounded-full text-xs font-medium gap-1.5 bg-primary/80 backdrop-blur-sm shadow-sm hover:bg-primary/90"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleAskAlly(alert);
                       }}
                     >
-                      <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                      <MessageSquare className="w-3.5 h-3.5" />
                       {t('waterTests.askAlly')}
                     </Button>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

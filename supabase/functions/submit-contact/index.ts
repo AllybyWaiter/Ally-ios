@@ -193,8 +193,15 @@ serve(async (req: Request) => {
         logger.info('Confirmation email sent', { email: data.email });
       }
     } catch (emailError) {
-      logger.warn('Failed to send confirmation email', { error: emailError });
-      // Don't fail the submission if email fails
+      logger.warn('Failed to send confirmation email', { error: emailError, email: data.email });
+      // Log failed email to database for manual follow-up
+      try {
+        await supabase.from('contacts').update({
+          status: 'new_email_failed'
+        }).eq('email', data.email).eq('status', 'new');
+      } catch {
+        // Best-effort logging
+      }
     }
 
     return createSuccessResponse({ 

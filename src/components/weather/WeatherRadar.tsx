@@ -340,10 +340,14 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
 
   // Fetch radar frames (via backend proxy for reliability)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchRadarFrames = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
+        if (isMounted) {
+          setIsLoading(true);
+          setError(null);
+        }
 
         // Prefer backend proxy to avoid CORS and network filtering issues
         let raw: RainViewerResponse | null = null;
@@ -374,21 +378,28 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
           logger.log('[Radar] Loaded from direct API');
         }
 
+        if (!isMounted) return;
         const allFrames = [...raw.radar.past, ...raw.radar.nowcast];
         setFrames(allFrames);
         setCurrentFrameIndex(raw.radar.past.length - 1);
       } catch (err) {
+        if (!isMounted) return;
         const errorMessage = err instanceof Error ? err.message : 'Network error';
         setError(`Unable to load radar data: ${errorMessage}`);
         logger.error('[Radar] Radar fetch error:', err instanceof Error ? err.message : err, err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchRadarFrames();
     const refreshInterval = setInterval(fetchRadarFrames, 10 * 60 * 1000);
-    return () => clearInterval(refreshInterval);
+    return () => {
+      isMounted = false;
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Fetch weather alerts from NWS API (US only)

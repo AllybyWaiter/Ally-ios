@@ -21,6 +21,22 @@ const getCurrentLanguage = (): 'en' | 'es' | 'fr' => {
 };
 
 /**
+ * Parse a string/number/Date into a Date, treating date-only strings (YYYY-MM-DD)
+ * as local dates to avoid UTC day-shift.
+ */
+function parseToLocalDate(date: Date | string | number): Date {
+  if (typeof date === 'string') {
+    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      return new Date(Number(year), Number(month) - 1, Number(day));
+    }
+    return new Date(date);
+  }
+  return typeof date === 'number' ? new Date(date) : date;
+}
+
+/**
  * Format a date according to the user's locale
  * Returns empty string for null/undefined/invalid dates to avoid showing "Invalid date" in UI
  */
@@ -30,21 +46,7 @@ export const formatDate = (
 ): string => {
   if (!date) return '';
 
-  let dateObj: Date;
-  if (typeof date === 'string') {
-    // Parse date-only strings as local dates to avoid UTC day-shift.
-    const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-    if (dateOnlyMatch) {
-      const [, year, month, day] = dateOnlyMatch;
-      dateObj = new Date(Number(year), Number(month) - 1, Number(day));
-    } else {
-      dateObj = new Date(date);
-    }
-  } else if (typeof date === 'number') {
-    dateObj = new Date(date);
-  } else {
-    dateObj = date;
-  }
+  const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
     console.warn('formatDate received invalid date:', date);
@@ -67,8 +69,8 @@ export const formatDateTime = (date: Date | string | number): string => {
  */
 export const formatDateShort = (date: Date | string | number | null | undefined): string => {
   if (!date) return '';
-  
-  const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+
+  const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
     console.warn('formatDateShort received invalid date:', date);
@@ -88,8 +90,8 @@ export const formatDateShort = (date: Date | string | number | null | undefined)
  */
 export const formatTime = (date: Date | string | number | null | undefined): string => {
   if (!date) return '';
-  
-  const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+
+  const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
     console.warn('formatTime received invalid date:', date);
@@ -109,7 +111,7 @@ export const formatTime = (date: Date | string | number | null | undefined): str
  */
 export const formatRelativeTime = (date: Date | string | number | null | undefined): string => {
   if (!date) return '';
-  const dateObj = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+  const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
     console.warn('formatRelativeTime received invalid date:', date);

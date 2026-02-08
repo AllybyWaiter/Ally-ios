@@ -80,11 +80,12 @@ class PerformanceMonitor {
     try {
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
+        if (entries.length === 0) return;
         const lastEntry = entries[entries.length - 1];
-        const lcpEntry = lastEntry as PerformanceEntry & { 
-          renderTime?: number; 
-          url?: string; 
-          element?: { tagName?: string }; 
+        const lcpEntry = lastEntry as PerformanceEntry & {
+          renderTime?: number;
+          url?: string;
+          element?: { tagName?: string };
         };
 
         if (lcpEntry.renderTime) {
@@ -180,7 +181,9 @@ class PerformanceMonitor {
         return result;
       })
       .catch((error) => {
-        this.endMeasure(name, featureArea);
+        try {
+          this.endMeasure(name, featureArea);
+        } catch { /* don't mask original error */ }
         throw error;
       });
   }

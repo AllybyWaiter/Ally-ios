@@ -31,6 +31,7 @@ import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastruc
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
 import { isPoolType, formatWaterBodyType } from "@/lib/waterBodyUtils";
+import { logger } from "@/lib/logger";
 
 // Safe date formatter to prevent crashes - returns empty string for invalid dates
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {
@@ -38,12 +39,12 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
   try {
     const date = new Date(dateValue);
     if (!isValid(date)) {
-      console.warn('Invalid date value:', dateValue);
+      logger.warn('Invalid date value:', dateValue);
       return '';
     }
     return format(date, formatStr);
   } catch (error) {
-    console.error('Date formatting error:', error);
+    logger.error('Date formatting error:', error);
     return '';
   }
 };
@@ -74,8 +75,8 @@ export default function AquariumDetail() {
       await deleteAquariumDAL(id);
 
       // Invalidate queries before navigation to ensure clean state
-      queryClient.invalidateQueries({ queryKey: ['aquariums'] });
-      queryClient.removeQueries({ queryKey: ['aquarium', id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.aquariums.all });
+      queryClient.removeQueries({ queryKey: queryKeys.aquariums.detail(id) });
 
       toast({
         title: t('common.success'),
@@ -84,7 +85,7 @@ export default function AquariumDetail() {
 
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error deleting aquarium:", error);
+      logger.error("Error deleting aquarium:", error);
       toast({
         title: t('common.error'),
         description: t('dashboard.failedToDelete'),
@@ -142,7 +143,7 @@ export default function AquariumDetail() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="container mx-auto px-4 py-8 pt-24 pb-20 md:pb-8 mt-safe">
+      <main className="container mx-auto px-4 py-8 pt-24 pb-32 md:pb-8 mt-safe">
         <Button
           variant="ghost"
           onClick={() => navigate("/dashboard")}
@@ -229,7 +230,7 @@ export default function AquariumDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex flex-wrap gap-2 w-full max-w-3xl mx-auto h-auto bg-transparent p-0 rounded-none">
+          <TabsList className="flex flex-wrap gap-2 w-full max-w-3xl mx-auto h-auto bg-transparent p-0 pb-2 rounded-none">
             <TabsTrigger value="overview" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
               <LayoutDashboard className="w-3.5 h-3.5" />
               {t('tabs.overview')}

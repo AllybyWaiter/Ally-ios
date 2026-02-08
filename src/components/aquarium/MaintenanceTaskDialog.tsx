@@ -172,15 +172,23 @@ export const MaintenanceTaskDialog = ({
   useEffect(() => {
     const loadTask = async () => {
       if (mode === "edit" && taskId) {
+        // Fetch user ID separately to avoid unsafe inline auth and empty-string fallback
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData?.user?.id) {
+          console.error('Failed to load task: user not authenticated');
+          return;
+        }
+
         const { data, error } = await supabase
           .from("maintenance_tasks")
           .select("*, aquariums!inner(user_id)")
           .eq("id", taskId)
-          .eq("aquariums.user_id", (await supabase.auth.getUser()).data?.user?.id ?? '')
+          .eq("aquariums.user_id", userData.user.id)
           .maybeSingle();
 
         if (error) {
           console.error('Failed to load task:', error.message);
+          return;
         }
 
         if (data) {

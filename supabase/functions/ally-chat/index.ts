@@ -155,8 +155,12 @@ serve(async (req) => {
       : Promise.resolve({ context: '', waterType: 'freshwater', aquariumData: null });
 
     // Wait for profile first to determine memory access
-    const { data: profile } = await profilePromise;
-    
+    const { data: profile, error: profileError } = await profilePromise;
+
+    if (profileError) {
+      logger.error('Failed to fetch user profile', { error: profileError.message });
+    }
+
     const skillLevel = profile?.skill_level || 'beginner';
     const subscriptionTier = profile?.subscription_tier || 'free';
     const userName = profile?.name || null;
