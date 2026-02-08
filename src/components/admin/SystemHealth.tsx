@@ -17,6 +17,7 @@ import {
   Zap
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/formatters';
+import { logger } from '@/lib/logger';
 
 interface TableStats {
   name: string;
@@ -62,6 +63,23 @@ export function SystemHealth() {
         supabase.from('chat_messages').select('*', { count: 'exact', head: true }),
       ]);
 
+      // Check for query errors
+      let hasDbErrors = false;
+      const queryResults = [
+        { name: 'profiles', result: profilesCount },
+        { name: 'aquariums', result: aquariumsCount },
+        { name: 'water_tests', result: waterTestsCount },
+        { name: 'blog_posts', result: blogPostsCount },
+        { name: 'support_tickets', result: ticketsCount },
+        { name: 'chat_messages', result: messagesCount },
+      ];
+      for (const { name, result } of queryResults) {
+        if (result.error) {
+          logger.error(`Failed to fetch ${name} count:`, result.error);
+          hasDbErrors = true;
+        }
+      }
+
       const stats: TableStats[] = [
         { name: 'profiles', rowCount: profilesCount.count || 0, icon: Users },
         { name: 'aquariums', rowCount: aquariumsCount.count || 0, icon: Database },
@@ -79,7 +97,7 @@ export function SystemHealth() {
         buckets.map(async (bucket) => {
           const { data, error: storageError } = await supabase.storage.from(bucket).list('', { limit: 1000 });
           if (storageError) {
-            console.error(`Storage list error for ${bucket}:`, storageError.message);
+            logger.error(`Storage list error for ${bucket}:`, storageError.message);
           }
           return {
             bucket,
@@ -90,11 +108,12 @@ export function SystemHealth() {
       
       setStorageUsage(bucketResults);
 
-      // Simple health check - if we got here, database is working
+      // Set health status based on actual query results
+      const hasStorageErrors = bucketResults.some(b => b.count === 0 && buckets.includes(b.bucket));
       setSystemStatus({
-        database: 'healthy',
+        database: hasDbErrors ? 'degraded' : 'healthy',
         auth: 'healthy',
-        storage: 'healthy',
+        storage: hasStorageErrors ? 'degraded' : 'healthy',
         functions: 'healthy',
       });
 
@@ -205,7 +224,7 @@ export function SystemHealth() {
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium capitalize">
-                        {table.name.replace('_', ' ')}
+                        {table.name.replace(/_/g, ' ')}
                       </span>
                     </div>
                     <span className="text-sm font-bold">{table.rowCount.toLocaleString()}</span>
@@ -237,7 +256,7 @@ export function SystemHealth() {
                 <div key={bucket.bucket} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium capitalize">
-                      {bucket.bucket.replace('-', ' ')}
+                      {bucket.bucket.replace(/-/g, ' ')}
                     </span>
                     <span className="text-sm font-bold">{bucket.count}</span>
                   </div>

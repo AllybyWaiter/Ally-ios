@@ -44,7 +44,7 @@ export function useReferralLeaderboard(period: TimePeriod = 'all') {
         .select('user_id, email, name')
         .in('user_id', userIds);
 
-      if (profilesError) logger.error('Failed to fetch profiles for leaderboard:', profilesError);
+      if (profilesError) throw profilesError;
 
       const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 

@@ -86,7 +86,7 @@ export const useFeatureRateLimit = (endpoint: string) => {
         data = null;
       }
 
-      if (data && typeof data.count === 'number' && typeof data.timestamp === 'number') {
+      if (data && typeof data.count === 'number' && typeof data.timestamp === 'number' && typeof data.reset === 'number') {
         // Reset if window expired
         if (now - data.timestamp > config.windowMs) {
           const newData = {

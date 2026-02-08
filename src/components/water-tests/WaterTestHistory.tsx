@@ -49,6 +49,8 @@ export const WaterTestHistory = ({ aquariumId }: WaterTestHistoryProps) => {
   useEffect(() => {
     if (data?.data && currentAquariumIdRef.current === aquariumId) {
       setAccumulatedTests(prev => {
+        // Guard against stale data from a different aquarium
+        if (currentAquariumIdRef.current !== aquariumId) return prev;
         if (page === 0) {
           return data.data as WaterTest[];
         }

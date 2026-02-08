@@ -503,13 +503,16 @@ serve(async (req) => {
     // Validate VAPID keys format
     const validation = validateVapidKeys(vapidPublicKey, vapidPrivateKey, vapidSubject, requestId);
     if (!validation.valid) {
-      console.error(JSON.stringify({ 
-        requestId, 
-        error: 'VAPID key validation failed', 
+      console.error(JSON.stringify({
+        requestId,
+        error: 'VAPID key validation failed',
         errors: validation.errors,
-        debug: validation.debug 
+        debug: validation.debug
       }));
-      // Continue anyway to see what error we get from push service
+      return new Response(
+        JSON.stringify({ error: 'Push notifications misconfigured' }),
+        { status: 500, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

@@ -84,7 +84,7 @@ export function useConversationManager(userId: string | null) {
         return [];
       }
 
-      if (data) {
+      if (data && Array.isArray(data)) {
         const typed = data as Conversation[];
         setConversations(typed);
         return typed;

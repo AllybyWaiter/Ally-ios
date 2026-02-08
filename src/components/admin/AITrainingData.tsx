@@ -29,7 +29,7 @@ import { formatDate } from '@/lib/formatters';
 import { fetchTrainingData, type TrainingDataEntry } from '@/infrastructure/queries/feedback';
 import { exportTrainingData } from '@/lib/exportTrainingData';
 import { queryPresets } from '@/lib/queryConfig';
-import { cn } from '@/lib/utils';
+
 
 const featureLabels: Record<string, string> = {
   chat: 'Ally Chat',

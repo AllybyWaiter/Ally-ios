@@ -202,6 +202,13 @@ export const useSystemStatus = () => {
       })
     );
 
+    // Log rejected promises before filtering
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to fetch updates for incident ${incidentsData[index]?.id}:`, result.reason);
+      }
+    });
+
     // Filter out failed promises and extract successful results
     const incidentsWithUpdates: SystemIncident[] = results
       .filter((result): result is PromiseFulfilledResult<SystemIncident> => result.status === 'fulfilled')

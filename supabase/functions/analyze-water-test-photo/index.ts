@@ -5,6 +5,7 @@ import { createLogger } from '../_shared/logger.ts';
 import { validateUrl, validateString, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
 import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Valid parameter ranges for validation (aquarium + pool parameters)
 const validRanges: Record<string, { min: number; max: number }> = {
@@ -32,7 +33,9 @@ const validRanges: Record<string, { min: number; max: number }> = {
 };
 
 // Validate and filter parameters within reasonable ranges
-function validateWaterParameters(params: any[]): any[] {
+interface WaterParam { name: string; value: number; status?: string; confidence?: number }
+
+function validateWaterParameters(params: WaterParam[]): WaterParam[] {
   return params.filter(p => {
     const range = validRanges[p.name];
     if (!range) return true; // Allow unknown parameters
@@ -146,6 +149,23 @@ serve(async (req) => {
       aquariumType: aquariumType || 'freshwater',
       imageUrlLength: imageUrl?.length || 0
     });
+
+    // Verify JWT authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.warn('Missing Authorization header');
+      return createErrorResponse('Authorization required', logger, { status: 401 });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !authData?.user) {
+      logger.warn('Invalid or expired JWT');
+      return createErrorResponse('Invalid or expired token', logger, { status: 401 });
+    }
 
     // Rate limiting - 5 requests per minute (photo analysis is resource-intensive)
     const rateLimitResult = checkRateLimit({

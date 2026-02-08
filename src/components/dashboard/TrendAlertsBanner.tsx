@@ -59,7 +59,7 @@ export function TrendAlertsBanner() {
 
   const { data: alerts = [], isLoading, isError, error } = useQuery({
     queryKey: queryKeys.waterTests.alerts(user?.id || ''),
-    queryFn: () => fetchActiveAlerts(user!.id),
+    queryFn: () => { if (!user) return []; return fetchActiveAlerts(user.id); },
     enabled: !!user,
     staleTime: 30000,
   });

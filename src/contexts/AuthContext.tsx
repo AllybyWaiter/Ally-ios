@@ -114,31 +114,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = useCallback(async (email: string, password: string, name: string) => {
-    addBreadcrumb('User attempting sign up', 'auth', { name }, FeatureArea.AUTH);
-    const redirectUrl = `${window.location.origin}/`;
+    try {
+      addBreadcrumb('User attempting sign up', 'auth', { name }, FeatureArea.AUTH);
+      const redirectUrl = `${window.location.origin}/`;
 
-    const { error, data } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: { name }
-      }
-    });
+      const { error, data } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: { name }
+        }
+      });
 
-    if (error) {
-      addBreadcrumb('Sign up failed', 'auth', { error: error.message }, FeatureArea.AUTH);
-      if (data?.user) {
-        logLoginHistory(data.user.id, false, error.message).catch((err: unknown) => logger.error('Activity logging failed:', err));
+      if (error) {
+        addBreadcrumb('Sign up failed', 'auth', { error: error.message }, FeatureArea.AUTH);
+        if (data?.user) {
+          logLoginHistory(data.user.id, false, error.message).catch((err: unknown) => logger.error('Activity logging failed:', err));
+        }
+      } else if (data?.user) {
+        addBreadcrumb('Sign up successful', 'auth', { userId: data.user.id }, FeatureArea.AUTH);
+        setUserContext(data.user.id, data.user.email, name);
+        logLoginHistory(data.user.id, true).catch((err: unknown) => logger.error('Activity logging failed:', err));
+        logActivity({ actionType: 'login', userId: data.user.id, actionDetails: { type: 'signup' } }).catch((err: unknown) => logger.error('Activity logging failed:', err));
       }
-    } else if (data?.user) {
-      addBreadcrumb('Sign up successful', 'auth', { userId: data.user.id }, FeatureArea.AUTH);
-      setUserContext(data.user.id, data.user.email, name);
-      logLoginHistory(data.user.id, true).catch((err: unknown) => logger.error('Activity logging failed:', err));
-      logActivity({ actionType: 'login', userId: data.user.id, actionDetails: { type: 'signup' } }).catch((err: unknown) => logger.error('Activity logging failed:', err));
+
+      return { error: error ?? null };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      addBreadcrumb('Sign up error', 'auth', { error: errorMessage }, FeatureArea.AUTH);
+      return { error: { message: errorMessage } };
     }
-
-    return { error: error ?? null };
   }, []);
 
   const signOut = useCallback(async () => {

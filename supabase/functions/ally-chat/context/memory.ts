@@ -8,9 +8,20 @@
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { generateEmbedding, formatEmbeddingForPostgres } from '../../_shared/embeddings.ts';
 
+interface UserMemoryRecord {
+  id: string;
+  memory_key: string;
+  memory_value: string;
+  water_type: string | null;
+  aquarium_id?: string | null;
+  category?: string;
+  similarity?: number;
+  updated_at?: string;
+}
+
 export interface MemoryContext {
   context: string;
-  memories: any[];
+  memories: UserMemoryRecord[];
 }
 
 /**
@@ -22,7 +33,7 @@ async function searchMemoriesSemantic(
   queryText: string,
   aquariumId?: string,
   limit: number = 20
-): Promise<any[]> {
+): Promise<UserMemoryRecord[]> {
   try {
     const embeddingResult = await generateEmbedding(queryText);
     const queryEmbedding = formatEmbeddingForPostgres(embeddingResult.embedding);
@@ -52,7 +63,7 @@ export async function buildMemoryContext(
   aquariumId?: string,
   conversationContext?: string
 ): Promise<MemoryContext> {
-  let memoryData: any[] = [];
+  let memoryData: UserMemoryRecord[] = [];
 
   // If we have conversation context, try semantic search first
   if (conversationContext && conversationContext.length > 10) {

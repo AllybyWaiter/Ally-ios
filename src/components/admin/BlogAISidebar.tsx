@@ -17,10 +17,9 @@ interface BlogAISidebarProps {
     tags: string;
   };
   onUpdate: (updates: Partial<BlogAISidebarProps['formData']>) => void;
-  generateSlug: (title: string) => string;
 }
 
-export default function BlogAISidebar({ formData, onUpdate, generateSlug }: BlogAISidebarProps) {
+export default function BlogAISidebar({ formData, onUpdate }: BlogAISidebarProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [topic, setTopic] = useState('');

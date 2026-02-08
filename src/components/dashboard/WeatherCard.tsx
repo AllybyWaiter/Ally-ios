@@ -98,6 +98,7 @@ export function WeatherCard() {
   const getTimeSinceUpdate = () => {
     if (!weather.fetchedAt) return '';
     const fetchedAt = new Date(weather.fetchedAt);
+    if (isNaN(fetchedAt.getTime())) return '';
     const now = new Date();
     const diffMinutes = Math.floor((now.getTime() - fetchedAt.getTime()) / (1000 * 60));
     

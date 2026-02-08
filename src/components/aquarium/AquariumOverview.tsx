@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Droplet, Wrench, ListTodo, Plus, AlertCircle } from "lucide-react";
+import { Loader2, Droplet, Wrench, ListTodo, Plus } from "lucide-react";
 import { format, isValid } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { formatParameter, formatVolume, UnitSystem } from "@/lib/unitConversions";
+import { formatParameter } from "@/lib/unitConversions";
 import { formatRelativeTime } from "@/lib/formatters";
 import { EquipmentDialog } from "./EquipmentDialog";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
@@ -48,7 +48,7 @@ interface AquariumOverviewProps {
   aquarium: Aquarium;
 }
 
-export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps) => {
+export const AquariumOverview = ({ aquariumId, aquarium: _aquarium }: AquariumOverviewProps) => {
   const navigate = useNavigate();
   const { user, loading: authLoading, units } = useAuth();
   const { t } = useTranslation();
@@ -186,7 +186,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-3">
-              {latestTest.test_parameters?.slice(0, 6).map((param: { id: string; parameter_name: string; value: number | null; unit: string; status?: string }) => {
+              {latestTest.test_parameters?.slice(0, 6).map((param: { id?: string; parameter_name: string; value: number | null; unit: string; status?: string }, index: number) => {
                 const getStatusBadgeClass = (status: string) => {
                   switch (status) {
                     case 'good':
@@ -202,7 +202,7 @@ export const AquariumOverview = ({ aquariumId, aquarium }: AquariumOverviewProps
 
                 return (
                   <div
-                    key={param.id}
+                    key={param.id ?? `${param.parameter_name}-${index}`}
                     className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                   >
                     <div>

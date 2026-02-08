@@ -15,8 +15,6 @@ import {
   Brain, 
   Search, 
   Trash2, 
-  Flag,
-  Filter,
   User,
   Droplets
 } from 'lucide-react';
@@ -52,7 +50,7 @@ const chartConfig = {
 
 export default function AdminMemoryManager() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryFilter, _setCategoryFilter] = useState<string>('all');
   const [waterTypeFilter, setWaterTypeFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

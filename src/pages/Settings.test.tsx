@@ -123,10 +123,10 @@ describe('Settings', () => {
     expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
   });
 
-  it('renders primary settings sections', () => {
+  it('renders primary settings sections', async () => {
     renderSettings();
 
-    expect(screen.getByRole('button', { name: /security/i })).toBeInTheDocument();
+    await screen.findByRole('button', { name: /security/i });
     expect(screen.getByRole('button', { name: /subscription/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /language & region/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /units/i })).toBeInTheDocument();

@@ -351,7 +351,6 @@ const AllyChat = () => {
 
   // Deps: initializeChat contains navigation and state setup that should only run once on mount.
   // Adding it as a dependency would cause infinite loops as it updates state it depends on.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     initializeChat();
   }, []);
@@ -409,11 +408,16 @@ const AllyChat = () => {
   };
 
   const handleLoadConversation = useCallback(async (id: string) => {
-    const loadedMessages = await conversationManager.loadConversation(id);
-    setMessages(loadedMessages);
-    // Persist for session continuity
-    if (userId) {
-      localStorage.setItem(getLastConversationKey(userId), id);
+    try {
+      const loadedMessages = await conversationManager.loadConversation(id);
+      setMessages(loadedMessages);
+      // Persist for session continuity
+      if (userId) {
+        localStorage.setItem(getLastConversationKey(userId), id);
+      }
+    } catch (error) {
+      logger.error('Failed to load conversation:', error);
+      setMessages(conversationManager.startNewConversation());
     }
   }, [conversationManager, userId]);
 
@@ -699,10 +703,10 @@ const AllyChat = () => {
     sendMessageRef.current = sendMessage;
   }, [sendMessage]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = async (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      await sendMessage();
     }
   };
 

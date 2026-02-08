@@ -186,26 +186,38 @@ export function useAdminTrendData() {
         dateMap.set(date, { date, users: 0, waterTests: 0, aquariums: 0, chatMessages: 0 });
       }
 
+      const safeFormatDate = (dateStr: string): string | null => {
+        try {
+          return format(new Date(dateStr), 'MMM dd');
+        } catch {
+          return null;
+        }
+      };
+
       (usersData.data || []).forEach(item => {
-        const date = format(new Date(item.created_at), 'MMM dd');
+        const date = safeFormatDate(item.created_at);
+        if (!date) return;
         const existing = dateMap.get(date);
         if (existing) existing.users++;
       });
 
       (waterTestsData.data || []).forEach(item => {
-        const date = format(new Date(item.created_at), 'MMM dd');
+        const date = safeFormatDate(item.created_at);
+        if (!date) return;
         const existing = dateMap.get(date);
         if (existing) existing.waterTests++;
       });
 
       (aquariumsData.data || []).forEach(item => {
-        const date = format(new Date(item.created_at), 'MMM dd');
+        const date = safeFormatDate(item.created_at);
+        if (!date) return;
         const existing = dateMap.get(date);
         if (existing) existing.aquariums++;
       });
 
       (messagesData.data || []).forEach(item => {
-        const date = format(new Date(item.created_at), 'MMM dd');
+        const date = safeFormatDate(item.created_at);
+        if (!date) return;
         const existing = dateMap.get(date);
         if (existing) existing.chatMessages++;
       });

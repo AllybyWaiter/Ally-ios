@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { getPlanDefinition, type PlanFeatures } from '@/lib/planConstants';
+import { logger } from '@/lib/logger';
 
 export interface PlanLimits extends PlanFeatures {}
 
@@ -38,7 +39,7 @@ export function usePlanLimits() {
         .lte('test_date', monthEnd);
       
       if (error) {
-        console.error('Error fetching test count:', error);
+        logger.error('Error fetching test count:', error);
         return 0;
       }
       

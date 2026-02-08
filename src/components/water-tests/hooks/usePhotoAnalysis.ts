@@ -75,7 +75,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
 
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (isMountedRef.current) {
+        if (isMountedRef.current && !reader.error && reader.result) {
           setPhotoPreview(reader.result as string);
         }
       };
@@ -97,7 +97,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
       setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (isMountedRef.current) {
+        if (isMountedRef.current && !reader.error && reader.result) {
           setPhotoPreview(reader.result as string);
         }
       };

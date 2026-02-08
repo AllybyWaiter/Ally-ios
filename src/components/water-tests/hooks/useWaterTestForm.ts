@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,6 +41,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
 
   const isAtTestLimit = !canLogTest();
   const remainingTests = getRemainingTests();
+  const alertsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-save draft functionality
   const autoSaveData = useMemo(() => ({ parameters, notes, tags }), [parameters, notes, tags]);
@@ -261,7 +262,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
       if (user) {
         triggerTrendAnalysis(aquarium.id, user.id, limits.hasAITrendAlerts);
         // Invalidate alerts cache after a short delay to allow edge function to complete
-        setTimeout(() => {
+        alertsTimeoutRef.current = setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.alerts(user.id) });
         }, 2000);
       }
@@ -291,6 +292,15 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
       toast.error(title, { description });
     },
   });
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (alertsTimeoutRef.current) {
+        clearTimeout(alertsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplate(templateId);

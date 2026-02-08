@@ -62,7 +62,7 @@ export async function executeCheckFishCompatibility(
 
     // 3. Look up the species in our database
     // Sanitize species name: strip all non-alphanumeric/space/hyphen characters for PostgREST filter safety
-    const safeName = args.species_name.replace(/[^a-zA-Z0-9 \-]/g, '').trim();
+    const safeName = args.species_name.replace(/[^a-zA-Z0-9 -]/g, '').trim();
     if (!safeName) {
       return {
         tool_call_id: toolCallId,
@@ -107,7 +107,7 @@ export async function executeCheckFishCompatibility(
     if (existingSpeciesNames.length > 0) {
       // Sanitize names: strip all non-alphanumeric/space/hyphen characters for PostgREST filter safety
       const conditions = existingSpeciesNames.map(name => {
-        const safe = name.replace(/[^a-zA-Z0-9 \-]/g, '').trim();
+        const safe = name.replace(/[^a-zA-Z0-9 -]/g, '').trim();
         // Escape ILIKE wildcards
         const ilikeSafe = safe.replace(/%/g, '\\%').replace(/_/g, '\\_');
         return `common_name.ilike.${ilikeSafe},scientific_name.ilike.${ilikeSafe}`;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -70,13 +70,7 @@ export default function MemoryManager() {
   });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      fetchMemories();
-    }
-  }, [user]);
-
-  const fetchMemories = async () => {
+  const fetchMemories = useCallback(async () => {
     if (!user) return;
     
     setIsLoading(true);
@@ -99,7 +93,13 @@ export default function MemoryManager() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (user) {
+      fetchMemories();
+    }
+  }, [user, fetchMemories]);
 
   const handleOpenDialog = (memory?: Memory) => {
     if (memory) {

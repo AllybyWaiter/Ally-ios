@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import {
-  corsHeaders,
   handleCors,
   createLogger,
   validateUuid,
@@ -246,7 +245,7 @@ serve(async (req) => {
     const parameterHistory: { name: string; value: number; date: string }[] = [];
     for (const test of waterTests) {
       if (test.test_parameters) {
-        for (const param of test.test_parameters as any[]) {
+        for (const param of test.test_parameters as { parameter_name: string; value: number | string; unit?: string }[]) {
           parameterHistory.push({
             name: param.parameter_name,
             value: Number(param.value),
@@ -281,7 +280,7 @@ serve(async (req) => {
 
     // Format test history for AI
     const formattedHistory = waterTests.slice(0, 10).map(test => {
-      const params = (test.test_parameters as any[])?.map(p => `${p.parameter_name}: ${p.value}${p.unit || ''}`).join(', ') || 'No parameters';
+      const params = (test.test_parameters as { parameter_name: string; value: number | string; unit?: string }[])?.map(p => `${p.parameter_name}: ${p.value}${p.unit || ''}`).join(', ') || 'No parameters';
       return `${test.test_date}: ${params}`;
     }).join('\n');
 
@@ -449,13 +448,13 @@ Respond using the analyze_trends tool with your findings. Include:
 });
 
 async function saveAlerts(
-  supabase: any,
+  supabase: ReturnType<typeof createClient>,
   alerts: TrendAlert[],
   aquariumId: string,
   userId: string,
   aquariumName: string,
   model: 'ai' | 'rule',
-  logger: any
+  logger: ReturnType<typeof createLogger>
 ): Promise<void> {
   if (alerts.length === 0) return;
 
@@ -467,7 +466,7 @@ async function saveAlerts(
     .eq('is_dismissed', false);
 
   const existingKeys = new Set(
-    (existingAlerts || []).map((a: any) => `${a.parameter_name}:${a.alert_type}`)
+    (existingAlerts || []).map((a: { parameter_name: string; alert_type: string }) => `${a.parameter_name}:${a.alert_type}`)
   );
 
   const newAlerts = alerts

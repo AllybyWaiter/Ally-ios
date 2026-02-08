@@ -81,7 +81,7 @@ export function usePullToRefresh(
     if (decayedDistance > 10) {
       e.preventDefault();
     }
-  }, [disabled, isRefreshing, maxPull]);
+  }, [disabled, isRefreshing, maxPull, containerRef]);
 
   const handleTouchEnd = useCallback(async () => {
     if (!isPulling.current) return;

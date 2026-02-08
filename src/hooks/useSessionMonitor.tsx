@@ -113,7 +113,7 @@ export const useSessionMonitor = () => {
       // Show warning if getting close to expiry
       else if (timeUntilExpiry < SESSION_WARNING_THRESHOLD && timeUntilExpiry > SESSION_REFRESH_THRESHOLD) {
         const minutesRemaining = Math.round(timeUntilExpiry / 60000);
-        toast({
+        toastRef.current({
           title: "Session Expiring Soon",
           description: `Your session will expire in ${minutesRemaining} minutes. Save your work.`,
         });
@@ -128,8 +128,12 @@ export const useSessionMonitor = () => {
         pendingCheckRef.current = false;
         const wasVisibilityChange = pendingVisibilityRef.current;
         pendingVisibilityRef.current = false;
-        // Use setTimeout to avoid synchronous recursion
-        setTimeout(() => checkAndRefreshSession(wasVisibilityChange), 100);
+        // Use setTimeout to avoid synchronous recursion; skip if a new check already started
+        setTimeout(() => {
+          if (!isCheckingRef.current) {
+            checkAndRefreshSession(wasVisibilityChange);
+          }
+        }, 100);
       }
     }
   }, []);

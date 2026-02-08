@@ -160,7 +160,9 @@ describe('Auth', () => {
       const toggleButton = screen.getByRole('button', { name: /show password/i });
       await user.click(toggleButton);
 
-      expect(passwordInput).toHaveAttribute('type', 'text');
+      await waitFor(() => {
+        expect(passwordInput).toHaveAttribute('type', 'text');
+      });
     });
   });
 

@@ -8,7 +8,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import AppHeader from '@/components/AppHeader';
 import { queryKeys } from '@/lib/queryKeys';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
@@ -38,7 +37,7 @@ export default function TaskCalendar() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [filters, setFilters] = useState<CalendarFilterState>(DEFAULT_FILTERS);
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+
 
   const {
     isLoading,

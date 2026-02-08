@@ -12,7 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { corsHeaders, handleCors, getCorsHeaders } from '../_shared/cors.ts';
+import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { validateUuid, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
 import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
@@ -160,7 +160,6 @@ serve(async (req) => {
     const skillLevel = profile?.skill_level || 'beginner';
     const subscriptionTier = profile?.subscription_tier || 'free';
     const userName = profile?.name || null;
-    const hasMemoryAccess = true; // Memory is available to all users
     const hasToolAccess = ['plus', 'gold', 'business', 'enterprise'].includes(subscriptionTier);
     
     // Validate model selection - server-side check for Gold access

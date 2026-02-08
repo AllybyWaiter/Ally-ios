@@ -55,8 +55,8 @@ export function CompactWeatherWidget() {
     temp: hour.temperature,
   })) || [];
 
-  // Calculate min/max for labels
-  const temps = chartData.map(d => d.temp);
+  // Calculate min/max for labels (filter out NaN values)
+  const temps = chartData.map(d => d.temp).filter(t => !isNaN(t));
   const minTemp = temps.length > 0 ? Math.min(...temps) : null;
   const maxTemp = temps.length > 0 ? Math.max(...temps) : null;
   const lowLabel = minTemp !== null ? formatTemperature(minTemp, units, 'C') : '';

@@ -263,7 +263,7 @@ serve(async (req) => {
         else if (isTomorrow) timeText = 'tomorrow';
 
         try {
-          const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
+          const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
             body: {
               userId: userPref.user_id,
               title: `Task Reminder: ${task.task_name}`,
@@ -339,7 +339,7 @@ serve(async (req) => {
           const severityEmoji = alert.severity === 'critical' ? '🔴' : alert.severity === 'warning' ? '🟡' : 'ℹ️';
 
           try {
-            const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
+            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
               body: {
                 userId: userPref.user_id,
                 title: `${severityEmoji} Water Alert: ${alert.parameter_name}`,
@@ -467,7 +467,7 @@ serve(async (req) => {
             : `Health score dropped to ${healthScore}%. Check water parameters and maintenance.`;
 
           try {
-            const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
+            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
               body: {
                 userId: userPref.user_id,
                 title,
@@ -559,7 +559,7 @@ serve(async (req) => {
 
           try {
             // Send push notification
-            const { data, error: sendError } = await supabase.functions.invoke('send-push-notification', {
+            const { error: sendError } = await supabase.functions.invoke('send-push-notification', {
               body: {
                 userId: userPref.user_id,
                 title: `${severityEmoji} ${props.severity} Weather Alert`,

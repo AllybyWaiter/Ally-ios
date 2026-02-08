@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import {
-  corsHeaders,
   handleCors,
   createLogger,
   validateUuid,
@@ -376,7 +375,7 @@ serve(async (req) => {
     const parameterHistory: { name: string; value: number; date: string }[] = [];
     for (const test of waterTests) {
       if (test.test_parameters) {
-        for (const param of test.test_parameters as any[]) {
+        for (const param of test.test_parameters as { parameter_name: string; value: number | string; unit?: string }[]) {
           parameterHistory.push({
             name: param.parameter_name,
             value: Number(param.value),

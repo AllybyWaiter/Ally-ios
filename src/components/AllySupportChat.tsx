@@ -179,7 +179,6 @@ const AllySupportChat = () => {
     setError(null); // Clear any previous error
     const userMessage: Message = { id: generateMessageId(), role: "user", content: input };
     const currentMessages = [...messages];
-    setMessages(prev => [...prev, userMessage]);
     setInput("");
 
     await processStreamResponse(userMessage, currentMessages);

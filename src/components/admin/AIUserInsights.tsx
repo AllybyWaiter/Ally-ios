@@ -20,7 +20,6 @@ import {
   ThumbsDown,
   Search,
   Eye,
-  TrendingUp,
   Clock
 } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
@@ -82,7 +81,7 @@ export default function AIUserInsights() {
         .select('user_id');
       if (convError) console.error('Failed to fetch conversations:', convError.message);
 
-      const { data: messages, error: msgError } = await supabase
+      const { error: msgError } = await supabase
         .from('chat_messages')
         .select('conversation_id');
       if (msgError) console.error('Failed to fetch messages:', msgError.message);

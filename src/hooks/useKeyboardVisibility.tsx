@@ -135,6 +135,8 @@ export function useKeyboardVisibility(
       }, 500);
     };
 
+    isMountedRef.current = true;
+
     viewport.addEventListener('resize', handleResize);
     document.addEventListener('focusin', handleFocus);
     document.addEventListener('focusout', handleBlur);
@@ -151,14 +153,6 @@ export function useKeyboardVisibility(
       timeoutsRef.current.clear();
     };
   }, [isKeyboardVisible, onKeyboardShow, onKeyboardHide, scrollInputIntoView, createTimeout]);
-
-  // Reset mounted ref on mount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   return {
     isKeyboardVisible,

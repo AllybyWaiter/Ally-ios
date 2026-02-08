@@ -54,15 +54,25 @@ export function WeatherSettings() {
         async (position) => {
           // Permission granted, save coordinates and enable weather
           setWeatherEnabled(true);
-          
-          await supabase
+
+          const { error: updateError } = await supabase
             .from('profiles')
-            .update({ 
+            .update({
               weather_enabled: true,
               latitude: position.coords.latitude,
               longitude: position.coords.longitude
             })
             .eq('user_id', user.id);
+
+          if (updateError) {
+            setWeatherEnabled(false);
+            toast({
+              title: "Failed to enable weather",
+              description: "Could not save your location. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
 
           toast({
             title: "Weather Enabled",
@@ -87,11 +97,21 @@ export function WeatherSettings() {
 
     // Disabling weather
     setWeatherEnabled(false);
-    
-    await supabase
+
+    const { error: disableError } = await supabase
       .from('profiles')
       .update({ weather_enabled: false })
       .eq('user_id', user.id);
+
+    if (disableError) {
+      setWeatherEnabled(true);
+      toast({
+        title: "Failed to disable weather",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     toast({
       title: "Weather Disabled",

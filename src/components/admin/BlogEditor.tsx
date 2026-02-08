@@ -209,7 +209,7 @@ export default function BlogEditor() {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `${fileName}`;
 
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('blog-images')
       .upload(filePath, featuredImage);
 
@@ -821,7 +821,6 @@ export default function BlogEditor() {
             <BlogAISidebar
               formData={formData}
               onUpdate={(updates) => setFormData({ ...formData, ...updates })}
-              generateSlug={generateSlug}
             />
           </div>
         </div>
