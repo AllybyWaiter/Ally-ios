@@ -7,7 +7,7 @@ interface SunMoonOrbProps {
   sunProgress?: number; // 0-1, where 0.5 is solar noon
 }
 
-export function SunMoonOrb({ isDay, condition, sunProgress = 0.5 }: SunMoonOrbProps) {
+export function SunMoonOrb({ isDay, condition, sunProgress: _sunProgress = 0.5 }: SunMoonOrbProps) {
   // Weather overlay icons for non-clear conditions
   const weatherOverlay: Record<WeatherCondition, React.ElementType | null> = {
     clear: null,

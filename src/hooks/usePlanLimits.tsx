@@ -5,7 +5,7 @@ import { startOfMonth, endOfMonth } from 'date-fns';
 import { getPlanDefinition, type PlanFeatures } from '@/lib/planConstants';
 import { logger } from '@/lib/logger';
 
-export interface PlanLimits extends PlanFeatures {}
+export type PlanLimits = PlanFeatures;
 
 // Re-export for backwards compatibility
 export type { PlanFeatures };

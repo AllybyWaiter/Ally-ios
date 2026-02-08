@@ -24,7 +24,7 @@ interface ReferralReward {
 
 export function useReferralCode() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   // Get or create user's referral code
   const { data: referralCode, isLoading: codeLoading } = useQuery({

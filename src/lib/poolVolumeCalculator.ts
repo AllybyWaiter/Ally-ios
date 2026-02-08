@@ -62,17 +62,19 @@ export function calculateAverageDepth(
  */
 export function calculateSurfaceArea(dimensions: PoolDimensions): number {
   switch (dimensions.shape) {
-    case 'round':
+    case 'round': {
       if (!dimensions.diameter_ft || dimensions.diameter_ft <= 0) return 0;
       const radius = dimensions.diameter_ft / 2;
       return Math.PI * radius * radius;
+    }
 
-    case 'oval':
-      if (!dimensions.length_ft || !dimensions.width_ft || 
+    case 'oval': {
+      if (!dimensions.length_ft || !dimensions.width_ft ||
           dimensions.length_ft <= 0 || dimensions.width_ft <= 0) return 0;
       const a = dimensions.length_ft / 2;
       const b = dimensions.width_ft / 2;
       return Math.PI * a * b;
+    }
 
     case 'rectangle':
       if (!dimensions.length_ft || !dimensions.width_ft ||

@@ -155,7 +155,7 @@ export function generateMarkdownTable(data: TableData): string {
   if (cells.length === 0 || cells[0].length === 0) return '';
   
   const lines: string[] = [];
-  const startRow = hasHeader ? 1 : 0;
+  const _startRow = hasHeader ? 1 : 0;
   
   // Header row
   if (hasHeader && cells.length > 0) {

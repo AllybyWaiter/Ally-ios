@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Download, Edit, Mail, UserCheck, UserX, Trash2, CheckSquare, Square, Activity } from 'lucide-react';
+import { Search, Download, Edit, Mail, UserCheck, UserX, Trash2, Activity } from 'lucide-react';
 import UserActivityLogs from './UserActivityLogs';
 import { formatDate } from '@/lib/formatters';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';

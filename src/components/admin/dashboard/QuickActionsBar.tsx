@@ -53,11 +53,11 @@ export function QuickActionsBar({ onNavigate, onRefresh }: QuickActionsBarProps)
       window.URL.revokeObjectURL(url);
 
       toast({ title: 'Export complete', description: `Exported ${data?.length || 0} users` });
-    } catch (error) {
-      toast({ 
-        title: 'Export failed', 
+    } catch (_error) {
+      toast({
+        title: 'Export failed',
         description: 'Could not export user data',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
     } finally {
       setIsExporting(false);
@@ -84,11 +84,11 @@ export function QuickActionsBar({ onNavigate, onRefresh }: QuickActionsBarProps)
         description: `Granted access to ${grantedCount} users`
       });
       onRefresh?.();
-    } catch (error) {
-      toast({ 
-        title: 'Failed to grant access', 
+    } catch (_error) {
+      toast({
+        title: 'Failed to grant access',
         description: 'Could not grant beta access',
-        variant: 'destructive' 
+        variant: 'destructive'
       });
     } finally {
       setIsGrantingBeta(false);

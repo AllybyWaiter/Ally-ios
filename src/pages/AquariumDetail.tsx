@@ -24,13 +24,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { formatVolume, UnitSystem } from "@/lib/unitConversions";
+import { formatVolume } from "@/lib/unitConversions";
 import { queryKeys } from "@/lib/queryKeys";
 import { queryPresets } from "@/lib/queryConfig";
 import { fetchAquarium, deleteAquarium as deleteAquariumDAL } from "@/infrastructure/queries";
 import { SectionErrorBoundary } from "@/components/error-boundaries";
 import { FeatureArea } from "@/lib/sentry";
-import { isPoolType, getWaterBodyLabels, formatWaterBodyType } from "@/lib/waterBodyUtils";
+import { isPoolType, formatWaterBodyType } from "@/lib/waterBodyUtils";
 
 // Safe date formatter to prevent crashes - returns empty string for invalid dates
 const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = "PPP"): string => {

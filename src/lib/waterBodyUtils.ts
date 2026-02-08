@@ -7,7 +7,6 @@
 import {
   WaterBodyCategory,
   WaterBodyType,
-  POOL_TYPES,
   isPoolType as checkIsPoolType,
 } from '@/types/enums';
 

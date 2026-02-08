@@ -239,6 +239,6 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Handle notification close (for analytics if needed)
-self.addEventListener('notificationclose', (event) => {
+self.addEventListener('notificationclose', (_event) => {
   swLog.log('[SW] Notification closed without interaction');
 });

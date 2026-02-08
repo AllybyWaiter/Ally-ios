@@ -4,14 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   MessageSquare, 
   Users, 
   Clock,
   TrendingUp,
-  Calendar,
-  BarChart3
+  Calendar
 } from 'lucide-react';
 import { formatDate } from '@/lib/formatters';
 import { queryPresets } from '@/lib/queryConfig';
@@ -22,7 +21,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { AreaChart, Area, XAxis, YAxis, BarChart, Bar, CartesianGrid } from 'recharts';
-import { subDays, format, eachDayOfInterval, eachHourOfInterval, startOfDay, endOfDay, getHours } from 'date-fns';
+import { subDays, format, eachDayOfInterval, startOfDay, endOfDay, getHours } from 'date-fns';
 
 const chartConfig = {
   conversations: {

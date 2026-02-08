@@ -392,7 +392,7 @@ export async function presentPaywall(): Promise<boolean> {
 /**
  * Show native RevenueCat paywall for a specific offering
  */
-export async function presentPaywallForOffering(offeringIdentifier: string): Promise<boolean> {
+export async function presentPaywallForOffering(_offeringIdentifier: string): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) {
     return false;
   }

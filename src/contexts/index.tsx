@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { AuthProvider, useAuthContext } from './AuthContext';
 import { ProfileProvider, useProfileContext } from './ProfileContext';
 import { PermissionsProvider, usePermissionsContext } from './PermissionsContext';
-import { FeatureFlagsProvider, useFeatureFlagsContext } from './FeatureFlagsContext';
+import { FeatureFlagsProvider } from './FeatureFlagsContext';
 import { OnboardingProvider } from './OnboardingContext';
 
 // Combined provider that nests all contexts in correct order

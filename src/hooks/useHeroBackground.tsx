@@ -11,7 +11,7 @@ interface HeroBackgroundInfo {
   weather: WeatherCondition | null;
 }
 
-const TIME_SLOTS: Record<TimeSlot, { start: number; end: number }> = {
+const _TIME_SLOTS: Record<TimeSlot, { start: number; end: number }> = {
   'dawn': { start: 5, end: 8 },
   'morning': { start: 8, end: 12 },
   'afternoon': { start: 12, end: 17 },

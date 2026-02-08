@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 export function WeatherSettings() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { weather, enabled, refreshWeather, loading: weatherLoading } = useWeather();
+  const { weather, enabled: _enabled, refreshWeather, loading: weatherLoading } = useWeather();
   
   const [weatherEnabled, setWeatherEnabled] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);

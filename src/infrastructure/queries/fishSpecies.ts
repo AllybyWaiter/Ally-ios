@@ -139,7 +139,7 @@ export async function getCompatibleSpecies(
   limit: number = 10
 ): Promise<FishSpecies[]> {
   // Get existing species data
-  const existingData = await getFishSpeciesByNames(existingSpeciesNames);
+  const _existingData = await getFishSpeciesByNames(existingSpeciesNames);
   
   // Determine if tank is freshwater or saltwater
   const isFreshwater = ['freshwater', 'planted', 'coldwater'].some(t => 

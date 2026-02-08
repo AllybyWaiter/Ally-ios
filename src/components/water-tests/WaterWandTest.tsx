@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWaterWand, type WaterReading, type YinmikDevice } from '@/hooks/ble';
-import { formatReading } from '@/lib/ble/yinmikProtocol';
 
 interface WaterWandTestProps {
   aquariumId: string;
@@ -35,7 +34,7 @@ interface WaterWandTestProps {
 }
 
 export function WaterWandTest({
-  aquariumId,
+  aquariumId: _aquariumId,
   aquariumName,
   onReadingComplete,
 }: WaterWandTestProps) {
@@ -48,13 +47,13 @@ export function WaterWandTest({
     lastReading,
     isSupported,
     error,
-    initialize,
+    initialize: _initialize,
     scan,
-    stopScan,
+    stopScan: _stopScan,
     connect,
     disconnect,
     readWater,
-    readBattery,
+    readBattery: _readBattery,
     clearError,
   } = useWaterWand({
     onReading: (reading) => {
@@ -105,7 +104,7 @@ export function WaterWandTest({
   };
 
   // Format reading value
-  const formatValue = (value: number | null, unit: string, decimals = 1) => {
+  const _formatValue = (value: number | null, unit: string, decimals = 1) => {
     if (value === null) return '—';
     return `${value.toFixed(decimals)}${unit}`;
   };

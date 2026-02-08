@@ -29,7 +29,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { BleClient, BleDevice, numbersToDataView } from '@capacitor-community/bluetooth-le';
+import { BleClient, numbersToDataView } from '@capacitor-community/bluetooth-le';
 import { toast } from 'sonner';
 import {
   YINMIK_SERVICE_UUID,
@@ -118,7 +118,7 @@ export function useWaterWand(options: UseWaterWandOptions = {}): UseWaterWandRet
   // Refs
   const isInitializedRef = useRef(false);
   const connectedDeviceIdRef = useRef<string | null>(null);
-  const notificationBufferRef = useRef<Uint8Array>(new Uint8Array(0));
+  const _notificationBufferRef = useRef<Uint8Array>(new Uint8Array(0));
   const readingResolverRef = useRef<((reading: WaterReading | null) => void) | null>(null);
 
   // Update status with callback

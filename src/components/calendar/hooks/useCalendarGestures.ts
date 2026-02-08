@@ -126,7 +126,7 @@ interface UseSwipeableTaskOptions {
   threshold?: number;
 }
 
-interface SwipeableState {
+interface _SwipeableState {
   offsetX: number;
   isDragging: boolean;
 }

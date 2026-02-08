@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useEffect, useState } from 'react';
-import { format, isSameDay, parseISO, isAfter, isBefore } from 'date-fns';
+import { format, isSameDay, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const DropdownMenu = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>
->(({ onOpenChange, ...props }, ref) => {
+>(({ onOpenChange, ...props }, _ref) => {
   const handleOpenChange = React.useCallback((open: boolean) => {
     if (!open) {
       // Clean up pointer-events when dropdown closes

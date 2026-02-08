@@ -102,7 +102,7 @@ export function RecentActivityTimeline({
               </h4>
 
               <div className="space-y-2">
-                {groupTests.map((test, index) => {
+                {groupTests.map((test, _index) => {
                   const hasWarnings = test.test_parameters?.some(
                     (p) => p.status === 'warning' || p.status === 'critical'
                   );

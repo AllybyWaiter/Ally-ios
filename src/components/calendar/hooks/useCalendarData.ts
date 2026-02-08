@@ -7,7 +7,7 @@
 import { useMemo, useCallback } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isToday, isBefore, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { queryKeys } from '@/lib/queryKeys';
 import { queryPresets } from '@/lib/queryConfig';
 import { useToast } from '@/hooks/use-toast';

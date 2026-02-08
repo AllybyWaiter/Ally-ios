@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Menu } from 'lucide-react';
@@ -30,7 +29,7 @@ import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
 
 export default function Admin() {
   const { hasPermission, hasAnyRole } = useAuth();
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');

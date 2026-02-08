@@ -22,7 +22,7 @@ interface UseSuggestedQuestionsParams {
 export function useSuggestedQuestions({ 
   selectedAquariumId, 
   aquariums, 
-  hasMessages 
+  hasMessages: _hasMessages
 }: UseSuggestedQuestionsParams) {
   const { user } = useAuth();
 

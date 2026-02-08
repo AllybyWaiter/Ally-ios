@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/formatters';
-import { useAuth } from '@/hooks/useAuth';
-import { PermissionGuard } from '@/components/PermissionGuard';
+
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -14,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Send, Edit, Trash2, Calendar, Mail, Bell } from 'lucide-react';
+import { Plus, Send, Trash2, Mail, Bell } from 'lucide-react';
 import { z } from 'zod';
 
 const announcementSchema = z.object({

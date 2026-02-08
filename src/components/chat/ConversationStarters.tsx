@@ -1,7 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Fish, Droplet, Wrench, HelpCircle, Waves, AlertTriangle, Sparkles, MessageCircle } from 'lucide-react';
+import { Fish, Droplet, Wrench, HelpCircle, AlertTriangle, Sparkles, MessageCircle } from 'lucide-react';
 import { SuggestedQuestion } from '@/hooks/useSuggestedQuestions';
 import { cn } from '@/lib/utils';
 

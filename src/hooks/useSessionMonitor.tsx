@@ -11,7 +11,7 @@ const VISIBILITY_REFRESH_TIMEOUT = 2000; // Quick timeout for visibility change 
 export const useSessionMonitor = () => {
   const { toast } = useToast();
   const toastRef = useRef(toast);
-  const lastVisibilityCheck = useRef<number>(0);
+  const _lastVisibilityCheck = useRef<number>(0);
   const isCheckingRef = useRef<boolean>(false);
   // Queue a pending check if one is requested during an ongoing check
   const pendingCheckRef = useRef<boolean>(false);
@@ -48,7 +48,7 @@ export const useSessionMonitor = () => {
           sessionPromise,
           timeoutPromise
         ]));
-      } catch (raceError) {
+      } catch (_raceError) {
         // Timeout fired before getSession resolved — skip logout logic
         addBreadcrumb('Session check timed out', 'auth', { timeoutMs }, FeatureArea.AUTH);
         return;

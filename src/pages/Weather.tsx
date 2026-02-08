@@ -248,7 +248,7 @@ export default function Weather() {
     );
   }
 
-  const WeatherIcon = weather.isDay ? (weatherIcons[weather.condition] || Cloud) : Moon;
+  const _WeatherIcon = weather.isDay ? (weatherIcons[weather.condition] || Cloud) : Moon;
   const conditionLabel = weatherLabels[weather.condition] || weather.condition;
   
   const displayTemp = formatTemperature(

@@ -313,7 +313,7 @@ export const useSystemStatus = () => {
         isLoading: false,
         error: null,
       });
-    } catch (error) {
+    } catch (_error) {
       setData((prev) => ({
         ...prev,
         isLoading: false,

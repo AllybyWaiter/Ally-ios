@@ -26,7 +26,7 @@ interface LivestockDialogProps {
 }
 
 // Category icons for visual display in category selector
-const CategoryIcon = ({ category }: { category: string }) => {
+const _CategoryIcon = ({ category }: { category: string }) => {
   switch (category) {
     case 'fish': return <Fish className="h-4 w-4" />;
     case 'invertebrate': return <Bug className="h-4 w-4" />;

@@ -39,16 +39,23 @@ export const useAdminBadgeCounts = () => {
           .eq('status', 'pending'),
       ]);
 
-      if (ticketsResult.error) logger.error('Failed to fetch ticket counts:', ticketsResult.error);
-      if (contactsResult.error) logger.error('Failed to fetch contact counts:', contactsResult.error);
-      if (waitlistResult.error) logger.error('Failed to fetch waitlist counts:', waitlistResult.error);
-      if (partnersResult.error) logger.error('Failed to fetch partner counts:', partnersResult.error);
+      const errors = [
+        ticketsResult.error,
+        contactsResult.error,
+        waitlistResult.error,
+        partnersResult.error,
+      ].filter(Boolean);
+
+      if (errors.length > 0) {
+        errors.forEach(err => logger.error('Failed to fetch badge counts:', err));
+        throw new Error('Failed to fetch one or more badge counts');
+      }
 
       return {
-        openTickets: ticketsResult.count || 0,
-        pendingContacts: contactsResult.count || 0,
-        pendingWaitlist: waitlistResult.count || 0,
-        pendingPartners: partnersResult.count || 0,
+        openTickets: ticketsResult.count ?? 0,
+        pendingContacts: contactsResult.count ?? 0,
+        pendingWaitlist: waitlistResult.count ?? 0,
+        pendingPartners: partnersResult.count ?? 0,
       };
     },
     staleTime: 30 * 1000, // 30 seconds

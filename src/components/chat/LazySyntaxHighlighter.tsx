@@ -1,4 +1,4 @@
-import { useState, useEffect, memo, Suspense } from "react";
+import { useState, useEffect, memo } from "react";
 import { cn } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 

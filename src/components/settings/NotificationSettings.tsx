@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX, CloudLightning, HeartPulse } from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Button } from '@/components/ui/button';

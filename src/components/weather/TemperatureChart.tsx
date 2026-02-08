@@ -1,18 +1,16 @@
 import { TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
+import {
+  XAxis,
+  YAxis,
+  Tooltip,
   ResponsiveContainer,
   Area,
   ComposedChart,
   Bar
 } from 'recharts';
 import { HourlyForecast } from '@/hooks/useWeather';
-import { formatTemperature, UnitSystem, celsiusToFahrenheit } from '@/lib/unitConversions';
+import { UnitSystem, celsiusToFahrenheit } from '@/lib/unitConversions';
 import { format, parseISO } from 'date-fns';
 
 interface TemperatureChartProps {

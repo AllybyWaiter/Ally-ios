@@ -28,7 +28,6 @@ import {
 } from 'lucide-react';
 import { useGlobalAdminSearch, SearchResult } from '@/hooks/useGlobalAdminSearch';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 interface CommandPaletteProps {
   open: boolean;
@@ -76,7 +75,7 @@ const resultTypeSections: Record<string, string> = {
 };
 
 export function CommandPalette({ open, onOpenChange, onSectionChange }: CommandPaletteProps) {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { query, setQuery, results, loading, search, debouncedQuery } = useGlobalAdminSearch();
   const [recentSections, setRecentSections] = useState<string[]>([]);
 

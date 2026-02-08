@@ -3,7 +3,6 @@ import type { CustomerInfo, PurchasesOffering, PurchasesPackage } from '@revenue
 import {
   initializeRevenueCat,
   loginUser,
-  logoutUser,
   getCustomerInfo,
   hasProAccess,
   getSubscriptionTier,

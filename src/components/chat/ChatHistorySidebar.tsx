@@ -44,9 +44,6 @@ import {
   CheckSquare,
   MoreHorizontal,
   Download,
-  Archive,
-  ArchiveRestore,
-  Copy
 } from "lucide-react";
 import { format, isToday, isYesterday, isWithinInterval, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -279,13 +276,6 @@ const ConversationCard = memo(({
     setIsEditing(false);
   };
 
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    if (onRename && !isSelectionMode) {
-      e.stopPropagation();
-      setIsEditing(true);
-    }
-  };
-
   const handleClick = () => {
     if (isSelectionMode && onToggleSelect) {
       onToggleSelect();
@@ -345,13 +335,11 @@ const ConversationCard = memo(({
             />
           ) : (
             <>
-              <p 
+              <p
                 className={cn(
                   "text-[13px] font-medium truncate leading-snug flex-1",
                   isActive && "text-primary"
                 )}
-                onDoubleClick={handleDoubleClick}
-                title="Double click to rename"
               >
                 {conversation.title}
               </p>
@@ -578,7 +566,7 @@ export const ChatHistorySidebar = ({
         title: "Deleted",
         description: `${selectedIds.size} conversation${selectedIds.size > 1 ? 's' : ''} deleted.`,
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to delete some conversations.",
@@ -611,7 +599,7 @@ export const ChatHistorySidebar = ({
         title: "Exported",
         description: "Conversation exported as Markdown.",
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to export conversation.",

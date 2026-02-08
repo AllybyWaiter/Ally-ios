@@ -251,7 +251,7 @@ export function AquariumGrid({
   onEditAquarium,
   onDeleteAquarium,
 }: AquariumGridProps) {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const { t } = useTranslation();
 
   const getLabels = () => {

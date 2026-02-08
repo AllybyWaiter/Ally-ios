@@ -109,7 +109,7 @@ const actionConfig: Record<QuickAction['type'], {
 };
 
 // Enhanced detection of actionable content in AI response
-export function detectQuickActions(content: string, aquariumId?: string | null): QuickAction[] {
+export function detectQuickActions(content: string, _aquariumId?: string | null): QuickAction[] {
   const actions: QuickAction[] = [];
   const lowerContent = content.toLowerCase();
   const addedTypes = new Set<string>();

@@ -19,7 +19,10 @@ export const useOnlineStatus = (): OnlineStatusReturn => {
     const handleOnline = () => {
       setIsOnline(true);
       setWasOffline(true);
-      
+
+      // Clear any existing timeout before creating a new one
+      if (timeoutId) clearTimeout(timeoutId);
+
       // Reset wasOffline after 5 seconds
       timeoutId = setTimeout(() => {
         setWasOffline(false);

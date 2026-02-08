@@ -2,18 +2,24 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 
 export function useWakeLock() {
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
+  const releaseHandlerRef = useRef<(() => void) | null>(null);
   const [isActive, setIsActive] = useState(false);
   const isSupported = 'wakeLock' in navigator;
 
   const request = useCallback(async () => {
     if (!isSupported) return;
     try {
+      // Remove previous listener before acquiring a new sentinel
+      if (sentinelRef.current && releaseHandlerRef.current) {
+        sentinelRef.current.removeEventListener('release', releaseHandlerRef.current);
+      }
+
       sentinelRef.current = await navigator.wakeLock.request('screen');
       setIsActive(true);
 
-      sentinelRef.current.addEventListener('release', () => {
-        setIsActive(false);
-      });
+      const onRelease = () => { setIsActive(false); };
+      releaseHandlerRef.current = onRelease;
+      sentinelRef.current.addEventListener('release', onRelease);
     } catch (err) {
       console.error('Wake Lock request failed:', err);
       sentinelRef.current = null;

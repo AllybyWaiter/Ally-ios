@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/queryKeys';
-import { fetchPlantPhotos, setAsPrimaryPlantPhoto, deletePlantPhoto, PlantPhoto } from '@/infrastructure/queries/plantPhotos';
+import { fetchPlantPhotos, setAsPrimaryPlantPhoto, deletePlantPhoto } from '@/infrastructure/queries/plantPhotos';
 import PlantPhotoUpload from './PlantPhotoUpload';
 
 interface PlantPhotoGalleryProps {

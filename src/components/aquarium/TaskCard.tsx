@@ -16,7 +16,7 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
     const date = new Date(dateValue);
     if (!isValid(date)) return 'Invalid date';
     return format(date, formatStr);
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 };

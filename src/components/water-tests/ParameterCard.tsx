@@ -22,7 +22,7 @@ export function ParameterCard({
   unit,
   status,
   trend,
-  lastUpdated,
+  lastUpdated: _lastUpdated,
   units,
   onClick,
   sparklineData,

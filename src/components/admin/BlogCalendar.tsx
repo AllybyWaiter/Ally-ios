@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format, isSameDay, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isSameDay, addMonths, subMonths } from 'date-fns';
 import { Clock, Edit, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -54,7 +54,7 @@ export default function BlogCalendar({ posts }: BlogCalendarProps) {
     : [];
 
   // Get all dates with scheduled posts
-  const datesWithPosts = scheduledPosts.map((post) => new Date(post.published_at!));
+  const _datesWithPosts = scheduledPosts.map((post) => new Date(post.published_at!));
 
   // Get posts for any given date (for hover preview)
   const getPostsForDate = (date: Date) => {

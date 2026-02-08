@@ -138,8 +138,10 @@ export const useVoiceRecording = () => {
       mediaRecorderRef.current.onerror = () => {
         if (promiseSettled) return;
         promiseSettled = true;
-        setIsRecording(false);
-        setIsProcessing(false);
+        if (!isAbortedRef.current) {
+          setIsRecording(false);
+          setIsProcessing(false);
+        }
         reject(new Error('MediaRecorder error'));
       };
 

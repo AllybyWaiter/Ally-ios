@@ -39,7 +39,7 @@ const CATEGORY_DISPLAY: Record<string, string> = {
 };
 
 export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();

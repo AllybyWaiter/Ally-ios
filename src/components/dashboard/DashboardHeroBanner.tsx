@@ -70,7 +70,7 @@ async function loadImageWithFallback(webpPath: string, jpgPath: string): Promise
 
 // Full-page background component with WebP support and lazy loading
 export function DashboardBackground() {
-  const { imagePathWebP, imagePathJpg, weather, weatherEnabled } = useTimeOfDay();
+  const { imagePathWebP, imagePathJpg, weather: _weather, weatherEnabled: _weatherEnabled } = useTimeOfDay();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [currentImage, setCurrentImage] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);

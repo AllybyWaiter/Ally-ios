@@ -29,7 +29,7 @@ import {
   TableTemplate, 
   TableStyle, 
   DEFAULT_TABLE_STYLE,
-  parseMarkdownTable,
+
   generateMarkdownTable,
   parseTSV,
   isSpreadsheetContent,
@@ -63,7 +63,7 @@ export default function TableEditorModal({
   const [alignments, setAlignments] = useState<CellAlignment[]>([]);
   const [style, setStyle] = useState<TableStyle>(DEFAULT_TABLE_STYLE);
   const [showPreview, setShowPreview] = useState(true);
-  const [focusedCell, setFocusedCell] = useState<{ row: number; col: number } | null>(null);
+  const [_focusedCell, setFocusedCell] = useState<{ row: number; col: number } | null>(null);
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
   // Initialize cells when modal opens

@@ -21,7 +21,7 @@ import { ThinkingIndicator } from "@/components/ThinkingIndicator";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { LazySyntaxHighlighter } from "./LazySyntaxHighlighter";
-import { parseFollowUpSuggestions, FollowUpSuggestions, type FollowUpItem } from "./FollowUpSuggestions";
+import { parseFollowUpSuggestions, FollowUpSuggestions } from "./FollowUpSuggestions";
 import { QuickActionChips, detectQuickActions, type QuickAction } from "./QuickActionChips";
 import { ToolExecutionFeedback, type ToolExecution } from "./ToolExecutionFeedback";
 import { DataCard, type DataCardPayload } from "./DataCard";
