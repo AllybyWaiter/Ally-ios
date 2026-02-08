@@ -22,6 +22,8 @@ vi.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'aquarium.backToDashboard': 'Back to Dashboard',
         'tabs.overview': 'Overview',
+        'tabs.photos': 'Photos',
+        'tabs.livestockPlants': 'Livestock & Plants',
         'tabs.waterTests': 'Water Tests',
         'tabs.equipment': 'Equipment',
         'tabs.tasks': 'Tasks',

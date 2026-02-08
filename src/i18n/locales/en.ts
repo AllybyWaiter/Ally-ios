@@ -358,6 +358,8 @@ export const en = {
     },
     tabs: {
       overview: "Overview",
+      photos: "Photos",
+      livestockPlants: "Livestock & Plants",
       waterTests: "Water Tests",
       equipment: "Equipment",
       tasks: "Tasks",

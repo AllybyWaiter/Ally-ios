@@ -300,6 +300,8 @@ export const es = {
     },
     tabs: {
       overview: "Resumen",
+      photos: "Fotos",
+      livestockPlants: "Ganado y Plantas",
       waterTests: "Pruebas de Agua",
       equipment: "Equipo",
       tasks: "Tareas",

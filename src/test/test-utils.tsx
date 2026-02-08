@@ -33,6 +33,8 @@ i18n.init({
         'aquarium.notes': 'Notes',
         'aquarium.notesPlaceholder': 'Add notes...',
         'tabs.overview': 'Overview',
+        'tabs.photos': 'Photos',
+        'tabs.livestockPlants': 'Livestock & Plants',
         'tabs.waterTests': 'Water Tests',
         'tabs.equipment': 'Equipment',
         'tabs.tasks': 'Tasks',

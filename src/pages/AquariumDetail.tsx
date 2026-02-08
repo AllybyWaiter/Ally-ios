@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, MoreVertical, Pencil, Trash2, MapPin } from "lucide-react";
+import { ArrowLeft, Loader2, MoreVertical, Pencil, Trash2, MapPin, LayoutDashboard, Camera, Fish, Droplets, Wrench, ListTodo } from "lucide-react";
 import { LocationMapPreview } from "@/components/aquarium/LocationMapPreview";
 import { AquariumOverview } from "@/components/aquarium/AquariumOverview";
 import { AquariumEquipment } from "@/components/aquarium/AquariumEquipment";
@@ -229,15 +229,33 @@ export default function AquariumDetail() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex overflow-x-auto w-full max-w-3xl mx-auto gap-1 scrollbar-hide">
-            <TabsTrigger value="overview" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.overview')}</TabsTrigger>
-            <TabsTrigger value="photos" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Photos</TabsTrigger>
+          <TabsList className="flex flex-wrap gap-2 w-full max-w-3xl mx-auto h-auto bg-transparent p-0 rounded-none">
+            <TabsTrigger value="overview" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              {t('tabs.overview')}
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
+              <Camera className="w-3.5 h-3.5" />
+              {t('tabs.photos')}
+            </TabsTrigger>
             {!isPoolType(aquarium.type) && (
-              <TabsTrigger value="livestock" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">Livestock & Plants</TabsTrigger>
+              <TabsTrigger value="livestock" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
+                <Fish className="w-3.5 h-3.5" />
+                {t('tabs.livestockPlants')}
+              </TabsTrigger>
             )}
-            <TabsTrigger value="water-tests" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.waterTests')}</TabsTrigger>
-            <TabsTrigger value="equipment" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.equipment')}</TabsTrigger>
-            <TabsTrigger value="tasks" className="flex-shrink-0 px-3 sm:px-4 text-xs sm:text-sm">{t('tabs.tasks')}</TabsTrigger>
+            <TabsTrigger value="water-tests" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
+              <Droplets className="w-3.5 h-3.5" />
+              {t('tabs.waterTests')}
+            </TabsTrigger>
+            <TabsTrigger value="equipment" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
+              <Wrench className="w-3.5 h-3.5" />
+              {t('tabs.equipment')}
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="rounded-full px-3 py-2 text-xs sm:text-sm gap-1.5 border border-border/60 bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-transparent">
+              <ListTodo className="w-3.5 h-3.5" />
+              {t('tabs.tasks')}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
