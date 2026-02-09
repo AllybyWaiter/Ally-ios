@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { Pencil, Trash2, Plus, X, Star } from "lucide-react";
 import type { Parameter } from "@/lib/waterTestUtils";
 import { queryKeys } from "@/lib/queryKeys";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 interface CustomTemplateManagerProps {
   open: boolean;
@@ -27,6 +28,11 @@ interface TemplateFormData {
   parameters: Parameter[];
   isDefault: boolean;
 }
+
+type CustomParameterTemplateRow =
+  Database["public"]["Tables"]["custom_parameter_templates"]["Row"];
+
+type ParameterField = "name" | "unit" | "range.min" | "range.max" | "range.flagAbove";
 
 const aquariumTypes = [
   { value: "freshwater", label: "Freshwater" },
@@ -79,7 +85,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
         user_id: user.id,
         name: data.name,
         aquarium_type: data.aquariumType,
-        parameters: data.parameters as any,
+        parameters: data.parameters as Json,
         is_default: data.isDefault,
       });
 
@@ -104,7 +110,7 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
         .update({
           name: data.name,
           aquarium_type: data.aquariumType,
-          parameters: data.parameters as any,
+          parameters: data.parameters as Json,
           is_default: data.isDefault,
         })
         .eq("id", id)
@@ -150,11 +156,11 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
     setEditingTemplate(null);
   };
 
-  const handleEdit = (template: any) => {
+  const handleEdit = (template: CustomParameterTemplateRow) => {
     setFormData({
       name: template.name,
       aquariumType: template.aquarium_type,
-      parameters: template.parameters,
+      parameters: (template.parameters as Parameter[]) ?? [],
       isDefault: template.is_default,
     });
     setEditingTemplate(template.id);
@@ -214,16 +220,26 @@ export function CustomTemplateManager({ open, onOpenChange, aquariumType }: Cust
     });
   };
 
-  const updateParameter = (index: number, field: string, value: any) => {
+  const updateParameter = (index: number, field: ParameterField, value: string | undefined) => {
     const newParams = [...formData.parameters];
     if (field.startsWith("range.")) {
       const rangeField = field.split(".")[1];
-      newParams[index] = {
-        ...newParams[index],
-        range: { ...newParams[index].range, [rangeField]: Number(value) },
-      };
+      const currentRange = newParams[index].range;
+      if (rangeField === "min" || rangeField === "max") {
+        newParams[index] = {
+          ...newParams[index],
+          range: { ...currentRange, [rangeField]: Number(value) },
+        };
+      } else if (rangeField === "flagAbove") {
+        newParams[index] = {
+          ...newParams[index],
+          range: { ...currentRange, flagAbove: value ? Number(value) : undefined },
+        };
+      }
     } else {
-      newParams[index] = { ...newParams[index], [field]: value };
+      if (field === "name" || field === "unit") {
+        newParams[index] = { ...newParams[index], [field]: value ?? "" };
+      }
     }
     setFormData({ ...formData, parameters: newParams });
   };
