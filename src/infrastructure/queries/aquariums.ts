@@ -109,7 +109,8 @@ export async function fetchAquarium(aquariumId: string) {
 
 // Fetch aquarium with full details (equipment, livestock, plants, water tests)
 export async function fetchAquariumWithDetails(aquariumId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('aquariums')
