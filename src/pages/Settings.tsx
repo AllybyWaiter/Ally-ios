@@ -86,7 +86,6 @@ const Settings = () => {
     isPro: _isPro,
     subscriptionTier: rcSubscriptionTier,
     restore,
-    showCustomerCenter,
     showPaywall,
     refreshCustomerInfo,
     isLoading: _rcLoading
@@ -423,7 +422,12 @@ const Settings = () => {
     // Use RevenueCat Customer Center on native platforms
     if (isNativePlatform) {
       try {
-        await showCustomerCenter();
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+          window.location.href = 'itms-apps://apps.apple.com/account/subscriptions';
+        } else {
+          window.location.href = 'market://subscriptions';
+        }
       } catch (e) {
         logger.error('Customer center error:', e);
         // Fallback to native subscription settings
@@ -678,7 +682,7 @@ const Settings = () => {
               label="Subscription"
               value={<Badge variant="secondary" className="text-xs">{(effectiveSubscriptionTier || 'FREE').toUpperCase()}</Badge>}
               onClick={() => {
-                if (isMobile) {
+                if (isMobile || isNativePlatform) {
                   if (!effectiveSubscriptionTier || effectiveSubscriptionTier === 'free') {
                     void handleUpgradePlan();
                   } else {

@@ -35,7 +35,7 @@ export function MobileBottomNav() {
   if (isKeyboardVisible) return null;
   if (isOnboarding) return null;
 
-  const hiddenPaths = ["/auth", "/", "/privacy", "/terms", "/contact", "/about", "/pricing", "/features", "/how-it-works", "/blog", "/faq", "/help", "/chat", "/ally"];
+  const hiddenPaths = ["/auth", "/", "/settings", "/privacy", "/terms", "/contact", "/about", "/pricing", "/features", "/how-it-works", "/blog", "/faq", "/help", "/chat", "/ally"];
   const shouldHide = hiddenPaths.some(path =>
     location.pathname === path || location.pathname.startsWith("/blog/")
   );

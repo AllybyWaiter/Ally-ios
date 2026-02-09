@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 interface OnlineStatusReturn {
   isOnline: boolean;
@@ -10,10 +11,18 @@ interface OnlineStatusReturn {
  * @returns Current online status and whether device was offline
  */
 export const useOnlineStatus = (): OnlineStatusReturn => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const isNative = Capacitor.isNativePlatform();
+  const [isOnline, setIsOnline] = useState(isNative ? true : navigator.onLine);
   const [wasOffline, setWasOffline] = useState(false);
 
   useEffect(() => {
+    // navigator.onLine is unreliable in WKWebView; avoid false offline banners on native.
+    if (isNative) {
+      setIsOnline(true);
+      setWasOffline(false);
+      return;
+    }
+
     let timeoutId: ReturnType<typeof setTimeout>;
 
     const handleOnline = () => {
@@ -41,7 +50,7 @@ export const useOnlineStatus = (): OnlineStatusReturn => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [isNative]);
 
   return { isOnline, wasOffline };
 };
