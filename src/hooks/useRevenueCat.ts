@@ -46,15 +46,23 @@ const TIER_PRIORITY: Record<SubscriptionTier, number> = {
 function deriveTierFromCustomerInfo(info: CustomerInfo): SubscriptionTier {
   let highestTier: SubscriptionTier = 'free';
 
-  const activeEntitlements = Object.values(info.entitlements.active || {});
+  const activeEntitlements = Object.values(info.entitlements?.active || {});
   for (const entitlement of activeEntitlements) {
-    const tier = getTierFromProductId(entitlement.productIdentifier);
+    const productIdentifier =
+      entitlement && typeof entitlement === 'object'
+        ? (entitlement as { productIdentifier?: unknown }).productIdentifier
+        : undefined;
+    if (typeof productIdentifier !== 'string') continue;
+
+    const tier = getTierFromProductId(productIdentifier);
     if (TIER_PRIORITY[tier] > TIER_PRIORITY[highestTier]) {
       highestTier = tier;
     }
   }
 
-  const activeSubscriptions = info.activeSubscriptions || [];
+  const activeSubscriptions = Array.isArray(info.activeSubscriptions)
+    ? info.activeSubscriptions.filter((subId): subId is string => typeof subId === 'string')
+    : [];
   for (const subId of activeSubscriptions) {
     const tier = getTierFromProductId(subId);
     if (TIER_PRIORITY[tier] > TIER_PRIORITY[highestTier]) {

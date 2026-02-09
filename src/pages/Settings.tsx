@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from 'zod';
 import { useAuth } from "@/hooks/useAuth";
@@ -566,14 +566,22 @@ const Settings = () => {
   const DetailSheet = ({ id, title, description, children }: { id: string; title: string; description?: string; children: React.ReactNode }) => {
     const isOpen = activeSection === id;
     const onClose = () => setActiveSection(null);
+    const sheetContentRef = useRef<HTMLDivElement | null>(null);
 
     if (isMobile) {
       return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
           <SheetContent
+            ref={sheetContentRef}
             side="bottom"
             className="max-h-[90svh] rounded-t-[10px] p-0 pt-safe flex flex-col"
-            onOpenAutoFocus={(e) => e.preventDefault()}
+            tabIndex={-1}
+            onOpenAutoFocus={(e) => {
+              e.preventDefault();
+              requestAnimationFrame(() => {
+                sheetContentRef.current?.focus({ preventScroll: true });
+              });
+            }}
           >
             <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
             <SheetHeader className="px-4 pt-4 pb-2">

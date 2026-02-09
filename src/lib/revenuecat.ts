@@ -42,6 +42,37 @@ const TIER_PRIORITY: Record<SubscriptionTier, number> = {
   business: 4,
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeCustomerInfoPayload(payload: unknown): CustomerInfo | null {
+  const candidate =
+    isRecord(payload) && 'customerInfo' in payload
+      ? (payload as { customerInfo?: unknown }).customerInfo
+      : payload;
+
+  if (!isRecord(candidate)) return null;
+  if (!isRecord(candidate.entitlements)) return null;
+  if (!isRecord(candidate.entitlements.active)) return null;
+
+  const normalizedActiveSubscriptions = Array.isArray(candidate.activeSubscriptions)
+    ? candidate.activeSubscriptions.filter((subId): subId is string => typeof subId === 'string')
+    : [];
+
+  return {
+    ...(candidate as CustomerInfo),
+    entitlements: {
+      ...(candidate.entitlements as CustomerInfo['entitlements']),
+      all: isRecord(candidate.entitlements.all)
+        ? (candidate.entitlements.all as CustomerInfo['entitlements']['all'])
+        : {},
+      active: candidate.entitlements.active as CustomerInfo['entitlements']['active'],
+    },
+    activeSubscriptions: normalizedActiveSubscriptions,
+  };
+}
+
 /**
  * Get the tier from a product identifier
  */
@@ -156,7 +187,11 @@ export async function getCustomerInfo(): Promise<CustomerInfo> {
   }
 
   try {
-    const { customerInfo } = await Purchases.getCustomerInfo();
+    const payload = await Purchases.getCustomerInfo();
+    const customerInfo = normalizeCustomerInfoPayload(payload);
+    if (!customerInfo) {
+      throw new Error('RevenueCat: Malformed customer info payload');
+    }
     return customerInfo;
   } catch (error) {
     logger.error('RevenueCat: Failed to get customer info', error);
@@ -317,12 +352,13 @@ export function addCustomerInfoUpdateListener(
   }
 
   const listener = Purchases.addCustomerInfoUpdateListener((payload: unknown) => {
-    if (payload && typeof payload === 'object' && 'customerInfo' in payload) {
-      callback((payload as { customerInfo: CustomerInfo }).customerInfo);
+    const customerInfo = normalizeCustomerInfoPayload(payload);
+    if (!customerInfo) {
+      logger.warn('RevenueCat: Ignoring malformed customer info update payload');
       return;
     }
 
-    callback(payload as CustomerInfo);
+    callback(customerInfo);
   });
 
   // Return cleanup function
