@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import {
-  corsHeaders,
   handleCors,
   createLogger,
   validateUuid,
@@ -98,27 +97,6 @@ const DEFAULT_SPA_SUGGESTIONS = [
     priority: "low",
     category: "drain_refresh",
     reasoning: "Spas should be drained every 3-4 months to reset water chemistry"
-  }
-];
-
-// Seasonal task suggestions for pools
-const WINTERIZATION_SUGGESTIONS = [
-  {
-    title: "Pool Winterization",
-    description: "Balance water chemistry, lower water level below skimmer, add winterizing chemicals, blow out lines, install winter plugs, and secure pool cover.",
-    priority: "high",
-    category: "winterize",
-    reasoning: "Fall is approaching. Proper winterization prevents freeze damage, protects equipment, and makes spring opening easier."
-  }
-];
-
-const SPRING_OPENING_SUGGESTIONS = [
-  {
-    title: "Spring Pool Opening",
-    description: "Remove and clean cover, reconnect equipment, refill to proper level, prime pump, shock pool with 2-3x normal dose, run filter 24+ hours, then balance chemistry.",
-    priority: "high",
-    category: "opening",
-    reasoning: "Spring is here. Opening your pool properly ensures safe swimming and prevents equipment issues."
   }
 ];
 
