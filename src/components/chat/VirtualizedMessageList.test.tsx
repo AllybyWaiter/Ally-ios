@@ -310,7 +310,6 @@ describe('VirtualizedMessageList', () => {
 
   describe('regenerate response', () => {
     it('calls onStartEdit when edit button is clicked on user message', async () => {
-      const user = userEvent.setup();
       const onStartEdit = vi.fn();
       const messages = [createMessage('user', 'User message to edit')];
       
