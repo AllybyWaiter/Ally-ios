@@ -164,7 +164,6 @@ export async function executeShowWaterData(
     const waterType = mapAquariumTypeToWaterType(aquarium.type);
 
     // 2. Calculate date range for query
-    const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
