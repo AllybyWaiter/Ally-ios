@@ -27,7 +27,8 @@ export async function fetchAquariumPhotos(
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('aquarium_photos')
