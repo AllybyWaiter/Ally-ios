@@ -167,7 +167,8 @@ export async function deleteLivestockPhoto(photoId: string, userId: string, phot
 
 // Get photo count for a livestock
 export async function getLivestockPhotoCount(livestockId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('livestock_photos')
