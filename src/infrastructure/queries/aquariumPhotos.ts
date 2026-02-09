@@ -61,7 +61,8 @@ const MAX_PHOTOS_LIMIT = 500;
 export async function fetchAllAquariumPhotos(aquariumId: string) {
   await ensureFreshSession();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('aquarium_photos')
