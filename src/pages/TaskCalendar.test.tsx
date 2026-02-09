@@ -57,18 +57,18 @@ vi.mock('@/hooks/use-toast', () => ({
 
 // Mock calendar components and hooks
 vi.mock('@/components/calendar', () => ({
-  CalendarHeroBanner: (props: any) => (
+  CalendarHeroBanner: ({ todayCount }: { todayCount: number }) => (
     <div data-testid="calendar-hero">
       <span>Task Calendar</span>
-      <span>{props.todayCount} today</span>
+      <span>{todayCount} today</span>
     </div>
   ),
-  WeekAtGlance: (props: any) => (
+  WeekAtGlance: ({ onAddTask }: { onAddTask: () => void }) => (
     <div data-testid="week-at-glance">
-      <button onClick={props.onAddTask}>Add Task</button>
+      <button onClick={onAddTask}>Add Task</button>
     </div>
   ),
-  CalendarGrid: (props: any) => (
+  CalendarGrid: () => (
     <div data-testid="calendar-grid">
       <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span>
       <span>Thu</span><span>Fri</span><span>Sat</span>
@@ -80,8 +80,8 @@ vi.mock('@/components/calendar', () => ({
   DayDetailPanel: () => (
     <div data-testid="day-detail">Day Detail</div>
   ),
-  QuickAddTaskFAB: (props: any) => (
-    <button data-testid="quick-add-fab" onClick={props.onClick}>Quick Add</button>
+  QuickAddTaskFAB: ({ onClick }: { onClick: () => void }) => (
+    <button data-testid="quick-add-fab" onClick={onClick}>Quick Add</button>
   ),
   useCalendarData: () => ({
     isLoading: false,
