@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import {
-  corsHeaders,
   handleCors,
   getCorsHeaders,
   createLogger,
@@ -10,8 +9,6 @@ import {
   checkRateLimit,
   rateLimitExceededResponse,
   extractIdentifier,
-  handleAIGatewayError,
-  createErrorResponse,
   createSuccessResponse,
   timingSafeEqual,
 } from "../_shared/mod.ts";
