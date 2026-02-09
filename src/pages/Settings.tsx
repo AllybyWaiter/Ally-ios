@@ -671,7 +671,17 @@ const Settings = () => {
               iconClassName="bg-amber-500/10 text-amber-500"
               label="Subscription"
               value={<Badge variant="secondary" className="text-xs">{(effectiveSubscriptionTier || 'FREE').toUpperCase()}</Badge>}
-              onClick={() => setActiveSection('subscription')}
+              onClick={() => {
+                if (isNativePlatform) {
+                  if (!effectiveSubscriptionTier || effectiveSubscriptionTier === 'free') {
+                    void handleUpgradePlan();
+                  } else {
+                    void handleManageSubscription();
+                  }
+                  return;
+                }
+                setActiveSection('subscription');
+              }}
             />
           </SettingsSection>
 
