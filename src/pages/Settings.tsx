@@ -128,6 +128,7 @@ const Settings = () => {
   
   // Active detail section for sheets/dialogs
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const hasSettingsModalOpen = Boolean(activeSection) || showUpgradeDialog;
 
   // Local theme state for immediate UI feedback
   const [selectedTheme, setSelectedTheme] = useState<string>(theme || themePreference || 'system');
@@ -197,6 +198,20 @@ const Settings = () => {
       i18n.changeLanguage(languagePreference);
     }
   }, [languagePreference]);
+
+  useEffect(() => {
+    if (!isMobile) return;
+
+    if (hasSettingsModalOpen) {
+      document.body.setAttribute('data-settings-sheet-open', 'true');
+    } else {
+      document.body.removeAttribute('data-settings-sheet-open');
+    }
+
+    return () => {
+      document.body.removeAttribute('data-settings-sheet-open');
+    };
+  }, [isMobile, hasSettingsModalOpen]);
 
   const getInitials = (name: string | null) => {
     if (!name) return user?.email?.charAt(0).toUpperCase() || "U";
