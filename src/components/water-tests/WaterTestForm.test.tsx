@@ -2,19 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/dom';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
 import { 
   defaultMockAuth,
   mockUseAuth,
 } from '@/test/test-utils';
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>{children}</BrowserRouter>
-  </QueryClientProvider>
-);
 import { WaterTestForm } from './WaterTestForm';
 
 // Mock hooks
@@ -131,7 +123,7 @@ vi.mock('react-i18next', () => ({
       'waterTests.goldDescription': 'Unlimited templates',
     };
     return {
-      t: (key: string, opts?: any) => translations[key] || opts?.defaultValue || key,
+      t: (key: string, opts?: { defaultValue?: string }) => translations[key] || opts?.defaultValue || key,
       i18n: { language: 'en' },
     };
   },
@@ -265,8 +257,6 @@ describe('WaterTestForm', () => {
   });
 
   it('submits form when save button is clicked', async () => {
-    const user = userEvent.setup();
-    
     // Mock valid parameters
     vi.doMock('./hooks', () => ({
       useWaterTestForm: () => ({
