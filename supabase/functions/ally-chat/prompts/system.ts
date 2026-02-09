@@ -20,6 +20,7 @@ interface BuildSystemPromptParams {
   aquariumType?: string; // reef, marine, freshwater, pool, spa, etc.
   inputGateInstructions?: string; // Optional instructions for missing inputs
   userName?: string | null; // User's display name from profile
+  conversationHint?: string; // Optional hint for specialized conversation flows
 }
 
 // ============= CORE PROMPT v1.2 - SAFETY & GUARDRAILS =============
@@ -403,6 +404,37 @@ ${memoryContext}
 Ask the user to select an aquarium, pool, spa, or pond for personalized advice.`;
 }
 
+// Conversation hint instructions for specialized flows
+function getConversationHintInstructions(hint?: string): string {
+  if (hint === 'volume-calculator') {
+    return `
+VOLUME ESTIMATION MODE:
+The user needs help calculating how many gallons their water body holds. Guide them through this step-by-step:
+
+1. First, ask them to take a **wide overview photo** showing the full water body shape, then wait for it.
+2. After receiving photo 1, ask for a **photo from the other end/angle** to help judge shape and proportions.
+3. After photo 2, ask for a **close-up photo showing depth** (e.g. where a wall meets the water line, steps, or a measuring stick).
+4. After photo 3, ask for a **photo of any labels, markings, or equipment** (pump model, manufacturer plate, etc.) that might indicate known specs.
+
+Between photos, ask for any known or estimated measurements:
+- Approximate length and width (or diameter if round)
+- Approximate depth (shallow end and deep end if it varies)
+- Shape description (rectangular, oval, kidney, L-shaped, freeform)
+
+After collecting photos and measurements, calculate the estimated gallons using standard formulas:
+- Rectangular: length × width × avg depth × 7.5
+- Round: diameter² × avg depth × 5.9
+- Oval: long diameter × short diameter × avg depth × 5.9
+- Irregular: break into sections and sum
+
+Present your estimate as a range (e.g. "approximately 15,000 - 18,000 gallons") and explain your reasoning.
+
+IMPORTANT: Ask for ONE photo at a time. Wait for each before requesting the next. Be conversational and encouraging.
+`;
+  }
+  return '';
+}
+
 export function buildSystemPrompt({
   hasMemoryAccess,
   hasToolAccess,
@@ -414,10 +446,13 @@ export function buildSystemPrompt({
   aquariumType,
   inputGateInstructions,
   userName,
+  conversationHint,
 }: BuildSystemPromptParams): string {
   // If no water type (no aquarium selected), use generic prompt
   if (!waterType) {
-    return buildGenericPrompt(hasMemoryAccess, skillLevel, memoryContext, userName);
+    const genericPrompt = buildGenericPrompt(hasMemoryAccess, skillLevel, memoryContext, userName);
+    const hintInstructions = getConversationHintInstructions(conversationHint);
+    return hintInstructions ? `${genericPrompt}\n${hintInstructions}` : genericPrompt;
   }
 
   const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
@@ -428,6 +463,9 @@ export function buildSystemPrompt({
   const inputGateSection = inputGateInstructions
     ? `\n${inputGateInstructions}\n\n---\n\n`
     : '';
+
+  // Inject conversation hint instructions if present
+  const hintSection = getConversationHintInstructions(conversationHint);
 
   // User identity section - CRITICAL to prevent AI confusion
   const userIdentitySection = userName
@@ -451,7 +489,7 @@ CRITICAL - IDENTITY RULES:
 ${userIdentitySection}
 
 ${CORE_PROMPT}
-${inputGateSection}
+${inputGateSection}${hintSection}
 ${buildExpertiseSection(waterType, aquariumType)}
 
 Your personality: Friendly, encouraging, patient. Provide clear, actionable advice. Prioritize ${isPoolSpa ? 'water safety and balance' : 'fish health and welfare'}.

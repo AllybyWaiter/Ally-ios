@@ -107,7 +107,7 @@ serve(async (req) => {
     }, logger);
 
     if (!rateLimitResult.allowed) {
-      return rateLimitExceededResponse(rateLimitResult);
+      return rateLimitExceededResponse(rateLimitResult, req);
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

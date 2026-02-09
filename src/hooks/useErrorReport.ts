@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { logError, FeatureAreaType, ErrorSeverity } from "@/lib/sentry";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger";
 
 export function useErrorReport() {
   const [isReporting, setIsReporting] = useState(false);
@@ -32,7 +33,7 @@ export function useErrorReport() {
         description: "Thank you for reporting this issue. Our team has been notified.",
       });
     } catch (reportError) {
-      console.error("Failed to report error:", reportError);
+      logger.error("Failed to report error:", reportError);
       toast.error("Failed to report issue", {
         description: "Please try again or contact support directly.",
       });

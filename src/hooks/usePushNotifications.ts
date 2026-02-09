@@ -357,7 +357,11 @@ export function usePushNotifications() {
     if (!user) return false;
 
     try {
-      const newPrefs = { ...preferences, ...updates };
+      // Use functional update to read latest preferences, avoiding stale closure on rapid calls
+      const currentPrefs = await new Promise<NotificationPreferences>(resolve => {
+        setPreferences(prev => { resolve(prev); return prev; });
+      });
+      const newPrefs = { ...currentPrefs, ...updates };
 
       const { error } = await supabase
         .from('notification_preferences')

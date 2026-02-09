@@ -27,10 +27,18 @@ export async function fetchAquariumPhotos(
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
 
-  const { data, error, count } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('aquarium_photos')
     .select('*', { count: 'exact' })
-    .eq('aquarium_id', aquariumId)
+    .eq('aquarium_id', aquariumId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data, error, count } = await query
     .order('taken_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -52,10 +60,18 @@ const MAX_PHOTOS_LIMIT = 500;
 export async function fetchAllAquariumPhotos(aquariumId: string) {
   await ensureFreshSession();
 
-  const { data, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('aquarium_photos')
     .select('*')
-    .eq('aquarium_id', aquariumId)
+    .eq('aquarium_id', aquariumId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data, error } = await query
     .order('taken_at', { ascending: false })
     .limit(MAX_PHOTOS_LIMIT);
 
@@ -77,6 +93,8 @@ export async function uploadAquariumPhoto(
   if (file.size > MAX_FILE_SIZE) throw new Error('File too large (max 10MB)');
   if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
 
+  await ensureFreshSession();
+
   const parts = file.name.split('.');
   const fileExt = parts.length > 1 ? parts.pop() : 'jpg';
   const fileName = `${userId}/${aquariumId}/${Date.now()}.${fileExt}`;
@@ -92,6 +110,10 @@ export async function uploadAquariumPhoto(
   const { data: urlData } = supabase.storage
     .from('aquarium-photos')
     .getPublicUrl(fileName);
+
+  if (!urlData?.publicUrl) {
+    throw new Error('Failed to retrieve public URL for uploaded photo');
+  }
 
   // Create photo record
   const { data, error } = await supabase
@@ -173,7 +195,7 @@ export async function deleteAquariumPhoto(photoId: string, userId: string, photo
       .select('primary_photo_url')
       .eq('id', aquariumId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (aquarium?.primary_photo_url === photoUrl) {
       await supabase
@@ -203,10 +225,18 @@ export async function deleteAquariumPhoto(photoId: string, userId: string, photo
 
 // Get photo count for an aquarium
 export async function getAquariumPhotoCount(aquariumId: string) {
-  const { count, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('aquarium_photos')
     .select('*', { count: 'exact', head: true })
     .eq('aquarium_id', aquariumId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { count, error } = await query;
 
   if (error) throw error;
   return count || 0;

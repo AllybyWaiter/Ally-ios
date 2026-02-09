@@ -71,7 +71,8 @@ export function useStreamingResponse() {
     aquariumId: string | null,
     model: ModelType = 'standard',
     callbacks: StreamingCallbacks,
-    retryToken?: string // Token to use for retry after refresh
+    retryToken?: string, // Token to use for retry after refresh
+    conversationHint?: string | null // Hint for system prompt context (e.g. 'volume-calculator')
   ): Promise<string> => {
     // Get access token - use retry token if provided, otherwise get from session
     let accessToken = retryToken;
@@ -149,6 +150,7 @@ export function useStreamingResponse() {
         messages: formattedMessages,
         aquariumId,
         model, // Pass model selection to backend
+        ...(conversationHint ? { conversationHint } : {}),
       }),
       signal: abortController.signal,
     });

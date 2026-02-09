@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { getDistanceKm } from '@/lib/geoUtils';
 import { logger } from '@/lib/logger';
-
-const LOCATION_CHANGE_THRESHOLD_KM = 10; // Auto-update if moved more than 10km
 
 export type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'snow' | 'storm' | 'fog';
 
@@ -310,58 +307,6 @@ export function useWeather() {
       }
     );
   }, [user?.id, fetchWeather]);
-
-  // Silently check if user moved significantly and update location if needed
-  const _checkAndUpdateLocation = useCallback(async (
-    savedLat: number,
-    savedLon: number
-  ): Promise<{ lat: number; lon: number }> => {
-    if (!navigator.geolocation) {
-      return { lat: savedLat, lon: savedLon };
-    }
-
-    // Reset abort flag for new geolocation request
-    geolocationAbortRef.current = { aborted: false };
-    const currentAbortRef = geolocationAbortRef.current;
-
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          // Check if component unmounted
-          if (currentAbortRef.aborted) {
-            resolve({ lat: savedLat, lon: savedLon });
-            return;
-          }
-
-          const { latitude, longitude } = position.coords;
-          const distance = getDistanceKm(savedLat, savedLon, latitude, longitude);
-
-          // If moved significantly, update profile silently
-          if (distance > LOCATION_CHANGE_THRESHOLD_KM) {
-            if (user?.id) {
-              const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ latitude, longitude })
-                .eq('user_id', user.id);
-              if (updateError) logger.error('Failed to update profile location:', updateError);
-            }
-            resolve({ lat: latitude, lon: longitude });
-          } else {
-            resolve({ lat: savedLat, lon: savedLon });
-          }
-        },
-        () => {
-          // GPS failed silently, use saved location
-          resolve({ lat: savedLat, lon: savedLon });
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 5000,
-          maximumAge: 60000,
-        }
-      );
-    });
-  }, [user?.id]);
 
   // Cleanup effect to abort pending geolocation requests on unmount or user change
   useEffect(() => {

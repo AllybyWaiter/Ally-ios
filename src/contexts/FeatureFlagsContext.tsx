@@ -103,18 +103,20 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
     };
   }, [flags, overrides, roles, subscriptionTier, user]);
 
-  const refetch = () => {
+  const refetch = useMemo(() => () => {
     refetchFlags();
     refetchOverrides();
-  };
+  }, [refetchFlags, refetchOverrides]);
 
-  const value: FeatureFlagsContextValue = {
+  const isLoading = flagsLoading || overridesLoading;
+
+  const value: FeatureFlagsContextValue = useMemo(() => ({
     flags,
     overrides,
-    isLoading: flagsLoading || overridesLoading,
+    isLoading,
     isEnabled,
     refetch,
-  };
+  }), [flags, overrides, isLoading, isEnabled, refetch]);
 
   return (
     <FeatureFlagsContext.Provider value={value}>

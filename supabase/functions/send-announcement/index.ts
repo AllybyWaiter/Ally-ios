@@ -146,6 +146,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Send emails if enabled
     if (announcement.send_email && targetUsers) {
       for (const user of targetUsers) {
+        if (!user.email) {
+          logger.warn('User has no email, skipping', { userId: user.user_id });
+          continue;
+        }
         try {
           await resend.emails.send({
             from: "Ally <support@allyaquatic.com>",
@@ -201,7 +205,7 @@ const handler = async (req: Request): Promise<Response> => {
             body: {
               userId: user.user_id,
               title: `📢 ${escapeHtml(announcement.title)}`,
-              body: announcement.message.slice(0, 100) + (announcement.message.length > 100 ? '...' : ''),
+              body: announcement.message ? (announcement.message.slice(0, 100) + (announcement.message.length > 100 ? '...' : '')) : '',
               tag: `announcement-${announcementId}`,
               url: '/dashboard',
               notificationType: 'announcement',

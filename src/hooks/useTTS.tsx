@@ -24,6 +24,8 @@ export const useTTS = () => {
 
   const stop = useCallback(() => {
     if (audioRef.current) {
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       audioRef.current = null;
@@ -180,6 +182,8 @@ export const useTTS = () => {
   useEffect(() => {
     return () => {
       if (audioRef.current) {
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
         audioRef.current.pause();
         audioRef.current = null;
       }

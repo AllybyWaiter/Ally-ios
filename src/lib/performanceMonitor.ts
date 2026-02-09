@@ -1,4 +1,5 @@
 import { addBreadcrumb, FeatureArea, logError, ErrorSeverity } from './sentry';
+import { logger } from './logger';
 
 interface PerformanceMetric {
   name: string;
@@ -136,7 +137,7 @@ class PerformanceMonitor {
   endMeasure(name: string, featureArea?: FeatureAreaType) {
     const startTime = this.metrics.get(name);
     if (!startTime) {
-      console.warn(`No start time found for measure: ${name}`);
+      logger.warn(`No start time found for measure: ${name}`);
       return;
     }
 

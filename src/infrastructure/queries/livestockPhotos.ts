@@ -20,11 +20,19 @@ export interface LivestockPhoto {
 // Fetch all photos for a livestock
 export async function fetchLivestockPhotos(livestockId: string) {
   await ensureFreshSession();
-  
-  const { data, error } = await supabase
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('livestock_photos')
     .select('*')
-    .eq('livestock_id', livestockId)
+    .eq('livestock_id', livestockId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data, error } = await query
     .order('taken_at', { ascending: false });
 
   if (error) throw error;
@@ -45,6 +53,8 @@ export async function uploadLivestockPhoto(
   if (file.size > MAX_FILE_SIZE) throw new Error('File too large (max 10MB)');
   if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
 
+  await ensureFreshSession();
+
   const parts = file.name.split('.');
   const fileExt = parts.length > 1 ? parts.pop() : 'jpg';
   const fileName = `${userId}/${livestockId}/${Date.now()}.${fileExt}`;
@@ -60,6 +70,10 @@ export async function uploadLivestockPhoto(
   const { data: urlData } = supabase.storage
     .from('livestock-photos')
     .getPublicUrl(fileName);
+
+  if (!urlData?.publicUrl) {
+    throw new Error('Failed to retrieve public URL for uploaded photo');
+  }
 
   // Create photo record
   const { data, error } = await supabase
@@ -152,10 +166,18 @@ export async function deleteLivestockPhoto(photoId: string, userId: string, phot
 
 // Get photo count for a livestock
 export async function getLivestockPhotoCount(livestockId: string) {
-  const { count, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('livestock_photos')
     .select('*', { count: 'exact', head: true })
     .eq('livestock_id', livestockId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { count, error } = await query;
 
   if (error) throw error;
   return count || 0;

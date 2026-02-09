@@ -160,10 +160,12 @@ export async function fetchTrainingData(options?: {
 
   if (messageIds.length > 0) {
     // Fetch the assistant messages that were rated
-    const { data: messages } = await supabase
+    const { data: messages, error: messagesError } = await supabase
       .from('chat_messages')
       .select('id, content, conversation_id, role, created_at')
       .in('id', messageIds);
+
+    if (messagesError) throw messagesError;
 
     messages?.forEach(m => {
       messagesMap[m.id] = { content: m.content, conversation_id: m.conversation_id };
@@ -171,13 +173,15 @@ export async function fetchTrainingData(options?: {
 
     // Get unique conversation IDs to fetch preceding user messages
     const conversationIds = [...new Set(messages?.map(m => m.conversation_id) || [])];
-    
+
     if (conversationIds.length > 0) {
-      const { data: allMessages } = await supabase
+      const { data: allMessages, error: allMessagesError } = await supabase
         .from('chat_messages')
         .select('id, content, conversation_id, role, created_at')
         .in('conversation_id', conversationIds)
         .order('created_at', { ascending: true });
+
+      if (allMessagesError) throw allMessagesError;
 
       // Group messages by conversation
       allMessages?.forEach(m => {

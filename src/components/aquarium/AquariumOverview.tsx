@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { formatParameter } from "@/lib/unitConversions";
 import { formatRelativeTime } from "@/lib/formatters";
+import { logger } from "@/lib/logger";
 import { EquipmentDialog } from "./EquipmentDialog";
 import { MaintenanceTaskDialog } from "./MaintenanceTaskDialog";
 import { queryKeys } from "@/lib/queryKeys";
@@ -23,12 +24,12 @@ const safeFormatDate = (dateValue: string | null | undefined, formatStr: string 
   try {
     const date = new Date(dateValue);
     if (!isValid(date)) {
-      console.warn('Invalid date value in AquariumOverview:', dateValue);
+      logger.warn('Invalid date value in AquariumOverview:', dateValue);
       return '';
     }
     return format(date, formatStr);
   } catch (error) {
-    console.error('Date formatting error in AquariumOverview:', error);
+    logger.error('Date formatting error in AquariumOverview:', error);
     return '';
   }
 };

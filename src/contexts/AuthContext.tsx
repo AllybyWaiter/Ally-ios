@@ -151,7 +151,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     addBreadcrumb('User signing out', 'auth', undefined, FeatureArea.AUTH);
     const currentUserId = user?.id;
 
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      logger.error('Sign out failed:', err);
+    }
 
     if (currentUserId) {
       logActivity({ actionType: 'logout', userId: currentUserId }).catch((err: unknown) => logger.error('Activity logging failed:', err));

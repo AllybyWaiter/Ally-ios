@@ -67,10 +67,14 @@ export default function Dashboard() {
   // Memoized handlers
   const handlePullRefresh = useCallback(async () => {
     if (user) {
-      const result = await loadAquariums(user.id);
-      // Only show success toast if fetch succeeded (returns undefined on error)
-      if (result !== undefined) {
-        toast({ title: 'Updated' });
+      try {
+        const result = await loadAquariums(user.id);
+        // Only show success toast if fetch succeeded (returns undefined on error)
+        if (result !== undefined) {
+          toast({ title: 'Updated' });
+        }
+      } catch {
+        toast({ title: 'Error', description: 'Failed to refresh', variant: 'destructive' });
       }
     }
   }, [user, loadAquariums, toast]);

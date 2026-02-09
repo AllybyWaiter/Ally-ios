@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { queryKeys } from "@/lib/queryKeys";
 import { createMaintenanceTask } from "@/infrastructure/queries/maintenanceTasks";
+import { logger } from "@/lib/logger";
 interface TaskSuggestion {
   title: string;
   description: string;
@@ -120,7 +121,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
         });
       }
     } catch (error: unknown) {
-      console.error('Error getting suggestions:', error);
+      logger.error('Error getting suggestions:', error);
       toast({
         title: "Error",
         description: "Failed to get AI suggestions. Please try again.",
@@ -159,7 +160,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks.list(aquariumId) });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error creating task:', message);
+      logger.error('Error creating task:', message);
       toast({
         title: "Error",
         description: "Failed to create task. Please try again.",
@@ -207,7 +208,7 @@ export function TaskSuggestions({ aquariumId }: TaskSuggestionsProps) {
 
       <div className="space-y-3">
         {suggestions.map((suggestion, index) => (
-          <Card key={index} className="p-4 border-l-4" style={{
+          <Card key={`${suggestion.title}-${suggestion.priority}`} className="p-4 border-l-4" style={{
             borderLeftColor: suggestion.priority === 'high' ? 'hsl(var(--destructive))' :
                             suggestion.priority === 'medium' ? '#eab308' :
                             'hsl(var(--primary))'

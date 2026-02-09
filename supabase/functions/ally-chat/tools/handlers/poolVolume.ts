@@ -129,11 +129,11 @@ export async function executeCalculatePoolVolume(
     // Determine confidence level
     let confidence: 'high' | 'medium' | 'low';
     if (args.shape === 'kidney') {
-      confidence = 'medium';
+      confidence = 'low';
     } else if (reductions.length > 0) {
-      confidence = 'high';
-    } else {
       confidence = 'medium';
+    } else {
+      confidence = 'high';
     }
 
     // Calculate range

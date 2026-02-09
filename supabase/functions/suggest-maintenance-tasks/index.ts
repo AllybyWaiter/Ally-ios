@@ -229,11 +229,16 @@ serve(async (req) => {
     logger.info('Fetching aquarium data', { aquariumId, userId: user.id });
 
     // Fetch aquarium details
-    const { data: aquarium } = await supabase
+    const { data: aquarium, error: aquariumError } = await supabase
       .from('aquariums')
       .select('*')
       .eq('id', aquariumId)
       .single();
+
+    if (aquariumError || !aquarium) {
+      logger.error('Failed to fetch aquarium', { error: aquariumError?.message, aquariumId });
+      return createErrorResponse('Aquarium not found', logger, { status: 404 });
+    }
 
     // Fetch recent water tests (last 30 days)
     const thirtyDaysAgo = new Date();
@@ -271,7 +276,7 @@ serve(async (req) => {
     const { data: profile } = await supabase
       .from('profiles')
       .select('hemisphere, weather_enabled, latitude, longitude')
-      .eq('user_id', aquarium?.user_id)
+      .eq('user_id', aquarium.user_id)
       .maybeSingle();
 
     const hemisphere = profile?.hemisphere || 'northern';

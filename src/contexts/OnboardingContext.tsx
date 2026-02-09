@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
 
 interface OnboardingContextValue {
   isOnboarding: boolean;
@@ -10,8 +10,10 @@ const OnboardingContext = createContext<OnboardingContextValue | undefined>(unde
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [isOnboarding, setIsOnboarding] = useState(false);
 
+  const value = useMemo(() => ({ isOnboarding, setIsOnboarding }), [isOnboarding]);
+
   return (
-    <OnboardingContext.Provider value={{ isOnboarding, setIsOnboarding }}>
+    <OnboardingContext.Provider value={value}>
       {children}
     </OnboardingContext.Provider>
   );

@@ -229,6 +229,7 @@ export const useVoiceRecording = () => {
 
               if (isAbortedRef.current) return;
               if (error) throw error;
+              if (!data?.text) throw new Error('Invalid transcription response');
 
               setIsProcessing(false);
               toast.success('Transcription complete');

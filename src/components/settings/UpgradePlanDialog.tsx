@@ -188,6 +188,9 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
       if (data?.url) {
         // Validate checkout URL to prevent open redirect
         const checkoutUrl = new URL(data.url);
+        if (checkoutUrl.protocol !== 'https:') {
+          throw new Error('Invalid checkout URL protocol');
+        }
         if (checkoutUrl.hostname !== 'stripe.com' && !checkoutUrl.hostname.endsWith('.stripe.com')) {
           throw new Error('Invalid checkout URL');
         }

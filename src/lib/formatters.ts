@@ -1,4 +1,5 @@
 import { format, formatDistanceToNow, isValid } from 'date-fns';
+import { logger } from '@/lib/logger';
 import { enUS, es, fr } from 'date-fns/locale';
 
 // Map language codes to date-fns locales
@@ -12,10 +13,13 @@ const localeMap = {
  * Get the current language from i18n
  */
 const getCurrentLanguage = (): 'en' | 'es' | 'fr' => {
-  // Access i18n language from localStorage or default to 'en'
-  const storedLang = localStorage.getItem('i18nextLng');
-  if (storedLang && ['en', 'es', 'fr'].includes(storedLang)) {
-    return storedLang as 'en' | 'es' | 'fr';
+  try {
+    const storedLang = localStorage.getItem('i18nextLng');
+    if (storedLang && ['en', 'es', 'fr'].includes(storedLang)) {
+      return storedLang as 'en' | 'es' | 'fr';
+    }
+  } catch {
+    // localStorage unavailable (Safari private mode, restricted context)
   }
   return 'en';
 };
@@ -49,7 +53,7 @@ export const formatDate = (
   const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
-    console.warn('formatDate received invalid date:', date);
+    logger.warn('formatDate received invalid date:', date);
     return '';
   }
 
@@ -73,7 +77,7 @@ export const formatDateShort = (date: Date | string | number | null | undefined)
   const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
-    console.warn('formatDateShort received invalid date:', date);
+    logger.warn('formatDateShort received invalid date:', date);
     return '';
   }
 
@@ -94,7 +98,7 @@ export const formatTime = (date: Date | string | number | null | undefined): str
   const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
-    console.warn('formatTime received invalid date:', date);
+    logger.warn('formatTime received invalid date:', date);
     return '';
   }
 
@@ -114,7 +118,7 @@ export const formatRelativeTime = (date: Date | string | number | null | undefin
   const dateObj = parseToLocalDate(date);
   
   if (!isValid(dateObj)) {
-    console.warn('formatRelativeTime received invalid date:', date);
+    logger.warn('formatRelativeTime received invalid date:', date);
     return '';
   }
 

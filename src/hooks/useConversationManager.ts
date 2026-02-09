@@ -15,6 +15,7 @@ interface Aquarium {
   id: string;
   name: string;
   type: string;
+  volume_gallons: number | null;
 }
 
 interface Conversation {
@@ -41,13 +42,14 @@ export function useConversationManager(userId: string | null) {
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [selectedAquarium, setSelectedAquarium] = useState<string>("general");
 
-  const fetchAquariums = useCallback(async () => {
-    if (!userId) return;
+  const fetchAquariums = useCallback(async (userIdOverride?: string) => {
+    const uid = userIdOverride || userId;
+    if (!uid) return;
     try {
       const { data, error } = await supabase
         .from('aquariums')
-        .select('id, name, type')
-        .eq('user_id', userId)
+        .select('id, name, type, volume_gallons')
+        .eq('user_id', uid)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -63,14 +65,15 @@ export function useConversationManager(userId: string | null) {
     }
   }, [userId]);
 
-  const fetchConversations = useCallback(async (): Promise<Conversation[]> => {
-    if (!userId) return [];
+  const fetchConversations = useCallback(async (userIdOverride?: string): Promise<Conversation[]> => {
+    const uid = userIdOverride || userId;
+    if (!uid) return [];
 
     try {
       const { data, error } = await supabase
         .from('chat_conversations')
         .select('id, title, updated_at, aquarium_id, is_pinned, last_message_preview, message_count')
-        .eq('user_id', userId)
+        .eq('user_id', uid)
         .order('is_pinned', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false });
 
@@ -284,11 +287,14 @@ export function useConversationManager(userId: string | null) {
         description: "Conversation deleted",
       });
       await fetchConversations();
-      
+
       if (currentConversationId === conversationId) {
         setCurrentConversationId(null);
         return true; // Signal to reset messages
       }
+    } else {
+      logger.error('Failed to delete conversation:', error);
+      toast({ title: 'Error', description: 'Failed to delete conversation', variant: 'destructive' });
     }
     return false;
   }, [userId, currentConversationId, toast, fetchConversations]);

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/lib/logger";
 
 export interface ParameterRange {
   min: number;
@@ -208,7 +209,7 @@ export const getCustomTemplates = async (
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching custom templates:", error);
+    logger.error("Error fetching custom templates:", error);
     return [];
   }
 

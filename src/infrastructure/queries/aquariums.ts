@@ -81,11 +81,18 @@ export async function fetchAquariumsWithTaskCounts(userId: string, limit?: numbe
 
 // Fetch a single aquarium by ID
 export async function fetchAquarium(aquariumId: string) {
-  const { data, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('aquariums')
     .select('*')
-    .eq('id', aquariumId)
-    .maybeSingle();
+    .eq('id', aquariumId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw error;
   if (!data) throw new Error('Aquarium not found');
@@ -101,7 +108,9 @@ export async function fetchAquarium(aquariumId: string) {
 
 // Fetch aquarium with full details (equipment, livestock, plants, water tests)
 export async function fetchAquariumWithDetails(aquariumId: string) {
-  const { data, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let query = supabase
     .from('aquariums')
     .select(`
       *,
@@ -110,8 +119,13 @@ export async function fetchAquariumWithDetails(aquariumId: string) {
       plants(*),
       water_tests(*, test_parameters(*))
     `)
-    .eq('id', aquariumId)
-    .maybeSingle();
+    .eq('id', aquariumId);
+
+  if (user?.id) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) throw error;
   if (!data) throw new Error('Aquarium not found');

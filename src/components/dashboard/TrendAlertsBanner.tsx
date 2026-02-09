@@ -8,6 +8,7 @@ import { fetchActiveAlerts, dismissAlert, WaterTestAlert } from '@/infrastructur
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { logger } from '@/lib/logger';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -89,7 +90,7 @@ export function TrendAlertsBanner() {
 
   // Handle error state silently - this is a non-critical feature
   if (isError) {
-    console.error('Failed to fetch trend alerts:', error);
+    logger.error('Failed to fetch trend alerts:', error);
     return null;
   }
 

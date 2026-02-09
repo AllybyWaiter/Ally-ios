@@ -284,6 +284,7 @@ export function AquariumDialog({ open, onOpenChange, onSuccess, aquarium }: Aqua
                         navigate('/ally', {
                           state: {
                             prefillMessage: 'I need help figuring out how many gallons my water body holds. Can you walk me through it? I can take photos and share measurements like depth and length.',
+                            context: { source: 'volume-calculator' },
                           },
                         });
                       }}

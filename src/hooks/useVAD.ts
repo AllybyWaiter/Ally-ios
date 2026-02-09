@@ -151,5 +151,5 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
     };
   }, []);
 
-  return { hasSpeechStarted, volumeLevel: volumeLevelRef.current, startMonitoring, stopMonitoring };
+  return { hasSpeechStarted, volumeLevelRef, startMonitoring, stopMonitoring };
 }

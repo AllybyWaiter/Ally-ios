@@ -107,7 +107,7 @@ export default function AquariumDetail() {
 
   // Handle query errors
   if (error) {
-    console.error('AquariumDetail query error:', error);
+    logger.error('AquariumDetail query error:', error);
     return (
       <div className="min-h-screen">
         <AppHeader />

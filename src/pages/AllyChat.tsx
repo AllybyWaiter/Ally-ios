@@ -95,6 +95,7 @@ const AllyChat = () => {
   const [lastError, setLastError] = useState<{ message: string; userMessage: Message } | null>(null);
   const [, setStreamStartTime] = useState<number | null>(null);
   const [conversationMode, setConversationMode] = useState(false);
+  const conversationHintRef = useRef<string | null>(null);
   const inputRef = useRef<MentionInputRef>(null);
   const conversationModeRef = useRef(false);
   const isRecordingRef = useRef(false);
@@ -371,6 +372,10 @@ const AllyChat = () => {
 
     if (state?.prefillMessage && !input) {
       setInput(state.prefillMessage);
+      // Capture conversation hint from context for system prompt injection
+      if (state.context?.source && typeof state.context.source === 'string') {
+        conversationHintRef.current = state.context.source;
+      }
       // Clear the state so it doesn't persist on refresh
       window.history.replaceState({}, document.title);
       // Auto-send after a brief delay
@@ -393,8 +398,9 @@ const AllyChat = () => {
         return;
       }
       setUserId(user.id);
-      await conversationManager.fetchAquariums();
-      const conversations = await conversationManager.fetchConversations();
+      // Pass user.id directly to avoid stale closure (userId state is still null here)
+      await conversationManager.fetchAquariums(user.id);
+      const conversations = await conversationManager.fetchConversations(user.id);
 
       // Restore last conversation if available
       // Use the fresh conversations array returned by fetchConversations
@@ -507,13 +513,13 @@ const AllyChat = () => {
       setConversationMode(false);
       stopMonitoring();
       stopSpeaking();
-      if (isRecording) stopRecording();
+      if (isRecordingRef.current) stopRecording();
     }
     toast({
       title: "Stopped",
       description: "Response generation was stopped.",
     });
-  }, [abort, toast, conversationMode, stopMonitoring, stopSpeaking, isRecording, stopRecording]);
+  }, [abort, toast, conversationMode, stopMonitoring, stopSpeaking, stopRecording]);
 
   // Retry last failed message
   const handleRetry = useCallback(async () => {
@@ -557,8 +563,12 @@ const AllyChat = () => {
             }
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
-        })
+        }),
+        undefined, // retryToken
+        conversationHintRef.current
       );
+      // Clear hint after first use so subsequent messages don't re-send it
+      conversationHintRef.current = null;
     } catch (error) {
       logger.error("Retry error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
@@ -744,17 +754,21 @@ const AllyChat = () => {
   const saveEdit = useCallback(async () => {
     if (editingIndex === null || !editingContent.trim()) return;
 
-    const updatedMessages = [...messages];
-    const messageToEdit = updatedMessages[editingIndex];
+    const messageToEdit = messages[editingIndex];
 
     if (!messageToEdit || messageToEdit.role !== "user") return;
 
-    messageToEdit.content = editingContent.trim();
-
-    const newMessages = updatedMessages.slice(0, editingIndex + 1);
+    // Create new objects to avoid mutating state in-place
+    const newMessages = messages.slice(0, editingIndex + 1).map((msg, i) =>
+      i === editingIndex ? { ...msg, content: editingContent.trim() } : msg
+    );
     setMessages(newMessages);
 
-    await conversationManager.updateMessageInDb(editingIndex, editingContent.trim());
+    try {
+      await conversationManager.updateMessageInDb(editingIndex, editingContent.trim());
+    } catch (dbError) {
+      logger.error("Failed to update message in DB:", dbError);
+    }
 
     setEditingIndex(null);
     setEditingContent("");
@@ -830,6 +844,11 @@ const AllyChat = () => {
                 { role: "assistant", content, timestamp: new Date() }
               );
             }
+          },
+          onError: (error) => {
+            logger.error("Regeneration error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Failed to regenerate response";
+            toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
         }),
       );
@@ -1077,7 +1096,7 @@ const AllyChat = () => {
                     setConversationMode(false);
                     stopMonitoring();
                     stopSpeaking();
-                    if (isRecording) stopRecording();
+                    if (isRecordingRef.current) stopRecording();
                   }}
                 >
                   Exit
@@ -1255,7 +1274,7 @@ const AllyChat = () => {
                             setConversationMode(false);
                             stopMonitoring();
                             stopSpeaking();
-                            if (isRecording) stopRecording();
+                            if (isRecordingRef.current) stopRecording();
                           } else {
                             emptyTranscriptionCountRef.current = 0;
                             setConversationMode(true);

@@ -75,6 +75,14 @@ serve(async (req: Request): Promise<Response> => {
 
     const { name, email, ticketId, priority, messagePreview }: TicketConfirmationRequest = await req.json();
 
+    if (!name || !email || !ticketId || !priority || !messagePreview) {
+      logger.warn('Missing required fields', { name: !!name, email: !!email, ticketId: !!ticketId, priority: !!priority });
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: name, email, ticketId, priority, messagePreview' }),
+        { status: 400, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) } }
+      );
+    }
+
     logger.info('Sending ticket confirmation', { email, ticketId, priority });
 
     const responseTime = getResponseTime(priority);

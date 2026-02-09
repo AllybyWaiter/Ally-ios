@@ -234,6 +234,8 @@ export async function uploadWaterTestPhoto(userId: string, file: File, maxRetrie
   if (file.size > MAX_FILE_SIZE) throw new Error('File too large (max 10MB)');
   if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
 
+  await ensureFreshSession();
+
   const parts = file.name.split('.');
   const fileExt = parts.length > 1 ? parts[parts.length - 1] : 'jpg'; // Default to jpg if no extension
   const fileName = `${userId}/${Date.now()}.${fileExt}`;

@@ -46,7 +46,7 @@ serve(async (req) => {
   try {
     // Parse and validate request
     const body = await req.json();
-    const { messages, aquariumId, model: requestedModel } = body;
+    const { messages, aquariumId, model: requestedModel, conversationHint } = body;
     
     const errors = collectErrors(
       validateUuid(aquariumId, 'aquariumId', { required: false })
@@ -60,7 +60,7 @@ serve(async (req) => {
           errors.push({ field: `messages[${index}].role`, message: 'Invalid message role' });
         }
         // Content can be empty if there's an image
-        if (!msg.content && typeof msg.content !== 'string' && !msg.imageUrl) {
+        if (!msg.content && !msg.imageUrl) {
           errors.push({ field: `messages[${index}].content`, message: 'Message content or image is required' });
         }
       });
@@ -222,6 +222,7 @@ serve(async (req) => {
       aquariumType: aquariumResult.aquariumData?.type,
       inputGateInstructions: inputValidation.gateInstructions,
       userName,
+      conversationHint: typeof conversationHint === 'string' ? conversationHint : undefined,
     });
 
     logger.info('Processing chat request', {

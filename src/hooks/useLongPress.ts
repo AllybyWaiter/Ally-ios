@@ -31,12 +31,21 @@ export function useLongPress({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isLongPressRef = useRef(false);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const cancelledRef = useRef(false);
   const { medium } = useHaptics();
+
+  // Minimum hold time (ms) to count as intentional tap (filters accidental brush touches)
+  const MIN_TAP_DURATION = 100;
+  // Movement threshold (px) to cancel — generous to avoid triggering during scrolls
+  const MOVE_THRESHOLD = 15;
 
   const start = useCallback((x: number, y: number) => {
     isLongPressRef.current = false;
+    cancelledRef.current = false;
     startPosRef.current = { x, y };
-    
+    startTimeRef.current = Date.now();
+
     timerRef.current = setTimeout(() => {
       isLongPressRef.current = true;
       medium(); // Haptic feedback
@@ -49,11 +58,13 @@ export function useLongPress({
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    
-    if (triggerPress && !isLongPressRef.current && onPress) {
+
+    // Only trigger press if held long enough to be intentional
+    const holdDuration = Date.now() - startTimeRef.current;
+    if (triggerPress && !isLongPressRef.current && !cancelledRef.current && onPress && holdDuration >= MIN_TAP_DURATION) {
       onPress();
     }
-    
+
     startPosRef.current = null;
   }, [onPress]);
 
@@ -69,12 +80,13 @@ export function useLongPress({
   }, [cancel]);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
-    // Cancel if moved more than 10px
+    // Cancel if moved more than threshold (scrolling, not tapping)
     if (startPosRef.current) {
       const touch = e.touches[0];
       const dx = Math.abs(touch.clientX - startPosRef.current.x);
       const dy = Math.abs(touch.clientY - startPosRef.current.y);
-      if (dx > 10 || dy > 10) {
+      if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+        cancelledRef.current = true;
         cancel(false);
       }
     }
