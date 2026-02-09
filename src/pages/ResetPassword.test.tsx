@@ -141,7 +141,7 @@ describe('ResetPassword', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/at least 6 characters/i)).toBeInTheDocument();
+        expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
       });
     });
 
