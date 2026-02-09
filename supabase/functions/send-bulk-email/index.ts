@@ -78,7 +78,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { emails, subject, message, fromName = "AquaAlly" } = body;
+    const { emails, subject, message, fromName: _fromName = "AquaAlly" } = body;
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return new Response(
