@@ -39,6 +39,24 @@ interface WeatherAlert {
   geometry: GeoJSON.Geometry | null;
 }
 
+interface NwsAlertFeature {
+  id: string;
+  properties?: {
+    headline?: string;
+    severity?: WeatherAlert['severity'];
+    event?: string;
+    areaDesc?: string;
+    expires?: string;
+    description?: string;
+    instruction?: string | null;
+  };
+  geometry?: GeoJSON.Geometry | null;
+}
+
+interface NwsAlertsResponse {
+  features?: NwsAlertFeature[];
+}
+
 interface WeatherRadarProps {
   latitude: number;
   longitude: number;
@@ -421,17 +439,17 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
           throw new Error('Failed to fetch alerts');
         }
         
-        const data = await response.json();
-        const parsedAlerts: WeatherAlert[] = (data.features || []).map((feature: any) => ({
+        const data: NwsAlertsResponse = await response.json();
+        const parsedAlerts: WeatherAlert[] = (data.features || []).map((feature) => ({
           id: feature.id,
-          headline: feature.properties.headline || feature.properties.event,
-          severity: feature.properties.severity || 'Unknown',
-          event: feature.properties.event,
-          areaDesc: feature.properties.areaDesc,
-          expires: feature.properties.expires,
-          description: feature.properties.description || '',
-          instruction: feature.properties.instruction,
-          geometry: feature.geometry,
+          headline: feature.properties?.headline || feature.properties?.event || 'Weather Alert',
+          severity: feature.properties?.severity || 'Unknown',
+          event: feature.properties?.event || 'Unknown event',
+          areaDesc: feature.properties?.areaDesc || 'Unknown area',
+          expires: feature.properties?.expires || '',
+          description: feature.properties?.description || '',
+          instruction: feature.properties?.instruction ?? null,
+          geometry: feature.geometry ?? null,
         }));
         
         // Sort by severity
