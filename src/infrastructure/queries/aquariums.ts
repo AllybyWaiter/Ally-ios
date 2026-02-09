@@ -81,7 +81,8 @@ export async function fetchAquariumsWithTaskCounts(userId: string, limit?: numbe
 
 // Fetch a single aquarium by ID
 export async function fetchAquarium(aquariumId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('aquariums')
