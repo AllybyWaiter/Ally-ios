@@ -52,7 +52,10 @@ export const AquariumEquipment = ({ aquariumId, aquariumType = 'freshwater', ini
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (equipmentId: string) => deleteEquipment(equipmentId, user!.id),
+    mutationFn: (equipmentId: string) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      return deleteEquipment(equipmentId, user.id);
+    },
     onMutate: async (equipmentId: string) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.equipment.list(aquariumId) });
