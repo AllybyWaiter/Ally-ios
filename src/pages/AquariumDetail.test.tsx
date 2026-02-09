@@ -175,12 +175,14 @@ import AquariumDetail from './AquariumDetail';
 
 // ResizeObserver class mock for Radix dropdown (floating-ui needs constructable ResizeObserver)
 const OriginalResizeObserver = global.ResizeObserver;
+class ResizeObserverMock implements ResizeObserver {
+  constructor(_callback: ResizeObserverCallback) {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
 beforeAll(() => {
-  global.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as any;
+  global.ResizeObserver = ResizeObserverMock;
 });
 afterAll(() => {
   global.ResizeObserver = OriginalResizeObserver;
