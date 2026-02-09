@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import Stripe from 'https://esm.sh/stripe@17.7.0?target=deno';
 import { createLogger } from '../_shared/logger.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
-import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
+import { handleCors } from '../_shared/cors.ts';
 
 Deno.serve(async (req) => {
   const logger = createLogger('apply-referral-reward');
@@ -97,9 +97,6 @@ Deno.serve(async (req) => {
       logger.info('Referral already processed by concurrent request', { referral_id: referral.id });
       return createSuccessResponse({ message: 'Referral already processed', rewarded: false });
     }
-
-    // Get Plus monthly price for coupon value (100% off for 1 month)
-    const plusMonthlyPrice = Deno.env.get('STRIPE_PRICE_PLUS_MONTHLY');
 
     // Create Stripe coupons for both referrer and referee
     const referrerCoupon = await stripe.coupons.create({
