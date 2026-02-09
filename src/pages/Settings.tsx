@@ -88,7 +88,8 @@ const Settings = () => {
     restore,
     showPaywall,
     refreshCustomerInfo,
-    isLoading: _rcLoading
+    isLoading: _rcLoading,
+    showCustomerCenter,
   } = useRevenueCat();
 
   // Use RevenueCat tier on native, fallback to auth context tier
@@ -422,21 +423,10 @@ const Settings = () => {
     // Use RevenueCat Customer Center on native platforms
     if (isNativePlatform) {
       try {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          window.location.href = 'itms-apps://apps.apple.com/account/subscriptions';
-        } else {
-          window.location.href = 'market://subscriptions';
-        }
+        await showCustomerCenter();
       } catch (e) {
         logger.error('Customer center error:', e);
-        // Fallback to native subscription settings
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (isIOS) {
-          window.location.href = 'https://apps.apple.com/account/subscriptions';
-        } else {
-          window.location.href = 'https://play.google.com/store/account/subscriptions';
-        }
+        toast({ title: "Unable to Open", description: "Please try again.", variant: "destructive" });
       } finally {
         setPortalLoading(false);
       }
@@ -681,17 +671,7 @@ const Settings = () => {
               iconClassName="bg-amber-500/10 text-amber-500"
               label="Subscription"
               value={<Badge variant="secondary" className="text-xs">{(effectiveSubscriptionTier || 'FREE').toUpperCase()}</Badge>}
-              onClick={() => {
-                if (isMobile || isNativePlatform) {
-                  if (!effectiveSubscriptionTier || effectiveSubscriptionTier === 'free') {
-                    void handleUpgradePlan();
-                  } else {
-                    void handleManageSubscription();
-                  }
-                  return;
-                }
-                setActiveSection('subscription');
-              }}
+              onClick={() => setActiveSection('subscription')}
             />
           </SettingsSection>
 
