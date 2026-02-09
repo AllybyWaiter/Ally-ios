@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -554,24 +554,20 @@ const Settings = () => {
 
     if (isMobile) {
       return (
-        <Drawer
-          open={isOpen}
-          onOpenChange={(open) => !open && onClose()}
-          shouldScaleBackground={false}
-          noBodyStyles
-          repositionInputs={false}
-        >
-          <DrawerContent
-            className="max-h-[90svh]"
+        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[90svh] rounded-t-[10px] p-0 pt-safe flex flex-col"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
-            <DrawerHeader>
-              <DrawerTitle>{title}</DrawerTitle>
-              {description && <DrawerDescription>{description}</DrawerDescription>}
-            </DrawerHeader>
-            <div className="px-4 pb-8 overflow-y-auto">{children}</div>
-          </DrawerContent>
-        </Drawer>
+            <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+            <SheetHeader className="px-4 pt-4 pb-2">
+              <SheetTitle>{title}</SheetTitle>
+              {description && <SheetDescription>{description}</SheetDescription>}
+            </SheetHeader>
+            <div className="px-4 pb-8 overflow-y-auto flex-1 min-h-0">{children}</div>
+          </SheetContent>
+        </Sheet>
       );
     }
 
