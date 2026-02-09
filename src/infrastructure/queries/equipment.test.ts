@@ -283,7 +283,7 @@ describe('equipment DAL', () => {
 
       // Mock for delete
       const mockDeleteChain = {
-        eq: vi.fn().mockResolvedValue({ error: null }),
+        match: vi.fn().mockResolvedValue({ error: null }),
       };
 
       let callCount = 0;

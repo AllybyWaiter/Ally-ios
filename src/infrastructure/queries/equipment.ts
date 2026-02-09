@@ -134,8 +134,7 @@ export async function deleteEquipment(equipmentId: string, userId: string) {
   const { error } = await supabase
     .from('equipment')
     .delete()
-    .eq('id', equipmentId)
-    .eq('aquarium_id', existing.aquarium_id);
+    .match({ id: equipmentId, aquarium_id: existing.aquarium_id });
 
   if (error) throw error;
 }
