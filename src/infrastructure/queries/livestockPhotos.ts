@@ -21,7 +21,8 @@ export interface LivestockPhoto {
 export async function fetchLivestockPhotos(livestockId: string) {
   await ensureFreshSession();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('livestock_photos')
