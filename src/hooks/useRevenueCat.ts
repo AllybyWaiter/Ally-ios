@@ -4,8 +4,7 @@ import {
   initializeRevenueCat,
   loginUser,
   getCustomerInfo,
-  hasProAccess,
-  getSubscriptionTier,
+  getTierFromProductId,
   getOfferings,
   purchasePackage,
   restorePurchases,
@@ -36,6 +35,36 @@ interface UseRevenueCatReturn {
   refreshCustomerInfo: () => Promise<void>;
 }
 
+const TIER_PRIORITY: Record<SubscriptionTier, number> = {
+  free: 0,
+  basic: 1,
+  plus: 2,
+  gold: 3,
+  business: 4,
+};
+
+function deriveTierFromCustomerInfo(info: CustomerInfo): SubscriptionTier {
+  let highestTier: SubscriptionTier = 'free';
+
+  const activeEntitlements = Object.values(info.entitlements.active || {});
+  for (const entitlement of activeEntitlements) {
+    const tier = getTierFromProductId(entitlement.productIdentifier);
+    if (TIER_PRIORITY[tier] > TIER_PRIORITY[highestTier]) {
+      highestTier = tier;
+    }
+  }
+
+  const activeSubscriptions = info.activeSubscriptions || [];
+  for (const subId of activeSubscriptions) {
+    const tier = getTierFromProductId(subId);
+    if (TIER_PRIORITY[tier] > TIER_PRIORITY[highestTier]) {
+      highestTier = tier;
+    }
+  }
+
+  return highestTier;
+}
+
 export function useRevenueCat(): UseRevenueCatReturn {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +75,15 @@ export function useRevenueCat(): UseRevenueCatReturn {
   const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('free');
 
   const isNative = isNativePlatform();
+
+  const applyCustomerInfoState = useCallback((info: CustomerInfo) => {
+    setCustomerInfo(info);
+    const tier = deriveTierFromCustomerInfo(info);
+    const hasPro = tier !== 'free';
+    setSubscriptionTier(tier);
+    setIsPro(hasPro);
+    return { tier, hasPro };
+  }, []);
 
   // Initialize RevenueCat (only once, without user ID)
   useEffect(() => {
@@ -92,26 +130,15 @@ export function useRevenueCat(): UseRevenueCatReturn {
           info = await getCustomerInfo();
         }
 
-        setCustomerInfo(info);
-
-        // Check entitlements
-        const hasPro = await hasProAccess();
-        setIsPro(hasPro);
+        const { hasPro, tier } = applyCustomerInfoState(info);
         logger.log('useRevenueCat: hasPro:', hasPro);
-
-        const tier = await getSubscriptionTier();
-        setSubscriptionTier(tier);
         logger.log('useRevenueCat: tier:', tier);
       } catch (error) {
         logger.error('Failed to sync user with RevenueCat:', error);
         // Still try to get customer info even if login fails
         try {
           const info = await getCustomerInfo();
-          setCustomerInfo(info);
-          const hasPro = await hasProAccess();
-          setIsPro(hasPro);
-          const tier = await getSubscriptionTier();
-          setSubscriptionTier(tier);
+          applyCustomerInfoState(info);
         } catch (e) {
           logger.error('Failed to get customer info:', e);
         }
@@ -119,7 +146,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
     };
 
     syncUser();
-  }, [isNative, isInitialized, user?.id]);
+  }, [isNative, isInitialized, user?.id, applyCustomerInfoState]);
 
   // Listen for customer info updates
   useEffect(() => {
@@ -129,23 +156,16 @@ export function useRevenueCat(): UseRevenueCatReturn {
       try {
         logger.log('useRevenueCat: Customer info update received from listener');
         logger.log('useRevenueCat: Active entitlements from listener:', Object.keys(info.entitlements.active));
-        setCustomerInfo(info);
-
-        // Update entitlement status
-        const hasPro = await hasProAccess();
-        setIsPro(hasPro);
+        const { hasPro, tier } = applyCustomerInfoState(info);
         logger.log('useRevenueCat: hasPro from listener:', hasPro);
-
-        const tier = await getSubscriptionTier();
         logger.log('useRevenueCat: tier from listener:', tier);
-        setSubscriptionTier(tier);
       } catch (error) {
         logger.error('Failed to process customer info update:', error);
       }
     });
 
     return unsubscribe;
-  }, [isNative, isInitialized]);
+  }, [isNative, isInitialized, applyCustomerInfoState]);
 
   // Purchase a package
   const purchase = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
@@ -154,13 +174,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
     setIsLoading(true);
     try {
       const info = await purchasePackage(pkg);
-      setCustomerInfo(info);
-
-      const hasPro = await hasProAccess();
-      setIsPro(hasPro);
-
-      const tier = await getSubscriptionTier();
-      setSubscriptionTier(tier);
+      const { hasPro } = applyCustomerInfoState(info);
 
       return hasPro;
     } catch (error) {
@@ -171,7 +185,7 @@ export function useRevenueCat(): UseRevenueCatReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [isNative]);
+  }, [isNative, applyCustomerInfoState]);
 
   // Restore purchases
   const restore = useCallback(async (): Promise<boolean> => {
@@ -180,19 +194,13 @@ export function useRevenueCat(): UseRevenueCatReturn {
     setIsLoading(true);
     try {
       const info = await restorePurchases();
-      setCustomerInfo(info);
-
-      const hasPro = await hasProAccess();
-      setIsPro(hasPro);
-
-      const tier = await getSubscriptionTier();
-      setSubscriptionTier(tier);
+      const { hasPro } = applyCustomerInfoState(info);
 
       return hasPro;
     } finally {
       setIsLoading(false);
     }
-  }, [isNative]);
+  }, [isNative, applyCustomerInfoState]);
 
   // Show paywall
   const showPaywall = useCallback(async (): Promise<boolean> => {
@@ -205,20 +213,14 @@ export function useRevenueCat(): UseRevenueCatReturn {
     try {
       const info = await getCustomerInfo();
       logger.log('useRevenueCat: showPaywall refreshing info, entitlements:', Object.keys(info.entitlements.active));
-      setCustomerInfo(info);
-
-      const hasPro = await hasProAccess();
-      setIsPro(hasPro);
-
-      const tier = await getSubscriptionTier();
+      const { tier } = applyCustomerInfoState(info);
       logger.log('useRevenueCat: showPaywall setting tier to:', tier);
-      setSubscriptionTier(tier);
     } catch (error) {
       logger.error('Failed to refresh after paywall:', error);
     }
 
     return purchased;
-  }, [isNative]);
+  }, [isNative, applyCustomerInfoState]);
 
   // Show customer center
   const showCustomerCenter = useCallback(async (): Promise<void> => {
@@ -231,17 +233,11 @@ export function useRevenueCat(): UseRevenueCatReturn {
     try {
       const info = await getCustomerInfo();
       logger.log('useRevenueCat: showCustomerCenter refreshing info');
-      setCustomerInfo(info);
-
-      const hasPro = await hasProAccess();
-      setIsPro(hasPro);
-
-      const tier = await getSubscriptionTier();
-      setSubscriptionTier(tier);
+      applyCustomerInfoState(info);
     } catch (error) {
       logger.error('Failed to refresh after customer center:', error);
     }
-  }, [isNative]);
+  }, [isNative, applyCustomerInfoState]);
 
   // Refresh customer info
   const refreshCustomerInfo = useCallback(async (): Promise<void> => {
@@ -252,19 +248,13 @@ export function useRevenueCat(): UseRevenueCatReturn {
       const info = await getCustomerInfo();
       logger.log('useRevenueCat: refreshCustomerInfo got info, entitlements:', Object.keys(info.entitlements.active));
       logger.log('useRevenueCat: refreshCustomerInfo subscriptions:', Object.keys(info.activeSubscriptions || {}));
-      setCustomerInfo(info);
-
-      const hasPro = await hasProAccess();
+      const { hasPro, tier } = applyCustomerInfoState(info);
       logger.log('useRevenueCat: refreshCustomerInfo hasPro:', hasPro);
-      setIsPro(hasPro);
-
-      const tier = await getSubscriptionTier();
       logger.log('useRevenueCat: refreshCustomerInfo setting tier to:', tier);
-      setSubscriptionTier(tier);
     } catch (error) {
       logger.error('Failed to refresh customer info:', error);
     }
-  }, [isNative]);
+  }, [isNative, applyCustomerInfoState]);
 
   return {
     isLoading,

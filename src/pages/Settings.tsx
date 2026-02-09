@@ -558,6 +558,8 @@ const Settings = () => {
           open={isOpen}
           onOpenChange={(open) => !open && onClose()}
           shouldScaleBackground={false}
+          noBodyStyles
+          repositionInputs={false}
         >
           <DrawerContent
             className="max-h-[90svh]"
