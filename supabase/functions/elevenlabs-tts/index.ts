@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createLogger } from '../_shared/logger.ts';
 import { checkRateLimit } from '../_shared/rateLimit.ts';
-import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
+import { createErrorResponse } from '../_shared/errorHandler.ts';
 import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
