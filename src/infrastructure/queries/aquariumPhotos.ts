@@ -227,7 +227,8 @@ export async function deleteAquariumPhoto(photoId: string, userId: string, photo
 
 // Get photo count for an aquarium
 export async function getAquariumPhotoCount(aquariumId: string) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const authResult = await supabase.auth.getUser();
+  const user = authResult?.data?.user;
 
   let query = supabase
     .from('aquarium_photos')
