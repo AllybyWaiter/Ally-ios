@@ -154,6 +154,10 @@ export function useRevenueCat(): UseRevenueCatReturn {
 
     const unsubscribe = addCustomerInfoUpdateListener(async (info) => {
       try {
+        if (!info || typeof info !== 'object' || !info.entitlements?.active) {
+          logger.warn('useRevenueCat: Ignoring malformed customer info update payload');
+          return;
+        }
         logger.log('useRevenueCat: Customer info update received from listener');
         logger.log('useRevenueCat: Active entitlements from listener:', Object.keys(info.entitlements.active));
         const { hasPro, tier } = applyCustomerInfoState(info);

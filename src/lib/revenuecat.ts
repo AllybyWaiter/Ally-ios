@@ -6,6 +6,7 @@ import {
 } from '@revenuecat/purchases-capacitor';
 import type {
   PurchasesOffering,
+  PurchasesOfferings,
   PurchasesPackage,
   CustomerInfo,
   PurchasesError,
@@ -236,9 +237,13 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
   }
 
   try {
-    const { offerings } = await Purchases.getOfferings();
+    const result = await Purchases.getOfferings() as unknown;
+    const offerings =
+      (result && typeof result === 'object' && 'offerings' in result
+        ? (result as { offerings: PurchasesOfferings }).offerings
+        : (result as PurchasesOfferings | null)) ?? null;
 
-    if (!offerings.current) {
+    if (!offerings?.current) {
       logger.warn('RevenueCat: No current offering available');
       return null;
     }
@@ -246,7 +251,7 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
     return offerings.current;
   } catch (error) {
     logger.error('RevenueCat: Failed to get offerings', error);
-    throw error;
+    return null;
   }
 }
 
@@ -311,8 +316,13 @@ export function addCustomerInfoUpdateListener(
     return () => {}; // No-op for web
   }
 
-  const listener = Purchases.addCustomerInfoUpdateListener(({ customerInfo }) => {
-    callback(customerInfo);
+  const listener = Purchases.addCustomerInfoUpdateListener((payload: unknown) => {
+    if (payload && typeof payload === 'object' && 'customerInfo' in payload) {
+      callback((payload as { customerInfo: CustomerInfo }).customerInfo);
+      return;
+    }
+
+    callback(payload as CustomerInfo);
   });
 
   // Return cleanup function

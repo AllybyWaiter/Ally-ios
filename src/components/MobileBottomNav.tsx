@@ -46,7 +46,7 @@ export function MobileBottomNav() {
     <nav 
       role="navigation"
       aria-label="Main navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-background/98 backdrop-blur-lg border-t border-border/40 pb-safe"
+      className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-40 bg-background/98 backdrop-blur-lg border-t border-border/40 pb-safe"
     >
       <div className="flex items-center justify-around h-14">
         {navItems.map((item) => {

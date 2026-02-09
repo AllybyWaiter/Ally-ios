@@ -12,6 +12,17 @@ interface UseKeyboardVisibilityReturn {
   scrollInputIntoView: () => void;
 }
 
+function isEditableElement(element: Element | null): boolean {
+  if (!(element instanceof HTMLElement)) return false;
+
+  const tagName = element.tagName;
+  if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
+    return true;
+  }
+
+  return element.getAttribute('contenteditable') === 'true';
+}
+
 export function useKeyboardVisibility(
   options: UseKeyboardVisibilityOptions = {}
 ): UseKeyboardVisibilityReturn {
@@ -62,6 +73,7 @@ export function useKeyboardVisibility(
     const handleResize = () => {
       const currentHeight = viewport.height;
       const currentOrientation = window.screen?.orientation?.angle ?? 0;
+      const hasEditableFocus = isEditableElement(document.activeElement);
 
       // Detect orientation change - reset reference height
       if (currentOrientation !== lastOrientation) {
@@ -78,8 +90,9 @@ export function useKeyboardVisibility(
 
       const heightDiff = referenceHeight - currentHeight;
 
-      // Keyboard is visible if height decreased significantly (more than 150px)
-      const keyboardShowing = heightDiff > 150;
+      // Treat viewport shrink as keyboard only when an editable element is focused.
+      // This avoids false positives from opening bottom sheets/modals on iOS.
+      const keyboardShowing = hasEditableFocus && heightDiff > 150;
 
       if (keyboardShowing && !isKeyboardVisible) {
         setIsKeyboardVisible(true);
