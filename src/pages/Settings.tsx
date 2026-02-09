@@ -554,9 +554,13 @@ const Settings = () => {
 
     if (isMobile) {
       return (
-        <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Drawer
+          open={isOpen}
+          onOpenChange={(open) => !open && onClose()}
+          shouldScaleBackground={false}
+        >
           <DrawerContent
-            className="max-h-[90vh]"
+            className="max-h-[90svh]"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <DrawerHeader>
