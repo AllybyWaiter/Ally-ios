@@ -44,9 +44,6 @@ export default function Dashboard() {
     aquariums,
     aquariumsOnly,
     poolsOnly,
-    hasOnlyAquariums,
-    hasOnlyPools,
-    hasMixed,
     upcomingTaskCount,
     totalVolume,
     loadAquariums,
@@ -91,10 +88,6 @@ export default function Dashboard() {
     [hasAnyRole, hasPermission]
   );
 
-  const waterBodyMix = useMemo(() => 
-    hasOnlyPools ? 'pools' : hasMixed ? 'mixed' : 'aquariums',
-    [hasOnlyPools, hasMixed]
-  );
 
   // Hard maximum loading timeout with stale closure prevention
   useEffect(() => {
@@ -314,9 +307,6 @@ export default function Dashboard() {
           <DashboardStats
             aquariumsOnly={aquariumsOnly}
             poolsOnly={poolsOnly}
-            hasOnlyAquariums={hasOnlyAquariums}
-            hasOnlyPools={hasOnlyPools}
-            hasMixed={hasMixed}
             totalVolume={totalVolume}
             upcomingTaskCount={upcomingTaskCount}
             units={units}
@@ -338,7 +328,6 @@ export default function Dashboard() {
             canCreate={canCreateAquarium(aquariums.length)}
             maxAquariums={limits.maxAquariums}
             limitsLoading={limitsLoading}
-            waterBodyMix={waterBodyMix}
             onCreateAquarium={handleCreateAquarium}
             onEditAquarium={handleEditAquarium}
             onDeleteAquarium={handleDeleteClick}

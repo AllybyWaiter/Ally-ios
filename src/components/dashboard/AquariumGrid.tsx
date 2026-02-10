@@ -29,15 +29,12 @@ interface Aquarium {
   notes: string | null;
 }
 
-type WaterBodyMix = 'aquariums' | 'pools' | 'mixed';
-
 interface AquariumGridProps {
   aquariums: Aquarium[];
   units: UnitSystem;
   canCreate: boolean;
   maxAquariums: number;
   limitsLoading: boolean;
-  waterBodyMix: WaterBodyMix;
   onCreateAquarium: () => void;
   onEditAquarium: (aquarium: Aquarium) => void;
   onDeleteAquarium: (aquariumId: string) => void;
@@ -246,7 +243,6 @@ export function AquariumGrid({
   canCreate,
   maxAquariums,
   limitsLoading,
-  waterBodyMix,
   onCreateAquarium,
   onEditAquarium,
   onDeleteAquarium,
@@ -254,31 +250,12 @@ export function AquariumGrid({
   const _navigate = useNavigate();
   const { t } = useTranslation();
 
-  const getLabels = () => {
-    switch (waterBodyMix) {
-      case 'pools':
-        return {
-          title: t('dashboard.yourPools'),
-          addButton: t('dashboard.addPool'),
-          emptyTitle: t('dashboard.noPoolsYet'),
-          emptyMessage: t('dashboard.getStartedPoolMessage'),
-        };
-      case 'mixed':
-        return {
-          title: t('dashboard.yourWaterBodies'),
-          addButton: t('dashboard.addWaterBody'),
-          emptyTitle: t('dashboard.noWaterBodiesYet'),
-          emptyMessage: t('dashboard.getStartedWaterBodyMessage'),
-        };
-      default:
-        return {
-          title: t('dashboard.yourAquariums'),
-          addButton: t('dashboard.addAquarium'),
-          emptyTitle: t('dashboard.noAquariumsYet'),
-          emptyMessage: t('dashboard.getStartedMessage'),
-        };
-    }
-  };
+  const getLabels = () => ({
+    title: t('dashboard.yourAquariums'),
+    addButton: t('dashboard.addAquarium'),
+    emptyTitle: t('dashboard.noAquariumsYet'),
+    emptyMessage: t('dashboard.getStartedMessage'),
+  });
 
   const labels = getLabels();
 
