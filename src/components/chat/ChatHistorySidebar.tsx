@@ -127,6 +127,8 @@ function getAquariumIcon(type: string) {
     case 'reef':
       return Waves;
     case 'pool':
+    case 'pool_chlorine':
+    case 'pool_saltwater':
     case 'spa':
     case 'hot_tub':
       return Droplets;
@@ -143,6 +145,8 @@ function getAquariumColor(type: string) {
     case 'reef':
       return 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20';
     case 'pool':
+    case 'pool_chlorine':
+    case 'pool_saltwater':
       return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
     case 'spa':
     case 'hot_tub':

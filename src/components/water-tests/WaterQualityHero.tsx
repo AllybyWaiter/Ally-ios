@@ -33,6 +33,7 @@ interface WaterQualityHeroProps {
   lastTestDate: string | null;
   alerts: Array<{ parameter: string; status: string; value?: number | null; unit?: string | null }>;
   onAlertParameterClick?: (parameter: string) => void;
+  onLogFirstTest?: () => void;
   isLoading?: boolean;
 }
 
