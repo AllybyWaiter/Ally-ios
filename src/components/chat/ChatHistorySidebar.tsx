@@ -1,4 +1,5 @@
 import { useState, useMemo, memo, useRef, useEffect, useCallback } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -570,7 +571,8 @@ export const ChatHistorySidebar = ({
         title: "Deleted",
         description: `${selectedIds.size} conversation${selectedIds.size > 1 ? 's' : ''} deleted.`,
       });
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Bulk delete failed:', error);
       toast({
         title: "Error",
         description: "Failed to delete some conversations.",
@@ -591,19 +593,23 @@ export const ChatHistorySidebar = ({
       
       const blob = new Blob([markdown], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
       
       toast({
         title: "Exported",
         description: "Conversation exported as Markdown.",
       });
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Export failed:', error);
       toast({
         title: "Error",
         description: "Failed to export conversation.",

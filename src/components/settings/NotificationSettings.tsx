@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export default function NotificationSettings() {
   const {
@@ -95,10 +96,14 @@ export default function NotificationSettings() {
               id="push-enabled"
               checked={isSubscribed && preferences.push_enabled}
               onCheckedChange={async (checked) => {
-                if (checked) {
-                  await subscribe();
-                } else {
-                  await unsubscribe();
+                try {
+                  if (checked) {
+                    await subscribe();
+                  } else {
+                    await unsubscribe();
+                  }
+                } catch (error) {
+                  logger.error('Failed to toggle push notifications:', error);
                 }
               }}
               disabled={permission === 'denied'}
@@ -110,7 +115,7 @@ export default function NotificationSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => sendTestNotification('task_reminder')}
+                onClick={async () => { try { await sendTestNotification('task_reminder'); } catch (e) { logger.error('Test notification failed:', e); } }}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Test Task
@@ -118,7 +123,7 @@ export default function NotificationSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => sendTestNotification('water_alert')}
+                onClick={async () => { try { await sendTestNotification('water_alert'); } catch (e) { logger.error('Test notification failed:', e); } }}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Test Alert
@@ -126,7 +131,7 @@ export default function NotificationSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => sendTestNotification('announcement')}
+                onClick={async () => { try { await sendTestNotification('announcement'); } catch (e) { logger.error('Test notification failed:', e); } }}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Test Announcement
@@ -160,7 +165,7 @@ export default function NotificationSettings() {
               <Switch
                 id="task-reminders"
                 checked={preferences.task_reminders_enabled}
-                onCheckedChange={(checked) => updatePreferences({ task_reminders_enabled: checked })}
+                onCheckedChange={async (checked) => { try { await updatePreferences({ task_reminders_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -173,7 +178,7 @@ export default function NotificationSettings() {
                 <Switch
                   id="sound-task"
                   checked={preferences.sound_task_reminders}
-                  onCheckedChange={(checked) => updatePreferences({ sound_task_reminders: checked })}
+                  onCheckedChange={async (checked) => { try { await updatePreferences({ sound_task_reminders: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                   disabled={!isSubscribed}
                 />
               </div>
@@ -195,7 +200,7 @@ export default function NotificationSettings() {
               <Switch
                 id="water-alerts"
                 checked={preferences.water_alerts_enabled}
-                onCheckedChange={(checked) => updatePreferences({ water_alerts_enabled: checked })}
+                onCheckedChange={async (checked) => { try { await updatePreferences({ water_alerts_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -208,7 +213,7 @@ export default function NotificationSettings() {
                 <Switch
                   id="sound-water"
                   checked={preferences.sound_water_alerts}
-                  onCheckedChange={(checked) => updatePreferences({ sound_water_alerts: checked })}
+                  onCheckedChange={async (checked) => { try { await updatePreferences({ sound_water_alerts: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                   disabled={!isSubscribed}
                 />
               </div>
@@ -230,7 +235,7 @@ export default function NotificationSettings() {
               <Switch
                 id="announcements"
                 checked={preferences.announcements_enabled}
-                onCheckedChange={(checked) => updatePreferences({ announcements_enabled: checked })}
+                onCheckedChange={async (checked) => { try { await updatePreferences({ announcements_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -243,7 +248,7 @@ export default function NotificationSettings() {
                 <Switch
                   id="sound-announcements"
                   checked={preferences.sound_announcements}
-                  onCheckedChange={(checked) => updatePreferences({ sound_announcements: checked })}
+                  onCheckedChange={async (checked) => { try { await updatePreferences({ sound_announcements: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                   disabled={!isSubscribed}
                 />
               </div>
@@ -265,7 +270,7 @@ export default function NotificationSettings() {
               <Switch
                 id="health-alerts"
                 checked={preferences.health_alerts_enabled}
-                onCheckedChange={(checked) => updatePreferences({ health_alerts_enabled: checked })}
+                onCheckedChange={async (checked) => { try { await updatePreferences({ health_alerts_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -279,7 +284,7 @@ export default function NotificationSettings() {
                   <Switch
                     id="sound-health"
                     checked={preferences.sound_health_alerts}
-                    onCheckedChange={(checked) => updatePreferences({ sound_health_alerts: checked })}
+                    onCheckedChange={async (checked) => { try { await updatePreferences({ sound_health_alerts: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                     disabled={!isSubscribed}
                   />
                 </div>
@@ -287,7 +292,7 @@ export default function NotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => sendTestNotification('health_alert')}
+                    onClick={async () => { try { await sendTestNotification('health_alert'); } catch (e) { logger.error('Test notification failed:', e); } }}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Test Health Alert
@@ -312,7 +317,7 @@ export default function NotificationSettings() {
               <Switch
                 id="weather-alerts"
                 checked={preferences.weather_alerts_enabled}
-                onCheckedChange={(checked) => updatePreferences({ weather_alerts_enabled: checked })}
+                onCheckedChange={async (checked) => { try { await updatePreferences({ weather_alerts_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -326,7 +331,7 @@ export default function NotificationSettings() {
                   <Switch
                     id="sound-weather"
                     checked={preferences.sound_weather_alerts}
-                    onCheckedChange={(checked) => updatePreferences({ sound_weather_alerts: checked })}
+                    onCheckedChange={async (checked) => { try { await updatePreferences({ sound_weather_alerts: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                     disabled={!isSubscribed}
                   />
                 </div>
@@ -334,7 +339,7 @@ export default function NotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => sendTestNotification('weather_alert')}
+                    onClick={async () => { try { await sendTestNotification('weather_alert'); } catch (e) { logger.error('Test notification failed:', e); } }}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Test Weather Alert
@@ -359,7 +364,7 @@ export default function NotificationSettings() {
             <Label htmlFor="reminder-hours">Remind me before tasks are due</Label>
             <Select
               value={preferences.reminder_hours_before.toString()}
-              onValueChange={(value) => updatePreferences({ reminder_hours_before: parseInt(value, 10) })}
+              onValueChange={async (value) => { try { await updatePreferences({ reminder_hours_before: parseInt(value, 10) }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
               disabled={!isSubscribed}
             >
               <SelectTrigger id="reminder-hours" className="w-full sm:w-[200px]">
@@ -386,9 +391,9 @@ export default function NotificationSettings() {
             <div className="flex flex-wrap items-center gap-2">
               <Select
                 value={preferences.quiet_hours_start || 'none'}
-                onValueChange={(value) => updatePreferences({ 
-                  quiet_hours_start: value === 'none' ? null : value 
-                })}
+                onValueChange={async (value) => { try { await updatePreferences({
+                  quiet_hours_start: value === 'none' ? null : value
+                }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed}
               >
                 <SelectTrigger className="w-[120px]">
@@ -405,9 +410,9 @@ export default function NotificationSettings() {
               <span className="text-muted-foreground">to</span>
               <Select
                 value={preferences.quiet_hours_end || 'none'}
-                onValueChange={(value) => updatePreferences({ 
-                  quiet_hours_end: value === 'none' ? null : value 
-                })}
+                onValueChange={async (value) => { try { await updatePreferences({
+                  quiet_hours_end: value === 'none' ? null : value
+                }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
                 disabled={!isSubscribed || !preferences.quiet_hours_start}
               >
                 <SelectTrigger className="w-[120px]">

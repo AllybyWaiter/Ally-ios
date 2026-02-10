@@ -21,9 +21,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 
 const WaterTests = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const urlAquariumId = searchParams.get('aquariumId');
-  const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(null);
+  const [selectedAquariumId, setSelectedAquariumId] = useState<string | null>(urlAquariumId);
   const [selectedParameter, setSelectedParameter] = useState<string>("pH");
   const { t } = useTranslation();
   const { units } = useProfileContext();
@@ -106,6 +106,10 @@ const WaterTests = () => {
 
   const handleAquariumChange = (aquarium: { id: string }) => {
     setSelectedAquariumId(aquarium.id);
+    // Keep URL in sync so the effect doesn't revert the selection
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('aquariumId', aquarium.id);
+    setSearchParams(newParams, { replace: true });
   };
 
   const handleParameterClick = (paramName: string) => {
@@ -117,6 +121,10 @@ const WaterTests = () => {
   const handleTestClick = (_testId: string) => {
     // Scroll to trends section when test clicked
     document.getElementById('trends-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleLogFirstTest = () => {
+    document.getElementById('quick-log-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   if (authLoading || aquariumsLoading) {
@@ -183,13 +191,16 @@ const WaterTests = () => {
             lastTestDate={healthData.lastWaterTest}
             alerts={parameterAlerts}
             onAlertParameterClick={handleParameterClick}
+            onLogFirstTest={handleLogFirstTest}
           />
         </SectionErrorBoundary>
 
         {/* Quick Log CTA */}
-        <SectionErrorBoundary fallbackTitle="Failed to load quick log" featureArea={FeatureArea.WATER_TESTS}>
-          <QuickLogSection aquarium={selectedAquarium ? { id: selectedAquarium.id, name: selectedAquarium.name, type: selectedAquarium.type } : null} />
-        </SectionErrorBoundary>
+        <div id="quick-log-section">
+          <SectionErrorBoundary fallbackTitle="Failed to load quick log" featureArea={FeatureArea.WATER_TESTS}>
+            <QuickLogSection aquarium={selectedAquarium ? { id: selectedAquarium.id, name: selectedAquarium.name, type: selectedAquarium.type } : null} />
+          </SectionErrorBoundary>
+        </div>
 
         {/* Parameter Insights Grid */}
         <SectionErrorBoundary fallbackTitle="Failed to load parameters" featureArea={FeatureArea.WATER_TESTS}>

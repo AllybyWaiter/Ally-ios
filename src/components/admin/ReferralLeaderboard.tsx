@@ -154,26 +154,26 @@ export function ReferralLeaderboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Active Referral Codes"
-          value={stats?.totalCodes.toLocaleString() || 0}
+          value={stats?.totalCodes?.toLocaleString() ?? '0'}
           subtitle="Users with codes"
           icon={Gift}
         />
         <StatCard
           title="Total Referrals"
-          value={stats?.totalReferrals.toLocaleString() || 0}
+          value={stats?.totalReferrals?.toLocaleString() ?? '0'}
           subtitle="All time signups"
           icon={Users}
         />
         <StatCard
           title="Qualified Referrals"
-          value={stats?.qualifiedReferrals.toLocaleString() || 0}
+          value={stats?.qualifiedReferrals?.toLocaleString() ?? '0'}
           subtitle="Converted to paid"
           icon={Trophy}
         />
         <StatCard
           title="Rewards Distributed"
           value={stats?.rewardsDistributed || 0}
-          subtitle={`Est. value: $${stats?.estimatedValue.toFixed(2) || '0.00'}`}
+          subtitle={`Est. value: $${stats?.estimatedValue?.toFixed(2) ?? '0.00'}`}
           icon={DollarSign}
         />
       </div>

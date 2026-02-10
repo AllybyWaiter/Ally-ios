@@ -9,6 +9,12 @@
 
 export type WaterType = 'freshwater' | 'saltwater' | 'brackish' | 'pool' | 'pool_chlorine' | 'pool_saltwater' | 'spa' | null;
 
+interface UserAquariumSummary {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface BuildSystemPromptParams {
   hasMemoryAccess: boolean;
   hasToolAccess?: boolean; // Whether user has access to all tools (paid tier)
@@ -21,6 +27,7 @@ interface BuildSystemPromptParams {
   inputGateInstructions?: string; // Optional instructions for missing inputs
   userName?: string | null; // User's display name from profile
   conversationHint?: string; // Optional hint for specialized conversation flows
+  userAquariums?: UserAquariumSummary[]; // User's saved aquariums for proactive context
 }
 
 // ============= CORE PROMPT v1.2 - SAFETY & GUARDRAILS =============
@@ -361,12 +368,49 @@ function buildPhotoSection(waterType: WaterType): string {
   return isPoolSpa ? photoAnalysisSections.pool_spa : photoAnalysisSections.aquarium;
 }
 
+// Build a summary of the user's saved aquariums for injection into prompts
+function buildUserAquariumsSection(userAquariums?: UserAquariumSummary[], currentAquariumId?: string): string {
+  if (!userAquariums || userAquariums.length === 0) return '';
+
+  // If a specific aquarium is selected, show the OTHER aquariums
+  const aquariumsToList = currentAquariumId
+    ? userAquariums.filter(a => a.id !== currentAquariumId)
+    : userAquariums;
+
+  if (aquariumsToList.length === 0) return '';
+
+  const listItems = aquariumsToList.map(a => {
+    const typeLabel = a.type || 'aquatic space';
+    return `- "${a.name}" (${typeLabel}) [id: ${a.id}]`;
+  }).join('\n');
+
+  if (currentAquariumId) {
+    return `
+The user also has these other aquatic spaces:
+${listItems}
+
+If relevant, you can mention them (e.g., "Want me to check your pool too?").
+`;
+  }
+
+  return `
+USER'S SAVED AQUATIC SPACES:
+${listItems}
+
+When the user asks about "my tank", "my pool", or similar — don't ask them to select one from a menu. Instead:
+- If they have only one of that type, reference it directly by name.
+- If ambiguous, ask using their actual names (e.g., "Are you asking about your Reef Tank or your Backyard Pool?").
+- To pull up full details for a specific aquatic space, use its ID with the relevant tools.
+`;
+}
+
 // Generic prompt for users with no aquarium selected (covers all types concisely)
 function buildGenericPrompt(
   hasMemoryAccess: boolean,
   skillLevel: string,
   memoryContext: string,
-  userName?: string | null
+  userName?: string | null,
+  userAquariums?: UserAquariumSummary[]
 ): string {
   const explanationStyle = explanationStyles[skillLevel] || explanationStyles.beginner;
   const userIdentity = userName
@@ -400,8 +444,7 @@ FORMATTING: Use **bold** for key terms, bullet points for lists, short paragraph
 
 ${explanationStyle}
 ${memoryContext}
-
-Ask the user to select an aquarium, pool, spa, or pond for personalized advice.`;
+${buildUserAquariumsSection(userAquariums)}${userAquariums && userAquariums.length > 0 ? '' : '\nAsk the user to select an aquarium, pool, spa, or pond for personalized advice.'}`;
 }
 
 // Conversation hint instructions for specialized flows
@@ -447,10 +490,11 @@ export function buildSystemPrompt({
   inputGateInstructions,
   userName,
   conversationHint,
+  userAquariums,
 }: BuildSystemPromptParams): string {
   // If no water type (no aquarium selected), use generic prompt
   if (!waterType) {
-    const genericPrompt = buildGenericPrompt(hasMemoryAccess, skillLevel, memoryContext, userName);
+    const genericPrompt = buildGenericPrompt(hasMemoryAccess, skillLevel, memoryContext, userName, userAquariums);
     const hintInstructions = getConversationHintInstructions(conversationHint);
     return hintInstructions ? `${genericPrompt}\n${hintInstructions}` : genericPrompt;
   }
@@ -541,5 +585,6 @@ Examples:
 - "Test results?" | "My readings are: pH ___, ammonia ___, nitrite ___, nitrate ___"
 - "Fish species?" | "I have ___ (species name), quantity: ___"
 - "Pool size?" | "My pool is approximately ___ gallons"
-- "Recent changes?" | "I recently ___"`;
+- "Recent changes?" | "I recently ___"
+${buildUserAquariumsSection(userAquariums, aquariumId)}`;
 }

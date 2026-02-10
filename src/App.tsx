@@ -15,7 +15,7 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { ToastNavigationCleanup } from "@/components/ToastNavigationCleanup";
 import { lazy, Suspense, ComponentType } from "react";
-import { DashboardSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
+import { DashboardSkeleton, ChatSkeleton, FormSkeleton } from "@/components/ui/loading-skeleton";
 import { SkipToContent } from "@/components/SkipToContent";
 import { FeatureArea } from "@/lib/sentry";
 
@@ -62,7 +62,13 @@ const lazyWithRetry = <T extends ComponentType<unknown>>(
     }
 
     try {
-      const component = await componentImport();
+      // 10s timeout prevents lazy imports from hanging forever (e.g. stale service worker)
+      const component = await Promise.race([
+        componentImport(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Module load timeout')), 10000)
+        ),
+      ]);
       sessionStorage.setItem('page-has-been-force-refreshed', 'false');
       return component;
     } catch (error) {
@@ -256,7 +262,7 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Ally Chat" featureArea="chat">
-                          <Suspense fallback={<DashboardSkeleton />}>
+                          <Suspense fallback={<ChatSkeleton />}>
                             <AllyChat />
                           </Suspense>
                         </PageErrorBoundary>
@@ -268,7 +274,7 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Ally Chat" featureArea="chat">
-                          <Suspense fallback={<DashboardSkeleton />}>
+                          <Suspense fallback={<ChatSkeleton />}>
                             <AllyChat />
                           </Suspense>
                         </PageErrorBoundary>

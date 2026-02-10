@@ -92,7 +92,7 @@ export default function BlogEditor() {
 
     const initializeEditor = async () => {
       try {
-        await fetchCategories();
+        await fetchCategories(() => isMounted);
         if (isEditing && isMounted) {
           await fetchPost();
         }
@@ -108,13 +108,13 @@ export default function BlogEditor() {
     };
   }, [id]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (checkMounted: () => boolean) => {
     try {
       const { data, error } = await supabase
         .from('blog_categories')
         .select('id, name')
         .order('name');
-      
+
       if (error) {
         logger.error('Failed to fetch categories:', error);
         toast({
@@ -123,10 +123,10 @@ export default function BlogEditor() {
           variant: 'destructive',
         });
       }
-      setCategories(data || []);
+      if (checkMounted()) setCategories(data || []);
     } catch (error) {
       logger.error('Error fetching categories:', error);
-      setCategories([]);
+      if (checkMounted()) setCategories([]);
     }
   };
 

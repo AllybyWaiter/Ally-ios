@@ -60,8 +60,6 @@ interface Message {
 
 import { MODEL_OPTIONS, type ModelType } from '@/lib/constants';
 
-// Persist last conversation ID for session continuity (user-scoped)
-const getLastConversationKey = (userId: string) => `ally_last_conversation_${userId}`;
 
 const MAX_EMPTY_TRANSCRIPTIONS = 3;
 
@@ -105,6 +103,10 @@ const AllyChat = () => {
   const pendingDataCardsRef = useRef<DataCardPayload[]>([]);
   const isSubmittingRef = useRef(false); // Prevent double submission
   const emptyTranscriptionCountRef = useRef(0); // Track consecutive empty transcriptions
+  const isMountedRef = useRef(true);
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  const autoSendTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { isStreaming, streamResponse, abort } = useStreamingResponse();
   const conversationManager = useConversationManager(userId);
@@ -188,7 +190,6 @@ const AllyChat = () => {
       case 'new_chat':
         setMessages(conversationManager.startNewConversation());
         setLastError(null);
-        if (userId) localStorage.removeItem(getLastConversationKey(userId));
         if (conversationModeRef.current) startRecordingWithVAD();
         break;
     }
@@ -362,7 +363,13 @@ const AllyChat = () => {
   // Deps: initializeChat contains navigation and state setup that should only run once on mount.
   // Adding it as a dependency would cause infinite loops as it updates state it depends on.
   useEffect(() => {
+    isMountedRef.current = true;
     initializeChat();
+    return () => {
+      isMountedRef.current = false;
+      if (autoSendTimeoutRef.current) clearTimeout(autoSendTimeoutRef.current);
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
   }, []);
 
   // Handle prefilled messages from navigation (e.g., "Ask Ally" from alerts)
@@ -390,46 +397,56 @@ const AllyChat = () => {
   }, [location.state, input]);
 
   const initializeChat = async () => {
-    try {
-      const { data } = await supabase.auth.getUser();
-      const user = data?.user;
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
-      setUserId(user.id);
-      // Pass user.id directly to avoid stale closure (userId state is still null here)
-      await conversationManager.fetchAquariums(user.id);
-      const conversations = await conversationManager.fetchConversations(user.id);
+    const INIT_TIMEOUT = 6000; // 6s max — matches auth/profile safety timeout pattern
 
-      // Restore last conversation if available
-      // Use the fresh conversations array returned by fetchConversations
-      // instead of conversationManager.conversations which may be stale
-      const lastConvoId = localStorage.getItem(getLastConversationKey(user.id));
-      if (lastConvoId && conversations.some(c => c.id === lastConvoId)) {
-        const loadedMessages = await conversationManager.loadConversation(lastConvoId);
-        if (loadedMessages && loadedMessages.length > 0) {
-          setMessages(loadedMessages);
-        } else {
+    try {
+      const result = await Promise.race([
+        initializeChatCore(),
+        new Promise<'timeout'>((resolve) =>
+          setTimeout(() => resolve('timeout'), INIT_TIMEOUT)
+        ),
+      ]);
+
+      if (result === 'timeout') {
+        logger.warn('Chat initialization timed out — falling back to new conversation');
+        if (isMountedRef.current) {
           setMessages(conversationManager.startNewConversation());
         }
-      } else {
-        setMessages(conversationManager.startNewConversation());
       }
     } catch (error) {
       logger.error('Failed to initialize chat:', error);
-      setMessages(conversationManager.startNewConversation());
+      if (isMountedRef.current) {
+        setMessages(conversationManager.startNewConversation());
+      }
     }
+  };
+
+  const initializeChatCore = async () => {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (!isMountedRef.current) return;
+    setUserId(user.id);
+
+    // Fetch aquariums and conversations in parallel to reduce waterfall delay
+    const [fetchedAquariums] = await Promise.all([
+      conversationManager.fetchAquariums(user.id),
+      conversationManager.fetchConversations(user.id),
+    ]);
+    if (!isMountedRef.current) return;
+
+    // Always start a fresh conversation to avoid unbounded context growth.
+    // Users can resume previous chats from the history sidebar.
+    setMessages(conversationManager.startNewConversation(fetchedAquariums));
   };
 
   const handleLoadConversation = useCallback(async (id: string) => {
     try {
       const loadedMessages = await conversationManager.loadConversation(id);
       setMessages(loadedMessages);
-      // Persist for session continuity
-      if (userId) {
-        localStorage.setItem(getLastConversationKey(userId), id);
-      }
     } catch (error) {
       logger.error('Failed to load conversation:', error);
       setMessages(conversationManager.startNewConversation());
@@ -439,10 +456,7 @@ const AllyChat = () => {
   const handleStartNewConversation = useCallback(() => {
     setMessages(conversationManager.startNewConversation());
     setLastError(null);
-    if (userId) {
-      localStorage.removeItem(getLastConversationKey(userId));
-    }
-  }, [conversationManager, userId]);
+  }, [conversationManager]);
 
   const handleDeleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -524,10 +538,10 @@ const AllyChat = () => {
   // Retry last failed message
   const handleRetry = useCallback(async () => {
     if (!lastError) return;
-    
+
     const userMessage = lastError.userMessage;
     setLastError(null);
-    
+
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setStreamStartTime(Date.now());
@@ -537,7 +551,7 @@ const AllyChat = () => {
 
     try {
       await streamResponse(
-        [...messages, userMessage],
+        [...messagesRef.current, userMessage],
         conversationManager.getAquariumIdForApi(),
         selectedModel,
         createStreamCallbacks({
@@ -547,10 +561,7 @@ const AllyChat = () => {
             triggerHaptic('success');
             setStreamStartTime(null);
             const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
-            const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
-            if (savedId && userId) {
-              localStorage.setItem(getLastConversationKey(userId), savedId);
-            }
+            await conversationManager.saveConversation(userMessage, finalAssistantMessage);
           },
           onError: (error) => {
             logger.error("Stream error:", error);
@@ -565,7 +576,8 @@ const AllyChat = () => {
           },
         }),
         undefined, // retryToken
-        conversationHintRef.current
+        conversationHintRef.current,
+        !conversationManager.getAquariumIdForApi() ? conversationManager.aquariums.map(a => ({ id: a.id, name: a.name, type: a.type })) : undefined
       );
       // Clear hint after first use so subsequent messages don't re-send it
       conversationHintRef.current = null;
@@ -585,7 +597,7 @@ const AllyChat = () => {
       setIsLoading(false);
       setStreamStartTime(null);
     }
-  }, [lastError, messages, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, stopSpeaking, userId]);
+  }, [lastError, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, stopSpeaking, userId]);
 
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
@@ -650,10 +662,7 @@ const AllyChat = () => {
             triggerHaptic('success');
             setStreamStartTime(null);
             const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
-            const savedId = await conversationManager.saveConversation(userMessage, finalAssistantMessage);
-            if (savedId && userId) {
-              localStorage.setItem(getLastConversationKey(userId), savedId);
-            }
+            await conversationManager.saveConversation(userMessage, finalAssistantMessage);
 
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
@@ -675,7 +684,10 @@ const AllyChat = () => {
             }
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
-        })
+        }),
+        undefined, // retryToken
+        undefined, // conversationHint
+        !conversationManager.getAquariumIdForApi() ? conversationManager.aquariums.map(a => ({ id: a.id, name: a.name, type: a.type })) : undefined
       );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
@@ -800,7 +812,10 @@ const AllyChat = () => {
             const errorMessage = error instanceof Error ? error.message : "Failed to regenerate response";
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
-        })
+        }),
+        undefined, // retryToken
+        undefined, // conversationHint
+        !conversationManager.getAquariumIdForApi() ? conversationManager.aquariums.map(a => ({ id: a.id, name: a.name, type: a.type })) : undefined
       );
     } catch (error) {
       logger.error("Error regenerating response:", error);
@@ -851,6 +866,9 @@ const AllyChat = () => {
             toast({ title: "Error", description: errorMessage, variant: "destructive" });
           },
         }),
+        undefined, // retryToken
+        undefined, // conversationHint
+        !conversationManager.getAquariumIdForApi() ? conversationManager.aquariums.map(a => ({ id: a.id, name: a.name, type: a.type })) : undefined
       );
     } catch (error) {
       logger.error("Failed to regenerate response:", error);
@@ -1071,7 +1089,7 @@ const AllyChat = () => {
                 hasAlerts={hasAlerts}
                 onSelectQuestion={(question) => {
                   setInput(question);
-                  setTimeout(() => sendMessageRef.current(), 100);
+                  autoSendTimeoutRef.current = setTimeout(() => sendMessageRef.current(), 100);
                 }}
               />
             </motion.div>

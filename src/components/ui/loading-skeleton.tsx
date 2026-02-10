@@ -74,6 +74,40 @@ export const DashboardSkeleton = () => {
   );
 };
 
+export const ChatSkeleton = () => {
+  return (
+    <div
+      className="h-[100dvh] flex flex-col bg-background"
+      role="status"
+      aria-label="Loading chat"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-9 rounded-md" />
+        </div>
+        <Skeleton className="h-8 w-28 rounded-md" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <Skeleton className="h-5 w-48" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+
+      {/* Input area */}
+      <div className="border-t p-4">
+        <div className="max-w-3xl mx-auto">
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const FormSkeleton = () => {
   return (
     <Card role="status" aria-label="Loading form content">

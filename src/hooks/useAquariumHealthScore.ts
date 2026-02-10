@@ -89,10 +89,8 @@ function calculateWaterTestScore(tests: WaterTestWithParams[]): number {
   if (parameters.length === 0) return recencyScore * 0.7;
   
   const statusScores: Record<string, number> = {
-    'optimal': 100,
-    'acceptable': 80,
+    'good': 100,
     'warning': 50,
-    'danger': 20,
     'critical': 0,
   };
   

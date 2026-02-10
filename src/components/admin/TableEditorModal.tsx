@@ -176,7 +176,7 @@ export default function TableEditorModal({
         } else {
           // Optionally add a new row
           addRow();
-          setTimeout(() => navigate(row + 1, col), 10);
+          requestAnimationFrame(() => navigate(row + 1, col));
         }
         break;
       case 'ArrowUp':

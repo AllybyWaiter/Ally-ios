@@ -115,7 +115,7 @@ export const confidenceLevelSchema = z.enum(['high', 'medium', 'low']);
 
 export const entryMethodSchema = z.enum(['manual', 'photo', 'api', 'import']);
 
-export const parameterStatusSchema = z.enum(['optimal', 'acceptable', 'warning', 'danger']);
+export const parameterStatusSchema = z.enum(['good', 'warning', 'critical']);
 
 export const testParameterSchema = z.object({
   parameter_name: nonEmptyString.max(50, 'Parameter name must be 50 characters or less'),

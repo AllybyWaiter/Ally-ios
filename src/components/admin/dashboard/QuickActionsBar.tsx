@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  PenLine, 
-  UserPlus, 
-  Megaphone, 
+import {
+  PenLine,
+  UserPlus,
+  Megaphone,
   Download,
   Zap,
   Loader2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/lib/logger';
 
 interface QuickActionsBarProps {
   onNavigate?: (tab: string) => void;
@@ -53,7 +54,8 @@ export function QuickActionsBar({ onNavigate, onRefresh }: QuickActionsBarProps)
       window.URL.revokeObjectURL(url);
 
       toast({ title: 'Export complete', description: `Exported ${data?.length || 0} users` });
-    } catch (_error) {
+    } catch (error) {
+      logger.error('User export failed:', error);
       toast({
         title: 'Export failed',
         description: 'Could not export user data',
@@ -84,7 +86,8 @@ export function QuickActionsBar({ onNavigate, onRefresh }: QuickActionsBarProps)
         description: `Granted access to ${grantedCount} users`
       });
       onRefresh?.();
-    } catch (_error) {
+    } catch (error) {
+      logger.error('Beta grant failed:', error);
       toast({
         title: 'Failed to grant access',
         description: 'Could not grant beta access',

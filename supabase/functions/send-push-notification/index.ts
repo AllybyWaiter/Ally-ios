@@ -554,11 +554,22 @@ serve(async (req) => {
         );
       }
 
-      // Check quiet hours
-      // NOTE: Quiet hours are evaluated in UTC. Consider user timezone for more accurate enforcement.
+      // Check quiet hours using user's timezone if available
       if (prefs.quiet_hours_start && prefs.quiet_hours_end) {
         const now = new Date();
-        const currentTime = now.toISOString().slice(11, 16); // Use UTC time HH:MM
+        const userTimezone = prefs.timezone || 'UTC';
+        let currentTime: string;
+        try {
+          currentTime = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: userTimezone,
+          });
+        } catch {
+          // Invalid timezone — fall back to UTC
+          currentTime = now.toISOString().slice(11, 16);
+        }
         const start = prefs.quiet_hours_start.slice(0, 5);
         const end = prefs.quiet_hours_end.slice(0, 5);
 

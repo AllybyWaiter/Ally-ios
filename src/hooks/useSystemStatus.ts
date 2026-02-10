@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export type ServiceStatus = 'operational' | 'degraded' | 'outage' | 'maintenance';
 
@@ -313,7 +314,8 @@ export const useSystemStatus = () => {
         isLoading: false,
         error: null,
       });
-    } catch (_error) {
+    } catch (error) {
+      logger.error('System status fetch failed:', error);
       setData((prev) => ({
         ...prev,
         isLoading: false,

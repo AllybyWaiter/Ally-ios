@@ -48,13 +48,13 @@ export function calculateAverageDepth(
   shallowDepth?: number,
   deepDepth?: number
 ): number {
-  if (depthType === 'flat' && singleDepth) {
+  if (depthType === 'flat' && singleDepth != null) {
     return singleDepth;
   }
-  if (depthType === 'sloped' && shallowDepth && deepDepth) {
+  if (depthType === 'sloped' && shallowDepth != null && deepDepth != null) {
     return (shallowDepth + deepDepth) / 2;
   }
-  return singleDepth || shallowDepth || deepDepth || 4; // Default 4ft
+  return singleDepth ?? shallowDepth ?? deepDepth ?? 4; // Default 4ft
 }
 
 /**
@@ -97,7 +97,8 @@ export function calculateSurfaceArea(dimensions: PoolDimensions): number {
  */
 export function applyAdjustments(
   baseGallons: number,
-  adjustments?: PoolAdjustments
+  adjustments?: PoolAdjustments,
+  avgDepthFt: number = 4
 ): { adjustedGallons: number; reductions: string[] } {
   let adjustedGallons = baseGallons;
   const reductions: string[] = [];
@@ -108,7 +109,7 @@ export function applyAdjustments(
 
   // Water level adjustment (convert inches to feet)
   if (adjustments.water_inches_below_top && adjustments.water_inches_below_top > 0) {
-    const depthReductionPercent = (adjustments.water_inches_below_top / 12) / 4 * 100; // Assuming 4ft avg depth
+    const depthReductionPercent = (adjustments.water_inches_below_top / 12) / avgDepthFt * 100;
     const reduction = baseGallons * (depthReductionPercent / 100);
     adjustedGallons -= reduction;
     reductions.push(`Water level ${adjustments.water_inches_below_top}" below top: -${Math.round(reduction)} gallons`);
@@ -214,7 +215,7 @@ export function calculatePoolVolume(
   const baseGallons = cubicFeet * CUBIC_FT_TO_GALLONS;
 
   // Apply adjustments
-  const { adjustedGallons, reductions } = applyAdjustments(baseGallons, adjustments);
+  const { adjustedGallons, reductions } = applyAdjustments(baseGallons, adjustments, avgDepth);
 
   // Determine confidence
   const confidence = determineConfidence(dimensions.shape, hasExactMeasurements, adjustments);

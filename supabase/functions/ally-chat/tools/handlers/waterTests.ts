@@ -269,7 +269,7 @@ export async function executeShowWaterData(
       let change: number | undefined;
       if (history?.values.length >= 2) {
         const prevValue = history.values[history.values.length - 2];
-        change = prevValue ? Math.round(((latestValue - prevValue) / prevValue) * 100) : 0;
+        change = (prevValue != null && prevValue !== 0) ? Math.round(((latestValue - prevValue) / prevValue) * 100) : 0;
       }
 
       return {

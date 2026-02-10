@@ -5,6 +5,7 @@ import { useFeatureRateLimit } from '@/hooks/useFeatureRateLimit';
 import { measurePerformance } from '@/lib/performanceMonitor';
 import { FeatureArea } from '@/lib/sentry';
 import { compressImage, validateImageFile, formatFileSize } from '@/lib/imageCompression';
+import { logger } from '@/lib/logger';
 import type { Json } from '@/integrations/supabase/types';
 
 interface AiDetectedParam {
@@ -80,14 +81,14 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         }
       };
       reader.onerror = () => {
-        console.error('FileReader error reading compressed file');
+        logger.error('FileReader error reading compressed file');
         if (isMountedRef.current) {
           toast.error('Failed to read image file');
         }
       };
       reader.readAsDataURL(compressedFile);
     } catch (error) {
-      console.error('Compression error:', error);
+      logger.error('Compression error:', error);
       toast.error('Failed to process image', {
         description: 'Using original file instead',
       });
@@ -102,7 +103,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         }
       };
       reader.onerror = () => {
-        console.error('FileReader error reading original file');
+        logger.error('FileReader error reading original file');
         if (isMountedRef.current) {
           toast.error('Failed to read image file');
         }
@@ -132,7 +133,25 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         FeatureArea.WATER_TESTS
       );
 
-      if (error) throw error;
+      if (error) {
+        // FunctionsHttpError wraps the response — extract the actual error message
+        let message = error.message || 'Unable to analyze the photo';
+        try {
+          if (error.context) {
+            if (typeof error.context.json === 'function' && !error.context.bodyUsed) {
+              const body = await error.context.json();
+              message = body?.error || message;
+            } else if (error.context?.error) {
+              message = error.context.error;
+            }
+          }
+        } catch (contextError) {
+          logger.warn('Failed to read FunctionsHttpError context:', contextError);
+        }
+        throw new Error(message);
+      }
+
+      if (!isMountedRef.current) return;
 
       if (data?.error) {
         toast.error(data.error);
@@ -157,7 +176,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
 
         // Only call callback if we actually detected parameters with values
         const detectedCount = Object.keys(newParams).length;
-        if (detectedCount > 0) {
+        if (detectedCount > 0 && isMountedRef.current) {
           onParametersDetected(newParams, detectedParams);
           toast.success(`Detected ${detectedCount} parameters from photo`, {
             description: 'Review and edit values before saving',
@@ -173,8 +192,9 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         });
       }
     } catch (err) {
+      if (!isMountedRef.current) return;
       const error = err instanceof Error ? err : new Error(String(err));
-      console.error('Error analyzing photo:', error);
+      logger.error('Error analyzing photo:', error);
 
       const errorMessage = error.message || 'Unable to analyze the photo';
       const isRateLimitError = errorMessage.toLowerCase().includes('rate limit') ||
@@ -200,7 +220,9 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
         });
       }
     } finally {
-      setAnalyzingPhoto(false);
+      if (isMountedRef.current) {
+        setAnalyzingPhoto(false);
+      }
     }
   };
 
@@ -240,7 +262,7 @@ export function usePhotoAnalysis({ aquariumType, onParametersDetected }: UsePhot
 
       toast.success(rating === 'positive' ? "Thanks for the feedback!" : "Thanks! We'll work to improve.");
     } catch (error) {
-      console.error('Failed to submit feedback:', error);
+      logger.error('Failed to submit feedback:', error);
     }
   };
 

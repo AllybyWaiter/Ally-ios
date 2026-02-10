@@ -3,6 +3,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleCors, getCorsHeaders, securityHeaders } from '../_shared/cors.ts';
 import { timingSafeEqual } from '../_shared/validation.ts';
 
+// Row types for health score calculations (mirrors Supabase schema)
+interface WaterTestRow {
+  id: string;
+  test_date: string;
+}
+
+interface LivestockRow {
+  id: string;
+  quantity: number | null;
+  health_status: string | null;
+}
+
+interface MaintenanceTaskRow {
+  id: string;
+  due_date: string;
+  status: string;
+  completed_date: string | null;
+}
+
+// Joined aquarium fields from !inner selects
+interface JoinedAquarium {
+  user_id: string;
+  name: string;
+}
+
 interface NWSAlert {
   id: string;
   properties: {
@@ -44,50 +69,51 @@ async function fetchNWSAlerts(latitude: number, longitude: number): Promise<NWSA
 }
 
 // Health score calculation functions (mirrors client-side logic)
-function calculateWaterTestScore(tests: any[]): number {
-  if (!tests || tests.length === 0) return 50; // Neutral if no tests
-  
+function calculateWaterTestScore(tests: WaterTestRow[]): number {
+  if (!tests || tests.length === 0) return 30; // Match client: no tests = low score
+
   const now = new Date();
   const latestTest = tests[0];
   const testDate = new Date(latestTest.test_date);
   const daysSinceTest = Math.floor((now.getTime() - testDate.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Freshness penalty
+
+  // Freshness penalty (aligned with client-side values)
   let freshnessScore = 100;
-  if (daysSinceTest > 14) freshnessScore = 40;
-  else if (daysSinceTest > 7) freshnessScore = 70;
+  if (daysSinceTest > 14) freshnessScore = 50;
+  else if (daysSinceTest > 7) freshnessScore = 75;
   else if (daysSinceTest > 3) freshnessScore = 90;
-  
+
   return freshnessScore;
 }
 
-function calculateLivestockScore(livestock: any[]): number {
-  if (!livestock || livestock.length === 0) return 80; // Neutral if no livestock
-  
+function calculateLivestockScore(livestock: LivestockRow[]): number {
+  if (!livestock || livestock.length === 0) return 100; // Match client: no livestock = perfect
+
   let totalScore = 0;
   let totalQuantity = 0;
-  
+
   for (const animal of livestock) {
     const quantity = animal.quantity || 1;
     let healthValue = 100;
-    
+
+    // Aligned with client-side healthScores in useAquariumHealthScore.ts
     switch (animal.health_status) {
       case 'healthy': healthValue = 100; break;
-      case 'stressed': healthValue = 60; break;
-      case 'sick': healthValue = 30; break;
+      case 'quarantine': healthValue = 70; break;
+      case 'stressed': healthValue = 50; break;
+      case 'sick': healthValue = 25; break;
       case 'deceased': healthValue = 0; break;
-      case 'quarantine': healthValue = 50; break;
-      default: healthValue = 80;
+      default: healthValue = 70;
     }
-    
+
     totalScore += healthValue * quantity;
     totalQuantity += quantity;
   }
-  
-  return totalQuantity > 0 ? Math.round(totalScore / totalQuantity) : 80;
+
+  return totalQuantity > 0 ? Math.round(totalScore / totalQuantity) : 100;
 }
 
-function calculateMaintenanceScore(tasks: any[]): number {
+function calculateMaintenanceScore(tasks: MaintenanceTaskRow[]): number {
   if (!tasks || tasks.length === 0) return 80; // Neutral if no tasks
   
   const now = new Date();
@@ -111,14 +137,14 @@ function calculateMaintenanceScore(tasks: any[]): number {
   const totalTasks = overdueCount + pendingCount + completedCount;
   if (totalTasks === 0) return 80;
   
-  // Heavy penalty for overdue tasks
-  const overdueImpact = overdueCount * 20;
-  const score = Math.max(0, 100 - overdueImpact);
-  
-  return Math.round(score);
+  // Penalty for overdue tasks (aligned with client: 15 per task, max 60)
+  const completionRate = totalTasks > 0 ? (completedCount / totalTasks) * 100 : 80;
+  const overduePenalty = Math.min(overdueCount * 15, 60);
+
+  return Math.round(Math.max(0, Math.min(100, completionRate - overduePenalty)));
 }
 
-function calculateConsistencyScore(tests: any[], tasks: any[]): number {
+function calculateConsistencyScore(tests: WaterTestRow[], tasks: MaintenanceTaskRow[]): number {
   // Check testing regularity over last 30 days
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -139,7 +165,7 @@ function calculateConsistencyScore(tests: any[], tasks: any[]): number {
   return Math.round((testingScore + taskScore) / 2);
 }
 
-function calculateHealthScore(tests: any[], livestock: any[], tasks: any[]): number {
+function calculateHealthScore(tests: WaterTestRow[], livestock: LivestockRow[], tasks: MaintenanceTaskRow[]): number {
   const waterScore = calculateWaterTestScore(tests);
   const livestockScore = calculateLivestockScore(livestock);
   const maintenanceScore = calculateMaintenanceScore(tasks);
@@ -253,7 +279,7 @@ serve(async (req) => {
         if (existingLog) continue;
 
         // Send notification
-        const aquariumName = (task.aquariums as any)?.name || 'your aquatic space';
+        const aquariumName = (task.aquariums as unknown as JoinedAquarium | null)?.name || 'your aquatic space';
         const dueDate = new Date(task.due_date);
         const isToday = dueDate.toDateString() === now.toDateString();
         const isTomorrow = dueDate.toDateString() === new Date(now.getTime() + 86400000).toDateString();
@@ -335,7 +361,7 @@ serve(async (req) => {
 
           if (existingLog) continue;
 
-          const aquariumName = (alert.aquariums as any)?.name || 'your aquatic space';
+          const aquariumName = (alert.aquariums as unknown as JoinedAquarium | null)?.name || 'your aquatic space';
           const severityEmoji = alert.severity === 'critical' ? '🔴' : alert.severity === 'warning' ? '🟡' : 'ℹ️';
 
           try {
@@ -433,7 +459,7 @@ serve(async (req) => {
           }
 
           // Determine severity bucket for deduplication
-          const { label, severity } = getHealthLabel(healthScore);
+          const { severity } = getHealthLabel(healthScore);
           const notificationRefId = `${aquarium.id}-${severity}`;
 
           // Check if already notified for this severity level in last 24 hours

@@ -249,9 +249,6 @@ export function PreferencesOnboarding({ userId, onComplete }: PreferencesOnboard
 
       // CRITICAL: Refresh the auth profile to update onboarding_completed in context
       await refreshProfile();
-      
-      // Extra safety: Small delay to ensure state propagates
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       toast({
         title: t('preferencesOnboarding.success'),

@@ -4,6 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 
 vi.mock('@/integrations/supabase/client');
 
+// Derived mock return types to avoid `as any` casts
+type AuthSessionReturn = Awaited<ReturnType<typeof supabase.auth.getSession>>;
+type AuthRefreshReturn = Awaited<ReturnType<typeof supabase.auth.refreshSession>>;
+
 describe('sessionUtils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -19,7 +23,7 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       await ensureFreshSession();
 
@@ -31,12 +35,12 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: null },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
         data: { session: { user: { id: 'user-1' } } },
         error: null,
-      } as any);
+      } as unknown as AuthRefreshReturn);
 
       await ensureFreshSession();
 
@@ -53,12 +57,12 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
         data: { session: mockSession },
         error: null,
-      } as any);
+      } as unknown as AuthRefreshReturn);
 
       await ensureFreshSession();
 
@@ -74,7 +78,7 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       await ensureFreshSession();
 
@@ -85,12 +89,12 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: null },
         error: { message: 'Session error' },
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
         data: { session: null },
         error: null,
-      } as any);
+      } as unknown as AuthRefreshReturn);
 
       await ensureFreshSession();
 
@@ -101,12 +105,12 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: null },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
         data: { session: null },
         error: { message: 'Refresh failed' },
-      } as any);
+      } as unknown as AuthRefreshReturn);
 
       // Should not throw
       await expect(ensureFreshSession()).resolves.toBeUndefined();
@@ -128,7 +132,7 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       // Should complete without error
       await expect(ensureFreshSession()).resolves.toBeUndefined();
@@ -145,14 +149,14 @@ describe('sessionUtils', () => {
     });
 
     it('should return false when window is undefined (SSR)', () => {
-      // @ts-ignore
+      // @ts-expect-error - partial window mock for test
       global.window = undefined;
 
       expect(isIOSPWA()).toBe(false);
     });
 
     it('should return true when navigator.standalone is true (iOS Safari PWA)', () => {
-      // @ts-ignore
+      // @ts-expect-error - partial window mock for test
       global.window = {
         navigator: { standalone: true },
         matchMedia: vi.fn().mockReturnValue({ matches: false }),
@@ -162,7 +166,7 @@ describe('sessionUtils', () => {
     });
 
     it('should return true when display-mode is standalone', () => {
-      // @ts-ignore
+      // @ts-expect-error - partial window mock for test
       global.window = {
         navigator: { standalone: false },
         matchMedia: vi.fn().mockReturnValue({ matches: true }),
@@ -172,7 +176,7 @@ describe('sessionUtils', () => {
     });
 
     it('should return false when not in PWA mode', () => {
-      // @ts-ignore
+      // @ts-expect-error - partial window mock for test
       global.window = {
         navigator: { standalone: false },
         matchMedia: vi.fn().mockReturnValue({ matches: false }),
@@ -189,7 +193,7 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       const result = await getSession();
 
@@ -205,7 +209,7 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: { user: mockUser } },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       const result = await getCurrentUser();
 
@@ -216,7 +220,7 @@ describe('sessionUtils', () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: null },
         error: null,
-      } as any);
+      } as unknown as AuthSessionReturn);
 
       const result = await getCurrentUser();
 

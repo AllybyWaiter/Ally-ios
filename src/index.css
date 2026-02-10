@@ -191,6 +191,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
   }
 
   /* Radix UI pointer-events fix - prevent stuck state after dropdown/dialog interactions */

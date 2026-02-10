@@ -16,6 +16,7 @@ export const useSessionMonitor = () => {
   // Queue a pending check if one is requested during an ongoing check
   const pendingCheckRef = useRef<boolean>(false);
   const pendingVisibilityRef = useRef<boolean>(false);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep toast ref current without causing callback recreation
   useEffect(() => {
@@ -129,7 +130,7 @@ export const useSessionMonitor = () => {
         const wasVisibilityChange = pendingVisibilityRef.current;
         pendingVisibilityRef.current = false;
         // Use setTimeout to avoid synchronous recursion; skip if a new check already started
-        setTimeout(() => {
+        retryTimeoutRef.current = setTimeout(() => {
           if (!isCheckingRef.current) {
             checkAndRefreshSession(wasVisibilityChange);
           }
@@ -148,6 +149,7 @@ export const useSessionMonitor = () => {
 
     return () => {
       clearInterval(intervalId);
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
     };
   }, [checkAndRefreshSession]);
 };

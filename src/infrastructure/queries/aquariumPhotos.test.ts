@@ -19,6 +19,10 @@ describe('aquariumPhotos DAL', () => {
       data: { session: { user: { id: 'user-1' } } },
       error: null,
     } as any);
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    } as any);
   });
 
   describe('fetchAquariumPhotos', () => {
@@ -219,29 +223,53 @@ describe('aquariumPhotos DAL', () => {
   });
 
   describe('getAquariumPhotoCount', () => {
-    it('should return photo count for aquarium', async () => {
+    it('should return photo count for aquarium with user_id filter', async () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ count: 5, error: null }),
+        eq: vi.fn().mockReturnThis(),
+        then: (resolve: any) => resolve({ count: 5, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await getAquariumPhotoCount('aq-1');
 
       expect(supabase.from).toHaveBeenCalledWith('aquarium_photos');
+      expect(mockChain.eq).toHaveBeenCalledWith('aquarium_id', 'aq-1');
+      expect(mockChain.eq).toHaveBeenCalledWith('user_id', 'user-1');
       expect(result).toBe(5);
     });
 
     it('should return 0 when count is null', async () => {
       const mockChain = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ count: null, error: null }),
+        eq: vi.fn().mockReturnThis(),
+        then: (resolve: any) => resolve({ count: null, error: null }),
       };
       vi.mocked(supabase.from).mockReturnValue(mockChain as any);
 
       const result = await getAquariumPhotoCount('aq-1');
 
       expect(result).toBe(0);
+    });
+
+    it('should skip user_id filter when user is not authenticated', async () => {
+      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+        data: { user: null },
+        error: null,
+      } as any);
+
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        then: (resolve: any) => resolve({ count: 2, error: null }),
+      };
+      vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+
+      const result = await getAquariumPhotoCount('aq-1');
+
+      expect(mockChain.eq).toHaveBeenCalledWith('aquarium_id', 'aq-1');
+      expect(mockChain.eq).not.toHaveBeenCalledWith('user_id', expect.anything());
+      expect(result).toBe(2);
     });
   });
 });

@@ -124,10 +124,8 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
   });
 
   const handleEditLivestock = useCallback((item: Livestock) => {
-    setTimeout(() => {
-      setEditingLivestock(item);
-      setLivestockDialogOpen(true);
-    }, 0);
+    setEditingLivestock(item);
+    setLivestockDialogOpen(true);
   }, []);
 
   const handleAddLivestock = useCallback(() => {
@@ -136,10 +134,8 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
   }, []);
 
   const handleEditPlant = useCallback((item: Plant) => {
-    setTimeout(() => {
-      setEditingPlant(item);
-      setPlantDialogOpen(true);
-    }, 0);
+    setEditingPlant(item);
+    setPlantDialogOpen(true);
   }, []);
 
   const handleAddPlant = useCallback(() => {
@@ -148,19 +144,15 @@ export function AquariumLivestock({ aquariumId, initialAddNew }: AquariumLivesto
   }, []);
 
   const handleDeleteLivestockClick = useCallback((id: string) => {
-    setTimeout(() => {
-      setDeletingId(id);
-      setDeletingType('livestock');
-      setDeleteDialogOpen(true);
-    }, 0);
+    setDeletingId(id);
+    setDeletingType('livestock');
+    setDeleteDialogOpen(true);
   }, []);
 
   const handleDeletePlantClick = useCallback((id: string) => {
-    setTimeout(() => {
-      setDeletingId(id);
-      setDeletingType('plant');
-      setDeleteDialogOpen(true);
-    }, 0);
+    setDeletingId(id);
+    setDeletingType('plant');
+    setDeleteDialogOpen(true);
   }, []);
 
   const handleDeleteConfirm = () => {

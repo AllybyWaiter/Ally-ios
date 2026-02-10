@@ -142,6 +142,76 @@ serve(async (req) => {
         }
       }
 
+      // Clean up livestock-photos storage bucket
+      const { data: livestockData } = await supabaseAdmin
+        .from('livestock')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(10000);
+
+      if (livestockData && livestockData.length > 0) {
+        const livestockIds = livestockData.map(l => l.id);
+
+        // Delete livestock_photos DB rows
+        const { error: lsPhotosError } = await supabaseAdmin
+          .from('livestock_photos')
+          .delete()
+          .in('livestock_id', livestockIds);
+        if (lsPhotosError) logger.warn('livestock_photos deletion', { error: lsPhotosError.message });
+        else logger.info('Deleted livestock_photos');
+
+        // Delete livestock-photos storage files
+        for (const livestock of livestockData) {
+          try {
+            const { data: files } = await supabaseAdmin.storage
+              .from('livestock-photos')
+              .list(livestock.id);
+            if (files && files.length > 0) {
+              const filePaths = files.map(f => `${livestock.id}/${f.name}`);
+              await supabaseAdmin.storage.from('livestock-photos').remove(filePaths);
+              logger.info('Deleted livestock storage files', { livestockId: livestock.id, count: filePaths.length });
+            }
+          } catch (storageErr) {
+            logger.warn('Livestock photo storage cleanup failed', { livestockId: livestock.id, error: String(storageErr) });
+          }
+        }
+      }
+
+      // Clean up plant-photos storage bucket
+      const { data: plantsData } = await supabaseAdmin
+        .from('plants')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(10000);
+
+      if (plantsData && plantsData.length > 0) {
+        const plantIds = plantsData.map(p => p.id);
+
+        // Delete plant_photos DB rows
+        const { error: plantPhotosError } = await supabaseAdmin
+          .from('plant_photos')
+          .delete()
+          .in('plant_id', plantIds);
+        if (plantPhotosError) logger.warn('plant_photos deletion', { error: plantPhotosError.message });
+        else logger.info('Deleted plant_photos');
+
+        // Delete plant-photos storage files
+        for (const plant of plantsData) {
+          try {
+            const { data: files } = await supabaseAdmin.storage
+              .from('plant-photos')
+              .list(plant.id);
+            if (files && files.length > 0) {
+              const filePaths = files.map(f => `${plant.id}/${f.name}`);
+              await supabaseAdmin.storage.from('plant-photos').remove(filePaths);
+              logger.info('Deleted plant storage files', { plantId: plant.id, count: filePaths.length });
+            }
+          } catch (storageErr) {
+            logger.warn('Plant photo storage cleanup failed', { plantId: plant.id, error: String(storageErr) });
+          }
+        }
+      }
+
       const { error: tasksError } = await supabaseAdmin
         .from('maintenance_tasks')
         .delete()

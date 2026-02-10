@@ -29,11 +29,23 @@ interface Conversation {
 }
 
 // Factory function to create initial message with fresh timestamp
-const createInitialMessage = (): Message => ({
-  role: "assistant",
-  content: "Hi! I'm Ally, your aquatics assistant. I can help with aquariums, pools, spas, and ponds - including water chemistry, livestock care, equipment, and maintenance. What would you like help with?",
-  timestamp: new Date()
-});
+const createInitialMessage = (userAquariums?: Aquarium[]): Message => {
+  let content: string;
+
+  if (userAquariums && userAquariums.length === 1) {
+    content = `Hi! I'm Ally, your aquatics assistant. I see you have **${userAquariums[0].name}** set up. How can I help today?`;
+  } else if (userAquariums && userAquariums.length > 1) {
+    const names = userAquariums.map(a => `**${a.name}**`);
+    const nameList = names.length === 2
+      ? names.join(' and ')
+      : names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
+    content = `Hi! I'm Ally, your aquatics assistant. I see you're managing ${nameList}. Which would you like to talk about, or ask me anything!`;
+  } else {
+    content = "Hi! I'm Ally, your aquatics assistant. I can help with aquariums, pools, spas, and ponds - including water chemistry, livestock care, equipment, and maintenance. What would you like help with?";
+  }
+
+  return { role: "assistant", content, timestamp: new Date() };
+};
 
 export function useConversationManager(userId: string | null) {
   const { toast } = useToast();
@@ -42,9 +54,9 @@ export function useConversationManager(userId: string | null) {
   const [aquariums, setAquariums] = useState<Aquarium[]>([]);
   const [selectedAquarium, setSelectedAquarium] = useState<string>("general");
 
-  const fetchAquariums = useCallback(async (userIdOverride?: string) => {
+  const fetchAquariums = useCallback(async (userIdOverride?: string): Promise<Aquarium[]> => {
     const uid = userIdOverride || userId;
-    if (!uid) return;
+    if (!uid) return [];
     try {
       const { data, error } = await supabase
         .from('aquariums')
@@ -54,14 +66,17 @@ export function useConversationManager(userId: string | null) {
 
       if (error) {
         logger.error('Failed to fetch aquariums:', error);
-        return;
+        return [];
       }
 
       if (data) {
         setAquariums(data);
+        return data;
       }
+      return [];
     } catch (error) {
       logger.error('Failed to fetch aquariums:', error);
+      return [];
     }
   }, [userId]);
 
@@ -99,14 +114,22 @@ export function useConversationManager(userId: string | null) {
     }
   }, [userId, toast]);
 
-  // Auto-fetch aquariums and conversations when userId changes
-  // This ensures data is loaded even with React's async state updates
+  // Auto-fetch aquariums and conversations when userId changes.
+  // Skip if data was already loaded by an explicit call (e.g. initializeChat)
+  // to avoid duplicate concurrent requests on first mount.
   useEffect(() => {
-    if (userId) {
+    if (userId && aquariums.length === 0 && conversations.length === 0) {
       fetchAquariums();
       fetchConversations();
     }
-  }, [userId, fetchAquariums, fetchConversations]);
+  }, [userId, fetchAquariums, fetchConversations, aquariums.length, conversations.length]);
+
+  // Auto-select when user has exactly 1 aquarium and none is selected yet
+  useEffect(() => {
+    if (aquariums.length === 1 && selectedAquarium === "general") {
+      setSelectedAquarium(aquariums[0].id);
+    }
+  }, [aquariums, selectedAquarium]);
 
   const pinConversation = useCallback(async (conversationId: string) => {
     if (!userId) return;
@@ -149,48 +172,62 @@ export function useConversationManager(userId: string | null) {
   const renameConversation = useCallback(async (conversationId: string, newTitle: string) => {
     if (!userId || !newTitle.trim()) return;
 
-    const { error } = await supabase
-      .from('chat_conversations')
-      .update({ title: newTitle.trim() })
-      .eq('id', conversationId)
-      .eq('user_id', userId);
-
-    if (error) {
-      logger.error('Failed to rename conversation:', error);
-      toast({ title: 'Error', description: 'Failed to rename conversation', variant: 'destructive' });
-      return;
-    }
     try {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .update({ title: newTitle.trim() })
+        .eq('id', conversationId)
+        .eq('user_id', userId);
+
+      if (error) {
+        logger.error('Failed to rename conversation:', error);
+        toast({ title: 'Error', description: 'Failed to rename conversation', variant: 'destructive' });
+        return;
+      }
       await fetchConversations();
     } catch (e) {
-      logger.error('Failed to refresh conversations after rename:', e);
+      logger.error('Failed to rename conversation:', e);
+      toast({ title: 'Error', description: 'Failed to rename conversation', variant: 'destructive' });
     }
   }, [userId, fetchConversations, toast]);
 
   const bulkDeleteConversations = useCallback(async (conversationIds: string[]) => {
     if (!userId || conversationIds.length === 0) return;
-    
-    const { error } = await supabase
-      .from('chat_conversations')
-      .delete()
-      .in('id', conversationIds)
-      .eq('user_id', userId);
 
-    if (error) {
-      throw error;
-    }
+    try {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .delete()
+        .in('id', conversationIds)
+        .eq('user_id', userId);
 
-    await fetchConversations();
-    
-    // Reset current conversation if it was deleted
-    if (currentConversationId && conversationIds.includes(currentConversationId)) {
-      setCurrentConversationId(null);
+      if (error) {
+        logger.error('Failed to bulk delete conversations:', error);
+        toast({ title: 'Error', description: 'Failed to delete conversations', variant: 'destructive' });
+        return;
+      }
+
+      await fetchConversations();
+
+      // Reset current conversation if it was deleted
+      setCurrentConversationId(prev =>
+        prev && conversationIds.includes(prev) ? null : prev
+      );
+    } catch (e) {
+      logger.error('Failed to bulk delete conversations:', e);
+      toast({ title: 'Error', description: 'Failed to delete conversations', variant: 'destructive' });
     }
-  }, [userId, currentConversationId, fetchConversations]);
+  }, [userId, fetchConversations, toast]);
 
   const exportConversation = useCallback(async (conversationId: string): Promise<string> => {
-    const conversation = conversations.find(c => c.id === conversationId);
-    if (!conversation) {
+    // Fetch title directly from DB to avoid stale local state
+    const { data: conversation, error: convError } = await supabase
+      .from('chat_conversations')
+      .select('title')
+      .eq('id', conversationId)
+      .maybeSingle();
+
+    if (convError || !conversation) {
       throw new Error('Conversation not found');
     }
 
@@ -222,7 +259,7 @@ export function useConversationManager(userId: string | null) {
     }
 
     return markdown;
-  }, [conversations]);
+  }, []);
 
   const loadConversation = useCallback(async (conversationId: string): Promise<Message[]> => {
     const { data: messagesData, error } = await supabase
@@ -267,10 +304,10 @@ export function useConversationManager(userId: string | null) {
     return [createInitialMessage()];
   }, [toast, fetchConversations]);
 
-  const startNewConversation = useCallback((): Message[] => {
+  const startNewConversation = useCallback((userAquariums?: Aquarium[]): Message[] => {
     setCurrentConversationId(null);
-    return [createInitialMessage()];
-  }, []);
+    return [createInitialMessage(userAquariums ?? aquariums)];
+  }, [aquariums]);
 
   const deleteConversation = useCallback(async (conversationId: string) => {
     if (!userId) return false;

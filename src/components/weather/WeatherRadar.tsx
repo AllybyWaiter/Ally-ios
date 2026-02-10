@@ -303,6 +303,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [leafletReady, setLeafletReady] = useState(false);
@@ -422,23 +423,25 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
 
   // Fetch weather alerts from NWS API (US only)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAlerts = async () => {
       try {
-        setAlertsLoading(true);
+        if (isMounted) setAlertsLoading(true);
         const response = await fetch(
           `https://api.weather.gov/alerts/active?point=${latitude},${longitude}&status=actual`,
           { headers: { 'User-Agent': 'AllyByWaiter/1.0' } }
         );
-        
+
         if (!response.ok) {
           // NWS API only works in US - graceful fallback
           if (response.status === 404) {
-            setAlerts([]);
+            if (isMounted) setAlerts([]);
             return;
           }
           throw new Error('Failed to fetch alerts');
         }
-        
+
         const data: NwsAlertsResponse = await response.json();
         const parsedAlerts: WeatherAlert[] = (data.features || []).map((feature) => ({
           id: feature.id,
@@ -451,26 +454,29 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
           instruction: feature.properties?.instruction ?? null,
           geometry: feature.geometry ?? null,
         }));
-        
+
         // Sort by severity
         const severityOrder = ['Extreme', 'Severe', 'Moderate', 'Minor', 'Unknown'];
-        parsedAlerts.sort((a, b) => 
+        parsedAlerts.sort((a, b) =>
           severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity)
         );
-        
-        setAlerts(parsedAlerts);
+
+        if (isMounted) setAlerts(parsedAlerts);
       } catch (err) {
         logger.error('Alert fetch error:', err);
-        setAlerts([]);
+        if (isMounted) setAlerts([]);
       } finally {
-        setAlertsLoading(false);
+        if (isMounted) setAlertsLoading(false);
       }
     };
 
     fetchAlerts();
     // Refresh alerts every 5 minutes
     const refreshInterval = setInterval(fetchAlerts, 5 * 60 * 1000);
-    return () => clearInterval(refreshInterval);
+    return () => {
+      isMounted = false;
+      clearInterval(refreshInterval);
+    };
   }, [latitude, longitude]);
 
   // Animation loop - pause when tab is hidden to save CPU
@@ -484,12 +490,14 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
       visibilityListenerRef.current = null;
     }
 
+    isPlayingRef.current = isPlaying;
+
     if (isPlaying && frames.length > 0) {
       const handleVisibilityChange = () => {
         if (document.hidden && intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
-        } else if (!document.hidden && isPlaying) {
+        } else if (!document.hidden && isPlayingRef.current) {
           intervalRef.current = window.setInterval(() => {
             setCurrentFrameIndex((prev) => (prev + 1) % frames.length);
           }, 500);

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { setUserContext } from '@/lib/sentry';
 import { UnitSystem } from '@/lib/unitConversions';
 import { useAuthContext } from './AuthContext';
+import { logger } from '@/lib/logger';
 
 const PROFILE_TIMEOUT_MS = 3000;
 
@@ -118,10 +119,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
       setProfileLoading(false);
     }, PROFILE_TIMEOUT_MS);
 
-    fetchUserProfile(user.id).finally(() => {
-      clearTimeout(profileTimeout);
-      setProfileLoading(false);
-    });
+    fetchUserProfile(user.id)
+      .catch(err => logger.error('Profile fetch error:', err))
+      .finally(() => {
+        clearTimeout(profileTimeout);
+        setProfileLoading(false);
+      });
   }, [user?.id, isInitialAuthComplete, fetchUserProfile, clearProfile]);
 
   // Visibility-based recovery for iOS PWA

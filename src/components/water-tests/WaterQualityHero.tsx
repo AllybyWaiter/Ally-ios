@@ -54,6 +54,7 @@ export function WaterQualityHero({
   lastTestDate,
   alerts,
   onAlertParameterClick,
+  onLogFirstTest,
   isLoading,
 }: WaterQualityHeroProps) {
   const navigate = useNavigate();
@@ -210,9 +211,15 @@ export function WaterQualityHero({
                 </Badge>
               )}
               {alerts.length === 0 && !isLoading && (
-                <Badge variant="secondary" className="gap-1">
-                  {t('waterTests.logFirstTest')}
-                </Badge>
+                <button
+                  type="button"
+                  onClick={onLogFirstTest}
+                  className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  <Badge variant="secondary" className="gap-1 cursor-pointer hover:bg-secondary/80">
+                    {t('waterTests.logFirstTest')}
+                  </Badge>
+                </button>
               )}
               {/* Fallback: alerts exist but none match good/warning/critical */}
               {alerts.length > 0 && goodCount === 0 && criticalAlerts.length === 0 && warningAlerts.length === 0 && (

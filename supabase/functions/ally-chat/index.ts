@@ -46,7 +46,7 @@ serve(async (req) => {
   try {
     // Parse and validate request
     const body = await req.json();
-    const { messages, aquariumId, model: requestedModel, conversationHint } = body;
+    const { messages, aquariumId, model: requestedModel, conversationHint, userAquariums } = body;
     
     const errors = collectErrors(
       validateUuid(aquariumId, 'aquariumId', { required: false })
@@ -211,6 +211,13 @@ serve(async (req) => {
     }
 
     // Build system prompt using module (water-type-specific for reduced token usage)
+    // Validate userAquariums if provided — lightweight array of {id, name, type}
+    const validatedUserAquariums = Array.isArray(userAquariums)
+      ? userAquariums
+          .filter((a: Record<string, unknown>) => typeof a.id === 'string' && typeof a.name === 'string')
+          .map((a: Record<string, unknown>) => ({ id: a.id as string, name: a.name as string, type: (a.type as string) || '' }))
+      : undefined;
+
     const systemPrompt = buildSystemPrompt({
       hasMemoryAccess: true,
       hasToolAccess,
@@ -223,6 +230,7 @@ serve(async (req) => {
       inputGateInstructions: inputValidation.gateInstructions,
       userName,
       conversationHint: typeof conversationHint === 'string' ? conversationHint : undefined,
+      userAquariums: validatedUserAquariums,
     });
 
     logger.info('Processing chat request', {

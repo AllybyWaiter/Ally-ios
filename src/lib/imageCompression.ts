@@ -76,26 +76,34 @@ export async function compressImage(
                 );
                 resolve(compressedFile);
               } else {
-                // Need more compression, reduce quality
-                const newQuality = Math.max(0.5, validQuality * 0.8);
-                
-                canvas.toBlob(
-                  (secondBlob) => {
-                    if (!secondBlob) {
-                      reject(new Error('Failed to create blob on second attempt'));
-                      return;
-                    }
-                    
-                    const compressedFile = new File(
-                      [secondBlob],
-                      file.name,
-                      { type: 'image/jpeg' }
-                    );
-                    resolve(compressedFile);
-                  },
-                  'image/jpeg',
-                  newQuality
-                );
+                // Need more compression, reduce quality iteratively
+                const attemptCompression = (quality: number, attempt: number) => {
+                  canvas.toBlob(
+                    (compressedBlob) => {
+                      if (!compressedBlob) {
+                        reject(new Error(`Failed to create blob on attempt ${attempt}`));
+                        return;
+                      }
+
+                      if (compressedBlob.size <= targetSizeBytes || quality <= 0.3) {
+                        // Accept the result — either within target or at minimum quality
+                        const compressedFile = new File(
+                          [compressedBlob],
+                          file.name,
+                          { type: 'image/jpeg' }
+                        );
+                        resolve(compressedFile);
+                      } else {
+                        // Try again with lower quality
+                        attemptCompression(Math.max(0.3, quality * 0.7), attempt + 1);
+                      }
+                    },
+                    'image/jpeg',
+                    quality
+                  );
+                };
+
+                attemptCompression(Math.max(0.5, validQuality * 0.8), 2);
               }
             },
             'image/jpeg',

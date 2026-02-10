@@ -18,6 +18,10 @@ describe('equipment DAL', () => {
       data: { session: { user: { id: 'user-1' } } },
       error: null,
     } as any);
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    } as any);
   });
 
   describe('fetchEquipment', () => {
@@ -278,7 +282,7 @@ describe('equipment DAL', () => {
       const mockSelectChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'eq-1', aquariums: { user_id: 'user-1' } }, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'eq-1', aquarium_id: 'aq-1', aquariums: { user_id: 'user-1' } }, error: null }),
       };
 
       // Mock for delete

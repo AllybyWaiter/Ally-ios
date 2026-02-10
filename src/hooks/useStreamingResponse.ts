@@ -72,7 +72,8 @@ export function useStreamingResponse() {
     model: ModelType = 'standard',
     callbacks: StreamingCallbacks,
     retryToken?: string, // Token to use for retry after refresh
-    conversationHint?: string | null // Hint for system prompt context (e.g. 'volume-calculator')
+    conversationHint?: string | null, // Hint for system prompt context (e.g. 'volume-calculator')
+    userAquariums?: Array<{ id: string; name: string; type: string }> // User's aquarium list for context when no aquarium selected
   ): Promise<string> => {
     // Get access token - use retry token if provided, otherwise get from session
     let accessToken = retryToken;
@@ -151,6 +152,7 @@ export function useStreamingResponse() {
         aquariumId,
         model, // Pass model selection to backend
         ...(conversationHint ? { conversationHint } : {}),
+        ...(!aquariumId && userAquariums && userAquariums.length > 0 ? { userAquariums } : {}),
       }),
       signal: abortController.signal,
     });
@@ -185,7 +187,7 @@ export function useStreamingResponse() {
           // Session refreshed - abort the old controller before retrying with new token
           logger.log('Session refreshed, retrying with new token...');
           abortController.abort();
-          return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token);
+          return streamResponse(messages, aquariumId, model, callbacks, refreshData.session.access_token, conversationHint, userAquariums);
         } catch (refreshErr) {
           // Re-throw our own errors, but catch unexpected refreshSession failures
           if (refreshErr instanceof Error && refreshErr.message.includes("Session expired")) {
@@ -312,7 +314,13 @@ export function useStreamingResponse() {
             updateContent(content);
           }
         } catch {
-          textBuffer = line + "\n" + textBuffer;
+          if (textBuffer.trim().length > 0) {
+            // Buffer has more data — this line is complete and genuinely malformed, skip it
+            logger.warn('Skipping malformed SSE line:', jsonStr.substring(0, 100));
+            continue;
+          }
+          // Buffer is empty — line might be split across chunks, save for next read
+          textBuffer = line + "\n";
           break;
         }
       }

@@ -19,6 +19,10 @@ describe('aquariums DAL', () => {
       data: { session: { user: { id: 'user-1' } } },
       error: null,
     } as any);
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    } as any);
   });
 
   describe('fetchAquariumsWithTaskCounts', () => {

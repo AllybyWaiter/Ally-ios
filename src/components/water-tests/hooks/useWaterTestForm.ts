@@ -262,6 +262,7 @@ export function useWaterTestForm({ aquarium }: UseWaterTestFormProps) {
       if (user) {
         triggerTrendAnalysis(aquarium.id, user.id, limits.hasAITrendAlerts);
         // Invalidate alerts cache after a short delay to allow edge function to complete
+        if (alertsTimeoutRef.current) clearTimeout(alertsTimeoutRef.current);
         alertsTimeoutRef.current = setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: queryKeys.waterTests.alerts(user.id) });
         }, 2000);
