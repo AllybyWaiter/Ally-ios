@@ -49,14 +49,17 @@ export const useVoiceRecording = () => {
     };
   }, []);
 
-  const startRecording = useCallback(async (onStreamReady?: (stream: MediaStream) => void) => {
+  const startRecording = useCallback(async (
+    onStreamReady?: (stream: MediaStream) => void,
+    options?: { silent?: boolean }
+  ): Promise<boolean> => {
     // Guard against being called while already recording — prevents orphaned streams
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      return;
+      return false;
     }
     // Guard against concurrent calls during async getUserMedia
     if (isStartingRef.current) {
-      return;
+      return false;
     }
     isStartingRef.current = true;
 
@@ -65,12 +68,12 @@ export const useVoiceRecording = () => {
       if (!navigator.mediaDevices?.getUserMedia) {
         isStartingRef.current = false;
         toast.error('Voice recording not supported in this browser');
-        return;
+        return false;
       }
       if (!window.MediaRecorder) {
         isStartingRef.current = false;
         toast.error('MediaRecorder not supported');
-        return;
+        return false;
       }
 
       // Detect supported format before starting
@@ -93,13 +96,13 @@ export const useVoiceRecording = () => {
       onStreamReady?.(stream);
 
       // Build MediaRecorder options with detected format
-      const options: MediaRecorderOptions = {};
+      const recorderOptions: MediaRecorderOptions = {};
       if (formatInfo.mimeType) {
-        options.mimeType = formatInfo.mimeType;
+        recorderOptions.mimeType = formatInfo.mimeType;
       }
 
-      const mediaRecorder = new MediaRecorder(stream, options);
-      
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
+
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -112,11 +115,13 @@ export const useVoiceRecording = () => {
       mediaRecorder.start();
       setIsRecording(true);
       isStartingRef.current = false;
-      toast.success('Recording started');
+      if (!options?.silent) toast.success('Recording started');
+      return true;
     } catch (error) {
       isStartingRef.current = false;
       console.error('Error starting recording:', error);
       toast.error('Failed to start recording. Please check microphone permissions.');
+      return false;
     }
   }, []);
 
@@ -186,8 +191,8 @@ export const useVoiceRecording = () => {
             console.error('FileReader error:', reader.error);
             if (!isAbortedRef.current) {
               setIsProcessing(false);
-              resolve(null);
             }
+            resolve(null);
           };
 
           reader.onabort = () => {
@@ -196,8 +201,8 @@ export const useVoiceRecording = () => {
             clearTimeout(readerTimeout);
             if (!isAbortedRef.current) {
               setIsProcessing(false);
-              resolve(null);
             }
+            resolve(null);
           };
 
           reader.onloadend = async () => {
@@ -205,7 +210,7 @@ export const useVoiceRecording = () => {
             readerSettled = true;
             clearTimeout(readerTimeout);
 
-            if (isAbortedRef.current) return;
+            if (isAbortedRef.current) { resolve(null); return; }
 
             const resultString = reader.result as string;
             const splitResult = resultString.split(',');
@@ -220,14 +225,21 @@ export const useVoiceRecording = () => {
             const base64Audio = splitResult[1];
 
             try {
-              const { data, error } = await supabase.functions.invoke('transcribe-audio', {
-                body: {
-                  audio: base64Audio,
-                  format: mimeTypeRef.current?.extension || 'webm'
-                }
-              });
+              // Race transcription against a 15s timeout to prevent isProcessing
+              // from staying true forever if the Whisper API hangs.
+              const { data, error } = await Promise.race([
+                supabase.functions.invoke('transcribe-audio', {
+                  body: {
+                    audio: base64Audio,
+                    format: mimeTypeRef.current?.extension || 'webm'
+                  }
+                }),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error('Transcription timed out')), 15000)
+                ),
+              ]);
 
-              if (isAbortedRef.current) return;
+              if (isAbortedRef.current) { resolve(null); return; }
               if (error) throw error;
               if (!data?.text) throw new Error('Invalid transcription response');
 
@@ -235,9 +247,13 @@ export const useVoiceRecording = () => {
               toast.success('Transcription complete');
               resolve(data.text);
             } catch (error) {
-              if (isAbortedRef.current) return;
+              if (isAbortedRef.current) { resolve(null); return; }
               console.error('Transcription error:', error);
-              toast.error('Failed to transcribe audio');
+              toast.error(
+                error instanceof Error && error.message === 'Transcription timed out'
+                  ? 'Transcription timed out — please try again'
+                  : 'Failed to transcribe audio'
+              );
               setIsProcessing(false);
               resolve(null);
             }
@@ -245,7 +261,7 @@ export const useVoiceRecording = () => {
 
           reader.readAsDataURL(audioBlob);
         } catch (error) {
-          if (isAbortedRef.current) return;
+          if (isAbortedRef.current) { resolve(null); return; }
           console.error('Error processing audio:', error);
           toast.error('Failed to process audio');
           setIsProcessing(false);

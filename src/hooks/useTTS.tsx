@@ -13,6 +13,7 @@ export const useTTS = () => {
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const unlockedRef = useRef(false);
   // Refs to avoid dependency array issues while still accessing current state
   const isSpeakingRef = useRef(isSpeaking);
@@ -23,6 +24,11 @@ export const useTTS = () => {
   speakingMessageIdRef.current = speakingMessageId;
 
   const stop = useCallback(() => {
+    // Abort any in-flight TTS fetch so audio doesn't play after stop
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     if (audioRef.current) {
       audioRef.current.onended = null;
       audioRef.current.onerror = null;
@@ -34,6 +40,7 @@ export const useTTS = () => {
       URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     }
+    setIsGenerating(false);
     setIsSpeaking(false);
     setSpeakingMessageId(null);
   }, []);
@@ -68,8 +75,12 @@ export const useTTS = () => {
       return;
     }
 
-    // Stop any current playback
+    // Stop any current playback (also aborts any in-flight fetch)
     stop();
+
+    // Create abort controller for this speak request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     // Clean text for TTS (remove markdown, code blocks, etc.)
     const cleanText = text
@@ -83,6 +94,7 @@ export const useTTS = () => {
 
     if (!cleanText) {
       toast.error('No speakable content in this message');
+      safeOnEnded();
       return;
     }
 
@@ -113,6 +125,7 @@ export const useTTS = () => {
             Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ text: truncatedText }),
+          signal: controller.signal,
         }
       );
 
@@ -122,6 +135,13 @@ export const useTTS = () => {
       }
 
       const audioBlob = await response.blob();
+
+      // Check if aborted while waiting for response/blob
+      if (controller.signal.aborted) {
+        setIsGenerating(false);
+        return;
+      }
+
       const audioUrl = URL.createObjectURL(audioBlob);
       audioUrlRef.current = audioUrl;
 
@@ -141,6 +161,8 @@ export const useTTS = () => {
       audio.onerror = (e) => {
         logger.error('Audio playback error:', e);
         toast.error('Failed to play audio');
+        // Reset audio session unlock — iOS may have lost the session
+        unlockedRef.current = false;
         setIsSpeaking(false);
         setIsGenerating(false);
         setSpeakingMessageId(null);
@@ -159,6 +181,8 @@ export const useTTS = () => {
       } catch (playError) {
         logger.error('Audio play() error:', playError);
         toast.error('Audio playback failed - try tapping again');
+        // Reset audio session unlock — iOS may have lost the session (phone call, BT switch)
+        unlockedRef.current = false;
         setIsSpeaking(false);
         setSpeakingMessageId(null);
         if (audioUrlRef.current) {
@@ -168,6 +192,9 @@ export const useTTS = () => {
         safeOnEnded();
       }
     } catch (error) {
+      // Ignore aborted requests — stop() already cleaned up state
+      if (controller.signal.aborted) return;
+
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error('TTS error:', errorMessage, error);
       toast.error(errorMessage || 'Failed to generate speech');
@@ -181,6 +208,10 @@ export const useTTS = () => {
   // Clean up audio and blob URL on unmount
   useEffect(() => {
     return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
       if (audioRef.current) {
         audioRef.current.onended = null;
         audioRef.current.onerror = null;

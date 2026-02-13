@@ -148,19 +148,48 @@ const AllyChat = () => {
     else releaseWakeLock();
   }, [conversationMode, requestWakeLock, releaseWakeLock]);
 
+  // Bail out of conversation mode on unrecoverable error (mic failure, etc.)
+  const exitConversationModeWithError = useCallback((reason?: string) => {
+    setConversationMode(false);
+    stopMonitoring();
+    stopSpeaking();
+    toast({
+      title: "Conversation mode ended",
+      description: reason || "An error occurred with the microphone.",
+    });
+  }, [stopMonitoring, stopSpeaking, toast]);
+
   // Start recording with VAD monitoring and audio cue
   const startRecordingWithVAD = useCallback(async () => {
     // Pre-warm AudioContext and unlock HTML5 Audio while still in user gesture
     // context. iOS requires both to be activated during a user gesture — after
     // the await getUserMedia below, the gesture context is lost.
-    getOrCreateAudioContext();
+    const ctx = getOrCreateAudioContext();
+    // Explicitly await resume — iOS may suspend the AudioContext after TTS
+    // playback via HTMLAudioElement. Without this, VAD gets all-zero data.
+    if (ctx.state === 'suspended') {
+      try { await ctx.resume(); } catch { /* non-fatal */ }
+    }
     unlockTTS();
 
-    await startRecording((stream) => {
-      playListeningChime();
+    const started = await startRecording((stream) => {
+      try { playListeningChime(); } catch { /* non-critical audio cue */ }
       startMonitoring(stream);
-    });
-  }, [startRecording, startMonitoring, unlockTTS]);
+    }, { silent: true }); // Suppress toast in conversation mode — chime is sufficient
+
+    if (!started) {
+      throw new Error('Failed to start recording');
+    }
+
+    // If conversation mode was exited during the async getUserMedia gap (rapid
+    // toggling), clean up the recording that just started rather than leaving it
+    // orphaned with no one to stop it.
+    if (!conversationModeRef.current) {
+      stopMonitoring();
+      stopRecording().catch(() => {});
+      return;
+    }
+  }, [startRecording, startMonitoring, unlockTTS, stopMonitoring, stopRecording]);
 
   // Execute voice commands detected via VAD
   const executeVoiceCommand = useCallback((command: 'stop' | 'cancel' | 'repeat' | 'new_chat') => {
@@ -171,7 +200,7 @@ const AllyChat = () => {
         break;
       case 'cancel':
         // Cancel — just restart listening without sending
-        if (conversationModeRef.current) startRecordingWithVAD();
+        if (conversationModeRef.current) startRecordingWithVAD().catch(() => exitConversationModeWithError());
         break;
       case 'repeat': {
         // Re-read the last assistant message
@@ -179,29 +208,38 @@ const AllyChat = () => {
         if (lastAssistant?.content) {
           speak(lastAssistant.content, `repeat-${Date.now()}`, () => {
             if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
-              startRecordingWithVAD();
+              startRecordingWithVAD().catch(() => exitConversationModeWithError());
             }
           });
         } else if (conversationModeRef.current) {
-          startRecordingWithVAD();
+          startRecordingWithVAD().catch(() => exitConversationModeWithError());
         }
         break;
       }
       case 'new_chat':
         setMessages(conversationManager.startNewConversation());
         setLastError(null);
-        if (conversationModeRef.current) startRecordingWithVAD();
+        if (conversationModeRef.current) startRecordingWithVAD().catch(() => exitConversationModeWithError());
         break;
     }
-  }, [stopSpeaking, messages, speak, startRecordingWithVAD, conversationManager, userId]);
+  }, [stopSpeaking, messages, speak, startRecordingWithVAD, exitConversationModeWithError, conversationManager, userId]);
 
   // VAD silence handler — auto-stops recording when user pauses speaking
   const handleVADSilence = useCallback(async () => {
     if (!isRecordingRef.current) return;
     stopMonitoring();
-    playConfirmationTone();
+    try { playConfirmationTone(); } catch { /* non-critical audio cue */ }
 
-    const text = await stopRecording();
+    let text: string | null = null;
+    try {
+      text = await stopRecording();
+    } catch (err) {
+      logger.error('stopRecording failed in VAD handler:', err);
+      // Recording is broken — exit conversation mode gracefully
+      if (conversationModeRef.current) exitConversationModeWithError();
+      return;
+    }
+
     if (text) {
       emptyTranscriptionCountRef.current = 0;
       const command = parseVoiceCommand(text);
@@ -222,11 +260,11 @@ const AllyChat = () => {
           stopMonitoring();
           toast({ title: "Couldn't hear you", description: "Conversation mode exited after no speech was detected." });
         } else {
-          startRecordingWithVAD();
+          startRecordingWithVAD().catch(() => exitConversationModeWithError());
         }
       }
     }
-  }, [stopRecording, stopMonitoring, startRecordingWithVAD, executeVoiceCommand, toast]);
+  }, [stopRecording, stopMonitoring, startRecordingWithVAD, executeVoiceCommand, exitConversationModeWithError, toast]);
 
   // Keep handleVADSilence ref in sync
   useEffect(() => {
@@ -315,11 +353,18 @@ const AllyChat = () => {
 
   const handleMicClick = async () => {
     if (isRecording) {
-      const text = await stopRecording();
-      if (text) {
-        setInput(prev => prev ? `${prev} ${text}` : text);
-        setWasVoiceInput(true);
-        setAutoSendPending(true);
+      // Stop VAD monitoring if in conversation mode to prevent leaked interval
+      if (conversationModeRef.current) stopMonitoring();
+      try {
+        const text = await stopRecording();
+        if (text) {
+          setInput(prev => prev ? `${prev} ${text}` : text);
+          setWasVoiceInput(true);
+          setAutoSendPending(true);
+        }
+      } catch (error) {
+        logger.error('Error stopping recording:', error);
+        toast({ title: "Recording error", description: "Failed to process recording.", variant: "destructive" });
       }
     } else {
       // Unlock TTS audio session during user gesture so autoplay works
@@ -369,6 +414,9 @@ const AllyChat = () => {
       isMountedRef.current = false;
       if (autoSendTimeoutRef.current) clearTimeout(autoSendTimeoutRef.current);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+      // Clean up conversation mode resources if user navigates away
+      stopMonitoring();
+      stopSpeaking();
     };
   }, []);
 
@@ -444,6 +492,13 @@ const AllyChat = () => {
   };
 
   const handleLoadConversation = useCallback(async (id: string) => {
+    // Exit conversation mode when manually loading a different conversation
+    if (conversationModeRef.current) {
+      setConversationMode(false);
+      stopMonitoring();
+      stopSpeaking();
+      if (isRecordingRef.current) stopRecording().catch(() => {});
+    }
     try {
       const loadedMessages = await conversationManager.loadConversation(id);
       setMessages(loadedMessages);
@@ -451,12 +506,19 @@ const AllyChat = () => {
       logger.error('Failed to load conversation:', error);
       setMessages(conversationManager.startNewConversation());
     }
-  }, [conversationManager, userId]);
+  }, [conversationManager, userId, stopMonitoring, stopSpeaking, stopRecording]);
 
   const handleStartNewConversation = useCallback(() => {
+    // Exit conversation mode when manually starting a new conversation
+    if (conversationModeRef.current) {
+      setConversationMode(false);
+      stopMonitoring();
+      stopSpeaking();
+      if (isRecordingRef.current) stopRecording().catch(() => {});
+    }
     setMessages(conversationManager.startNewConversation());
     setLastError(null);
-  }, [conversationManager]);
+  }, [conversationManager, stopMonitoring, stopSpeaking, stopRecording]);
 
   const handleDeleteConversation = useCallback(async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -527,7 +589,7 @@ const AllyChat = () => {
       setConversationMode(false);
       stopMonitoring();
       stopSpeaking();
-      if (isRecordingRef.current) stopRecording();
+      if (isRecordingRef.current) stopRecording().catch(() => {});
     }
     toast({
       title: "Stopped",
@@ -561,7 +623,25 @@ const AllyChat = () => {
             triggerHaptic('success');
             setStreamStartTime(null);
             const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
-            await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+
+            // Save and start TTS concurrently — don't let a slow save block voice
+            const savePromise = conversationManager.saveConversation(userMessage, finalAssistantMessage).catch(
+              (err: unknown) => logger.error('Failed to save conversation:', err)
+            );
+
+            // Continue conversation cycle if active
+            if (conversationModeRef.current && content) {
+              const messageId = `auto-${Date.now()}`;
+              speak(content, messageId, () => {
+                if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
+                  startRecordingWithVAD().catch(() => exitConversationModeWithError());
+                }
+              });
+            } else if (conversationModeRef.current) {
+              startRecordingWithVAD().catch(() => exitConversationModeWithError());
+            }
+
+            await savePromise;
           },
           onError: (error) => {
             logger.error("Stream error:", error);
@@ -597,7 +677,7 @@ const AllyChat = () => {
       setIsLoading(false);
       setStreamStartTime(null);
     }
-  }, [lastError, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, stopSpeaking, userId]);
+  }, [lastError, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, stopSpeaking, speak, startRecordingWithVAD, exitConversationModeWithError, userId]);
 
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
@@ -652,7 +732,7 @@ const AllyChat = () => {
 
     try {
       await streamResponse(
-        [...messages, userMessage],
+        [...messagesRef.current, userMessage],
         conversationManager.getAquariumIdForApi(),
         selectedModel,
         createStreamCallbacks({
@@ -662,16 +742,25 @@ const AllyChat = () => {
             triggerHaptic('success');
             setStreamStartTime(null);
             const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
-            await conversationManager.saveConversation(userMessage, finalAssistantMessage);
+
+            // Save and start TTS concurrently — don't let a slow/failed save block voice playback
+            const savePromise = conversationManager.saveConversation(userMessage, finalAssistantMessage).catch(
+              (err: unknown) => logger.error('Failed to save conversation:', err)
+            );
 
             if (shouldAutoPlay && content) {
               const messageId = `auto-${Date.now()}`;
               speak(content, messageId, () => {
                 if (conversationModeRef.current && !isRecordingRef.current && !isProcessingRef.current) {
-                  startRecordingWithVAD();
+                  startRecordingWithVAD().catch(() => exitConversationModeWithError());
                 }
               });
+            } else if (conversationModeRef.current) {
+              // Empty response — restart recording to keep the cycle alive
+              startRecordingWithVAD().catch(() => exitConversationModeWithError());
             }
+
+            await savePromise;
           },
           onError: (error) => {
             logger.error("Stream error:", error);
@@ -686,9 +775,11 @@ const AllyChat = () => {
           },
         }),
         undefined, // retryToken
-        undefined, // conversationHint
+        conversationHintRef.current,
         !conversationManager.getAquariumIdForApi() ? conversationManager.aquariums.map(a => ({ id: a.id, name: a.name, type: a.type })) : undefined
       );
+      // Clear hint after first use so subsequent messages don't re-send it
+      conversationHintRef.current = null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to send message";
       logger.error("Chat error:", errorMessage, error);
@@ -1114,7 +1205,7 @@ const AllyChat = () => {
                     setConversationMode(false);
                     stopMonitoring();
                     stopSpeaking();
-                    if (isRecordingRef.current) stopRecording();
+                    if (isRecordingRef.current) stopRecording().catch(() => {});
                   }}
                 >
                   Exit
@@ -1292,12 +1383,13 @@ const AllyChat = () => {
                             setConversationMode(false);
                             stopMonitoring();
                             stopSpeaking();
-                            if (isRecordingRef.current) stopRecording();
+                            if (isRecordingRef.current) stopRecording().catch(() => {});
                           } else {
                             emptyTranscriptionCountRef.current = 0;
                             setConversationMode(true);
                             setWasVoiceInput(true);
-                            startRecordingWithVAD();
+                            stopSpeaking(); // Stop any playing TTS before recording starts
+                            startRecordingWithVAD().catch(() => exitConversationModeWithError());
                           }
                         }}
                         disabled={isLoading || isProcessing}

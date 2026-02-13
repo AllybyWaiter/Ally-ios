@@ -65,6 +65,11 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
 
     try {
       const audioContext = getOrCreateAudioContext();
+      // Defensive: ensure AudioContext is running before wiring up analyser.
+      // On iOS the context may still be suspended if resume() wasn't awaited.
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
 
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
@@ -133,6 +138,19 @@ export function useVAD(config: VADConfig, callbacks: VADCallbacks) {
       }, 50);
     } catch (error) {
       console.error('Failed to start VAD monitoring:', error);
+      // Safety: even if AudioContext/analyser setup fails, ensure the recording
+      // doesn't hang forever. Set up a minimal interval that force-fires after
+      // maxRecordingDuration so stopRecording is eventually called.
+      recordingStartTimeRef.current = Date.now();
+      firedRef.current = false;
+      intervalRef.current = setInterval(() => {
+        if (firedRef.current) return;
+        const elapsed = Date.now() - (recordingStartTimeRef.current ?? Date.now());
+        if (elapsed >= maxRecording) {
+          firedRef.current = true;
+          callbacksRef.current.onSilenceDetected();
+        }
+      }, 1000);
     }
   }, [config.silenceThreshold, config.silenceDuration, config.minRecordingDuration, config.maxRecordingDuration, stopMonitoring]);
 

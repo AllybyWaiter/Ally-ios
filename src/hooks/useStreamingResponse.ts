@@ -241,6 +241,7 @@ export function useStreamingResponse() {
     const decoder = new TextDecoder();
     let textBuffer = "";
     let streamDone = false;
+    let hadError = false;
 
     // Reset state
     lastUpdateRef.current = Date.now();
@@ -304,6 +305,7 @@ export function useStreamingResponse() {
           // Check for error responses from the server
           if (parsed.error) {
             logger.warn('Stream returned error payload:', parsed.error);
+            hadError = true;
             callbacks.onError(new Error(typeof parsed.error === 'string' ? parsed.error : parsed.error.message || 'Server error'));
             streamDone = true;
             break;
@@ -314,14 +316,10 @@ export function useStreamingResponse() {
             updateContent(content);
           }
         } catch {
-          if (textBuffer.trim().length > 0) {
-            // Buffer has more data — this line is complete and genuinely malformed, skip it
-            logger.warn('Skipping malformed SSE line:', jsonStr.substring(0, 100));
-            continue;
-          }
-          // Buffer is empty — line might be split across chunks, save for next read
-          textBuffer = line + "\n";
-          break;
+          // Lines extracted from the inner loop are always newline-delimited (complete).
+          // If JSON.parse fails, the line is genuinely malformed — skip it.
+          logger.warn('Skipping malformed SSE line:', jsonStr.substring(0, 100));
+          continue;
         }
       }
     }
@@ -335,10 +333,14 @@ export function useStreamingResponse() {
     // Final update to ensure all content is sent
     callbacks.onToken(assistantMessageRef.current);
     setIsStreaming(false);
-    
+
     const finalContent = assistantMessageRef.current;
-    callbacks.onStreamEnd(finalContent);
-    
+    // Don't call onStreamEnd if onError already fired — prevents double handling
+    // (partial conversation save, false success haptic, TTS of error content)
+    if (!hadError) {
+      callbacks.onStreamEnd(finalContent);
+    }
+
     return finalContent;
   }, [navigate, toast]);
 
