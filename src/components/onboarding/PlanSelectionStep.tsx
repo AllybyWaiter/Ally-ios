@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
 import { getPaidPlans } from '@/lib/planConstants';
 import { useSearchParams } from 'react-router-dom';
+import { useRevenueCat } from '@/hooks/useRevenueCat';
+import { logger } from '@/lib/logger';
 
 interface PlanSelectionStepProps {
   userId: string;
@@ -45,6 +47,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
   const { toast } = useToast();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
+  const { isNative, currentOffering, purchase, showPaywall } = useRevenueCat();
 
   // Handle returning from cancelled checkout
   useEffect(() => {
@@ -64,7 +67,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
     setIsLoading(true);
 
     try {
-      // Save preferences before redirecting to Stripe (prevents data loss if user pays during onboarding)
+      // Save preferences before purchase flow (prevents data loss if user pays during onboarding)
       if (currentPreferences) {
         const { error: prefError } = await supabase
           .from('profiles')
@@ -72,15 +75,45 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
             unit_preference: currentPreferences.units,
             theme_preference: currentPreferences.theme,
             language_preference: currentPreferences.language,
-            // NOTE: NOT setting onboarding_completed here - that happens after payment confirmation
           })
           .eq('user_id', userId);
-          
+
         if (prefError) {
-          console.error('Failed to save preferences:', prefError);
+          logger.error('Failed to save preferences:', prefError);
         }
       }
 
+      // Use RevenueCat for native iOS/Android
+      if (isNative) {
+        let purchased = false;
+        if (currentOffering) {
+          const packageIdentifier = `${planId}_${isAnnual ? 'yearly' : 'monthly'}`;
+          const pkg = currentOffering.availablePackages.find(
+            p => p.identifier.toLowerCase() === packageIdentifier ||
+                 p.identifier.toLowerCase().includes(planId) &&
+                 p.identifier.toLowerCase().includes(isAnnual ? 'year' : 'month')
+          );
+          if (pkg) {
+            purchased = await purchase(pkg);
+          } else {
+            purchased = await showPaywall();
+          }
+        } else {
+          purchased = await showPaywall();
+        }
+
+        if (purchased) {
+          toast({
+            title: t('planSelection.subscriptionActivated', 'Subscription activated!'),
+            description: t('planSelection.welcome', 'Welcome to Ally Pro!'),
+          });
+        }
+        // Complete onboarding regardless of purchase result
+        await onComplete();
+        return;
+      }
+
+      // Web fallback: Use Stripe
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           plan_name: planId,
@@ -97,30 +130,29 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
         if (!checkoutUrl.hostname.endsWith('stripe.com')) {
           throw new Error('Invalid checkout URL');
         }
-        // Don't reset state here - we're redirecting away
         window.location.href = data.url;
-        return; // Early return to prevent finally block from running
+        return;
       } else {
         throw new Error('No checkout URL returned');
       }
     } catch (error: unknown) {
-      console.error('Checkout error:', error);
+      logger.error('Checkout error:', error);
       toast({
         title: t('planSelection.paymentNotReady', 'Payment setup not ready'),
-        description: t('planSelection.startingFree', 'Stripe is being configured. Starting you on the free plan for now.'),
+        description: t('planSelection.startingFree', 'Starting you on the free plan for now.'),
         variant: 'destructive',
       });
-      // Continue to dashboard on free plan
       try {
         await onComplete();
       } catch (completeError) {
-        console.error('Failed to complete onboarding:', completeError);
+        logger.error('Failed to complete onboarding:', completeError);
         toast({
           title: t('common.error', 'Error'),
           description: t('onboarding.completeFailed', 'Failed to complete setup. Please try again.'),
           variant: 'destructive',
         });
       }
+    } finally {
       setIsLoading(false);
       setSelectedPlan(null);
     }

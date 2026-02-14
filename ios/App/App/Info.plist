@@ -49,8 +49,6 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Ally needs your location to provide accurate weather data and water care recommendations for your area.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Ally uses your location to send weather alerts that may affect your pool or aquarium water quality.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Ally needs camera access to capture photos of your water test results for AI-powered analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -58,6 +56,6 @@
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Ally needs permission to save water test photos and aquarium images to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Ally needs microphone access for voice commands and video recording.</string>
+	<string>Ally needs microphone access for voice commands and audio transcription.</string>
 </dict>
 </plist>

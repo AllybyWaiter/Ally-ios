@@ -25,18 +25,6 @@ export default function TermsOfService() {
             By using the Service, you agree to be bound by these Terms.
           </p>
 
-          <h2>Beta Program</h2>
-          <p>
-            Ally is currently in closed beta. By participating in the beta program, you acknowledge that:
-          </p>
-          <ul>
-            <li>Access to the beta may be revoked at any time without notice</li>
-            <li>The Service may contain bugs, errors, or other issues</li>
-            <li>Features may change, be modified, or removed without notice</li>
-            <li>Beta access does not guarantee future access to the Service</li>
-            <li>The Service is provided "as is" during the beta period</li>
-          </ul>
-
           <h2>Account Registration</h2>
           <p>
             To use certain features of the Service, you must create an account. You agree to:

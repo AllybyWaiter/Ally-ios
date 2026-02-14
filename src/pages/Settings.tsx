@@ -871,7 +871,7 @@ const Settings = () => {
                 <p className="font-medium text-sm">Ally by WA.I.TER</p>
                 <p className="text-xs text-muted-foreground">Version {APP_VERSION}</p>
               </div>
-              <Badge variant="secondary" className="text-xs">Closed Beta</Badge>
+              <Badge variant="secondary" className="text-xs">v{APP_VERSION}</Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               © {new Date().getFullYear()} WA.I.TER. All rights reserved.
