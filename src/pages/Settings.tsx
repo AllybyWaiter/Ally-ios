@@ -433,58 +433,16 @@ const Settings = () => {
       return;
     }
 
-    // Web: Use Stripe portal
+    // Web fallback: direct to platform subscription management
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isAndroid = /Android/.test(navigator.userAgent);
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session?.access_token) {
-        toast({ title: "Session Expired", description: "Please sign in again.", variant: "destructive" });
-        setPortalLoading(false);
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke('create-portal-session', {
-        body: { return_url: window.location.href }
-      });
-      if (error) throw new Error(error.message);
-      if (data?.url) {
-        try {
-          const redirectUrl = new URL(data.url);
-          if (!redirectUrl.hostname.endsWith('stripe.com')) {
-            toast({ title: "Invalid Redirect", description: "Unexpected redirect URL. Please try again.", variant: "destructive" });
-            setPortalLoading(false);
-            return;
-          }
-          window.location.href = data.url;
-        } catch {
-          toast({ title: "Invalid URL", description: "Received an invalid URL. Please try again.", variant: "destructive" });
-          setPortalLoading(false);
-        }
-        return;
-      }
-      if (data?.error === 'no_subscription') {
-        setPortalLoading(false);
-        if (isIOS) {
-          window.location.href = 'https://apps.apple.com/account/subscriptions';
-        } else if (isAndroid) {
-          window.location.href = 'https://play.google.com/store/account/subscriptions';
-        } else {
-          toast({ title: "No Active Subscription", description: "Upgrade to manage your subscription." });
-          navigate('/pricing');
-        }
-        return;
-      }
-      throw new Error('Failed to get portal URL');
-    } catch (e) {
-      logger.error('Subscription management error:', e);
-      setPortalLoading(false);
-      if (isIOS) {
-        window.location.href = 'https://apps.apple.com/account/subscriptions';
-      } else if (isAndroid) {
-        window.location.href = 'https://play.google.com/store/account/subscriptions';
-      } else {
-        toast({ title: "Unable to Open Portal", description: "Please try again.", variant: "destructive" });
-      }
+    setPortalLoading(false);
+    if (isIOS) {
+      window.location.href = 'https://apps.apple.com/account/subscriptions';
+    } else if (isAndroid) {
+      window.location.href = 'https://play.google.com/store/account/subscriptions';
+    } else {
+      toast({ title: "Manage Subscription", description: "Please manage your subscription through the App Store or Google Play." });
     }
   };
 

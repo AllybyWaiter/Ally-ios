@@ -16,7 +16,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/lib/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -112,41 +111,25 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
     setSelectedPlan(planId);
     setIsLoading(true);
 
-    // Use RevenueCat for native iOS/Android
-    if (isNative) {
-      try {
-        if (currentOffering) {
-          // Find the matching package based on plan tier and billing period
-          // Package identifiers are like: basic_monthly, plus_yearly, etc.
-          const packageIdentifier = `${planId}_${isAnnual ? 'yearly' : 'monthly'}`;
-          const pkg = currentOffering.availablePackages.find(
-            p => p.identifier.toLowerCase() === packageIdentifier ||
-                 p.identifier.toLowerCase().includes(planId) &&
-                 p.identifier.toLowerCase().includes(isAnnual ? 'year' : 'month')
-          );
+    try {
+      if (currentOffering) {
+        const packageIdentifier = `${planId}_${isAnnual ? 'yearly' : 'monthly'}`;
+        const pkg = currentOffering.availablePackages.find(
+          p => p.identifier.toLowerCase() === packageIdentifier ||
+               p.identifier.toLowerCase().includes(planId) &&
+               p.identifier.toLowerCase().includes(isAnnual ? 'year' : 'month')
+        );
 
-          if (pkg) {
-            const success = await purchase(pkg);
-            if (success) {
-              toast({
-                title: 'Subscription activated!',
-                description: `Welcome to Ally ${planId.charAt(0).toUpperCase() + planId.slice(1)}!`,
-              });
-              onClose();
-            }
-          } else {
-            // Fallback: show the RevenueCat paywall
-            const purchased = await showPaywall();
-            if (purchased) {
-              toast({
-                title: 'Subscription activated!',
-                description: 'Welcome to Ally Pro!',
-              });
-              onClose();
-            }
+        if (pkg) {
+          const success = await purchase(pkg);
+          if (success) {
+            toast({
+              title: 'Subscription activated!',
+              description: `Welcome to Ally ${planId.charAt(0).toUpperCase() + planId.slice(1)}!`,
+            });
+            onClose();
           }
         } else {
-          // No offerings available, show paywall as fallback
           const purchased = await showPaywall();
           if (purchased) {
             toast({
@@ -156,55 +139,25 @@ function PlanContent({ currentTier, onClose }: { currentTier?: string; onClose: 
             onClose();
           }
         }
-      } catch (error) {
-        logger.error('Purchase error:', error);
-        if ((error as Error).message !== 'Purchase cancelled') {
-          toast({
-            title: 'Unable to complete purchase',
-            description: 'Please try again later.',
-            variant: 'destructive',
-          });
-        }
-      } finally {
-        setIsLoading(false);
-        setSelectedPlan(null);
-      }
-      return;
-    }
-
-    // Web fallback: Use Stripe
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          plan_name: planId,
-          billing_interval: isAnnual ? 'year' : 'month',
-          success_url: `${window.location.origin}/dashboard?subscription=activated`,
-          cancel_url: `${window.location.origin}/dashboard?checkout=cancelled`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        // Validate checkout URL to prevent open redirect
-        const checkoutUrl = new URL(data.url);
-        if (checkoutUrl.protocol !== 'https:') {
-          throw new Error('Invalid checkout URL protocol');
-        }
-        if (checkoutUrl.hostname !== 'stripe.com' && !checkoutUrl.hostname.endsWith('.stripe.com')) {
-          throw new Error('Invalid checkout URL');
-        }
-        window.location.href = data.url;
       } else {
-        throw new Error('No checkout URL returned');
+        const purchased = await showPaywall();
+        if (purchased) {
+          toast({
+            title: 'Subscription activated!',
+            description: 'Welcome to Ally Pro!',
+          });
+          onClose();
+        }
       }
-    } catch (error: unknown) {
-      logger.error('Checkout error:', error);
-      toast({
-        title: 'Unable to start checkout',
-        description: 'Please try again later or contact support.',
-        variant: 'destructive',
-      });
+    } catch (error) {
+      logger.error('Purchase error:', error);
+      if ((error as Error).message !== 'Purchase cancelled') {
+        toast({
+          title: 'Unable to complete purchase',
+          description: 'Please try again later.',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLoading(false);
       setSelectedPlan(null);

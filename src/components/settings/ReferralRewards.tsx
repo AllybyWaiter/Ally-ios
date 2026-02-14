@@ -5,7 +5,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useReferralCode } from '@/hooks/useReferralCode';
 import { Gift, Clock, CheckCircle2, XCircle, Sparkles, Loader2 } from 'lucide-react';
 import { format, formatDistanceToNow, isPast } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { useRevenueCat } from '@/hooks/useRevenueCat';
@@ -66,47 +65,16 @@ export function ReferralRewards() {
     }
   };
 
-  const handleRedeem = async (rewardId: string, couponId: string | null) => {
-    if (!couponId && !isNative) {
-      toast.error('No coupon available for this reward');
-      return;
-    }
-
-    setRedeemingId(rewardId);
+  const handleRedeem = async (_rewardId: string, _couponId: string | null) => {
+    setRedeemingId(_rewardId);
 
     try {
-      // On native iOS/Android, use RevenueCat paywall (coupons handled via App Store promo codes)
-      if (isNative) {
-        const purchased = await showPaywall();
-        if (purchased) {
-          toast.success('Reward redeemed! Your subscription is now active.');
-        }
-        return;
-      }
-
-      // Web: Use Stripe checkout with coupon
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          plan_name: 'plus',
-          billing_interval: 'month',
-          coupon_id: couponId,
-          reward_id: rewardId,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        const checkoutUrl = new URL(data.url);
-        if (!checkoutUrl.hostname.endsWith('stripe.com')) {
-          throw new Error('Invalid checkout URL');
-        }
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
+      const purchased = await showPaywall();
+      if (purchased) {
+        toast.success('Reward redeemed! Your subscription is now active.');
       }
     } catch (err) {
-      logger.error('Failed to start checkout:', err);
+      logger.error('Failed to redeem reward:', err);
       toast.error('Failed to redeem reward. Please try again.');
     } finally {
       setRedeemingId(null);

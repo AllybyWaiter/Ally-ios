@@ -1,5 +1,4 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import Stripe from 'https://esm.sh/stripe@17.7.0?target=deno';
 import { createLogger } from '../_shared/logger.ts';
 import { createErrorResponse, createSuccessResponse } from '../_shared/errorHandler.ts';
 import { handleCors } from '../_shared/cors.ts';
@@ -11,17 +10,6 @@ Deno.serve(async (req) => {
   if (corsResponse) return corsResponse;
 
   try {
-    const stripeKey = Deno.env.get('STRIPE_API_KEY');
-    if (!stripeKey) {
-      logger.error('STRIPE_API_KEY not configured');
-      return createErrorResponse('Stripe not configured', logger, { status: 500 });
-    }
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
-
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -71,8 +59,8 @@ Deno.serve(async (req) => {
       return createSuccessResponse({ message: 'No pending referral', rewarded: false });
     }
 
-    // Claim the referral with an optimistic lock before creating Stripe coupons
-    // This prevents double coupon creation from concurrent requests
+    // Claim the referral with an optimistic lock before creating rewards
+    // This prevents double reward creation from concurrent requests
     const { data: updateData, error: updateError } = await supabaseAdmin
       .from('referrals')
       .update({
@@ -98,34 +86,6 @@ Deno.serve(async (req) => {
       return createSuccessResponse({ message: 'Referral already processed', rewarded: false });
     }
 
-    // Create Stripe coupons for both referrer and referee
-    const referrerCoupon = await stripe.coupons.create({
-      percent_off: 100,
-      duration: 'once',
-      name: 'Referral Reward - 1 Month Plus Free',
-      metadata: {
-        type: 'referral_reward',
-        referral_id: referral.id,
-        beneficiary: 'referrer',
-      },
-    });
-
-    const refereeCoupon = await stripe.coupons.create({
-      percent_off: 100,
-      duration: 'once',
-      name: 'Welcome Reward - 1 Month Plus Free',
-      metadata: {
-        type: 'referral_reward',
-        referral_id: referral.id,
-        beneficiary: 'referee',
-      },
-    });
-
-    logger.info('Created Stripe coupons', {
-      referrerCouponId: referrerCoupon.id,
-      refereeCouponId: refereeCoupon.id
-    });
-
     // Create reward records for both users
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
@@ -139,7 +99,7 @@ Deno.serve(async (req) => {
         reward_type: 'referrer_bonus',
         reward_value: 'plus_1_month',
         status: 'pending',
-        stripe_coupon_id: referrerCoupon.id,
+        stripe_coupon_id: null,
         expires_at: expiresAt.toISOString(),
       });
 
@@ -150,7 +110,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Referee reward (apply immediately if possible)
+    // Referee reward
     const { error: refereeRewardError } = await supabaseAdmin
       .from('referral_rewards')
       .insert({
@@ -159,7 +119,7 @@ Deno.serve(async (req) => {
         reward_type: 'referee_bonus',
         reward_value: 'plus_1_month',
         status: 'pending',
-        stripe_coupon_id: refereeCoupon.id,
+        stripe_coupon_id: null,
         expires_at: expiresAt.toISOString(),
       });
 
@@ -170,17 +130,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    logger.info('Referral rewards created successfully', { 
+    logger.info('Referral rewards created successfully', {
       referral_id: referral.id,
       referrer_id: referral.referrer_id,
-      referee_id 
+      referee_id
     });
 
     return createSuccessResponse({
       rewarded: true,
       referral_id: referral.id,
-      referrer_coupon_id: referrerCoupon.id,
-      referee_coupon_id: refereeCoupon.id,
     });
   } catch (error) {
     logger.error('Failed to apply referral reward', error);

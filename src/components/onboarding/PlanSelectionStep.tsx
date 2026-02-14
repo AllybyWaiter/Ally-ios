@@ -83,58 +83,32 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
         }
       }
 
-      // Use RevenueCat for native iOS/Android
-      if (isNative) {
-        let purchased = false;
-        if (currentOffering) {
-          const packageIdentifier = `${planId}_${isAnnual ? 'yearly' : 'monthly'}`;
-          const pkg = currentOffering.availablePackages.find(
-            p => p.identifier.toLowerCase() === packageIdentifier ||
-                 p.identifier.toLowerCase().includes(planId) &&
-                 p.identifier.toLowerCase().includes(isAnnual ? 'year' : 'month')
-          );
-          if (pkg) {
-            purchased = await purchase(pkg);
-          } else {
-            purchased = await showPaywall();
-          }
+      // Use RevenueCat for purchases
+      let purchased = false;
+      if (currentOffering) {
+        const packageIdentifier = `${planId}_${isAnnual ? 'yearly' : 'monthly'}`;
+        const pkg = currentOffering.availablePackages.find(
+          p => p.identifier.toLowerCase() === packageIdentifier ||
+               p.identifier.toLowerCase().includes(planId) &&
+               p.identifier.toLowerCase().includes(isAnnual ? 'year' : 'month')
+        );
+        if (pkg) {
+          purchased = await purchase(pkg);
         } else {
           purchased = await showPaywall();
         }
-
-        if (purchased) {
-          toast({
-            title: t('planSelection.subscriptionActivated', 'Subscription activated!'),
-            description: t('planSelection.welcome', 'Welcome to Ally Pro!'),
-          });
-        }
-        // Complete onboarding regardless of purchase result
-        await onComplete();
-        return;
-      }
-
-      // Web fallback: Use Stripe
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          plan_name: planId,
-          billing_interval: isAnnual ? 'year' : 'month',
-          success_url: `${window.location.origin}/dashboard?subscription=activated`,
-          cancel_url: `${window.location.origin}/dashboard?checkout=cancelled`,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        const checkoutUrl = new URL(data.url);
-        if (!checkoutUrl.hostname.endsWith('stripe.com')) {
-          throw new Error('Invalid checkout URL');
-        }
-        window.location.href = data.url;
-        return;
       } else {
-        throw new Error('No checkout URL returned');
+        purchased = await showPaywall();
       }
+
+      if (purchased) {
+        toast({
+          title: t('planSelection.subscriptionActivated', 'Subscription activated!'),
+          description: t('planSelection.welcome', 'Welcome to Ally Pro!'),
+        });
+      }
+      // Complete onboarding regardless of purchase result
+      await onComplete();
     } catch (error: unknown) {
       logger.error('Checkout error:', error);
       toast({
