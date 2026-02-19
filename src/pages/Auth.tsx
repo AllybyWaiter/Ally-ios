@@ -3,13 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// Card components no longer used - auth uses floating layout
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, Gift } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo-watermark.png';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeInput } from '@/lib/utils';
 import { useRateLimit } from '@/hooks/useRateLimit';
@@ -53,10 +53,12 @@ export default function Auth() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string; referralCode?: string }>({});
+  const [showNoAccount, setShowNoAccount] = useState(false);
   
   // Clear errors when switching views to prevent stale errors
   const handleViewChange = (newView: AuthView) => {
     setErrors({});
+    setShowNoAccount(false);
     setView(newView);
   };
   const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
@@ -364,11 +366,7 @@ export default function Auth() {
             duration: 10000, // Show for longer
           });
         } else if (errorMessage.includes('Invalid login credentials')) {
-          toast({
-            title: 'Error',
-            description: 'Invalid email or password',
-            variant: 'destructive',
-          });
+          setShowNoAccount(true);
         } else if (errorMessage.includes('User already registered')) {
           toast({
             title: 'Error',
@@ -389,31 +387,73 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4">
-          <Link to="/" className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity">
-            <img src={logo} alt="Ally Logo" className="w-12 h-12 object-contain" />
-            <div className="text-center">
-              <div className="font-bold text-2xl">Ally</div>
-              <div className="text-xs text-muted-foreground">by WA.I.TER</div>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative">
+      {/* Water background image */}
+      <div
+        className="fixed inset-0 bg-cover bg-center z-0"
+        style={{ backgroundImage: 'url(/images/dashboard/morning.jpg)' }}
+      />
+      {/* Subtle overlay for readability */}
+      <div className="fixed inset-0 bg-black/10 z-0" />
+
+      <div className="w-full max-w-sm relative z-10 space-y-8">
+        {/* Logo */}
+        <Link to="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
+          <img src={logo} alt="Ally by WA.I.TER" className="w-32 h-32 object-contain drop-shadow-lg" />
+        </Link>
+
+        {/* Title */}
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-white [text-shadow:_0_2px_8px_rgba(0,0,0,0.4)]">
+            {view === 'login' ? 'Welcome Back' : view === 'signup' ? 'Create Account' : 'Reset Password'}
+          </h1>
+          <p className="text-white/80 mt-1 [text-shadow:_0_1px_4px_rgba(0,0,0,0.4)]">
+            {view === 'login'
+              ? 'Sign in to your account'
+              : view === 'signup'
+                ? 'Create your free account to get started'
+                : 'Enter your email to receive a reset link'}
+          </p>
+        </div>
+
+        {/* Form */}
+        <div>
+          {showNoAccount ? (
+            <div className="text-center space-y-6">
+              <div className="text-5xl">😯</div>
+              <div>
+                <h2 className="text-2xl font-bold text-white [text-shadow:_0_2px_8px_rgba(0,0,0,0.4)]">
+                  Uh oh!
+                </h2>
+                <p className="text-white/80 mt-2 [text-shadow:_0_1px_4px_rgba(0,0,0,0.4)]">
+                  This email isn't anchored to an account. Join today!
+                </p>
+              </div>
+              <div className="space-y-3">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    setShowNoAccount(false);
+                    setPassword('');
+                  }}
+                >
+                  Try Again
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-white/30 text-white bg-white/10 hover:bg-white/20"
+                  onClick={() => {
+                    setShowNoAccount(false);
+                    setPassword('');
+                    setConfirmPassword('');
+                    handleViewChange('signup');
+                  }}
+                >
+                  Create an Account
+                </Button>
+              </div>
             </div>
-          </Link>
-          <div>
-          <CardTitle className="text-2xl text-center">
-              {view === 'login' ? 'Welcome Back' : view === 'signup' ? 'Create Account' : 'Reset Password'}
-            </CardTitle>
-            <CardDescription className="text-center">
-              {view === 'login' 
-                ? 'Sign in to your account' 
-                : view === 'signup' 
-                  ? 'Create your free account to get started'
-                  : 'Enter your email to receive a reset link'}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {view === 'forgotPassword' ? (
+          ) : view === 'forgotPassword' ? (
             resetEmailSent ? (
               <div className="text-center space-y-4">
                 <div className="text-green-500 text-5xl mb-4">✓</div>
@@ -435,7 +475,7 @@ export default function Auth() {
             ) : (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-white font-semibold [text-shadow:_0_1px_4px_rgba(0,0,0,0.5)]">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -443,6 +483,7 @@ export default function Auth() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}
+                    className="auth-glass-input"
                   />
                   {errors.email && (
                     <p className="text-sm text-destructive">{errors.email}</p>
@@ -474,7 +515,7 @@ export default function Auth() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 {view === 'signup' && (
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name" className="text-white font-semibold [text-shadow:_0_1px_4px_rgba(0,0,0,0.5)]">Name</Label>
                     <Input
                       id="name"
                       type="text"
@@ -485,6 +526,7 @@ export default function Auth() {
                       autoComplete="name"
                       maxLength={100}
                       aria-describedby={errors.name ? 'name-error' : undefined}
+                      className="auth-glass-input"
                     />
                     {errors.name && (
                       <p id="name-error" className="text-sm text-destructive">{errors.name}</p>
@@ -492,7 +534,7 @@ export default function Auth() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-white font-semibold [text-shadow:_0_1px_4px_rgba(0,0,0,0.5)]">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -501,6 +543,7 @@ export default function Auth() {
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
                     disabled={isLoading}
+                    className="auth-glass-input"
                   />
                   {errors.email && (
                     <p className="text-sm text-destructive">{errors.email}</p>
@@ -508,12 +551,12 @@ export default function Auth() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-white font-semibold [text-shadow:_0_1px_4px_rgba(0,0,0,0.5)]">Password</Label>
                     {view === 'login' && (
                       <button
                         type="button"
                         onClick={() => handleViewChange('forgotPassword')}
-                        className="text-xs text-primary hover:underline"
+                        className="text-xs text-white/80 hover:text-white hover:underline [text-shadow:_0_1px_3px_rgba(0,0,0,0.4)]"
                       >
                         Forgot password?
                       </button>
@@ -527,13 +570,13 @@ export default function Auth() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
-                      className="pr-10"
+                      className="pr-10 auth-glass-input"
                       autoComplete={view === 'login' ? 'current-password' : 'new-password'}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                       tabIndex={-1}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
@@ -544,14 +587,14 @@ export default function Auth() {
                     <p className="text-sm text-destructive">{errors.password}</p>
                   )}
                   {view === 'signup' && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-white/60">
                       Must be 8+ characters with uppercase, lowercase, and number
                     </p>
                   )}
                 </div>
                 {view === 'signup' && (
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword" className="text-white font-semibold [text-shadow:_0_1px_4px_rgba(0,0,0,0.5)]">Confirm Password</Label>
                     <div className="relative">
                       <Input
                         id="confirmPassword"
@@ -560,13 +603,13 @@ export default function Auth() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         disabled={isLoading}
-                        className="pr-10"
+                        className="pr-10 auth-glass-input"
                         autoComplete="new-password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                         tabIndex={-1}
                       >
                         {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -579,8 +622,8 @@ export default function Auth() {
                 )}
                 {view === 'signup' && (
                   <div className="space-y-2">
-                    <Label htmlFor="referralCode" className="flex items-center gap-2">
-                      <Gift size={14} className="text-primary" />
+                    <Label htmlFor="referralCode" className="flex items-center gap-2 text-white drop-shadow">
+                      <Gift size={14} className="text-white/70" />
                       Referral Code (optional)
                     </Label>
                     <Input
@@ -598,7 +641,7 @@ export default function Auth() {
                         }
                       }}
                       disabled={isLoading}
-                      className="uppercase"
+                      className="uppercase auth-glass-input"
                     />
                     {referrerName && (
                       <p className="text-xs text-green-600 flex items-center gap-1">
@@ -612,16 +655,16 @@ export default function Auth() {
                   </div>
                 )}
                 {view === 'signup' && (
-                  <p className="text-xs text-muted-foreground text-center">
+                  <p className="text-xs text-white/60 text-center">
                     By creating an account, you agree to our{' '}
-                    <Link to="/terms" className="text-primary hover:underline">
+                    <Link to="/terms" className="text-white/80 hover:text-white underline">
                       Terms of Service
                     </Link>{' '}
                     and{' '}
-                    <Link to="/privacy" className="text-primary hover:underline">
+                    <Link to="/privacy" className="text-white/80 hover:text-white underline">
                       Privacy Policy
                     </Link>, and acknowledge our{' '}
-                    <Link to="/cookies" className="text-primary hover:underline">
+                    <Link to="/cookies" className="text-white/80 hover:text-white underline">
                       Cookie Policy
                     </Link>.
                   </p>
@@ -645,7 +688,7 @@ export default function Auth() {
               <div className="mt-4 text-center text-sm">
                 <button
                   onClick={() => handleViewChange(view === 'login' ? 'signup' : 'login')}
-                  className="text-primary hover:underline"
+                  className="text-white/80 hover:text-white hover:underline [text-shadow:_0_1px_4px_rgba(0,0,0,0.4)]"
                   disabled={isLoading}
                 >
                   {view === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
@@ -653,8 +696,8 @@ export default function Auth() {
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
