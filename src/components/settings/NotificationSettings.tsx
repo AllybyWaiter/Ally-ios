@@ -1,4 +1,19 @@
-import { Bell, BellOff, Clock, Moon, Send, AlertTriangle, CheckCircle2, Info, Volume2, VolumeX, CloudLightning, HeartPulse } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import {
+  Bell,
+  BellOff,
+  Clock,
+  Moon,
+  Send,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  Volume2,
+  VolumeX,
+  CloudLightning,
+  HeartPulse,
+} from 'lucide-react';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -15,13 +30,40 @@ export default function NotificationSettings() {
     isSupported,
     permission,
     isSubscribed,
+    isSubscribing,
     preferences,
     loading,
+    lastSubscribeCode,
+    lastSubscribeError,
+    clearSubscribeFailure,
     subscribe,
     unsubscribe,
     updatePreferences,
     sendTestNotification,
   } = usePushNotifications();
+  const [masterEnabled, setMasterEnabled] = useState(false);
+
+  useEffect(() => {
+    setMasterEnabled(isSubscribed);
+  }, [isSubscribed]);
+
+  const toggleMasterNotifications = async (checked: boolean) => {
+    if (isSubscribing) return;
+    const previous = masterEnabled;
+    setMasterEnabled(checked);
+
+    try {
+      const success = checked ? await subscribe() : await unsubscribe();
+      if (!success) {
+        setMasterEnabled(previous);
+      } else {
+        clearSubscribeFailure();
+      }
+    } catch (error) {
+      setMasterEnabled(previous);
+      logger.error('Failed to toggle push notifications:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -32,7 +74,6 @@ export default function NotificationSettings() {
     );
   }
 
-  // Browser support check
   if (!isSupported) {
     return (
       <Alert>
@@ -44,16 +85,23 @@ export default function NotificationSettings() {
     );
   }
 
-  // Detect iOS and whether running as installed PWA
+  const isNativeApp = Capacitor.isNativePlatform();
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const navigatorWithStandalone = window.navigator as Navigator & { standalone?: boolean };
   const isStandalone = navigatorWithStandalone.standalone === true;
-  // Show notice only for iOS users who have NOT installed as PWA
-  const isIOSNotPWA = isIOS && !isStandalone;
+  const isIOSNotPWA = !isNativeApp && isIOS && !isStandalone;
+
+  const openSystemSettings = () => {
+    if (!isNativeApp) return;
+    try {
+      window.location.href = 'app-settings:';
+    } catch (error) {
+      logger.error('Failed to open system settings:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* iOS PWA Notice - only show if iOS user hasn't installed as PWA */}
       {isIOSNotPWA && (
         <Alert>
           <Info className="h-4 w-4" />
@@ -63,17 +111,35 @@ export default function NotificationSettings() {
         </Alert>
       )}
 
-      {/* Permission Status */}
       {permission === 'denied' && (
         <Alert variant="destructive">
           <BellOff className="h-4 w-4" />
           <AlertDescription>
-            Notifications are blocked. Please enable them in your browser settings to receive push notifications.
+            Notifications are blocked. Please enable them in {isNativeApp ? 'Settings > Notifications' : 'your browser settings'} to receive push notifications.
+            {isNativeApp && (
+              <div className="mt-3">
+                <Button size="sm" variant="outline" onClick={openSystemSettings}>
+                  Open iOS Settings
+                </Button>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Master Toggle Card */}
+      {!!lastSubscribeError && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-medium">Notification setup failed</div>
+            <div className="text-sm mt-1">{lastSubscribeError}</div>
+            {!!lastSubscribeCode && (
+              <div className="text-xs mt-2 text-muted-foreground">Failure code: {lastSubscribeCode}</div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -89,33 +155,50 @@ export default function NotificationSettings() {
             <div className="space-y-0.5">
               <Label htmlFor="push-enabled" className="text-base">Enable Push Notifications</Label>
               <p className="text-sm text-muted-foreground">
-                {isSubscribed ? 'Notifications are enabled' : 'Enable to receive alerts'}
+                {isSubscribing
+                  ? 'Enabling notifications...'
+                  : isSubscribed
+                    ? 'Notifications are enabled'
+                    : 'Enable to receive alerts'}
               </p>
             </div>
             <Switch
               id="push-enabled"
-              checked={isSubscribed && preferences.push_enabled}
-              onCheckedChange={async (checked) => {
-                try {
-                  if (checked) {
-                    await subscribe();
-                  } else {
-                    await unsubscribe();
-                  }
-                } catch (error) {
-                  logger.error('Failed to toggle push notifications:', error);
-                }
-              }}
-              disabled={permission === 'denied'}
+              checked={masterEnabled}
+              onCheckedChange={toggleMasterNotifications}
+              disabled={isSubscribing}
             />
           </div>
+
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void toggleMasterNotifications(!masterEnabled)}
+              disabled={isSubscribing}
+            >
+              {masterEnabled ? 'Disable Notifications' : 'Enable Notifications'}
+            </Button>
+          </div>
+
+          {permission === 'denied' && (
+            <p className="text-xs text-muted-foreground">
+              iOS requires enabling notifications in device Settings for this app.
+            </p>
+          )}
 
           {isSubscribed && (
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => { try { await sendTestNotification('task_reminder'); } catch (e) { logger.error('Test notification failed:', e); } }}
+                onClick={async () => {
+                  try {
+                    await sendTestNotification('task_reminder');
+                  } catch (e) {
+                    logger.error('Test notification failed:', e);
+                  }
+                }}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Test Task
@@ -123,7 +206,13 @@ export default function NotificationSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => { try { await sendTestNotification('water_alert'); } catch (e) { logger.error('Test notification failed:', e); } }}
+                onClick={async () => {
+                  try {
+                    await sendTestNotification('water_alert');
+                  } catch (e) {
+                    logger.error('Test notification failed:', e);
+                  }
+                }}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Test Alert
@@ -131,7 +220,13 @@ export default function NotificationSettings() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => { try { await sendTestNotification('announcement'); } catch (e) { logger.error('Test notification failed:', e); } }}
+                onClick={async () => {
+                  try {
+                    await sendTestNotification('announcement');
+                  } catch (e) {
+                    logger.error('Test notification failed:', e);
+                  }
+                }}
               >
                 <Send className="h-4 w-4 mr-2" />
                 Test Announcement
@@ -141,7 +236,6 @@ export default function NotificationSettings() {
         </CardContent>
       </Card>
 
-      {/* Category Settings */}
       <Card className={cn(!isSubscribed && 'opacity-50 pointer-events-none')}>
         <CardHeader>
           <CardTitle>Notification Categories</CardTitle>
@@ -150,7 +244,6 @@ export default function NotificationSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Task Reminders */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -165,7 +258,13 @@ export default function NotificationSettings() {
               <Switch
                 id="task-reminders"
                 checked={preferences.task_reminders_enabled}
-                onCheckedChange={async (checked) => { try { await updatePreferences({ task_reminders_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await updatePreferences({ task_reminders_enabled: checked });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -178,14 +277,19 @@ export default function NotificationSettings() {
                 <Switch
                   id="sound-task"
                   checked={preferences.sound_task_reminders}
-                  onCheckedChange={async (checked) => { try { await updatePreferences({ sound_task_reminders: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      await updatePreferences({ sound_task_reminders: checked });
+                    } catch (e) {
+                      logger.error('Failed to update preferences:', e);
+                    }
+                  }}
                   disabled={!isSubscribed}
                 />
               </div>
             )}
           </div>
 
-          {/* Water Alerts */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -200,7 +304,13 @@ export default function NotificationSettings() {
               <Switch
                 id="water-alerts"
                 checked={preferences.water_alerts_enabled}
-                onCheckedChange={async (checked) => { try { await updatePreferences({ water_alerts_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await updatePreferences({ water_alerts_enabled: checked });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -213,14 +323,19 @@ export default function NotificationSettings() {
                 <Switch
                   id="sound-water"
                   checked={preferences.sound_water_alerts}
-                  onCheckedChange={async (checked) => { try { await updatePreferences({ sound_water_alerts: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      await updatePreferences({ sound_water_alerts: checked });
+                    } catch (e) {
+                      logger.error('Failed to update preferences:', e);
+                    }
+                  }}
                   disabled={!isSubscribed}
                 />
               </div>
             )}
           </div>
 
-          {/* Announcements */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -235,7 +350,13 @@ export default function NotificationSettings() {
               <Switch
                 id="announcements"
                 checked={preferences.announcements_enabled}
-                onCheckedChange={async (checked) => { try { await updatePreferences({ announcements_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await updatePreferences({ announcements_enabled: checked });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -248,14 +369,19 @@ export default function NotificationSettings() {
                 <Switch
                   id="sound-announcements"
                   checked={preferences.sound_announcements}
-                  onCheckedChange={async (checked) => { try { await updatePreferences({ sound_announcements: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                  onCheckedChange={async (checked) => {
+                    try {
+                      await updatePreferences({ sound_announcements: checked });
+                    } catch (e) {
+                      logger.error('Failed to update preferences:', e);
+                    }
+                  }}
                   disabled={!isSubscribed}
                 />
               </div>
             )}
           </div>
 
-          {/* Health Score Alerts */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -270,7 +396,13 @@ export default function NotificationSettings() {
               <Switch
                 id="health-alerts"
                 checked={preferences.health_alerts_enabled}
-                onCheckedChange={async (checked) => { try { await updatePreferences({ health_alerts_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await updatePreferences({ health_alerts_enabled: checked });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -284,7 +416,13 @@ export default function NotificationSettings() {
                   <Switch
                     id="sound-health"
                     checked={preferences.sound_health_alerts}
-                    onCheckedChange={async (checked) => { try { await updatePreferences({ sound_health_alerts: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await updatePreferences({ sound_health_alerts: checked });
+                      } catch (e) {
+                        logger.error('Failed to update preferences:', e);
+                      }
+                    }}
                     disabled={!isSubscribed}
                   />
                 </div>
@@ -292,7 +430,13 @@ export default function NotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={async () => { try { await sendTestNotification('health_alert'); } catch (e) { logger.error('Test notification failed:', e); } }}
+                    onClick={async () => {
+                      try {
+                        await sendTestNotification('health_alert');
+                      } catch (e) {
+                        logger.error('Test notification failed:', e);
+                      }
+                    }}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Test Health Alert
@@ -302,7 +446,6 @@ export default function NotificationSettings() {
             )}
           </div>
 
-          {/* Severe Weather Alerts */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
@@ -317,7 +460,13 @@ export default function NotificationSettings() {
               <Switch
                 id="weather-alerts"
                 checked={preferences.weather_alerts_enabled}
-                onCheckedChange={async (checked) => { try { await updatePreferences({ weather_alerts_enabled: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await updatePreferences({ weather_alerts_enabled: checked });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed}
               />
             </div>
@@ -331,7 +480,13 @@ export default function NotificationSettings() {
                   <Switch
                     id="sound-weather"
                     checked={preferences.sound_weather_alerts}
-                    onCheckedChange={async (checked) => { try { await updatePreferences({ sound_weather_alerts: checked }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await updatePreferences({ sound_weather_alerts: checked });
+                      } catch (e) {
+                        logger.error('Failed to update preferences:', e);
+                      }
+                    }}
                     disabled={!isSubscribed}
                   />
                 </div>
@@ -339,7 +494,13 @@ export default function NotificationSettings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={async () => { try { await sendTestNotification('weather_alert'); } catch (e) { logger.error('Test notification failed:', e); } }}
+                    onClick={async () => {
+                      try {
+                        await sendTestNotification('weather_alert');
+                      } catch (e) {
+                        logger.error('Test notification failed:', e);
+                      }
+                    }}
                   >
                     <Send className="h-4 w-4 mr-2" />
                     Test Weather Alert
@@ -351,7 +512,6 @@ export default function NotificationSettings() {
         </CardContent>
       </Card>
 
-      {/* Timing Settings */}
       <Card className={cn(!isSubscribed && 'opacity-50 pointer-events-none')}>
         <CardHeader>
           <CardTitle>Reminder Timing</CardTitle>
@@ -364,7 +524,13 @@ export default function NotificationSettings() {
             <Label htmlFor="reminder-hours">Remind me before tasks are due</Label>
             <Select
               value={preferences.reminder_hours_before.toString()}
-              onValueChange={async (value) => { try { await updatePreferences({ reminder_hours_before: parseInt(value, 10) }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+              onValueChange={async (value) => {
+                try {
+                  await updatePreferences({ reminder_hours_before: parseInt(value, 10) });
+                } catch (e) {
+                  logger.error('Failed to update preferences:', e);
+                }
+              }}
               disabled={!isSubscribed}
             >
               <SelectTrigger id="reminder-hours" className="w-full sm:w-[200px]">
@@ -391,9 +557,13 @@ export default function NotificationSettings() {
             <div className="flex flex-wrap items-center gap-2">
               <Select
                 value={preferences.quiet_hours_start || 'none'}
-                onValueChange={async (value) => { try { await updatePreferences({
-                  quiet_hours_start: value === 'none' ? null : value
-                }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onValueChange={async (value) => {
+                  try {
+                    await updatePreferences({ quiet_hours_start: value === 'none' ? null : value });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed}
               >
                 <SelectTrigger className="w-[120px]">
@@ -410,9 +580,13 @@ export default function NotificationSettings() {
               <span className="text-muted-foreground">to</span>
               <Select
                 value={preferences.quiet_hours_end || 'none'}
-                onValueChange={async (value) => { try { await updatePreferences({
-                  quiet_hours_end: value === 'none' ? null : value
-                }); } catch (e) { logger.error('Failed to update preferences:', e); } }}
+                onValueChange={async (value) => {
+                  try {
+                    await updatePreferences({ quiet_hours_end: value === 'none' ? null : value });
+                  } catch (e) {
+                    logger.error('Failed to update preferences:', e);
+                  }
+                }}
                 disabled={!isSubscribed || !preferences.quiet_hours_start}
               >
                 <SelectTrigger className="w-[120px]">
@@ -431,7 +605,6 @@ export default function NotificationSettings() {
         </CardContent>
       </Card>
 
-      {/* Status Indicator */}
       {isSubscribed && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 text-green-500" />
