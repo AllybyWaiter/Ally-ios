@@ -86,17 +86,18 @@ interface AquariumCardProps {
   t: (key: string) => string;
 }
 
-const AquariumCard = memo(function AquariumCard({ 
-  aquarium, 
-  index, 
-  units, 
-  onEdit, 
-  onDelete, 
-  t 
+const AquariumCard = memo(function AquariumCard({
+  aquarium,
+  index,
+  units,
+  onEdit,
+  onDelete,
+  t
 }: AquariumCardProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const health = useAquariumHealthScore(aquarium.id);
 
   const handleLongPress = useCallback(() => {
     setSheetOpen(true);
@@ -113,9 +114,13 @@ const AquariumCard = memo(function AquariumCard({
   });
 
   const cardContent = (
-    <Card 
+    <Card
       className="glass-card animate-fade-up opacity-0 relative"
-      style={{ animationDelay: `${(index + 3) * 100}ms` }}
+      style={{
+        animationDelay: `${(index + 3) * 100}ms`,
+        borderColor: health.color,
+        borderWidth: '1.5px',
+      }}
       onMouseEnter={() => {
         import('@/pages/AquariumDetail').catch((error) => {
           logger.debug('Failed to preload AquariumDetail:', error);
@@ -123,12 +128,6 @@ const AquariumCard = memo(function AquariumCard({
       }}
       {...(isMobile ? longPressHandlers : {})}
     >
-      {/* Health indicator badge */}
-      <TooltipProvider>
-        <div className="absolute top-3 right-3 z-10">
-          <HealthIndicator aquariumId={aquarium.id} t={t} />
-        </div>
-      </TooltipProvider>
 
       <CardHeader className="pr-8">
         <div className="flex justify-between items-start">

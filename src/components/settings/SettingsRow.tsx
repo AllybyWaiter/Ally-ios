@@ -76,7 +76,7 @@ export function SettingsRow({
 
   if (onClick) {
     return (
-      <button onClick={onClick} className={baseClasses}>
+      <button type="button" onClick={onClick} className={baseClasses}>
         {content}
       </button>
     );

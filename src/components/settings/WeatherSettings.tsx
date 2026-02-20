@@ -198,7 +198,7 @@ export function WeatherSettings() {
 
         {/* Privacy Notice */}
         <p className="text-xs text-muted-foreground">
-          Weather uses your device's current GPS location each time you open the app, so it always shows weather for where you are. Your location is not stored on our servers.
+          Weather uses your device's current GPS location when the app opens and when it returns to the foreground. A fallback location may be stored in your profile if GPS is unavailable.
         </p>
       </CardContent>
     </Card>

@@ -95,6 +95,8 @@ interface WeatherState {
 
 const CACHE_KEY_PREFIX = 'ally_weather_cache_';
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const GEOLOCATION_MAX_AGE_MS = 60 * 1000; // 1 minute
+const FOREGROUND_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 type MaybeSingleLikeResult<T> = Promise<{ data: T | null; error: unknown }>;
 
@@ -291,7 +293,7 @@ export function useWeather() {
 
           if (currentAbortRef.aborted) return;
 
-          if (profile?.latitude && profile?.longitude) {
+          if (profile?.latitude != null && profile?.longitude != null) {
             await fetchWeather(profile.latitude, profile.longitude);
           } else {
             setState(prev => ({ ...prev, loading: false, error: 'Location unavailable' }));
@@ -303,7 +305,7 @@ export function useWeather() {
       {
         enableHighAccuracy: forceRefresh,
         timeout: 10000,
-        maximumAge: forceRefresh ? 0 : 300000,
+        maximumAge: forceRefresh ? 0 : GEOLOCATION_MAX_AGE_MS,
       }
     );
   }, [user?.id, fetchWeather]);
@@ -322,7 +324,7 @@ export function useWeather() {
   const fetchWeatherForCurrentLocationRef = useRef(fetchWeatherForCurrentLocation);
   fetchWeatherForCurrentLocationRef.current = fetchWeatherForCurrentLocation;
 
-  // Load weather on mount if user has weather enabled - prioritize saved location
+  // Load weather on mount if user has weather enabled - prioritize current GPS location
   useEffect(() => {
     if (!user?.id) {
       setState(prev => ({ ...prev, initializing: false, loading: false }));
@@ -360,19 +362,31 @@ export function useWeather() {
         if (profile?.weather_enabled) {
           setState(prev => ({ ...prev, enabled: true }));
 
-          // Use cached weather if still valid
+          // Show cached weather immediately while requesting current location in background.
           const cached = getCachedWeather(userId);
           if (cached) {
-            setState(prev => ({ ...prev, weather: cached, loading: false, initializing: false }));
-            return;
+            setState(prev => ({
+              ...prev,
+              weather: cached,
+              loading: false,
+              error: null,
+              initializing: false,
+            }));
           }
 
-          // Use saved profile coordinates if available
-          if (profile.latitude && profile.longitude) {
+          // Always prefer live GPS so weather follows where the user currently is.
+          await fetchWeatherForCurrentLocationRef.current();
+
+          // If GPS and fallback both fail and we had no cache, try saved coordinates as a last resort.
+          if (!cached && profile.latitude != null && profile.longitude != null) {
             await fetchWeatherRef.current(profile.latitude, profile.longitude);
-          } else {
-            await fetchWeatherForCurrentLocationRef.current();
           }
+        } else {
+          setState(prev => ({
+            ...prev,
+            enabled: false,
+            loading: false,
+          }));
         }
       } catch (err) {
         console.error('Error loading weather:', err);
@@ -389,6 +403,37 @@ export function useWeather() {
       isMounted = false;
     };
   }, [user?.id]);
+
+  // Refresh weather when app returns to foreground so location changes are reflected.
+  useEffect(() => {
+    if (!user?.id || !state.enabled) return;
+
+    let lastForegroundRefresh = Date.now();
+
+    const maybeRefreshFromForeground = () => {
+      if (document.visibilityState === 'hidden') return;
+
+      const now = Date.now();
+      if (now - lastForegroundRefresh < FOREGROUND_REFRESH_INTERVAL_MS) return;
+
+      lastForegroundRefresh = now;
+      void fetchWeatherForCurrentLocationRef.current();
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        maybeRefreshFromForeground();
+      }
+    };
+
+    window.addEventListener('focus', maybeRefreshFromForeground);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', maybeRefreshFromForeground);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [user?.id, state.enabled]);
 
   const refreshWeather = useCallback(async () => {
     sessionStorage.removeItem(getCacheKey(user?.id));

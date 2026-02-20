@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from 'zod';
 import { useAuth } from "@/hooks/useAuth";
@@ -71,6 +71,64 @@ const PLAN_FEATURES: Record<string, string[]> = {
   gold: ['10 water bodies', 'Unlimited test logs', 'Multi-system management', 'Export water history', 'Priority AI support'],
   business: ['Unlimited water bodies', 'Unlimited test logs', 'Multi-system management', 'Export water history', 'Priority AI support'],
 };
+
+interface SettingsDetailSheetProps {
+  id: string;
+  title: string;
+  description?: string;
+  activeSection: string | null;
+  isMobile: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}
+
+function SettingsDetailSheet({
+  id,
+  title,
+  description,
+  activeSection,
+  isMobile,
+  onClose,
+  children,
+}: SettingsDetailSheetProps) {
+  const isOpen = activeSection === id;
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[90svh] rounded-t-[10px] p-0 pt-safe flex flex-col"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+          <SheetHeader className="px-4 pt-4 pb-2">
+            <SheetTitle>{title}</SheetTitle>
+            {description && <SheetDescription>{description}</SheetDescription>}
+          </SheetHeader>
+          <div className="px-4 pb-8 overflow-y-auto flex-1 min-h-0">{children}</div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="max-w-md max-h-[85vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description && <DialogDescription>{description}</DialogDescription>}
+        </DialogHeader>
+        {children}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 const Settings = () => {
   const { user, userName, subscriptionTier, unitPreference, themePreference, languagePreference, hemisphere: userHemisphere, signOut, refreshProfile, isAdmin } = useAuth();
@@ -212,6 +270,19 @@ const Settings = () => {
       document.body.removeAttribute('data-settings-sheet-open');
     };
   }, [isMobile, hasSettingsModalOpen]);
+
+  useEffect(() => {
+    if (hasSettingsModalOpen) return;
+
+    const rafId = requestAnimationFrame(() => {
+      const hasOpenDialog = document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]');
+      if (hasOpenDialog) return;
+      document.body.removeAttribute('data-scroll-locked');
+      document.body.style.removeProperty('pointer-events');
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [hasSettingsModalOpen]);
 
   const getInitials = (name: string | null) => {
     if (!name) return user?.email?.charAt(0).toUpperCase() || "U";
@@ -514,54 +585,6 @@ const Settings = () => {
     }
   };
 
-  // Detail sheet/dialog wrapper
-  const DetailSheet = ({ id, title, description, children }: { id: string; title: string; description?: string; children: React.ReactNode }) => {
-    const isOpen = activeSection === id;
-    const onClose = () => setActiveSection(null);
-    const sheetContentRef = useRef<HTMLDivElement | null>(null);
-
-    if (isMobile) {
-      return (
-        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-          <SheetContent
-            ref={sheetContentRef}
-            side="bottom"
-            className="max-h-[90svh] rounded-t-[10px] p-0 pt-safe flex flex-col"
-            tabIndex={-1}
-            onOpenAutoFocus={(e) => {
-              e.preventDefault();
-              requestAnimationFrame(() => {
-                sheetContentRef.current?.focus({ preventScroll: true });
-              });
-            }}
-          >
-            <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
-            <SheetHeader className="px-4 pt-4 pb-2">
-              <SheetTitle>{title}</SheetTitle>
-              {description && <SheetDescription>{description}</SheetDescription>}
-            </SheetHeader>
-            <div className="px-4 pb-8 overflow-y-auto flex-1 min-h-0">{children}</div>
-          </SheetContent>
-        </Sheet>
-      );
-    }
-
-    return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent
-          className="max-w-md max-h-[85vh] overflow-y-auto"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            {description && <DialogDescription>{description}</DialogDescription>}
-          </DialogHeader>
-          {children}
-        </DialogContent>
-      </Dialog>
-    );
-  };
-
   if (!user) return null;
 
   return (
@@ -839,7 +862,7 @@ const Settings = () => {
       </div>
 
       {/* Detail Sheets */}
-      <DetailSheet id="profile" title="Edit Profile" description="Update your name and experience level">
+      <SettingsDetailSheet id="profile" title="Edit Profile" description="Update your name and experience level" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">Email</Label>
@@ -878,9 +901,9 @@ const Settings = () => {
             {isLoading ? "Saving..." : "Save Profile"}
           </Button>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="security" title="Security" description="Update your password">
+      <SettingsDetailSheet id="security" title="Security" description="Update your password" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">New Password</Label>
@@ -894,9 +917,9 @@ const Settings = () => {
             {isLoading ? "Updating..." : "Update Password"}
           </Button>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="subscription" title="Subscription" description="Manage your plan">
+      <SettingsDetailSheet id="subscription" title="Subscription" description="Manage your plan" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-4">
           <div className="space-y-2">
             {(PLAN_FEATURES[effectiveSubscriptionTier || 'free'] || PLAN_FEATURES.free).map((feature) => (
@@ -931,9 +954,9 @@ const Settings = () => {
             </Button>
           </div>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="data" title="Data & Privacy" description="Export your data">
+      <SettingsDetailSheet id="data" title="Data & Privacy" description="Export your data" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-4">
           <div className="p-4 rounded-lg bg-muted/50">
             <h4 className="font-medium mb-2">Download Your Data</h4>
@@ -944,9 +967,9 @@ const Settings = () => {
             </Button>
           </div>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="delete-account" title="Delete Account" description="This action cannot be undone">
+      <SettingsDetailSheet id="delete-account" title="Delete Account" description="This action cannot be undone" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-4">
           <div className="p-4 rounded-lg border-2 border-destructive/30 bg-destructive/5">
             <h4 className="font-medium text-destructive mb-2 flex items-center gap-2">
@@ -986,9 +1009,9 @@ const Settings = () => {
             </AlertDialog>
           </div>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="language" title="Language & Region" description="Choose your language and hemisphere">
+      <SettingsDetailSheet id="language" title="Language & Region" description="Choose your language and hemisphere" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-4">
           <div>
             <Label className="text-sm font-medium mb-2 block">Language</Label>
@@ -1036,9 +1059,9 @@ const Settings = () => {
             </div>
           </div>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="units" title="Units" description="Choose your measurement system">
+      <SettingsDetailSheet id="units" title="Units" description="Choose your measurement system" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="grid grid-cols-2 gap-3">
           {[
             { value: 'imperial', label: 'Imperial', details: 'Gallons, °F, inches' },
@@ -1057,29 +1080,29 @@ const Settings = () => {
             </button>
           ))}
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="weather" title="Weather Settings" description="Location and display options">
+      <SettingsDetailSheet id="weather" title="Weather Settings" description="Location and display options" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <WeatherSettings />
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="notifications" title="Notifications" description="Manage alerts and reminders">
+      <SettingsDetailSheet id="notifications" title="Notifications" description="Manage alerts and reminders" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <NotificationSettings />
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="memory" title="AI Memory" description="What Ally remembers about you">
+      <SettingsDetailSheet id="memory" title="AI Memory" description="What Ally remembers about you" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <MemoryManager />
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="referrals" title="Refer Friends" description="Earn free months of Plus">
+      <SettingsDetailSheet id="referrals" title="Refer Friends" description="Earn free months of Plus" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-6">
           <ReferralSection />
           <Separator />
           <ReferralRewards />
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
-      <DetailSheet id="ally-wand" title="Ally Wand" description="Manage your BLE water testing wand">
+      <SettingsDetailSheet id="ally-wand" title="Ally Wand" description="Manage your BLE water testing wand" activeSection={activeSection} isMobile={isMobile} onClose={() => setActiveSection(null)}>
         <div className="space-y-6">
           {/* Connection Status */}
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
@@ -1136,7 +1159,7 @@ const Settings = () => {
             </ul>
           </div>
         </div>
-      </DetailSheet>
+      </SettingsDetailSheet>
 
       {/* Unit Change Confirmation Dialog */}
       <AlertDialog open={showUnitConfirmDialog} onOpenChange={setShowUnitConfirmDialog}>
