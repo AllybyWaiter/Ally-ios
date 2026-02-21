@@ -285,6 +285,11 @@ ${aquariumId ? `Current aquarium ID: ${aquariumId}` : 'No aquarium selected. Ask
 **KNOWLEDGE BASE SEARCH:**
 Use search_knowledge when you need detailed expert information to answer questions accurately. The knowledge base contains:
 - Water chemistry guides (nitrogen cycle, pH, reef parameters)
+- Emergency runbooks (ammonia/nitrite triage, crisis stabilization)
+- Cycling SOPs (fishless and fish-in guardrails)
+- Parameter target playbooks (freshwater and saltwater corrective actions)
+- Reef balancing protocols (alkalinity, calcium, magnesium)
+- pH/KH stabilization workflows (CO2 + buffering logic)
 - Disease diagnosis and treatment protocols
 - Equipment comparisons and recommendations
 - Pool and spa maintenance guides
