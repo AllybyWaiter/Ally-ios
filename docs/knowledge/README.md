@@ -12,6 +12,11 @@ This folder contains protocol-level guidance used to seed and maintain Ally's aq
 - `ph-kh-stabilization-workflow.md`
 - `high-nitrate-reduction-playbook.md`
 - `temperature-stress-triage-protocol.md`
+- `fin-rot-diagnosis-staged-treatment.md`
+- `antibiotic-compatibility-contraindication-matrix.md`
+- `columnaris-red-flag-triage-escalation.md`
+- `freshwater-ich-differential-diagnosis-treatment.md`
+- `marine-ich-vs-velvet-differential-protocol.md`
 
 ## Source imports
 
@@ -25,6 +30,11 @@ Original source drafts are preserved in:
 - `sources/ph-kh-stabilization-workflow.source.md`
 - `sources/high-nitrate-reduction-playbook.source.md`
 - `sources/temperature-stress-triage-protocol.source.md`
+- `sources/fin-rot-diagnosis-staged-treatment.source.md`
+- `sources/antibiotic-compatibility-contraindication-matrix.source.md`
+- `sources/columnaris-red-flag-triage-escalation.source.md`
+- `sources/freshwater-ich-differential-diagnosis-treatment.source.md`
+- `sources/marine-ich-vs-velvet-differential-protocol.source.md`
 
 ## Usage notes
 
@@ -35,4 +45,6 @@ Original source drafts are preserved in:
 ## Database sync
 
 - Migration: `supabase/migrations/20260221100000_add_runbook_knowledge_entries.sql`
+- Migration: `supabase/migrations/20260221103000_add_nitrate_and_temperature_knowledge_entries.sql`
+- Migration: `supabase/migrations/20260221120000_add_disease_knowledge_entries.sql`
 - After migration, generate embeddings for new rows with the `embed-knowledge` edge function.
