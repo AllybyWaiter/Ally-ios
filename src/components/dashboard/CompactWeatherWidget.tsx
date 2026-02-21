@@ -17,7 +17,7 @@ const weatherIcons: Record<WeatherCondition, React.ComponentType<{ className?: s
 };
 
 export function CompactWeatherWidget() {
-  const { weather, loading, enabled, initializing } = useWeather();
+  const { weather, loading, enabled, initializing, freshnessState } = useWeather();
   const { units } = useAuth();
 
   // Don't render if weather is not enabled (and we're done initializing)
@@ -71,6 +71,9 @@ export function CompactWeatherWidget() {
         <WeatherIcon className="h-5 w-5 text-primary" />
         <span className="font-semibold text-foreground">{temperature}</span>
         <span className="text-muted-foreground text-sm capitalize">{weather.condition}</span>
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground hidden md:inline">
+          {freshnessState}
+        </span>
         <span className="text-muted-foreground/70 text-xs hidden sm:inline">
           · Feels {feelsLike}
         </span>

@@ -326,7 +326,7 @@ serve(async (req) => {
 
     // Rate limiting (10 requests per minute)
     const identifier = extractIdentifier(req, userId);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 10,
       windowMs: 60 * 1000,
       identifier: `water-trends:${identifier}`,

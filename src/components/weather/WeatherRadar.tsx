@@ -60,6 +60,7 @@ interface NwsAlertsResponse {
 interface WeatherRadarProps {
   latitude: number;
   longitude: number;
+  alertCoverage?: 'full' | 'limited' | 'none';
   onReady?: () => void;
 }
 
@@ -299,7 +300,7 @@ function AlertsLayer({ alerts, showAlerts }: { alerts: WeatherAlert[]; showAlert
   );
 }
 
-export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps) {
+export function WeatherRadar({ latitude, longitude, alertCoverage = 'full', onReady }: WeatherRadarProps) {
   const [frames, setFrames] = useState<RadarFrame[]>([]);
   const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -309,6 +310,9 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
   const [leafletReady, setLeafletReady] = useState(false);
   const [mapMounted, setMapMounted] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [radarRetryNonce, setRadarRetryNonce] = useState(0);
+  const [retryBlockedUntil, setRetryBlockedUntil] = useState(0);
+  const [retrySecondsRemaining, setRetrySecondsRemaining] = useState(0);
   const intervalRef = useRef<number | null>(null);
 
   // Alert state
@@ -327,6 +331,29 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
     setMapMounted(false);
     setRetryKey(prev => prev + 1);
   }, []);
+
+  const handleRadarRetry = useCallback(() => {
+    const now = Date.now();
+    if (now < retryBlockedUntil) return;
+    setRetryBlockedUntil(now + 5000);
+    setRadarRetryNonce(prev => prev + 1);
+  }, [retryBlockedUntil]);
+
+  useEffect(() => {
+    if (retryBlockedUntil <= Date.now()) {
+      setRetrySecondsRemaining(0);
+      return;
+    }
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((retryBlockedUntil - Date.now()) / 1000));
+      setRetrySecondsRemaining(remaining);
+    };
+
+    tick();
+    const id = window.setInterval(tick, 250);
+    return () => window.clearInterval(id);
+  }, [retryBlockedUntil]);
 
   // Fix Leaflet default marker icon inside useEffect to prevent iOS PWA module-level crashes
   useEffect(() => {
@@ -404,7 +431,15 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
       } catch (err) {
         if (!isMounted) return;
         const errorMessage = err instanceof Error ? err.message : 'Network error';
-        setError(`Unable to load radar data: ${errorMessage}`);
+        const lower = errorMessage.toLowerCase();
+        if (lower.includes('rainviewer')) {
+          setError('RainViewer is temporarily unavailable. Please try again shortly.');
+        } else if (lower.includes('proxy') || lower.includes('get-radar-frames')) {
+          setError('Radar proxy is temporarily unavailable. Retrying may resolve this.');
+        } else {
+          setError(`Unable to load radar data: ${errorMessage}`);
+        }
+        setRetryBlockedUntil(Date.now() + 5000);
         logger.error('[Radar] Radar fetch error:', err instanceof Error ? err.message : err, err);
       } finally {
         if (isMounted) {
@@ -419,13 +454,21 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
       isMounted = false;
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [radarRetryNonce]);
 
   // Fetch weather alerts from NWS API (US only)
   useEffect(() => {
     let isMounted = true;
 
     const fetchAlerts = async () => {
+      if (alertCoverage !== 'full') {
+        if (isMounted) {
+          setAlerts([]);
+          setAlertsLoading(false);
+        }
+        return;
+      }
+
       try {
         if (isMounted) setAlertsLoading(true);
         const response = await fetch(
@@ -477,7 +520,7 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
       isMounted = false;
       clearInterval(refreshInterval);
     };
-  }, [latitude, longitude]);
+  }, [latitude, longitude, alertCoverage]);
 
   // Animation loop - pause when tab is hidden to save CPU
   // Use ref to track visibility listener for proper cleanup
@@ -559,8 +602,17 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
-            {error}
+          <div className="h-64 flex flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+            <p>{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRadarRetry}
+              disabled={retrySecondsRemaining > 0}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {retrySecondsRemaining > 0 ? `Retry in ${retrySecondsRemaining}s` : 'Retry Radar'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -602,6 +654,11 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
               >
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 {alerts.length}
+              </Badge>
+            )}
+            {alertCoverage !== 'full' && (
+              <Badge variant="outline" className="text-xs">
+                Alerts {alertCoverage === 'limited' ? 'Limited' : 'Unavailable'}
               </Badge>
             )}
             <Button
@@ -714,6 +771,12 @@ export function WeatherRadar({ latitude, longitude, onReady }: WeatherRadarProps
             </div>
             <span>Heavy</span>
           </div>
+
+          {alertCoverage !== 'full' && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Weather alert overlays are currently optimized for U.S. coverage. Global alert coverage is {alertCoverage}.
+            </p>
+          )}
         </div>
 
         {/* Alert List Panel */}

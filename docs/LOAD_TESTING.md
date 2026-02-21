@@ -35,6 +35,28 @@ Dry-run config check (no network calls):
 node scripts/load/run-load-tests.mjs --dry-run
 ```
 
+## Profiles
+
+Runner profiles set repeatable traffic envelopes:
+
+- `standard` (default): baseline check
+- `burst`: high-concurrency burst validation
+- `soak`: 15-minute sustained run
+- `failure-injection`: synthetic failure mode for resilience verification
+
+Examples:
+
+```bash
+# Burst profile
+npm run load:test -- --profile burst --require-auth
+
+# 15-minute soak
+npm run load:test -- --profile soak --duration-minutes 15 --require-auth
+
+# Failure injection (0.5%)
+npm run load:test -- --profile failure-injection --failure-rate 0.005 --require-auth
+```
+
 ## Required Environment
 
 The runner reads from process env first, then `.env` / `.env.local`.
@@ -82,6 +104,9 @@ Use `--out` to override the output path.
 - `--require-auth`: fail instead of skipping auth-required scenarios when no JWT is available
 - `--bearer-token <jwt>`: pass a user JWT explicitly
 - `--auth-email <email> --auth-password <password>`: fetch JWT before running scenarios
+- `--profile <name>`: `standard|burst|soak|failure-injection`
+- `--duration-minutes <n>`: duration-based execution for soak-style runs
+- `--failure-rate <0..1>` / `--failure-status <http>`: synthetic failure injection mode
 
 ## CI Workflow
 
@@ -93,6 +118,12 @@ Triggers:
 
 - Manual: `workflow_dispatch`
 - Scheduled: every Monday at `13:00 UTC`
+
+Scheduled workflow runs enforce gates across:
+
+1. `burst` profile
+2. `soak` profile (`15m`)
+3. `failure-injection` profile (low-rate synthetic failures)
 
 Required GitHub repository secrets:
 

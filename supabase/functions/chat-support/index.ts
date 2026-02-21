@@ -147,7 +147,7 @@ serve(async (req) => {
 
     // Rate limiting (20 requests per minute for public endpoint)
     const identifier = extractIdentifier(req);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 20,
       windowMs: 60 * 1000,
       identifier: `chat-support:${identifier}`,

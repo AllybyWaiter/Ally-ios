@@ -181,7 +181,7 @@ serve(async (req) => {
 
     // Rate limiting
     const identifier = extractIdentifier(req, userId);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 10,
       windowMs: 60 * 1000,
       identifier: `water-trends-ai:${identifier}`,

@@ -9,6 +9,42 @@ const DEFAULT_REQUESTS = 50;
 const DEFAULT_CONCURRENCY = 10;
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_ERROR_RATE_LIMIT = 0.01;
+const DEFAULT_PROFILE = "standard";
+
+const PROFILE_PRESETS = {
+  standard: {
+    requests: 50,
+    concurrency: 10,
+    timeoutMs: 15000,
+    durationMinutes: 0,
+    failureInjectionRate: 0,
+    failureInjectionStatus: 503,
+  },
+  burst: {
+    requests: 240,
+    concurrency: 40,
+    timeoutMs: 15000,
+    durationMinutes: 0,
+    failureInjectionRate: 0,
+    failureInjectionStatus: 503,
+  },
+  soak: {
+    requests: 100,
+    concurrency: 12,
+    timeoutMs: 15000,
+    durationMinutes: 15,
+    failureInjectionRate: 0,
+    failureInjectionStatus: 503,
+  },
+  "failure-injection": {
+    requests: 90,
+    concurrency: 18,
+    timeoutMs: 15000,
+    durationMinutes: 0,
+    failureInjectionRate: 0.2,
+    failureInjectionStatus: 503,
+  },
+};
 
 function printHelp() {
   console.log(`Usage: node scripts/load/run-load-tests.mjs [options]
@@ -18,6 +54,10 @@ Options:
   --requests <n>          Requests per scenario (default: 50)
   --concurrency <n>       Concurrent workers per scenario (default: 10)
   --timeout-ms <n>        Request timeout in milliseconds (default: 15000)
+  --profile <name>        Profile: standard, burst, soak, failure-injection
+  --duration-minutes <n>  Override soak duration in minutes (0 uses requests mode)
+  --failure-rate <n>      Inject synthetic failure rate 0..1 (test harness validation)
+  --failure-status <n>    HTTP status code used for synthetic failures (default: 503)
   --bearer-token <token>  Bearer JWT for auth-required scenarios
   --auth-email <email>    Auth email used to fetch JWT if no bearer token is provided
   --auth-password <pass>  Auth password used to fetch JWT if no bearer token is provided
@@ -38,6 +78,10 @@ function parseArgs(argv) {
     requests: DEFAULT_REQUESTS,
     concurrency: DEFAULT_CONCURRENCY,
     timeoutMs: DEFAULT_TIMEOUT_MS,
+    profile: DEFAULT_PROFILE,
+    durationMinutes: 0,
+    failureRate: 0,
+    failureStatus: 503,
     bearerToken: "",
     authEmail: "",
     authPassword: "",
@@ -97,6 +141,18 @@ function parseArgs(argv) {
       case "--timeout-ms":
         options.timeoutMs = Number(value);
         break;
+      case "--profile":
+        options.profile = value;
+        break;
+      case "--duration-minutes":
+        options.durationMinutes = Number(value);
+        break;
+      case "--failure-rate":
+        options.failureRate = Number(value);
+        break;
+      case "--failure-status":
+        options.failureStatus = Number(value);
+        break;
       case "--bearer-token":
         options.bearerToken = value;
         break;
@@ -126,8 +182,36 @@ function parseArgs(argv) {
   if (options.scenarios.length === 0) {
     throw new Error("At least one scenario is required");
   }
+  if (!PROFILE_PRESETS[options.profile]) {
+    throw new Error(`Unknown profile: ${options.profile}`);
+  }
+  if (options.durationMinutes < 0 || !Number.isFinite(options.durationMinutes)) {
+    throw new Error("--duration-minutes must be zero or positive");
+  }
+  if (options.failureRate < 0 || options.failureRate > 1 || !Number.isFinite(options.failureRate)) {
+    throw new Error("--failure-rate must be between 0 and 1");
+  }
+  if (options.failureStatus < 100 || options.failureStatus > 599 || !Number.isFinite(options.failureStatus)) {
+    throw new Error("--failure-status must be a valid HTTP status code");
+  }
 
   return options;
+}
+
+function applyProfilePreset(options) {
+  const preset = PROFILE_PRESETS[options.profile] ?? PROFILE_PRESETS.standard;
+
+  const resolved = {
+    ...options,
+    requests: options.profile === DEFAULT_PROFILE ? options.requests : preset.requests,
+    concurrency: options.profile === DEFAULT_PROFILE ? options.concurrency : preset.concurrency,
+    timeoutMs: options.profile === DEFAULT_PROFILE ? options.timeoutMs : preset.timeoutMs,
+    durationMinutes: options.durationMinutes > 0 ? options.durationMinutes : preset.durationMinutes,
+    failureRate: options.failureRate > 0 ? options.failureRate : preset.failureInjectionRate,
+    failureStatus: options.failureStatus || preset.failureInjectionStatus,
+  };
+
+  return resolved;
 }
 
 function parseEnvFile(path) {
@@ -323,6 +407,7 @@ function createScenarios(env) {
       requiresBearer: false,
       targetP95Ms: 1200,
       targetErrorRate: DEFAULT_ERROR_RATE_LIMIT,
+      targetSuccessRate: 0.99,
       body: { latitude: lat, longitude: lon },
     },
     chat: {
@@ -333,6 +418,7 @@ function createScenarios(env) {
       requiresBearer: true,
       targetP95Ms: 4000,
       targetErrorRate: DEFAULT_ERROR_RATE_LIMIT,
+      targetSuccessRate: 0.99,
       body: {
         messages: [{ role: "user", content: "Give one short aquarium maintenance tip." }],
         aquariumId: null,
@@ -347,6 +433,7 @@ function createScenarios(env) {
       requiresBearer: true,
       targetP95Ms: 800,
       targetErrorRate: DEFAULT_ERROR_RATE_LIMIT,
+      targetSuccessRate: 0.99,
     },
     "dashboard-tasks": {
       name: "dashboard-tasks",
@@ -356,6 +443,7 @@ function createScenarios(env) {
       requiresBearer: true,
       targetP95Ms: 800,
       targetErrorRate: DEFAULT_ERROR_RATE_LIMIT,
+      targetSuccessRate: 0.99,
     },
   };
 }
@@ -375,7 +463,16 @@ async function consumeResponseBody(response, readMode) {
   await response.text();
 }
 
-async function runSingleRequest(url, requestInit, timeoutMs, readMode) {
+async function runSingleRequest(url, requestInit, timeoutMs, readMode, failureRate, failureStatus) {
+  if (failureRate > 0 && Math.random() < failureRate) {
+    return {
+      ok: false,
+      status: failureStatus,
+      durationMs: 0,
+      error: `Injected failure (${failureStatus})`,
+    };
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const startedAt = performance.now();
@@ -409,7 +506,18 @@ async function runSingleRequest(url, requestInit, timeoutMs, readMode) {
   }
 }
 
-async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, concurrency, timeoutMs }) {
+async function runScenario({
+  scenario,
+  baseUrl,
+  apikey,
+  bearerToken,
+  requests,
+  concurrency,
+  timeoutMs,
+  durationMs,
+  failureRate,
+  failureStatus,
+}) {
   if (scenario.requiresBearer && !bearerToken) {
     return {
       name: scenario.name,
@@ -424,10 +532,12 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
   const failures = [];
   const statusCounts = {};
   const url = `${baseUrl}${scenario.path}`;
-  const totalRequests = requests;
+  const requestedCount = requests;
+  const isDurationMode = durationMs > 0;
 
   let nextRequestIndex = 0;
-  const workers = Math.min(concurrency, totalRequests);
+  const workers = Math.min(concurrency, Math.max(1, requestedCount));
+  const startedAt = Date.now();
 
   const baseHeaders = {
     apikey,
@@ -446,12 +556,25 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
   };
 
   const worker = async () => {
-    while (nextRequestIndex < totalRequests) {
+    while (true) {
+      if (isDurationMode) {
+        if (Date.now() - startedAt >= durationMs) break;
+      } else if (nextRequestIndex >= requestedCount) {
+        break;
+      }
+
       const current = nextRequestIndex;
       nextRequestIndex += 1;
-      if (current >= totalRequests) break;
+      if (!isDurationMode && current >= requestedCount) break;
 
-      const result = await runSingleRequest(url, requestInit, timeoutMs, scenario.readMode);
+      const result = await runSingleRequest(
+        url,
+        requestInit,
+        timeoutMs,
+        scenario.readMode,
+        failureRate,
+        failureStatus
+      );
       latencies.push(result.durationMs);
       statusCounts[result.status] = (statusCounts[result.status] ?? 0) + 1;
       if (!result.ok) {
@@ -463,8 +586,10 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
   await Promise.all(Array.from({ length: workers }, () => worker()));
 
   const sorted = [...latencies].sort((a, b) => a - b);
+  const totalRequests = latencies.length;
   const successful = totalRequests - failures.length;
   const errorRate = totalRequests === 0 ? 0 : failures.length / totalRequests;
+  const successRate = totalRequests === 0 ? 0 : successful / totalRequests;
   const avgMs = totalRequests === 0
     ? 0
     : latencies.reduce((sum, ms) => sum + ms, 0) / totalRequests;
@@ -474,6 +599,7 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
     success: successful,
     failures: failures.length,
     errorRate: round(errorRate * 100),
+    successRate: round(successRate * 100),
     avgMs: round(avgMs),
     p50Ms: round(percentile(sorted, 50)),
     p95Ms: round(percentile(sorted, 95)),
@@ -485,7 +611,8 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
 
   const pass =
     errorRate <= scenario.targetErrorRate &&
-    metrics.p95Ms <= scenario.targetP95Ms;
+    metrics.p95Ms <= scenario.targetP95Ms &&
+    (scenario.targetSuccessRate == null || successRate >= scenario.targetSuccessRate);
 
   return {
     name: scenario.name,
@@ -494,6 +621,9 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
     target: {
       p95Ms: scenario.targetP95Ms,
       errorRate: round(scenario.targetErrorRate * 100),
+      successRate: scenario.targetSuccessRate != null
+        ? round(scenario.targetSuccessRate * 100)
+        : undefined,
     },
     metrics,
     sampleFailures: failures.slice(0, 5),
@@ -510,13 +640,14 @@ function printScenarioResult(result) {
   const m = result.metrics;
   console.log(
     `- ${result.name}: ${status} | req=${m.requests} ok=${m.success} fail=${m.failures} ` +
-      `error=${m.errorRate}% p95=${m.p95Ms}ms target<=${result.target.p95Ms}ms`
+      `error=${m.errorRate}% success=${m.successRate}% p95=${m.p95Ms}ms target<=${result.target.p95Ms}ms`
   );
 }
 
 async function main() {
   const cwd = process.cwd();
-  const options = parseArgs(process.argv.slice(2));
+  const parsedOptions = parseArgs(process.argv.slice(2));
+  const options = applyProfilePreset(parsedOptions);
 
   if (options.help) {
     printHelp();
@@ -562,9 +693,13 @@ async function main() {
             Boolean(options.authEmail || env.LOAD_AUTH_EMAIL) &&
             Boolean(options.authPassword || env.LOAD_AUTH_PASSWORD),
           requireAuth: options.requireAuth,
+          profile: options.profile,
           requests: options.requests,
           concurrency: options.concurrency,
           timeoutMs: options.timeoutMs,
+          durationMinutes: options.durationMinutes,
+          failureRate: options.failureRate,
+          failureStatus: options.failureStatus,
           scenarios: selectedScenarios.map((scenario) => ({
             name: scenario.name,
             method: scenario.method,
@@ -572,6 +707,7 @@ async function main() {
             requiresBearer: scenario.requiresBearer,
             targetP95Ms: scenario.targetP95Ms,
             targetErrorRatePercent: round(scenario.targetErrorRate * 100),
+            targetSuccessRatePercent: round((scenario.targetSuccessRate ?? 0) * 100),
           })),
         },
         null,
@@ -594,8 +730,12 @@ async function main() {
   console.log(`Running load tests against ${baseUrl}`);
   console.log(
     `Scenarios: ${selectedScenarios.map((scenario) => scenario.name).join(", ")} | ` +
-      `requests/scenario=${options.requests} concurrency=${options.concurrency}`
+      `${options.durationMinutes > 0 ? `duration=${options.durationMinutes}m` : `requests/scenario=${options.requests}`} ` +
+      `concurrency=${options.concurrency} profile=${options.profile}`
   );
+  if (options.failureRate > 0) {
+    console.log(`Failure injection: ${(options.failureRate * 100).toFixed(1)}% as HTTP ${options.failureStatus}`);
+  }
   if (authResolution.hasAuthScenario) {
     console.log(`Auth mode: ${authResolution.source}${bearerToken ? " (JWT available)" : " (no JWT)"}`);
   }
@@ -612,6 +752,9 @@ async function main() {
       requests: options.requests,
       concurrency: options.concurrency,
       timeoutMs: options.timeoutMs,
+      durationMs: options.durationMinutes > 0 ? options.durationMinutes * 60 * 1000 : 0,
+      failureRate: options.failureRate,
+      failureStatus: options.failureStatus,
     });
     scenarioResults.push(result);
     printScenarioResult(result);
@@ -627,9 +770,13 @@ async function main() {
     finishedAt,
     baseUrl,
     options: {
+      profile: options.profile,
       requests: options.requests,
       concurrency: options.concurrency,
       timeoutMs: options.timeoutMs,
+      durationMinutes: options.durationMinutes,
+      failureRate: options.failureRate,
+      failureStatus: options.failureStatus,
       scenarios: options.scenarios,
       requireAuth: options.requireAuth,
       authMode: authResolution.source,

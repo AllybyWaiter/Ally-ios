@@ -184,7 +184,7 @@ serve(async (req) => {
 
     // Rate limiting (5 requests per minute - AI intensive)
     const identifier = extractIdentifier(req, user.id);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 1000,
       identifier: `maintenance-tasks:${identifier}`,

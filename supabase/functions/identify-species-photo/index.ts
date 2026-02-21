@@ -131,7 +131,7 @@ serve(async (req) => {
     }
 
     // Rate limiting - 5 requests per minute
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 1000,
       identifier: extractIdentifier(req),

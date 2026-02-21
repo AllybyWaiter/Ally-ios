@@ -43,6 +43,7 @@ import { SettingsRow } from "@/components/settings/SettingsRow";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useRevenueCat } from "@/hooks/useRevenueCat";
+import { setWeatherPreference } from "@/lib/weatherPreference";
 
 const APP_VERSION = "1.0.0";
 
@@ -575,12 +576,21 @@ const Settings = () => {
 
   const handleToggleWeather = async (enabled: boolean) => {
     if (!user) return;
+
+    const previousValue = weatherEnabled;
     setWeatherEnabled(enabled);
+
     try {
-      const { error } = await supabase.from('profiles').update({ weather_enabled: enabled }).eq('user_id', user.id);
-      if (error) throw error;
-      toast({ title: enabled ? "Weather enabled" : "Weather disabled" });
+      const result = await setWeatherPreference({ userId: user.id, enabled });
+      setWeatherEnabled(result.enabled);
+      toast({
+        title: result.enabled ? "Weather enabled" : "Weather disabled",
+        description: result.enabled && !result.capturedLocation
+          ? "Using fallback location because live location was unavailable."
+          : undefined,
+      });
     } catch {
+      setWeatherEnabled(previousValue);
       toast({ title: "Error", description: "Failed to update weather setting.", variant: "destructive" });
     }
   };

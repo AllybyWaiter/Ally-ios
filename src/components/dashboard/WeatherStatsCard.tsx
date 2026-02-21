@@ -46,7 +46,7 @@ function formatSunTime(isoString: string | undefined): string {
 }
 
 export function WeatherStatsCard() {
-  const { weather, loading, enabled, initializing } = useWeather();
+  const { weather, loading, enabled, initializing, freshnessState, locationSource } = useWeather();
   const { units } = useAuth();
 
   // Don't render if weather is not enabled (and we're done initializing)
@@ -86,6 +86,13 @@ export function WeatherStatsCard() {
   const temperature = formatTemperature(weather.temperature, units, 'C');
   const feelsLike = formatTemperature(weather.feelsLike, units, 'C');
   const uvSeverity = getUvSeverity(weather.uvIndex);
+  const sourceLabel = locationSource === 'gps'
+    ? 'GPS'
+    : locationSource === 'saved_profile'
+      ? 'Saved location'
+      : locationSource === 'manual'
+        ? 'Manual'
+        : 'Unknown source';
 
   // Get 3-day forecast preview
   const forecastPreview = weather.forecast?.slice(0, 3) || [];
@@ -107,6 +114,9 @@ export function WeatherStatsCard() {
               <span className="text-muted-foreground capitalize">{weather.condition}</span>
             </div>
             <span className="text-sm text-muted-foreground">Feels like {feelsLike}</span>
+            <div className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">
+              {freshnessState} · {sourceLabel}
+            </div>
             {weather.locationName && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                 <MapPin className="h-3 w-3" />

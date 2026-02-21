@@ -14,9 +14,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { handleCors, getCorsHeaders } from '../_shared/cors.ts';
 import { createLogger } from '../_shared/logger.ts';
-import { validateUuid, collectErrors, validationErrorResponse } from '../_shared/validation.ts';
-import { checkRateLimit, rateLimitExceededResponse, extractIdentifier } from '../_shared/rateLimit.ts';
-import { createErrorResponse, createStreamResponse } from '../_shared/errorHandler.ts';
+import { validateUuid, collectErrors } from '../_shared/validation.ts';
+import { checkRateLimit, extractIdentifier } from '../_shared/rateLimit.ts';
 
 // Modular imports
 import { tools } from './tools/index.ts';
@@ -36,12 +35,204 @@ const AI_MODELS = {
 
 const GOLD_TIERS = ['gold', 'business', 'enterprise'];
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_TIMEOUT_MS = Math.max(5000, Number(Deno.env.get('OPENAI_TIMEOUT_MS') || 30000));
+const OPENAI_MAX_ATTEMPTS = Math.max(1, Number(Deno.env.get('OPENAI_RETRY_ATTEMPTS') || 3));
+const OPENAI_STREAM_BUFFER_CAP_BYTES = Math.max(250000, Number(Deno.env.get('OPENAI_STREAM_BUFFER_CAP_BYTES') || 2_000_000));
+const OPENAI_RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+
+interface ChatMetaEvent {
+  type: 'meta';
+  requestId: string;
+  model: string;
+  degraded: {
+    rateLimitBackend: boolean;
+    upstreamRetried: boolean;
+  };
+  retryAttempts: {
+    initial: number;
+    followUp: number;
+  };
+}
+
+class UpstreamRequestError extends Error {
+  status?: number;
+  code: string;
+  attempts: number;
+
+  constructor(message: string, options: { status?: number; code: string; attempts: number }) {
+    super(message);
+    this.name = 'UpstreamRequestError';
+    this.status = options.status;
+    this.code = options.code;
+    this.attempts = options.attempts;
+  }
+}
+
+function delayWithJitter(attempt: number): Promise<void> {
+  const backoffMs = Math.min(300 * (2 ** Math.max(0, attempt - 1)) + Math.floor(Math.random() * 160), 2200);
+  return new Promise((resolve) => setTimeout(resolve, backoffMs));
+}
+
+function createChatErrorResponse(
+  req: Request,
+  status: number,
+  code: string,
+  message: string,
+  requestId: string,
+  extra?: Record<string, unknown>
+): Response {
+  return new Response(
+    JSON.stringify({
+      error: message,
+      code,
+      correlationId: requestId,
+      ...(extra || {}),
+    }),
+    {
+      status,
+      headers: {
+        ...getCorsHeaders(req),
+        'Content-Type': 'application/json',
+        'X-Request-ID': requestId,
+      },
+    }
+  );
+}
+
+function createChatStreamResponse(stream: ReadableStream<Uint8Array>, req: Request, requestId: string): Response {
+  return new Response(stream, {
+    headers: {
+      ...getCorsHeaders(req),
+      'Content-Type': 'text/event-stream',
+      'X-Request-ID': requestId,
+    },
+  });
+}
+
+function prependMetaEvent(
+  stream: ReadableStream<Uint8Array>,
+  meta: ChatMetaEvent
+): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(meta)}\n\n`));
+
+      const reader = stream.getReader();
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      controller.close();
+    },
+  });
+}
+
+async function fetchOpenAIWithRetry(
+  apiKey: string,
+  body: Record<string, unknown>,
+  requestId: string,
+  logger: ReturnType<typeof createLogger>
+): Promise<{ response: Response; attempts: number }> {
+  let lastError: UpstreamRequestError | null = null;
+
+  for (let attempt = 1; attempt <= OPENAI_MAX_ATTEMPTS; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), OPENAI_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(OPENAI_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "X-Request-ID": requestId,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (response.ok) {
+        return { response, attempts: attempt };
+      }
+
+      const errorText = await response.text().catch(() => '');
+      const code = response.status === 429
+        ? 'UPSTREAM_RATE_LIMIT'
+        : response.status === 408
+          ? 'UPSTREAM_TIMEOUT'
+          : response.status >= 500
+            ? 'UPSTREAM_UNAVAILABLE'
+            : 'UPSTREAM_FAILURE';
+
+      lastError = new UpstreamRequestError(
+        `OpenAI request failed with status ${response.status}`,
+        { status: response.status, code, attempts: attempt }
+      );
+
+      const retryable = OPENAI_RETRYABLE_STATUSES.has(response.status);
+      logger.warn('OpenAI upstream failure', {
+        requestId,
+        status: response.status,
+        attempt,
+        retryable,
+        error: errorText.slice(0, 180),
+      });
+
+      if (!retryable || attempt >= OPENAI_MAX_ATTEMPTS) {
+        throw lastError;
+      }
+
+      await delayWithJitter(attempt);
+    } catch (error) {
+      const isTimeout = error instanceof DOMException && error.name === 'AbortError';
+      if (error instanceof UpstreamRequestError) {
+        throw error;
+      }
+
+      lastError = new UpstreamRequestError(
+        isTimeout ? 'OpenAI request timed out' : 'OpenAI network failure',
+        {
+          code: isTimeout ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_NETWORK_FAILURE',
+          attempts: attempt,
+        }
+      );
+
+      logger.warn('OpenAI request transport failure', {
+        requestId,
+        attempt,
+        isTimeout,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      if (attempt >= OPENAI_MAX_ATTEMPTS) {
+        throw lastError;
+      }
+
+      await delayWithJitter(attempt);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError ?? new UpstreamRequestError('OpenAI request failed', {
+    code: 'UPSTREAM_FAILURE',
+    attempts: OPENAI_MAX_ATTEMPTS,
+  });
+}
 
 serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  const logger = createLogger('ally-chat');
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  const logger = createLogger('ally-chat', requestId);
 
   try {
     // Parse and validate request
@@ -68,7 +259,14 @@ serve(async (req) => {
     
     if (errors.length > 0) {
       logger.warn('Validation failed', { errors });
-      return validationErrorResponse(errors);
+      return createChatErrorResponse(
+        req,
+        400,
+        'VALIDATION_ERROR',
+        'Invalid request payload',
+        requestId,
+        { details: errors }
+      );
     }
     
     // Check if any message contains an image
@@ -79,7 +277,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       logger.error('No authorization header provided');
-      return createErrorResponse('Authentication required', logger, { status: 401, request: req });
+      return createChatErrorResponse(req, 401, 'AUTH_REQUIRED', 'Authentication required', requestId);
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -104,14 +302,14 @@ serve(async (req) => {
         errorStatus: authError?.status,
         hasUser: !!authUser
       });
-      return createErrorResponse('Authentication failed', logger, { status: 401, request: req });
+      return createChatErrorResponse(req, 401, 'AUTH_FAILED', 'Authentication failed', requestId);
     }
     
     logger.info('User authenticated', { userId: authUser.id });
     logger.setUserId(authUser.id);
 
     // Rate limiting
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 10,
       windowMs: 60 * 1000,
       identifier: extractIdentifier(req, authUser.id),
@@ -119,27 +317,65 @@ serve(async (req) => {
 
     if (!rateLimitResult.allowed) {
       logger.warn('Rate limit exceeded', { userId: authUser.id });
-      return rateLimitExceededResponse(rateLimitResult);
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          code: 'RATE_LIMIT_EXCEEDED',
+          correlationId: requestId,
+          retryAfterSeconds: rateLimitResult.retryAfterSeconds,
+          resetTime: new Date(rateLimitResult.resetTime).toISOString(),
+          meta: {
+            backend: rateLimitResult.backend ?? 'memory',
+            degraded: Boolean(rateLimitResult.degraded),
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            ...getCorsHeaders(req),
+            'Content-Type': 'application/json',
+            'Retry-After': String(rateLimitResult.retryAfterSeconds || 60),
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': String(rateLimitResult.resetTime),
+            'X-RateLimit-Backend': String(rateLimitResult.backend ?? 'memory'),
+            'X-RateLimit-Degraded': rateLimitResult.degraded ? '1' : '0',
+            'X-Request-ID': requestId,
+          },
+        }
+      );
     }
 
     // Check API key
     const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     if (!OPENAI_API_KEY) {
       logger.error('OPENAI_API_KEY not configured');
-      return createErrorResponse('AI service not configured', logger, { status: 500, request: req });
+      return createChatErrorResponse(req, 500, 'AI_SERVICE_NOT_CONFIGURED', 'AI service not configured', requestId);
     }
 
     // Enforce aquatics-only conversation scope
     const scopeValidation = validateAquaticScope(messages);
     if (!scopeValidation.isInScope) {
       logger.info('Aquatic scope gate triggered', { reason: scopeValidation.reason });
-      return createStreamResponse(
+      const scopeStream = prependMetaEvent(
         createContentStream(
           scopeValidation.redirectMessage ??
             "I can only help with aquatics topics: aquariums, pools, spas, and ponds."
         ),
-        req
+        {
+          type: 'meta',
+          requestId,
+          model: 'scope-gate',
+          degraded: {
+            rateLimitBackend: Boolean(rateLimitResult.degraded),
+            upstreamRetried: false,
+          },
+          retryAttempts: {
+            initial: 0,
+            followUp: 0,
+          },
+        }
       );
+      return createChatStreamResponse(scopeStream, req, requestId);
     }
 
     // Fetch profile and context in parallel for better performance
@@ -302,41 +538,21 @@ serve(async (req) => {
       model: aiModel
     });
 
-    const response = await fetch(OPENAI_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(streamingApiBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error('AI gateway error', { status: response.status, error: errorText });
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
-        );
-      }
-
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Service temporarily unavailable. Please try again later.' }),
-          { status: 402, headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return createErrorResponse('Failed to process AI request', logger, { status: 502, request: req });
-    }
+    const initialCall = await fetchOpenAIWithRetry(
+      OPENAI_API_KEY,
+      streamingApiBody,
+      requestId,
+      logger
+    );
+    const response = initialCall.response;
 
     // All users now have at least save_memory, so always parse for tool calls
 
     // Parse stream to detect tool calls (buffering strategy for reliability)
     logger.debug('Parsing stream for tool calls');
-    const parseResult = await parseStreamForToolCalls(response);
+    const parseResult = await parseStreamForToolCalls(response, {
+      maxStreamBytes: OPENAI_STREAM_BUFFER_CAP_BYTES,
+    });
     
     logger.debug('Stream parse result', { 
       hasToolCalls: parseResult.hasToolCalls,
@@ -406,20 +622,14 @@ serve(async (req) => {
         max_tokens: 4096,
       };
 
-      const followUpResponse = await fetch(OPENAI_API_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(followUpApiBody),
-      });
-
-      if (!followUpResponse.ok) {
-        const errorText = await followUpResponse.text();
-        logger.error('Follow-up AI gateway error', { status: followUpResponse.status, error: errorText });
-        return createErrorResponse('Failed to process follow-up request', logger, { status: 502, request: req });
-      }
+      const followUpCall = await fetchOpenAIWithRetry(
+        OPENAI_API_KEY,
+        followUpApiBody,
+        requestId,
+        logger
+      );
+      const followUpAttempts = followUpCall.attempts;
+      const followUpResponse = followUpCall.response;
 
       // Extract tool execution feedback and data cards from results
       const toolExecutions: Array<{ toolName: string; success: boolean; message: string }> = [];
@@ -457,10 +667,23 @@ serve(async (req) => {
       });
 
       // Stream tool execution feedback and data cards first, then the AI response
-      return createStreamResponse(
+      const stream = prependMetaEvent(
         createToolExecutionStream(toolExecutions, followUpResponse.body, dataCards),
-        req
+        {
+          type: 'meta',
+          requestId,
+          model: aiModel,
+          degraded: {
+            rateLimitBackend: Boolean(rateLimitResult.degraded),
+            upstreamRetried: initialCall.attempts > 1 || followUpAttempts > 1,
+          },
+          retryAttempts: {
+            initial: initialCall.attempts,
+            followUp: followUpAttempts,
+          },
+        }
       );
+      return createChatStreamResponse(stream, req, requestId);
     }
 
     // No tool calls - return buffered content as SSE stream
@@ -469,9 +692,69 @@ serve(async (req) => {
       contentLength: parseResult.contentBuffer.length 
     });
     
-    return createStreamResponse(createContentStream(parseResult.contentBuffer), req);
+    const noToolStream = prependMetaEvent(
+      createContentStream(parseResult.contentBuffer),
+      {
+        type: 'meta',
+        requestId,
+        model: aiModel,
+        degraded: {
+          rateLimitBackend: Boolean(rateLimitResult.degraded),
+          upstreamRetried: initialCall.attempts > 1,
+        },
+        retryAttempts: {
+          initial: initialCall.attempts,
+          followUp: 0,
+        },
+      }
+    );
+    return createChatStreamResponse(noToolStream, req, requestId);
   } catch (error) {
+    if (error instanceof UpstreamRequestError) {
+      const status = error.status === 429
+        ? 429
+        : error.status && error.status >= 400 && error.status < 500
+          ? 502
+          : 503;
+
+      logger.error('Upstream OpenAI failure', {
+        code: error.code,
+        status: error.status,
+        attempts: error.attempts,
+      });
+
+      return createChatErrorResponse(
+        req,
+        status,
+        error.code,
+        'AI service temporarily unavailable. Please try again.',
+        requestId,
+        {
+          meta: {
+            attempts: error.attempts,
+            upstreamStatus: error.status ?? null,
+          },
+        }
+      );
+    }
+
+    if (error instanceof Error && error.message === 'OPENAI_STREAM_BUFFER_EXCEEDED') {
+      return createChatErrorResponse(
+        req,
+        502,
+        'STREAM_BUFFER_EXCEEDED',
+        'Response stream exceeded safety limits. Please retry with a shorter prompt.',
+        requestId
+      );
+    }
+
     logger.error('Unexpected error', { error: error instanceof Error ? error.message : 'Unknown error' });
-    return createErrorResponse(error, logger, { request: req });
+    return createChatErrorResponse(
+      req,
+      500,
+      'INTERNAL_ERROR',
+      'Failed to process request',
+      requestId
+    );
   }
 });

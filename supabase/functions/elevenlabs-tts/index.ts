@@ -21,7 +21,7 @@ serve(async (req) => {
   try {
     // Rate limiting - 10 requests per minute per IP
     const clientIP = req.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       identifier: `tts:${clientIP}`,
       maxRequests: 10,
       windowMs: 60000,

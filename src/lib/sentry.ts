@@ -188,6 +188,26 @@ export const logMonitoringEvent = (
   );
 };
 
+export const logDegradedState = (
+  state: string,
+  featureArea: FeatureAreaType,
+  data?: BreadcrumbData
+) => {
+  logMessage(
+    `degraded_state:${state}`,
+    'warning',
+    featureArea,
+    {
+      degraded_state: state,
+      ...(data || {}),
+    },
+    {
+      monitoring_event: 'degraded_state',
+      degraded_state: state,
+    }
+  );
+};
+
 export const logApiFailure = (
   context: ApiFailureContext,
   featureArea?: FeatureAreaType

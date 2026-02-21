@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   try {
     // Rate limiting — prevent brute-force of referral codes
     const identifier = extractIdentifier(req);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 1000,
       identifier: `referral-validate:${identifier}`,

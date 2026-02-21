@@ -31,12 +31,17 @@ export interface StreamParseResult {
   finishReason: string | null;
 }
 
+interface StreamParseOptions {
+  maxStreamBytes?: number;
+}
+
 /**
  * Parse a complete SSE stream to detect tool calls and accumulate content.
  * Uses buffering strategy for reliability.
  */
 export async function parseStreamForToolCalls(
-  response: Response
+  response: Response,
+  options: StreamParseOptions = {}
 ): Promise<StreamParseResult> {
   const reader = response.body?.getReader();
   if (!reader) {
@@ -48,11 +53,18 @@ export async function parseStreamForToolCalls(
   let contentBuffer = '';
   const toolCallsMap = new Map<number, AccumulatedToolCall>();
   let finishReason: string | null = null;
+  const maxStreamBytes = options.maxStreamBytes ?? 2_000_000;
+  let consumedBytes = 0;
 
   try {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
+
+      consumedBytes += value.byteLength;
+      if (consumedBytes > maxStreamBytes) {
+        throw new Error('OPENAI_STREAM_BUFFER_EXCEEDED');
+      }
 
       buffer += decoder.decode(value, { stream: true });
       

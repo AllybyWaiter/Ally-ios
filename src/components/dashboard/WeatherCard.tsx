@@ -26,7 +26,15 @@ const weatherLabels: Record<WeatherCondition, string> = {
 };
 
 export function WeatherCard() {
-  const { weather, loading, error, enabled, refreshWeather, initializing } = useWeather();
+  const {
+    weather,
+    loading,
+    enabled,
+    refreshWeather,
+    initializing,
+    freshnessState,
+    locationSource,
+  } = useWeather();
   const { units } = useAuth();
 
   // Don't render if weather is not enabled (and we're done initializing)
@@ -52,7 +60,7 @@ export function WeatherCard() {
   }
 
   // Error state or no weather data
-  if (error || !weather) {
+  if (!weather) {
     return (
       <Card className="glass-card">
         <CardContent className="p-4">
@@ -93,6 +101,13 @@ export function WeatherCard() {
 
   // Get UV level info
   const uvLevel = getUVLevel(weather.uvIndex);
+  const sourceLabel = locationSource === 'gps'
+    ? 'GPS'
+    : locationSource === 'saved_profile'
+      ? 'Saved location'
+      : locationSource === 'manual'
+        ? 'Manual'
+        : 'Unknown source';
 
   // Calculate time since last fetch
   const getTimeSinceUpdate = () => {
@@ -173,6 +188,9 @@ export function WeatherCard() {
             </Button>
             <span className="text-xs text-muted-foreground">
               {getTimeSinceUpdate()}
+            </span>
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              {freshnessState} · {sourceLabel}
             </span>
             <Link 
               to="/weather" 

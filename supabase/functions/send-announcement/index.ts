@@ -84,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Rate limiting (5 announcements per minute - prevent spam)
     const identifier = extractIdentifier(req, user.id);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 1000,
       identifier: `announcement:${identifier}`,

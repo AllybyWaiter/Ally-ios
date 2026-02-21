@@ -98,7 +98,7 @@ serve(async (req) => {
 
     // Rate limiting (15 requests per minute)
     const identifier = extractIdentifier(req);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 15,
       windowMs: 60 * 1000,
       identifier: `ticket-reply:${identifier}`,

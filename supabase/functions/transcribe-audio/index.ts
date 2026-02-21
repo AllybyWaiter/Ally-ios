@@ -99,7 +99,7 @@ serve(async (req) => {
     }
 
     // Rate limiting (10 transcriptions per minute per user)
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 10,
       windowMs: 60 * 1000,
       identifier: `transcribe:${user.id}`,

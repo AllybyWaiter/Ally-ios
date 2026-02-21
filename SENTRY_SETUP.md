@@ -97,6 +97,16 @@ Configure these alerts to match release gates in `docs/SCALE_READINESS.md`:
    - Condition: sustained events over 15m
    - Action: create incident ticket
 
+5. Degraded-state surge alert:
+   - Query filter: `monitoring_event:degraded_state`
+   - Condition: sustained increase over baseline in 15m
+   - Action: notify owning team to evaluate fallback behavior and rollout flags
+
+6. Rate-limit backend degradation alert:
+   - Query filter: `monitoring_event:rate_limit_backend_degraded`
+   - Condition: any sustained events > 5m
+   - Action: investigate Redis connectivity and fallback mode (`RATE_LIMIT_FALLBACK_MODE`)
+
 ## Disabling Sentry
 
 If you don't want to use Sentry, simply don't add the `VITE_SENTRY_DSN` environment variable. The app will continue to work normally with console logging as fallback.

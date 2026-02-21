@@ -14,6 +14,8 @@ Scope: Day 1 baseline and release gates
 - Read API p95: `<= 800ms`
 - Write API p95: `<= 1200ms`
 - Weather edge function p95: `<= 1200ms`
+- Chat first chunk p95: `<= 4000ms`
+- Chat stream completion success: `>= 99.0%`
 
 ### Quality
 - Lint: `0 errors`
@@ -106,6 +108,11 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 - Added npm scripts: `load:test`, `load:test:quick`, `load:test:auth`
 - Added authenticated execution mode (JWT token or email/password auth)
 - Quick baseline (`weather`, 10 requests, concurrency 2): `p95 992.25ms`, `0%` errors
+- Added profile mode:
+  - `burst`
+  - `soak` (15 minutes)
+  - `failure-injection`
+- Added success-rate gate in report outputs (`>= 99%` for critical scenarios)
 
 ### Observability Progress
 - Added reliability telemetry tags/events in app:
@@ -118,3 +125,30 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 - Added CI load-test workflow:
   - `.github/workflows/load-tests.yml`
   - supports manual runs + weekly schedule with artifacted JSON reports
+  - scheduled run enforces gates for burst/soak/failure-injection profiles
+
+## Reliability Infrastructure Notes
+
+### Distributed Rate Limiting
+- Shared edge limiter now supports distributed Redis backend with fallback controls.
+- Required envs for distributed mode:
+  - `RATE_LIMIT_REDIS_URL`
+  - `RATE_LIMIT_REDIS_TOKEN`
+  - `RATE_LIMIT_FALLBACK_MODE` (`memory` or `strict`)
+- Response headers preserve rate-limit metadata and now include backend/degraded markers.
+
+### Weather/Location Accuracy Metadata
+- `get-weather` response includes additive `meta` object:
+  - `provider`, `source`, `fetchedAt`, `dataAgeSeconds`, `isStale`
+  - `locationSource`, `locationAccuracyMeters`, `alertCoverage`
+- Reverse-geocode cache table:
+  - `public.weather_geocode_cache`
+  - migration: `supabase/migrations/20260221170000_weather_geocode_cache.sql`
+
+### Chat Stream Stability
+- `ally-chat` now emits:
+  - machine-readable error `code`
+  - `correlationId` on error payloads
+  - SSE `meta` event with request ID/model/degraded flags
+- Upstream OpenAI calls now use timeout + retry with bounded attempts.
+- Stream parser applies buffer-cap protection to prevent pathological growth.

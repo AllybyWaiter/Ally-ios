@@ -4,9 +4,15 @@ import { Cloud, CloudRain, CloudSnow, CloudFog, CloudLightning, Sun, RefreshCw, 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { LazyLoadWithTimeout } from '@/components/ui/lazy-load-with-timeout';
 import { SectionErrorBoundary } from '@/components/error-boundaries';
-import { useWeather, WeatherCondition, ForecastDay } from '@/hooks/useWeather';
+import {
+  useWeather,
+  WeatherCondition,
+  ForecastDay,
+} from '@/hooks/useWeather';
+import { WEATHER_FRESHNESS_COPY, WEATHER_SOURCE_COPY } from '@/lib/weatherEdgeCopy';
 import { HourlyForecast } from '@/components/dashboard/HourlyForecast';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -52,7 +58,15 @@ const weatherLabels: Record<WeatherCondition, string> = {
 };
 
 // Simplified WeatherRadarWrapper using reusable LazyLoadWithTimeout with render prop
-function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longitude: number }) {
+function WeatherRadarWrapper({
+  latitude,
+  longitude,
+  alertCoverage,
+}: {
+  latitude: number;
+  longitude: number;
+  alertCoverage: 'full' | 'limited' | 'none';
+}) {
   const radarFallback = (
     <Card className="glass-card overflow-hidden">
       <CardHeader className="pb-2">
@@ -83,6 +97,7 @@ function WeatherRadarWrapper({ latitude, longitude }: { latitude: number; longit
         <LazyWeatherRadar 
           latitude={latitude} 
           longitude={longitude}
+          alertCoverage={alertCoverage}
           onReady={onReady}
         />
       )}
@@ -167,7 +182,19 @@ function CompactForecastDay({ day, units }: ForecastCardProps) {
 }
 
 export default function Weather() {
-  const { weather, loading, error, enabled, refreshWeather, initializing } = useWeather();
+  const {
+    weather,
+    loading,
+    error,
+    enabled,
+    refreshWeather,
+    initializing,
+    freshnessState,
+    dataAgeSeconds,
+    locationSource,
+    accuracyWarning,
+    alertCoverage,
+  } = useWeather();
   const { units, user } = useAuth();
   const isMobile = useIsMobile();
 
@@ -223,7 +250,7 @@ export default function Weather() {
   }
 
   // Error or no data
-  if (error || !weather) {
+  if (!weather) {
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
@@ -266,6 +293,14 @@ export default function Weather() {
   const uvLevel = getUVLevel(weather.uvIndex);
 
   const getTimeSinceUpdate = () => {
+    if (typeof dataAgeSeconds === 'number') {
+      const diffMinutes = Math.floor(dataAgeSeconds / 60);
+      if (diffMinutes < 1) return 'Just now';
+      if (diffMinutes === 1) return '1 min ago';
+      if (diffMinutes < 60) return `${diffMinutes} min ago`;
+      return `${Math.floor(diffMinutes / 60)}h ago`;
+    }
+
     if (!weather.fetchedAt) return '';
     const fetchedAt = new Date(weather.fetchedAt);
     const now = new Date();
@@ -302,9 +337,34 @@ export default function Weather() {
             </div>
           </div>
 
+          {freshnessState !== 'fresh' && (
+            <div className="rounded-lg border border-border/60 bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+              {WEATHER_FRESHNESS_COPY[freshnessState]}
+              {error ? ` (${error})` : ''}
+            </div>
+          )}
+
           {/* Current Conditions Hero */}
           <Card className="glass-card overflow-hidden">
             <CardContent className="p-6">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Badge variant={freshnessState === 'fresh' ? 'secondary' : 'outline'}>
+                  {freshnessState === 'fresh' ? 'Fresh' : freshnessState}
+                </Badge>
+                <Badge variant="outline">{WEATHER_SOURCE_COPY[locationSource]}</Badge>
+                {alertCoverage !== 'full' && (
+                  <Badge variant="outline">
+                    Alerts: {alertCoverage === 'limited' ? 'Limited' : 'Unavailable'}
+                  </Badge>
+                )}
+              </div>
+
+              {accuracyWarning && (
+                <p className="mb-3 text-xs text-amber-600 dark:text-amber-400">
+                  {accuracyWarning}
+                </p>
+              )}
+
               <div className="flex items-start justify-between mb-4">
                 <div>
                   {weather.locationName && (
@@ -400,7 +460,11 @@ export default function Weather() {
           {/* Weather Radar - with error boundary fallback */}
           {weather.latitude != null && weather.longitude != null && (
             <SectionErrorBoundary fallbackTitle="Weather radar unavailable">
-              <WeatherRadarWrapper latitude={weather.latitude} longitude={weather.longitude} />
+              <WeatherRadarWrapper
+                latitude={weather.latitude}
+                longitude={weather.longitude}
+                alertCoverage={alertCoverage}
+              />
             </SectionErrorBoundary>
           )}
 

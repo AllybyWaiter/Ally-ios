@@ -37,7 +37,7 @@ serve(async (req: Request) => {
 
     // Server-side rate limiting: 5 requests per IP per hour
     const identifier = extractIdentifier(req);
-    const rateLimitResult = checkRateLimit({
+    const rateLimitResult = await checkRateLimit({
       maxRequests: 5,
       windowMs: 60 * 60 * 1000, // 1 hour
       identifier,

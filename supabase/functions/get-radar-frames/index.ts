@@ -23,7 +23,7 @@ serve(async (req) => {
 
   try {
     const identifier = extractIdentifier(req) || "unknown";
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       identifier,
       maxRequests: 120,
       windowMs: 60 * 60 * 1000,

@@ -93,9 +93,20 @@ Day 2 reliability telemetry adds searchable `monitoring_event` tags:
 
 - **`api_failure`** - API/edge/rest request failed
 - **`slow_operation`** - Response latency exceeded threshold
+- **`degraded_state`** - UI/feature path is operating in a degraded mode
+- **`rate_limit_backend_degraded`** - Redis rate-limit backend unavailable; fallback mode active
 - **`weather_location_unavailable`** - Could not resolve location for weather refresh
 - **`weather_geolocation_unsupported`** - Geolocation API unavailable
 - **`chat_stream_payload_error`** - Ally chat stream returned explicit error payload
+- **`chat_stream_retry`** - Client retried recoverable stream transport/API failures
+- **`chat_stream_truncated`** - Stream ended without `[DONE]` completion marker
+- **`chat_stream_meta`** - Stream meta payload observed (request ID/model/degraded flags)
+
+Additional tag dimensions:
+
+- **`degraded_state`** values: `fresh`, `stale`, `degraded`, `offline`, `unavailable`
+- **`location_source`** values: `gps`, `saved_profile`, `manual`, `unknown`
+- **`monitoring_event`** plus `feature_area` should be used together for dashboards/alerts
 
 Recommended filters:
 
@@ -103,3 +114,6 @@ Recommended filters:
 - `monitoring_event:api_failure feature_area:chat`
 - `monitoring_event:slow_operation feature_area:weather`
 - `monitoring_event:slow_operation feature_area:chat`
+- `monitoring_event:degraded_state feature_area:weather`
+- `monitoring_event:rate_limit_backend_degraded`
+- `monitoring_event:chat_stream_retry feature_area:chat`

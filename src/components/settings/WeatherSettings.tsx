@@ -5,9 +5,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useWeather } from '@/hooks/useWeather';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { loadWeatherEnabled, setWeatherPreference } from '@/lib/weatherPreference';
 
 export function WeatherSettings() {
   const { user } = useAuth();
@@ -22,13 +22,8 @@ export function WeatherSettings() {
     if (!user?.id) return;
 
     const loadSettings = async () => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('weather_enabled')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      setWeatherEnabled(profile?.weather_enabled ?? false);
+      const enabled = await loadWeatherEnabled(user.id);
+      setWeatherEnabled(enabled);
       setSettingsLoading(false);
     };
 
@@ -37,87 +32,35 @@ export function WeatherSettings() {
 
   const handleToggleWeather = async (enabled: boolean) => {
     if (!user?.id) return;
+    const previousValue = weatherEnabled;
+    setWeatherEnabled(enabled);
 
-    // If enabling, request location permission first
-    if (enabled) {
-      if (!navigator.geolocation) {
+    try {
+      const result = await setWeatherPreference({ userId: user.id, enabled });
+      setWeatherEnabled(result.enabled);
+
+      if (result.enabled) {
         toast({
-          title: "Location Not Supported",
-          description: "Your browser doesn't support geolocation.",
-          variant: "destructive",
+          title: "Weather Enabled",
+          description: result.capturedLocation
+            ? "Weather now uses your current location."
+            : "Weather enabled with fallback location settings.",
         });
-        return;
+        refreshWeather();
+      } else {
+        toast({
+          title: "Weather Disabled",
+          description: "Weather features have been turned off.",
+        });
       }
-
-      // Request location permission
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          // Permission granted, save coordinates and enable weather
-          setWeatherEnabled(true);
-
-          try {
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({
-                weather_enabled: true,
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude
-              })
-              .eq('user_id', user.id);
-
-            if (updateError) throw updateError;
-
-            toast({
-              title: "Weather Enabled",
-              description: "Your dashboard will now show weather-aware content based on your current location.",
-            });
-
-            // Refresh weather to get current data
-            refreshWeather();
-          } catch {
-            setWeatherEnabled(false);
-            toast({
-              title: "Failed to enable weather",
-              description: "Could not save your location. Please try again.",
-              variant: "destructive",
-            });
-          }
-        },
-        (error) => {
-          console.error('Location permission denied:', error);
-          toast({
-            title: "Location Required",
-            description: "Please enable location access to use weather features.",
-            variant: "destructive",
-          });
-        },
-        { enableHighAccuracy: false, timeout: 10000 }
-      );
-      return;
-    }
-
-    // Disabling weather
-    setWeatherEnabled(false);
-
-    const { error: disableError } = await supabase
-      .from('profiles')
-      .update({ weather_enabled: false })
-      .eq('user_id', user.id);
-
-    if (disableError) {
-      setWeatherEnabled(true);
+    } catch {
+      setWeatherEnabled(previousValue);
       toast({
-        title: "Failed to disable weather",
+        title: "Failed to update weather setting",
         description: "Please try again.",
         variant: "destructive",
       });
-      return;
     }
-
-    toast({
-      title: "Weather Disabled",
-      description: "Weather features have been turned off.",
-    });
   };
 
   const getConditionLabel = (condition: string) => {
