@@ -23,6 +23,12 @@ Quick smoke run:
 npm run load:test:quick
 ```
 
+Authenticated full run (fails fast if auth cannot be established):
+
+```bash
+npm run load:test:auth
+```
+
 Dry-run config check (no network calls):
 
 ```bash
@@ -40,7 +46,11 @@ Required:
 Optional (needed for auth-required scenarios like `chat` and dashboard reads):
 - `LOAD_BEARER_TOKEN`
 - or `SUPABASE_USER_JWT`
-- or `SUPABASE_SERVICE_ROLE_KEY` (use carefully; bypasses RLS)
+- or `SUPABASE_ACCESS_TOKEN`
+
+Optional password-auth fallback for auto JWT fetch:
+- `LOAD_AUTH_EMAIL`
+- `LOAD_AUTH_PASSWORD`
 
 Optional weather coordinates:
 - `LOAD_WEATHER_LAT`
@@ -66,3 +76,9 @@ Reports are written to:
 `artifacts/load-tests/load-report-<timestamp>.json`
 
 Use `--out` to override the output path.
+
+## Useful Flags
+
+- `--require-auth`: fail instead of skipping auth-required scenarios when no JWT is available
+- `--bearer-token <jwt>`: pass a user JWT explicitly
+- `--auth-email <email> --auth-password <password>`: fetch JWT before running scenarios

@@ -103,5 +103,6 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 ### Load Testing Progress
 - Added load test runner: `scripts/load/run-load-tests.mjs`
 - Added runbook: `docs/LOAD_TESTING.md`
-- Added npm scripts: `load:test`, `load:test:quick`
-- Quick baseline (`weather`, 10 requests, concurrency 2): `p95 1116.43ms`, `0%` errors
+- Added npm scripts: `load:test`, `load:test:quick`, `load:test:auth`
+- Added authenticated execution mode (JWT token or email/password auth)
+- Quick baseline (`weather`, 10 requests, concurrency 2): `p95 992.25ms`, `0%` errors

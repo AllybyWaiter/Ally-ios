@@ -18,6 +18,10 @@ Options:
   --requests <n>          Requests per scenario (default: 50)
   --concurrency <n>       Concurrent workers per scenario (default: 10)
   --timeout-ms <n>        Request timeout in milliseconds (default: 15000)
+  --bearer-token <token>  Bearer JWT for auth-required scenarios
+  --auth-email <email>    Auth email used to fetch JWT if no bearer token is provided
+  --auth-password <pass>  Auth password used to fetch JWT if no bearer token is provided
+  --require-auth          Fail fast when auth-required scenarios can't authenticate
   --out <path>            Write JSON report to this path
   --dry-run               Print resolved config only, do not make requests
   --no-env-file           Do not load .env/.env.local from workspace
@@ -34,6 +38,10 @@ function parseArgs(argv) {
     requests: DEFAULT_REQUESTS,
     concurrency: DEFAULT_CONCURRENCY,
     timeoutMs: DEFAULT_TIMEOUT_MS,
+    bearerToken: "",
+    authEmail: "",
+    authPassword: "",
+    requireAuth: false,
     out: "",
     dryRun: false,
     noEnvFile: false,
@@ -68,6 +76,10 @@ function parseArgs(argv) {
       options.noEnvFile = true;
       continue;
     }
+    if (flag === "--require-auth") {
+      options.requireAuth = true;
+      continue;
+    }
 
     const { value, consumed } = readOptionValue(inlineValue, i);
     i += consumed;
@@ -84,6 +96,15 @@ function parseArgs(argv) {
         break;
       case "--timeout-ms":
         options.timeoutMs = Number(value);
+        break;
+      case "--bearer-token":
+        options.bearerToken = value;
+        break;
+      case "--auth-email":
+        options.authEmail = value;
+        break;
+      case "--auth-password":
+        options.authPassword = value;
         break;
       case "--out":
         options.out = value;
@@ -174,6 +195,119 @@ function percentile(sortedValues, pct) {
 
 function round(value) {
   return Number(value.toFixed(2));
+}
+
+function truncateForLog(input, maxLength = 160) {
+  if (!input) return "";
+  if (input.length <= maxLength) return input;
+  return `${input.slice(0, maxLength)}...`;
+}
+
+async function fetchJwtFromPasswordAuth({
+  baseUrl,
+  apikey,
+  email,
+  password,
+  timeoutMs,
+}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${baseUrl}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+      signal: controller.signal,
+    });
+
+    const payloadText = await response.text();
+    let payload = null;
+    try {
+      payload = payloadText ? JSON.parse(payloadText) : null;
+    } catch {
+      payload = null;
+    }
+
+    if (!response.ok) {
+      const message =
+        (payload && typeof payload.msg === "string" && payload.msg) ||
+        (payload && typeof payload.error_description === "string" && payload.error_description) ||
+        truncateForLog(payloadText);
+      throw new Error(
+        `Password auth failed (${response.status})${message ? `: ${message}` : ""}`
+      );
+    }
+
+    if (!payload || typeof payload.access_token !== "string" || !payload.access_token) {
+      throw new Error("Password auth succeeded but no access_token was returned.");
+    }
+
+    return payload.access_token;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function resolveBearerToken({
+  baseUrl,
+  apikey,
+  timeoutMs,
+  env,
+  options,
+  selectedScenarios,
+}) {
+  const hasAuthScenario = selectedScenarios.some((scenario) => scenario.requiresBearer);
+  const directBearerToken =
+    options.bearerToken ||
+    env.LOAD_BEARER_TOKEN ||
+    env.SUPABASE_USER_JWT ||
+    env.SUPABASE_ACCESS_TOKEN ||
+    "";
+
+  if (directBearerToken) {
+    return {
+      token: directBearerToken,
+      source: "direct-token",
+      hasAuthScenario,
+    };
+  }
+
+  const authEmail = options.authEmail || env.LOAD_AUTH_EMAIL || "";
+  const authPassword = options.authPassword || env.LOAD_AUTH_PASSWORD || "";
+
+  if (authEmail && authPassword) {
+    const token = await fetchJwtFromPasswordAuth({
+      baseUrl,
+      apikey,
+      email: authEmail,
+      password: authPassword,
+      timeoutMs,
+    });
+
+    return {
+      token,
+      source: "password-auth",
+      hasAuthScenario,
+    };
+  }
+
+  if (hasAuthScenario && options.requireAuth) {
+    throw new Error(
+      "Auth-required scenarios selected, but no auth credentials were provided. " +
+      "Set LOAD_BEARER_TOKEN, or LOAD_AUTH_EMAIL + LOAD_AUTH_PASSWORD, " +
+      "or pass --bearer-token / --auth-email / --auth-password."
+    );
+  }
+
+  return {
+    token: "",
+    source: "none",
+    hasAuthScenario,
+  };
 }
 
 function createScenarios(env) {
@@ -280,7 +414,9 @@ async function runScenario({ scenario, baseUrl, apikey, bearerToken, requests, c
     return {
       name: scenario.name,
       skipped: true,
-      skipReason: "Missing bearer token (set LOAD_BEARER_TOKEN or SUPABASE_USER_JWT).",
+      skipReason:
+        "Missing bearer token (set LOAD_BEARER_TOKEN/SUPABASE_USER_JWT, " +
+        "or LOAD_AUTH_EMAIL + LOAD_AUTH_PASSWORD).",
     };
   }
 
@@ -393,12 +529,6 @@ async function main() {
     env.SUPABASE_ANON_KEY ??
     env.VITE_SUPABASE_PUBLISHABLE_KEY ??
     env.SUPABASE_PUBLISHABLE_KEY;
-  const bearerToken =
-    env.LOAD_BEARER_TOKEN ??
-    env.SUPABASE_USER_JWT ??
-    env.SUPABASE_ACCESS_TOKEN ??
-    env.SUPABASE_SERVICE_ROLE_KEY ??
-    "";
 
   if (!rawBaseUrl) {
     throw new Error("Missing SUPABASE_URL or VITE_SUPABASE_URL.");
@@ -423,7 +553,15 @@ async function main() {
       JSON.stringify(
         {
           baseUrl,
-          hasBearerToken: Boolean(bearerToken),
+          hasBearerToken:
+            Boolean(options.bearerToken) ||
+            Boolean(env.LOAD_BEARER_TOKEN) ||
+            Boolean(env.SUPABASE_USER_JWT) ||
+            Boolean(env.SUPABASE_ACCESS_TOKEN),
+          hasPasswordAuthCredentials:
+            Boolean(options.authEmail || env.LOAD_AUTH_EMAIL) &&
+            Boolean(options.authPassword || env.LOAD_AUTH_PASSWORD),
+          requireAuth: options.requireAuth,
           requests: options.requests,
           concurrency: options.concurrency,
           timeoutMs: options.timeoutMs,
@@ -443,11 +581,24 @@ async function main() {
     process.exit(0);
   }
 
+  const authResolution = await resolveBearerToken({
+    baseUrl,
+    apikey,
+    timeoutMs: options.timeoutMs,
+    env,
+    options,
+    selectedScenarios,
+  });
+  const bearerToken = authResolution.token;
+
   console.log(`Running load tests against ${baseUrl}`);
   console.log(
     `Scenarios: ${selectedScenarios.map((scenario) => scenario.name).join(", ")} | ` +
       `requests/scenario=${options.requests} concurrency=${options.concurrency}`
   );
+  if (authResolution.hasAuthScenario) {
+    console.log(`Auth mode: ${authResolution.source}${bearerToken ? " (JWT available)" : " (no JWT)"}`);
+  }
 
   const startedAt = new Date().toISOString();
   const scenarioResults = [];
@@ -480,6 +631,8 @@ async function main() {
       concurrency: options.concurrency,
       timeoutMs: options.timeoutMs,
       scenarios: options.scenarios,
+      requireAuth: options.requireAuth,
+      authMode: authResolution.source,
     },
     overall: {
       pass: overallPass,
