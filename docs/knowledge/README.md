@@ -17,6 +17,18 @@ This folder contains protocol-level guidance used to seed and maintain Ally's aq
 - `columnaris-red-flag-triage-escalation.md`
 - `freshwater-ich-differential-diagnosis-treatment.md`
 - `marine-ich-vs-velvet-differential-protocol.md`
+- `angelfish-compatibility-aggression-profile.md`
+- `betta-care-compatibility-profile.md`
+- `goldfish-care-compatibility-profile.md`
+- `neon-tetra-schooling-stress-indicators-profile.md`
+- `quarantine-hospital-tank-setup-sop.md`
+- `shrimp-snail-safety-profile-copper-med-sensitivity.md`
+- `filter-troubleshooting-decision-tree.md`
+- `heater-chiller-failure-emergency-protocol.md`
+- `chlorine-pool-balancing-workflow.md`
+- `pool-algae-outbreak-playbook.md`
+- `saltwater-pool-scg-balancing-cell-care-workflow.md`
+- `spa-bromine-chlorine-management-workflow.md`
 
 ## Source imports
 
@@ -35,6 +47,20 @@ Original source drafts are preserved in:
 - `sources/columnaris-red-flag-triage-escalation.source.md`
 - `sources/freshwater-ich-differential-diagnosis-treatment.source.md`
 - `sources/marine-ich-vs-velvet-differential-protocol.source.md`
+- `sources/angelfish-compatibility-aggression-profile.source.md`
+- `sources/betta-care-compatibility-profile.source.md`
+- `sources/goldfish-care-compatibility-profile.source.md`
+- `sources/neon-tetra-schooling-stress-indicators-profile.source.md`
+- `sources/quarantine-hospital-tank-setup-sop.source.md`
+- `sources/shrimp-snail-safety-profile-copper-med-sensitivity.source.md`
+- `sources/filter-troubleshooting-decision-tree.source.md`
+- `sources/heater-chiller-failure-emergency-protocol.source.md`
+- `sources/chlorine-pool-balancing-workflow.source.md`
+- `sources/pool-algae-outbreak-playbook-green-mustard-black.source.md`
+- `sources/saltwater-pool-scg-balancing-cell-care-workflow.source.md`
+- `sources/spa-bromine-chlorine-management-workflow.source.md`
+- `sources/cya-fc-decision-guide-safe-action-thresholds.source.md` (not seeded)
+- `sources/discus-advanced-care-profile.source.md` (not seeded)
 
 ## Usage notes
 
@@ -47,4 +73,5 @@ Original source drafts are preserved in:
 - Migration: `supabase/migrations/20260221100000_add_runbook_knowledge_entries.sql`
 - Migration: `supabase/migrations/20260221103000_add_nitrate_and_temperature_knowledge_entries.sql`
 - Migration: `supabase/migrations/20260221120000_add_disease_knowledge_entries.sql`
+- Migration: `supabase/migrations/20260221143000_add_species_pool_and_ops_knowledge_entries.sql`
 - After migration, generate embeddings for new rows with the `embed-knowledge` edge function.
