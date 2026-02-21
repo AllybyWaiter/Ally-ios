@@ -25,20 +25,94 @@ interface SyntaxHighlighterProps {
   children: string;
 }
 
+interface SyntaxHighlighterComponent extends React.ComponentType<SyntaxHighlighterProps> {
+  registerLanguage?: (name: string, language: unknown) => void;
+}
+
+let syntaxLoaderPromise: Promise<{
+  Highlighter: SyntaxHighlighterComponent;
+  style: Record<string, React.CSSProperties>;
+}> | null = null;
+
+const LANGUAGE_ALIASES: Record<string, string> = {
+  js: "javascript",
+  ts: "typescript",
+  sh: "bash",
+  shell: "bash",
+  zsh: "bash",
+  py: "python",
+  yml: "yaml",
+  md: "markdown",
+};
+
+function normalizeLanguage(language: string): string {
+  const lower = language.toLowerCase().trim();
+  return LANGUAGE_ALIASES[lower] ?? lower;
+}
+
+function loadSyntaxHighlighter() {
+  if (!syntaxLoaderPromise) {
+    syntaxLoaderPromise = Promise.all([
+      import("react-syntax-highlighter/dist/esm/prism-light"),
+      import("react-syntax-highlighter/dist/esm/styles/prism/one-dark"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/javascript"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/typescript"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/jsx"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/tsx"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/json"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/bash"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/python"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/sql"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/yaml"),
+      import("react-syntax-highlighter/dist/esm/languages/prism/markdown"),
+    ]).then(([
+      prismLight,
+      oneDark,
+      javascript,
+      typescript,
+      jsx,
+      tsx,
+      json,
+      bash,
+      python,
+      sql,
+      yaml,
+      markdown,
+    ]) => {
+      const Highlighter = prismLight.default as SyntaxHighlighterComponent;
+
+      Highlighter.registerLanguage?.("javascript", javascript.default);
+      Highlighter.registerLanguage?.("typescript", typescript.default);
+      Highlighter.registerLanguage?.("jsx", jsx.default);
+      Highlighter.registerLanguage?.("tsx", tsx.default);
+      Highlighter.registerLanguage?.("json", json.default);
+      Highlighter.registerLanguage?.("bash", bash.default);
+      Highlighter.registerLanguage?.("python", python.default);
+      Highlighter.registerLanguage?.("sql", sql.default);
+      Highlighter.registerLanguage?.("yaml", yaml.default);
+      Highlighter.registerLanguage?.("markdown", markdown.default);
+
+      return {
+        Highlighter,
+        style: oneDark.default,
+      };
+    });
+  }
+
+  return syntaxLoaderPromise;
+}
+
 // Component that handles the lazy loading of syntax highlighter
 export const LazySyntaxHighlighter = memo(({ language, children, className }: LazySyntaxHighlighterProps) => {
-  const [Highlighter, setHighlighter] = useState<React.ComponentType<SyntaxHighlighterProps> | null>(null);
+  const [Highlighter, setHighlighter] = useState<SyntaxHighlighterComponent | null>(null);
   const [style, setStyle] = useState<Record<string, React.CSSProperties> | null>(null);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    
-    Promise.all([
-      import("react-syntax-highlighter").then((mod) => mod.Prism),
-      import("react-syntax-highlighter/dist/esm/styles/prism").then((mod) => mod.oneDark),
-    ])
-      .then(([HighlighterComponent, styleObj]) => {
+
+    loadSyntaxHighlighter()
+      .then(({ Highlighter: HighlighterComponent, style: styleObj }) => {
         if (mounted) {
           setHighlighter(() => HighlighterComponent);
           setStyle(styleObj);
@@ -61,10 +135,12 @@ export const LazySyntaxHighlighter = memo(({ language, children, className }: La
     return <CodeFallback className={className}>{children}</CodeFallback>;
   }
 
+  const normalizedLanguage = normalizeLanguage(language);
+
   return (
     <Highlighter
       style={style}
-      language={language}
+      language={normalizedLanguage}
       PreTag="div"
       className={cn("rounded-md my-2 text-sm", className)}
       customStyle={{

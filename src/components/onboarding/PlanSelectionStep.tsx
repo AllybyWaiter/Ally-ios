@@ -47,7 +47,7 @@ export function PlanSelectionStep({ userId, onComplete, onBack, currentPreferenc
   const { toast } = useToast();
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const { isNative, currentOffering, purchase, showPaywall } = useRevenueCat();
+  const { currentOffering, purchase, showPaywall } = useRevenueCat();
 
   // Handle returning from cancelled checkout
   useEffect(() => {

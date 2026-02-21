@@ -1245,7 +1245,7 @@ export function computeWhatIfScenarios(
   waterChangeEstimate: WaterChangeEstimate | null,
   stockingAnalysis: StockingAnalysis | null,
   volumeGallons: number | null | undefined,
-  waterType: string
+  _waterType: string
 ): WhatIfScenario[] {
   const scenarios: WhatIfScenario[] = [];
 
@@ -1835,7 +1835,6 @@ export function computeDosingRecommendations(
   } else {
     // --- Aquarium dosing ---
     const kh = latestParams['KH'];
-    const ph = latestParams['pH'];
     const nitrite = latestParams['Nitrite'];
     const ammonia = latestParams['Ammonia'];
 
@@ -1966,7 +1965,7 @@ export function computeSeasonalFactors(
           }
         }
         break;
-      case 'winter':
+      case 'winter': {
         risks.push('Heater failure is more dangerous when room temp is low');
         risks.push('Drafts near windows can cause localized cold spots');
         tips.push('Check heater function weekly — have a backup for critical tanks');
@@ -1982,6 +1981,7 @@ export function computeSeasonalFactors(
           }
         }
         break;
+      }
       case 'spring':
         risks.push('Parasite activity increases as temperatures warm up');
         risks.push('Algae blooms are common with increasing daylight');

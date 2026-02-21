@@ -33,14 +33,32 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks - separate heavy dependencies
-          'vendor-recharts': ['recharts'],
-          'vendor-framer': ['framer-motion'],
-          'vendor-markdown': ['react-markdown', 'react-syntax-highlighter'],
-          'vendor-leaflet': ['leaflet', 'react-leaflet'],
-          // i18n locales loaded dynamically, but group the library
-          'vendor-i18n': ['i18next', 'react-i18next'],
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          // Keep major heavy libraries isolated.
+          if (id.includes("node_modules/recharts")) return "vendor-recharts";
+          if (id.includes("node_modules/framer-motion")) return "vendor-framer";
+          if (id.includes("node_modules/leaflet") || id.includes("node_modules/react-leaflet")) return "vendor-leaflet";
+          if (id.includes("node_modules/i18next") || id.includes("node_modules/react-i18next")) return "vendor-i18n";
+
+          // Split markdown and syntax stack to avoid a single oversized chunk.
+          if (id.includes("node_modules/react-syntax-highlighter") || id.includes("node_modules/refractor")) {
+            return "vendor-syntax";
+          }
+          if (
+            id.includes("node_modules/react-markdown") ||
+            id.includes("node_modules/remark-") ||
+            id.includes("node_modules/rehype-") ||
+            id.includes("node_modules/unified") ||
+            id.includes("node_modules/micromark") ||
+            id.includes("node_modules/mdast") ||
+            id.includes("node_modules/hast") ||
+            id.includes("node_modules/vfile") ||
+            id.includes("node_modules/unist")
+          ) {
+            return "vendor-markdown";
+          }
         },
       },
     },

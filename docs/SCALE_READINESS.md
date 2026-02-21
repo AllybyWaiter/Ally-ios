@@ -85,3 +85,17 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 2. Start chunk reduction plan for `vendor-markdown`, `App`, and `vendor-recharts`.
 3. Add/load test scripts for weather/chat/dashboard and capture p95 + error rate.
 4. Add crash-free and API error dashboards (Sentry + edge function logs) and wire alert thresholds.
+
+## Day 2 Progress (Current)
+
+### Quality Gate Progress
+- Lint errors: `8 -> 0` (warnings remain: `48`)
+- Test run: `553/553` passing
+- Build: PASS
+
+### Bundle Split Progress
+- `vendor-markdown`: `~1.7M -> ~120.65k`
+- Added dedicated `vendor-syntax`: `~68.85k`
+- Remaining oversized chunks:
+  - `vendor-recharts`: `~568.86k`
+  - `App`: `~910.54k`

@@ -40,42 +40,6 @@ interface AquariumGridProps {
   onDeleteAquarium: (aquariumId: string) => void;
 }
 
-// Health indicator badge component - memoized to prevent unnecessary re-renders
-const HealthIndicator = memo(function HealthIndicator({
-  aquariumId,
-  t
-}: {
-  aquariumId: string;
-  t: (key: string) => string;
-}) {
-  const health = useAquariumHealthScore(aquariumId);
-
-  if (health.isLoading) {
-    return (
-      <div className="w-3 h-3 rounded-full bg-muted animate-pulse" />
-    );
-  }
-
-  const hasAlerts = health.alerts > 0 || health.overdueTasks > 0;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div
-          className={`w-3 h-3 rounded-full transition-all ${hasAlerts ? 'animate-pulse' : ''}`}
-          style={{ backgroundColor: health.color }}
-          role="status"
-          aria-label={`Health: ${health.label}, ${health.score}%${hasAlerts ? ', has alerts' : ''}`}
-        />
-      </TooltipTrigger>
-      <TooltipContent side="top" className="text-xs">
-        <p>{health.label} ({health.score}%)</p>
-        {hasAlerts && <p className="text-orange-400">{t('dashboard.tapHoldDetails')}</p>}
-      </TooltipContent>
-    </Tooltip>
-  );
-});
-
 // Individual aquarium card with hover/long-press health view
 interface AquariumCardProps {
   aquarium: Aquarium;

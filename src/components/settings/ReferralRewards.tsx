@@ -13,7 +13,7 @@ import { logger } from '@/lib/logger';
 export function ReferralRewards() {
   const { rewards, isLoading } = useReferralCode();
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
-  const { isNative, showPaywall } = useRevenueCat();
+  const { showPaywall } = useRevenueCat();
 
   const getStatusBadge = (status: string, expiresAt: string) => {
     const expired = isPast(new Date(expiresAt));

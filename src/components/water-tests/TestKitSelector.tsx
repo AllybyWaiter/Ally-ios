@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FlaskConical, Plus, Star, Upload, X } from 'lucide-react';
+import { FlaskConical, Plus, Star, Upload } from 'lucide-react';
 import type { TestKitProfile, TestKitTemplate } from './hooks/useTestKitProfiles';
 
 interface TestKitSelectorProps {
