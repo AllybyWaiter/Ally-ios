@@ -99,3 +99,8 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 - Remaining oversized chunks:
   - `vendor-recharts`: `~568.86k`
   - `App`: `~910.54k`
+
+### Load Testing Progress
+- Added load test runner: `scripts/load/run-load-tests.mjs`
+- Added runbook: `docs/LOAD_TESTING.md`
+- Added npm scripts: `load:test`, `load:test:quick`

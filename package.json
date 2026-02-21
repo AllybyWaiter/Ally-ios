@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "load:test": "node scripts/load/run-load-tests.mjs",
+    "load:test:quick": "node scripts/load/run-load-tests.mjs --requests 10 --concurrency 2"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",

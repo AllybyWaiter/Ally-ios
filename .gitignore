@@ -40,3 +40,4 @@ xcuserdata/
 *.xcworkspace/xcuserdata/
 build/
 *.ipa
+artifacts/
