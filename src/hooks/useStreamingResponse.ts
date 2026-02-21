@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { FeatureArea, logApiFailure, logMonitoringEvent, logSlowOperation } from "@/lib/sentry";
 
 interface Message {
   role: "user" | "assistant";
@@ -133,29 +134,69 @@ export function useStreamingResponse() {
     });
 
     // Set up timeout for this specific request
+    let timeoutTriggered = false;
     timeoutRef.current = window.setTimeout(() => {
       // Only abort if this is still the current request
       if (currentRequestIdRef.current === requestId) {
+        timeoutTriggered = true;
+        logApiFailure(
+          {
+            endpoint: 'ally-chat',
+            method: 'POST',
+            statusCode: 408,
+            operation: 'chat_stream',
+            reason: 'client_timeout_60s',
+          },
+          FeatureArea.CHAT
+        );
         abortController.abort();
         callbacks.onError(new Error('Request timed out after 60 seconds'));
       }
     }, STREAM_TIMEOUT_MS);
 
-    const response = await fetch(CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        messages: formattedMessages,
-        aquariumId,
-        model, // Pass model selection to backend
-        ...(conversationHint ? { conversationHint } : {}),
-        ...(!aquariumId && userAquariums && userAquariums.length > 0 ? { userAquariums } : {}),
-      }),
-      signal: abortController.signal,
-    });
+    const requestStartedAt = performance.now();
+    let response: Response;
+    try {
+      response = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          messages: formattedMessages,
+          aquariumId,
+          model, // Pass model selection to backend
+          ...(conversationHint ? { conversationHint } : {}),
+          ...(!aquariumId && userAquariums && userAquariums.length > 0 ? { userAquariums } : {}),
+        }),
+        signal: abortController.signal,
+      });
+    } catch (error) {
+      const durationMs = performance.now() - requestStartedAt;
+      if (!timeoutTriggered) {
+        logApiFailure(
+          {
+            endpoint: 'ally-chat',
+            method: 'POST',
+            durationMs,
+            operation: 'chat_stream',
+            reason: error instanceof Error ? error.message : 'network_error',
+          },
+          FeatureArea.CHAT
+        );
+      }
+      throw error;
+    }
+
+    const responseLatencyMs = performance.now() - requestStartedAt;
+    logSlowOperation(
+      'ally-chat_response_headers',
+      responseLatencyMs,
+      4000,
+      FeatureArea.CHAT,
+      { model }
+    );
 
     // Check if request was superseded before processing response
     if (currentRequestIdRef.current !== requestId) {
@@ -164,6 +205,17 @@ export function useStreamingResponse() {
 
     if (!response.ok || !response.body) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      logApiFailure(
+        {
+          endpoint: 'ally-chat',
+          method: 'POST',
+          statusCode: response.status,
+          durationMs: responseLatencyMs,
+          operation: 'chat_stream',
+          reason: !response.body ? 'missing_response_body' : 'http_error',
+        },
+        FeatureArea.CHAT
+      );
 
       // Handle 401 - try to refresh session and retry automatically (once)
       if (response.status === 401 && !retryToken) {
@@ -305,6 +357,12 @@ export function useStreamingResponse() {
           // Check for error responses from the server
           if (parsed.error) {
             logger.warn('Stream returned error payload:', parsed.error);
+            logMonitoringEvent(
+              'chat_stream_payload_error',
+              'error',
+              FeatureArea.CHAT,
+              { model }
+            );
             hadError = true;
             callbacks.onError(new Error(typeof parsed.error === 'string' ? parsed.error : parsed.error.message || 'Server error'));
             streamDone = true;

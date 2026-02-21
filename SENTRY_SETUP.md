@@ -73,6 +73,30 @@ The Sentry configuration can be adjusted in `src/lib/sentry.ts`:
 - `replaysSessionSampleRate`: Percentage of normal sessions to record
 - `replaysOnErrorSampleRate`: Percentage of error sessions to record
 
+## Day 2 Alert Thresholds
+
+Configure these alerts to match release gates in `docs/SCALE_READINESS.md`:
+
+1. Crash-free sessions alert:
+   - Condition: crash-free sessions `< 99.7%`
+   - Window: `1h`
+   - Action: page/Slack on-call channel
+
+2. API failure spike alert (weather):
+   - Query filter: `monitoring_event:api_failure feature_area:weather`
+   - Condition: sudden increase vs baseline (or fixed threshold per 5m interval)
+   - Action: Slack + issue assignment
+
+3. API failure spike alert (chat):
+   - Query filter: `monitoring_event:api_failure feature_area:chat`
+   - Condition: sudden increase vs baseline (or fixed threshold per 5m interval)
+   - Action: Slack + issue assignment
+
+4. Latency degradation (weather/chat):
+   - Query filter: `monitoring_event:slow_operation feature_area:weather` and `feature_area:chat`
+   - Condition: sustained events over 15m
+   - Action: create incident ticket
+
 ## Disabling Sentry
 
 If you don't want to use Sentry, simply don't add the `VITE_SENTRY_DSN` environment variable. The app will continue to work normally with console logging as fallback.

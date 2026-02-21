@@ -14,6 +14,7 @@ Errors are tagged with one of the following feature areas:
 - **`chat`** - Ally chat functionality
 - **`settings`** - User settings and preferences
 - **`admin`** - Admin dashboard and management
+- **`weather`** - Weather and location-refresh functionality
 - **`general`** - General app functionality
 
 ## Severity Levels
@@ -85,3 +86,20 @@ You can set up Sentry alerts for specific combinations:
 - Alert when error rate in `feature_area:water-tests` exceeds threshold
 
 This makes it easy to monitor specific areas of your app and respond to issues quickly!
+
+## Reliability Monitoring Events
+
+Day 2 reliability telemetry adds searchable `monitoring_event` tags:
+
+- **`api_failure`** - API/edge/rest request failed
+- **`slow_operation`** - Response latency exceeded threshold
+- **`weather_location_unavailable`** - Could not resolve location for weather refresh
+- **`weather_geolocation_unsupported`** - Geolocation API unavailable
+- **`chat_stream_payload_error`** - Ally chat stream returned explicit error payload
+
+Recommended filters:
+
+- `monitoring_event:api_failure feature_area:weather`
+- `monitoring_event:api_failure feature_area:chat`
+- `monitoring_event:slow_operation feature_area:weather`
+- `monitoring_event:slow_operation feature_area:chat`

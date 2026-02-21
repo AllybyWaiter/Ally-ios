@@ -104,12 +104,40 @@ export interface BreadcrumbData {
   [key: string]: string | number | boolean | undefined;
 }
 
+interface SentryTagMap {
+  [key: string]: string | undefined;
+}
+
+export interface ApiFailureContext {
+  endpoint: string;
+  method?: string;
+  statusCode?: number;
+  durationMs?: number;
+  operation?: string;
+  requestId?: string;
+  retryAttempt?: number;
+  reason?: string;
+}
+
+const normalizeTagValue = (value: string | number | boolean | undefined): string | undefined => {
+  if (value === undefined || value === null) return undefined;
+  return String(value);
+};
+
+const statusCodeToSeverity = (statusCode?: number): ErrorSeverityType => {
+  if (!statusCode) return ErrorSeverity.MEDIUM;
+  if (statusCode >= 500) return ErrorSeverity.HIGH;
+  if (statusCode >= 400) return ErrorSeverity.MEDIUM;
+  return ErrorSeverity.LOW;
+};
+
 // Helper function to log custom errors - only if Sentry is initialized
 export const logError = (
   error: Error,
   context?: ErrorContext,
   featureArea?: FeatureAreaType,
-  severity?: ErrorSeverityType
+  severity?: ErrorSeverityType,
+  extraTags?: SentryTagMap
 ) => {
   if (sentryInitialized && hasAnalyticsConsent()) {
     Sentry.captureException(error, {
@@ -117,6 +145,7 @@ export const logError = (
       tags: {
         feature_area: featureArea || FeatureArea.GENERAL,
         severity: severity || ErrorSeverity.MEDIUM,
+        ...(extraTags || {}),
       },
     });
   }
@@ -127,17 +156,95 @@ export const logError = (
 export const logMessage = (
   message: string, 
   level: 'info' | 'warning' | 'error' = 'info',
-  featureArea?: FeatureAreaType
+  featureArea?: FeatureAreaType,
+  extraData?: BreadcrumbData,
+  extraTags?: SentryTagMap
 ) => {
   if (sentryInitialized && hasAnalyticsConsent()) {
     Sentry.captureMessage(message, {
       level,
       tags: {
         feature_area: featureArea || FeatureArea.GENERAL,
+        ...(extraTags || {}),
       },
+      extra: extraData,
     });
   }
   logger[level === 'warning' ? 'warn' : level === 'error' ? 'error' : 'log'](message);
+};
+
+export const logMonitoringEvent = (
+  eventName: string,
+  level: 'info' | 'warning' | 'error' = 'info',
+  featureArea?: FeatureAreaType,
+  data?: BreadcrumbData
+) => {
+  logMessage(
+    eventName,
+    level,
+    featureArea,
+    data,
+    { monitoring_event: eventName }
+  );
+};
+
+export const logApiFailure = (
+  context: ApiFailureContext,
+  featureArea?: FeatureAreaType
+) => {
+  const severity = statusCodeToSeverity(context.statusCode);
+  const error = new Error(
+    `API failure (${context.method || 'REQUEST'} ${context.endpoint}${context.statusCode ? ` -> ${context.statusCode}` : ''})`
+  );
+
+  logError(
+    error,
+    {
+      endpoint: context.endpoint,
+      method: context.method,
+      status_code: context.statusCode,
+      duration_ms: context.durationMs,
+      operation: context.operation,
+      request_id: context.requestId,
+      retry_attempt: context.retryAttempt,
+      reason: context.reason,
+    },
+    featureArea,
+    severity,
+    {
+      monitoring_event: 'api_failure',
+      endpoint: normalizeTagValue(context.endpoint),
+      method: normalizeTagValue(context.method),
+      status_code: normalizeTagValue(context.statusCode),
+      operation: normalizeTagValue(context.operation),
+    }
+  );
+};
+
+export const logSlowOperation = (
+  operation: string,
+  durationMs: number,
+  thresholdMs: number,
+  featureArea?: FeatureAreaType,
+  extraData?: BreadcrumbData
+) => {
+  if (durationMs < thresholdMs) return;
+
+  logMessage(
+    `slow_operation:${operation}`,
+    'warning',
+    featureArea,
+    {
+      operation,
+      duration_ms: Math.round(durationMs),
+      threshold_ms: thresholdMs,
+      ...(extraData || {}),
+    },
+    {
+      monitoring_event: 'slow_operation',
+      operation,
+    }
+  );
 };
 
 // Helper to set user context

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/lib/logger';
+import { FeatureArea, logApiFailure, logMonitoringEvent, logSlowOperation } from '@/lib/sentry';
 
 export type WeatherCondition = 'clear' | 'cloudy' | 'rain' | 'snow' | 'storm' | 'fog';
 
@@ -100,6 +101,15 @@ const FOREGROUND_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 type MaybeSingleLikeResult<T> = Promise<{ data: T | null; error: unknown }>;
 
+function getStatusCode(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+
+  const errWithStatus = error as { status?: unknown; context?: { status?: unknown } };
+  if (typeof errWithStatus.status === 'number') return errWithStatus.status;
+  if (typeof errWithStatus.context?.status === 'number') return errWithStatus.context.status;
+  return undefined;
+}
+
 function maybeSingleCompat<T>(query: {
   maybeSingle?: () => MaybeSingleLikeResult<T>;
   single?: () => MaybeSingleLikeResult<T>;
@@ -195,6 +205,7 @@ export function useWeather() {
 
   const fetchWeather = useCallback(async (latitude: number, longitude: number) => {
     const abortFlag = geolocationAbortRef.current;
+    const startedAt = performance.now();
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
@@ -212,6 +223,14 @@ export function useWeather() {
         longitude,
       };
       setCachedWeather(weatherData, user?.id);
+      const durationMs = performance.now() - startedAt;
+      logSlowOperation(
+        'get-weather',
+        durationMs,
+        1200,
+        FeatureArea.WEATHER,
+        { source: 'supabase.functions.invoke' }
+      );
 
       if (abortFlag.aborted) return null; // Check before state update
       setState(prev => ({
@@ -224,6 +243,18 @@ export function useWeather() {
     } catch (err) {
       if (abortFlag.aborted) return null; // Check before state update
       console.error('Failed to fetch weather:', err);
+      const durationMs = performance.now() - startedAt;
+      logApiFailure(
+        {
+          endpoint: 'get-weather',
+          method: 'POST',
+          statusCode: getStatusCode(err),
+          durationMs,
+          operation: 'weather_refresh',
+          reason: err instanceof Error ? err.message : 'unknown_error',
+        },
+        FeatureArea.WEATHER
+      );
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch weather';
       setState(prev => ({
         ...prev,
@@ -237,6 +268,7 @@ export function useWeather() {
   // Request fresh GPS location and save to profile
   const fetchWeatherForCurrentLocation = useCallback(async (forceRefresh = false) => {
     if (!navigator.geolocation) {
+      logMonitoringEvent('weather_geolocation_unsupported', 'warning', FeatureArea.WEATHER);
       setState(prev => ({ ...prev, loading: false, error: 'Geolocation not supported' }));
       return;
     }
@@ -260,13 +292,25 @@ export function useWeather() {
             .from('profiles')
             .update({ latitude, longitude })
             .eq('user_id', user.id);
-          if (locError) logger.error('Failed to save location:', locError);
+          if (locError) {
+            logger.error('Failed to save location:', locError);
+            logApiFailure(
+              {
+                endpoint: 'profiles',
+                method: 'UPDATE',
+                statusCode: getStatusCode(locError),
+                operation: 'save_user_location',
+                reason: locError.message,
+              },
+              FeatureArea.WEATHER
+            );
+          }
         }
 
         if (currentAbortRef.aborted) return;
         await fetchWeather(latitude, longitude);
       },
-      async () => {
+      async (geoError) => {
         // Check if component unmounted or new request started
         if (currentAbortRef.aborted) return;
 
@@ -290,15 +334,39 @@ export function useWeather() {
             }>;
           });
           if (profileError) logger.error('Failed to load saved location:', profileError);
+          if (profileError) {
+            logApiFailure(
+              {
+                endpoint: 'profiles',
+                method: 'SELECT',
+                statusCode: getStatusCode(profileError),
+                operation: 'load_saved_location',
+                reason: profileError.message,
+              },
+              FeatureArea.WEATHER
+            );
+          }
 
           if (currentAbortRef.aborted) return;
 
           if (profile?.latitude != null && profile?.longitude != null) {
             await fetchWeather(profile.latitude, profile.longitude);
           } else {
+            logMonitoringEvent(
+              'weather_location_unavailable',
+              'warning',
+              FeatureArea.WEATHER,
+              { geolocation_code: geoError.code, geolocation_message: geoError.message }
+            );
             setState(prev => ({ ...prev, loading: false, error: 'Location unavailable' }));
           }
         } else {
+          logMonitoringEvent(
+            'weather_location_unavailable',
+            'warning',
+            FeatureArea.WEATHER,
+            { geolocation_code: geoError.code, geolocation_message: geoError.message }
+          );
           setState(prev => ({ ...prev, loading: false, error: 'Location unavailable' }));
         }
       },
