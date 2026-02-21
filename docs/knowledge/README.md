@@ -29,6 +29,7 @@ This folder contains protocol-level guidance used to seed and maintain Ally's aq
 - `pool-algae-outbreak-playbook.md`
 - `saltwater-pool-scg-balancing-cell-care-workflow.md`
 - `spa-bromine-chlorine-management-workflow.md`
+- `ro-di-source-water-quality-sop.md`
 
 ## Source imports
 
@@ -59,6 +60,7 @@ Original source drafts are preserved in:
 - `sources/pool-algae-outbreak-playbook-green-mustard-black.source.md`
 - `sources/saltwater-pool-scg-balancing-cell-care-workflow.source.md`
 - `sources/spa-bromine-chlorine-management-workflow.source.md`
+- `sources/ro-di-source-water-quality-sop.source.md`
 - `sources/cya-fc-decision-guide-safe-action-thresholds.source.md` (not seeded)
 - `sources/discus-advanced-care-profile.source.md` (not seeded)
 
@@ -74,4 +76,5 @@ Original source drafts are preserved in:
 - Migration: `supabase/migrations/20260221103000_add_nitrate_and_temperature_knowledge_entries.sql`
 - Migration: `supabase/migrations/20260221120000_add_disease_knowledge_entries.sql`
 - Migration: `supabase/migrations/20260221143000_add_species_pool_and_ops_knowledge_entries.sql`
+- Migration: `supabase/migrations/20260221160000_add_rodi_source_water_knowledge_entry.sql`
 - After migration, generate embeddings for new rows with the `embed-knowledge` edge function.
