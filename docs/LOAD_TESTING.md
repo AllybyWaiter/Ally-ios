@@ -82,3 +82,20 @@ Use `--out` to override the output path.
 - `--require-auth`: fail instead of skipping auth-required scenarios when no JWT is available
 - `--bearer-token <jwt>`: pass a user JWT explicitly
 - `--auth-email <email> --auth-password <password>`: fetch JWT before running scenarios
+
+## CI Workflow
+
+GitHub Actions workflow:
+
+- `.github/workflows/load-tests.yml`
+
+Triggers:
+
+- Manual: `workflow_dispatch`
+- Scheduled: every Monday at `13:00 UTC`
+
+Required GitHub repository secrets:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `LOAD_AUTH_EMAIL` and `LOAD_AUTH_PASSWORD` (or `LOAD_BEARER_TOKEN`)

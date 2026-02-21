@@ -115,3 +115,6 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 - Updated Sentry docs with Day 2 alert thresholds:
   - `SENTRY_SETUP.md`
   - `SENTRY_TAGS.md`
+- Added CI load-test workflow:
+  - `.github/workflows/load-tests.yml`
+  - supports manual runs + weekly schedule with artifacted JSON reports

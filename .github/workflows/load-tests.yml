@@ -1,0 +1,112 @@
+name: Load Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: "Requests per scenario"
+        required: false
+        default: "50"
+      concurrency:
+        description: "Concurrent workers per scenario"
+        required: false
+        default: "10"
+      timeout_ms:
+        description: "Request timeout in ms"
+        required: false
+        default: "15000"
+      scenarios:
+        description: "Comma-separated scenarios"
+        required: false
+        default: "weather,chat,dashboard-aquariums,dashboard-tasks"
+  schedule:
+    - cron: "0 13 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  load-tests:
+    name: Run Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      LOAD_AUTH_EMAIL: ${{ secrets.LOAD_AUTH_EMAIL }}
+      LOAD_AUTH_PASSWORD: ${{ secrets.LOAD_AUTH_PASSWORD }}
+      LOAD_BEARER_TOKEN: ${{ secrets.LOAD_BEARER_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Authenticated Load Tests
+        run: |
+          REQUESTS="${{ github.event.inputs.requests }}"
+          CONCURRENCY="${{ github.event.inputs.concurrency }}"
+          TIMEOUT_MS="${{ github.event.inputs.timeout_ms }}"
+          SCENARIOS="${{ github.event.inputs.scenarios }}"
+
+          if [ -z "$REQUESTS" ]; then REQUESTS="50"; fi
+          if [ -z "$CONCURRENCY" ]; then CONCURRENCY="10"; fi
+          if [ -z "$TIMEOUT_MS" ]; then TIMEOUT_MS="15000"; fi
+          if [ -z "$SCENARIOS" ]; then SCENARIOS="weather,chat,dashboard-aquariums,dashboard-tasks"; fi
+
+          npm run load:test -- \
+            --require-auth \
+            --requests "$REQUESTS" \
+            --concurrency "$CONCURRENCY" \
+            --timeout-ms "$TIMEOUT_MS" \
+            --scenarios "$SCENARIOS" \
+            --out artifacts/load-tests/load-report-ci.json
+
+      - name: Publish Summary
+        if: always()
+        run: |
+          if [ ! -f artifacts/load-tests/load-report-ci.json ]; then
+            echo "Load report not found" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node -e '
+            const fs = require("node:fs");
+            const report = JSON.parse(fs.readFileSync("artifacts/load-tests/load-report-ci.json", "utf8"));
+            const lines = [];
+            lines.push("## Load Test Summary");
+            lines.push("");
+            lines.push(`- Overall: ${report?.overall?.pass ? "PASS" : "FAIL"}`);
+            lines.push(`- Started: ${report?.startedAt ?? "n/a"}`);
+            lines.push(`- Finished: ${report?.finishedAt ?? "n/a"}`);
+            lines.push("");
+            lines.push("| Scenario | Status | Requests | Error % | P95 (ms) |");
+            lines.push("|---|---:|---:|---:|---:|");
+            for (const scenario of report?.scenarios ?? []) {
+              if (scenario?.skipped) {
+                lines.push(`| ${scenario.name} | SKIPPED | - | - | - |`);
+                continue;
+              }
+              const status = scenario.pass ? "PASS" : "FAIL";
+              const req = scenario.metrics?.requests ?? 0;
+              const err = scenario.metrics?.errorRate ?? 0;
+              const p95 = scenario.metrics?.p95Ms ?? 0;
+              lines.push(`| ${scenario.name} | ${status} | ${req} | ${err} | ${p95} |`);
+            }
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n`);
+          '
+
+      - name: Upload Load Test Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-report
+          path: artifacts/load-tests/load-report-ci.json
+          if-no-files-found: warn

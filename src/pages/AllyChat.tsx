@@ -338,6 +338,26 @@ const AllyChat = () => {
     },
   }), []);
 
+  const attachLatestAssistantMessageId = useCallback((assistantMessageId?: string | null) => {
+    if (!assistantMessageId) return;
+
+    setMessages(prev => {
+      // Attach to the newest assistant message that doesn't already have a persisted DB id.
+      const reverseIndex = [...prev].reverse().findIndex(
+        (message) => message.role === 'assistant' && !message.id
+      );
+      if (reverseIndex === -1) return prev;
+
+      const messageIndex = prev.length - 1 - reverseIndex;
+      const next = [...prev];
+      next[messageIndex] = {
+        ...next[messageIndex],
+        id: assistantMessageId,
+      };
+      return next;
+    });
+  }, []);
+
   const handleModelSelect = (modelId: ModelType) => {
     if (modelId === 'thinking' && !canUseThinking) {
       toast({
@@ -625,8 +645,11 @@ const AllyChat = () => {
             const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
 
             // Save and start TTS concurrently — don't let a slow save block voice
-            const savePromise = conversationManager.saveConversation(userMessage, finalAssistantMessage).catch(
-              (err: unknown) => logger.error('Failed to save conversation:', err)
+            const savePromise = conversationManager.saveConversationWithIds(userMessage, finalAssistantMessage).catch(
+              (err: unknown) => {
+                logger.error('Failed to save conversation:', err);
+                return null;
+              }
             );
 
             // Continue conversation cycle if active
@@ -641,7 +664,8 @@ const AllyChat = () => {
               startRecordingWithVAD().catch(() => exitConversationModeWithError());
             }
 
-            await savePromise;
+            const saveResult = await savePromise;
+            attachLatestAssistantMessageId(saveResult?.assistantMessageId);
           },
           onError: (error) => {
             logger.error("Stream error:", error);
@@ -677,7 +701,7 @@ const AllyChat = () => {
       setIsLoading(false);
       setStreamStartTime(null);
     }
-  }, [lastError, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, stopMonitoring, stopSpeaking, speak, startRecordingWithVAD, exitConversationModeWithError, userId]);
+  }, [lastError, conversationManager, streamResponse, selectedModel, toast, createStreamCallbacks, attachLatestAssistantMessageId, stopMonitoring, stopSpeaking, speak, startRecordingWithVAD, exitConversationModeWithError, userId]);
 
   const sendMessage = async () => {
     // Guard against double submission - check ref first (sync), then state
@@ -744,8 +768,11 @@ const AllyChat = () => {
             const finalAssistantMessage = { role: "assistant" as const, content, timestamp: new Date() };
 
             // Save and start TTS concurrently — don't let a slow/failed save block voice playback
-            const savePromise = conversationManager.saveConversation(userMessage, finalAssistantMessage).catch(
-              (err: unknown) => logger.error('Failed to save conversation:', err)
+            const savePromise = conversationManager.saveConversationWithIds(userMessage, finalAssistantMessage).catch(
+              (err: unknown) => {
+                logger.error('Failed to save conversation:', err);
+                return null;
+              }
             );
 
             if (shouldAutoPlay && content) {
@@ -760,7 +787,8 @@ const AllyChat = () => {
               startRecordingWithVAD().catch(() => exitConversationModeWithError());
             }
 
-            await savePromise;
+            const saveResult = await savePromise;
+            attachLatestAssistantMessageId(saveResult?.assistantMessageId);
           },
           onError: (error) => {
             logger.error("Stream error:", error);
@@ -888,13 +916,15 @@ const AllyChat = () => {
           aquariumName: conversationManager.getSelectedAquariumName(),
           onStreamEnd: async (content) => {
             if (conversationManager.currentConversationId) {
-              await conversationManager.saveAssistantMessage(content);
+              const assistantMessageId = await conversationManager.saveAssistantMessage(content);
+              attachLatestAssistantMessageId(assistantMessageId);
             } else {
               const lastUserMessage = newMessages[newMessages.length - 1];
-              await conversationManager.saveConversation(
+              const saveResult = await conversationManager.saveConversationWithIds(
                 lastUserMessage,
                 { role: "assistant", content, timestamp: new Date() }
               );
+              attachLatestAssistantMessageId(saveResult?.assistantMessageId);
               await conversationManager.fetchConversations();
             }
           },
@@ -918,7 +948,7 @@ const AllyChat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [editingIndex, editingContent, messages, conversationManager, streamResponse, toast, selectedModel]);
+  }, [editingIndex, editingContent, messages, conversationManager, streamResponse, toast, selectedModel, createStreamCallbacks, attachLatestAssistantMessageId]);
 
   const handleRegenerateResponse = useCallback(async (index: number) => {
     if (messages[index]?.role !== "user") return;
@@ -942,13 +972,15 @@ const AllyChat = () => {
         createStreamCallbacks({
           onStreamEnd: async (content) => {
             if (conversationManager.currentConversationId) {
-              await conversationManager.saveAssistantMessage(content);
+              const assistantMessageId = await conversationManager.saveAssistantMessage(content);
+              attachLatestAssistantMessageId(assistantMessageId);
             } else {
               const lastUserMessage = newMessages[newMessages.length - 1];
-              await conversationManager.saveConversation(
+              const saveResult = await conversationManager.saveConversationWithIds(
                 lastUserMessage,
                 { role: "assistant", content, timestamp: new Date() }
               );
+              attachLatestAssistantMessageId(saveResult?.assistantMessageId);
             }
           },
           onError: (error) => {
@@ -971,7 +1003,7 @@ const AllyChat = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, conversationManager, streamResponse, toast, selectedModel, createStreamCallbacks]);
+  }, [messages, conversationManager, streamResponse, toast, selectedModel, createStreamCallbacks, attachLatestAssistantMessageId]);
 
   return (
     <TooltipProvider>

@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { sanitizeInput } from "@/lib/utils";
 
 interface Message {
+  id?: string;
   role: "user" | "assistant";
   content: string;
   timestamp?: Date;
@@ -26,6 +27,12 @@ interface Conversation {
   is_pinned?: boolean;
   last_message_preview?: string | null;
   message_count?: number;
+}
+
+interface SaveConversationResult {
+  conversationId: string;
+  userMessageId: string | null;
+  assistantMessageId: string | null;
 }
 
 // Factory function to create initial message with fresh timestamp
@@ -280,6 +287,7 @@ export function useConversationManager(userId: string | null) {
 
     if (messagesData && messagesData.length > 0) {
       const messages = messagesData.map(msg => ({
+        id: msg.id,
         role: msg.role as "user" | "assistant",
         content: msg.content,
         timestamp: new Date(msg.created_at)
@@ -336,10 +344,10 @@ export function useConversationManager(userId: string | null) {
     return false;
   }, [userId, currentConversationId, toast, fetchConversations]);
 
-  const saveConversation = useCallback(async (
+  const saveConversationWithIds = useCallback(async (
     userMessage: Message,
     assistantMessage: Message
-  ): Promise<string | null> => {
+  ): Promise<SaveConversationResult | null> => {
     if (!userId) return null;
 
     let conversationId = currentConversationId;
@@ -371,7 +379,9 @@ export function useConversationManager(userId: string | null) {
     }
 
     // Save messages - check for errors to prevent silent failures
-    const { error: messagesError } = await supabase
+    let insertedMessages: Array<{ id: string; role: string }> | null = null;
+    let messagesError: { message?: string } | null = null;
+    const insertMessages = supabase
       .from('chat_messages')
       .insert([
         {
@@ -385,6 +395,21 @@ export function useConversationManager(userId: string | null) {
           content: assistantMessage.content
         }
       ]);
+
+    if (typeof (insertMessages as { select?: unknown }).select === 'function') {
+      const result = await (insertMessages as { select: (columns: string) => Promise<{ data: Array<{ id: string; role: string }> | null; error: { message?: string } | null }> })
+        .select('id, role');
+      insertedMessages = result.data;
+      messagesError = result.error;
+    } else {
+      const result = await insertMessages;
+      messagesError = (result as { error?: { message?: string } | null }).error || null;
+    }
+
+    const userMessageId =
+      insertedMessages?.find((msg) => msg.role === 'user')?.id || null;
+    const assistantMessageId =
+      insertedMessages?.find((msg) => msg.role === 'assistant')?.id || null;
 
     if (messagesError) {
       logger.error('Failed to save messages:', messagesError);
@@ -409,14 +434,28 @@ export function useConversationManager(userId: string | null) {
       logger.error('Failed to update conversation:', updateError);
     }
 
-    return conversationId;
+    return {
+      conversationId,
+      userMessageId,
+      assistantMessageId,
+    };
   }, [userId, currentConversationId, selectedAquarium, fetchConversations, toast]);
 
-  const saveAssistantMessage = useCallback(async (content: string) => {
-    if (!currentConversationId) return;
+  const saveConversation = useCallback(async (
+    userMessage: Message,
+    assistantMessage: Message
+  ): Promise<string | null> => {
+    const result = await saveConversationWithIds(userMessage, assistantMessage);
+    return result?.conversationId || null;
+  }, [saveConversationWithIds]);
+
+  const saveAssistantMessage = useCallback(async (content: string): Promise<string | null> => {
+    if (!currentConversationId) return null;
 
     try {
-      const { error: messageError } = await supabase
+      let insertedMessageId: string | null = null;
+      let messageError: { message?: string } | null = null;
+      const insertMessage = supabase
         .from('chat_messages')
         .insert({
           conversation_id: currentConversationId,
@@ -424,9 +463,20 @@ export function useConversationManager(userId: string | null) {
           content
         });
 
+      if (typeof (insertMessage as { select?: unknown }).select === 'function') {
+        const result = await (insertMessage as { select: (columns: string) => { single: () => Promise<{ data: { id: string } | null; error: { message?: string } | null }> } })
+          .select('id')
+          .single();
+        insertedMessageId = result.data?.id || null;
+        messageError = result.error;
+      } else {
+        const result = await insertMessage;
+        messageError = (result as { error?: { message?: string } | null }).error || null;
+      }
+
       if (messageError) {
         logger.error('Failed to save assistant message:', messageError);
-        return;
+        return null;
       }
 
       const { error: updateError } = await supabase
@@ -437,8 +487,11 @@ export function useConversationManager(userId: string | null) {
       if (updateError) {
         logger.error('Failed to update conversation timestamp:', updateError);
       }
+
+      return insertedMessageId;
     } catch (error) {
       logger.error('Error in saveAssistantMessage:', error);
+      return null;
     }
   }, [currentConversationId]);
 
@@ -509,6 +562,7 @@ export function useConversationManager(userId: string | null) {
     startNewConversation,
     deleteConversation,
     saveConversation,
+    saveConversationWithIds,
     saveAssistantMessage,
     updateMessageInDb,
     getSelectedAquariumName,

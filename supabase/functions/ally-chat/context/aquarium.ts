@@ -6,11 +6,43 @@
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { getWaterType } from '../tools/index.ts';
+import { computeAquariumInsights } from './insights.ts';
 
 export interface AquariumContext {
   context: string;
   waterType: string;
   aquariumData: Record<string, unknown> | null;
+}
+
+const MAX_PROACTIVE_SUMMARY_CHARS = 2500;
+type ComputeInsightsArgs = Parameters<typeof computeAquariumInsights>;
+
+async function fetchFishSpeciesData(
+  supabase: SupabaseClient,
+  livestock: Record<string, unknown>[]
+): Promise<Record<string, unknown>[]> {
+  const speciesNames = Array.from(
+    new Set(
+      livestock
+        .map((item) => (typeof item.species === 'string' ? item.species.trim() : ''))
+        .filter((name) => name.length > 0)
+    )
+  );
+
+  if (speciesNames.length === 0) return [];
+
+  const [scientificResult, commonResult] = await Promise.all([
+    supabase.from('fish_species').select('*').in('scientific_name', speciesNames),
+    supabase.from('fish_species').select('*').in('common_name', speciesNames),
+  ]);
+
+  const deduped = new Map<string, Record<string, unknown>>();
+  for (const row of [...(scientificResult.data || []), ...(commonResult.data || [])]) {
+    const id = typeof row.id === 'string' ? row.id : null;
+    if (id) deduped.set(id, row as Record<string, unknown>);
+  }
+
+  return Array.from(deduped.values());
 }
 
 export async function buildAquariumContext(
@@ -54,6 +86,40 @@ export async function buildAquariumContext(
   const aquariumWithTests = { ...aquarium, water_tests: waterTests };
 
   const waterType = getWaterType(aquarium.type);
+  let proactiveSummary = '';
+
+  try {
+    const fishSpeciesData = await fetchFishSpeciesData(
+      supabase,
+      (livestock || []) as Record<string, unknown>[]
+    );
+
+    const waterTestsForInsights = (waterTests || []) as unknown as ComputeInsightsArgs[0];
+    const livestockForInsights = (livestock || []) as unknown as ComputeInsightsArgs[1];
+    const fishSpeciesForInsights = fishSpeciesData as unknown as ComputeInsightsArgs[2];
+    const equipmentForInsights = ((aquarium.equipment as Record<string, unknown>[]) || []) as unknown as ComputeInsightsArgs[3];
+    const plantsForInsights = (plants || []) as unknown as ComputeInsightsArgs[6];
+
+    const insights = computeAquariumInsights(
+      waterTestsForInsights,
+      livestockForInsights,
+      fishSpeciesForInsights,
+      equipmentForInsights,
+      typeof aquarium.volume_gallons === 'number' ? aquarium.volume_gallons : null,
+      waterType,
+      plantsForInsights
+    );
+
+    const summary = insights.proactiveSummary?.trim() || '';
+    if (summary) {
+      proactiveSummary = summary.length > MAX_PROACTIVE_SUMMARY_CHARS
+        ? `${summary.slice(0, MAX_PROACTIVE_SUMMARY_CHARS).trimEnd()}...`
+        : summary;
+    }
+  } catch {
+    // Keep chat context generation resilient if insights computation fails.
+    proactiveSummary = '';
+  }
 
   const context = `
 
@@ -98,6 +164,7 @@ Active Trend Alerts (${alerts?.length || 0}):
 ${alerts && alerts.length > 0
   ? alerts.map((a: Record<string, unknown>) => `  - [${a.severity.toUpperCase()}] ${a.parameter_name}: ${a.message}`).join('\n')
   : '  No active alerts'}
+${proactiveSummary ? `\n\n${proactiveSummary}` : ''}
 `;
 
   return {

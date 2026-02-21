@@ -363,7 +363,15 @@ serve(async (req) => {
         toolCallsForExecutor,
         supabase,
         authUser.id,
-        logger
+        logger,
+        {
+          messages,
+          inputGate: {
+            requiresGate: inputValidation.requiresGate,
+            missingInputs: inputValidation.missingInputs,
+            conversationType: inputValidation.conversationType,
+          },
+        }
       );
 
       // Build assistant message with tool calls for follow-up

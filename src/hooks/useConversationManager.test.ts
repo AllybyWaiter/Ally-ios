@@ -321,7 +321,15 @@ describe('useConversationManager', () => {
         }),
       });
 
-      const mockInsertMsg = vi.fn().mockResolvedValue({ error: null });
+      const mockInsertMsg = vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'msg-user-1', role: 'user' },
+            { id: 'msg-assistant-1', role: 'assistant' },
+          ],
+          error: null,
+        }),
+      });
       const mockUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),
       });
@@ -529,7 +537,14 @@ describe('useConversationManager', () => {
 
   describe('saveAssistantMessage', () => {
     it('should save message when conversation exists', async () => {
-      const mockInsert = vi.fn().mockResolvedValue({ error: null });
+      const mockInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'assistant-msg-1' },
+            error: null,
+          }),
+        }),
+      });
       const mockUpdate = vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),
       });

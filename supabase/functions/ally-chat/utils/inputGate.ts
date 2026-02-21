@@ -35,6 +35,12 @@ interface AquaticScopeResult {
   reason?: string;
 }
 
+const CRITICAL_REQUIRED_INPUTS: Record<Exclude<ConversationType, 'general'>, string[]> = {
+  pool_dosing: ['volume', 'free_chlorine', 'combined_chlorine', 'ph', 'alkalinity', 'cya', 'sanitizer_type'],
+  spa_dosing: ['volume', 'sanitizer_level', 'ph', 'alkalinity', 'sanitizer_type'],
+  aquarium_treatment: ['species', 'tank_size', 'ammonia', 'nitrite', 'nitrate', 'temperature', 'symptoms', 'timeline'],
+};
+
 // Keywords that indicate dosing/treatment intent
 const POOL_DOSING_KEYWORDS = [
   'add chlorine', 'shock', 'balance', 'dose', 'how much', 'dosage',
@@ -150,7 +156,10 @@ function detectInputsInConversation(
   messages: Message[],
   requirements: Record<string, string[]>
 ): Record<string, boolean> {
+  // Only user-provided content should satisfy safety requirements.
+  // Assistant questions/prompts must not count as user inputs.
   const allText = messages
+    .filter(m => m.role === 'user')
     .map(m => m.content.toLowerCase())
     .join(' ');
 
@@ -302,16 +311,28 @@ export function validateRequiredInputs(
     delete requirements.tank_size;
   }
 
+  // If the water type is already known from selected context, sanitizer type is implied.
+  if (conversationType === 'pool_dosing' && waterType === 'pool') {
+    requirements = { ...requirements };
+    delete requirements.sanitizer_type;
+  }
+  if (conversationType === 'spa_dosing' && waterType === 'spa') {
+    requirements = { ...requirements };
+    delete requirements.sanitizer_type;
+  }
+
   const detectedInputs = detectInputsInConversation(messages, requirements);
   const missingInputs = getMissingInputs(detectedInputs);
 
-  // Require gate if more than 2 critical inputs are missing
-  // Allow partial info to reduce friction for follow-up questions
-  const criticalMissingCount = missingInputs.filter(input =>
-    ['volume', 'tank_size', 'species', 'ph', 'free_chlorine', 'ammonia', 'symptoms'].includes(input.replace(' ', '_'))
-  ).length;
+  // Safety-first: if ANY required critical input is missing, enforce the gate.
+  const criticalInputs = [...(CRITICAL_REQUIRED_INPUTS[conversationType as Exclude<ConversationType, 'general'>] || [])];
+  if (conversationType === 'aquarium_treatment' && (waterType === 'saltwater' || waterType === 'brackish')) {
+    criticalInputs.push('salinity');
+  }
 
-  const requiresGate = criticalMissingCount >= 2;
+  const missingSet = new Set(missingInputs.map(input => input.replace(/ /g, '_')));
+  const criticalMissingCount = criticalInputs.filter(input => missingSet.has(input)).length;
+  const requiresGate = criticalMissingCount > 0;
 
   return {
     conversationType,
