@@ -10,6 +10,8 @@ This folder contains protocol-level guidance used to seed and maintain Ally's aq
 - `freshwater-parameter-targets-corrective-actions.md`
 - `reef-alkalinity-calcium-magnesium-balancing-protocol.md`
 - `ph-kh-stabilization-workflow.md`
+- `high-nitrate-reduction-playbook.md`
+- `temperature-stress-triage-protocol.md`
 
 ## Source imports
 
@@ -21,6 +23,8 @@ Original source drafts are preserved in:
 - `sources/freshwater-parameter-targets-corrective-actions.source.md`
 - `sources/reef-alkalinity-calcium-magnesium-balancing-protocol.source.md`
 - `sources/ph-kh-stabilization-workflow.source.md`
+- `sources/high-nitrate-reduction-playbook.source.md`
+- `sources/temperature-stress-triage-protocol.source.md`
 
 ## Usage notes
 
