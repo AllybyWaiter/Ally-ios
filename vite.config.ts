@@ -38,9 +38,32 @@ export default defineConfig(({ mode }) => ({
 
           // Keep major heavy libraries isolated.
           if (id.includes("node_modules/recharts")) return "vendor-recharts";
-          if (id.includes("node_modules/framer-motion")) return "vendor-framer";
-          if (id.includes("node_modules/leaflet") || id.includes("node_modules/react-leaflet")) return "vendor-leaflet";
+          if (
+            id.includes("node_modules/framer-motion") ||
+            id.includes("node_modules/motion-dom") ||
+            id.includes("node_modules/motion-utils")
+          ) {
+            return "vendor-framer";
+          }
+          if (
+            id.includes("node_modules/leaflet") ||
+            id.includes("node_modules/react-leaflet") ||
+            id.includes("node_modules/@react-leaflet/core")
+          ) {
+            return "vendor-leaflet";
+          }
           if (id.includes("node_modules/i18next") || id.includes("node_modules/react-i18next")) return "vendor-i18n";
+          if (id.includes("node_modules/react-dom")) return "vendor-react-dom";
+          if (id.includes("node_modules/react/")) return "vendor-react";
+          if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
+          if (id.includes("node_modules/@supabase")) return "vendor-supabase";
+          if (id.includes("node_modules/@tanstack")) return "vendor-query";
+          if (id.includes("node_modules/react-router") || id.includes("node_modules/@remix-run/router")) return "vendor-router";
+          if (id.includes("node_modules/@sentry")) return "vendor-sentry";
+          if (id.includes("node_modules/date-fns")) return "vendor-datefns";
+          if (id.includes("node_modules/lucide-react")) return "vendor-icons";
+          if (id.includes("node_modules/@capacitor") || id.includes("node_modules/@revenuecat")) return "vendor-native";
+          if (id.includes("node_modules/react-day-picker")) return "vendor-datepicker";
 
           // Split markdown and syntax stack to avoid a single oversized chunk.
           if (id.includes("node_modules/react-syntax-highlighter") || id.includes("node_modules/refractor")) {

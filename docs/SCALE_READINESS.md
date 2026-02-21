@@ -74,11 +74,11 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 | Crash-free sessions >=99.7% | NOT MEASURED (needs prod/staging telemetry) |
 | API error rate <=1% | NOT MEASURED (needs load + telemetry) |
 | Read/Write p95 targets | NOT MEASURED (needs load testing) |
-| Lint 0 errors | FAIL |
+| Lint 0 errors | PASS (warnings remain) |
 | Tests 100% pass | PASS |
 | Coverage >=70% | FAIL |
 | Initial JS budget <=350KB gzip | FAIL |
-| No huge chunks (>500KB warning proxy) | FAIL |
+| No huge chunks (>500KB warning proxy) | PASS |
 
 ## Day 2 Priorities
 1. Fix lint errors to unblock quality gate.
@@ -94,13 +94,14 @@ find dist/assets -maxdepth 1 -name "*.js" -print0 | xargs -0 ls -lh | sort -k5 -
 - Build: PASS
 
 ### Bundle Split Progress
-- `vendor-markdown`: `~1.7M -> ~120.65k`
-- Added dedicated `vendor-syntax`: `~68.85k`
-- Remaining oversized chunks:
-  - `vendor-recharts`: `~568.86k`
-  - `App`: `~910.54k`
+- `vendor-markdown`: `~1.7M -> ~120.61k`
+- `App`: `~910.54k -> ~205.11k`
+- `vendor-recharts`: `~568.86k -> ~434.58k`
+- `AquariumDetail` moved to lazy route chunk with retry/preload: `~121.36k`
+- Current status: no production chunk above `500k`
 
 ### Load Testing Progress
 - Added load test runner: `scripts/load/run-load-tests.mjs`
 - Added runbook: `docs/LOAD_TESTING.md`
 - Added npm scripts: `load:test`, `load:test:quick`
+- Quick baseline (`weather`, 10 requests, concurrency 2): `p95 1116.43ms`, `0%` errors

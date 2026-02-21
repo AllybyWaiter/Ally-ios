@@ -97,7 +97,6 @@ checkForServiceWorkerUpdate();
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import AquariumDetail from "./pages/AquariumDetail"; // Eagerly loaded to prevent iOS PWA module resolution errors
 
 const loadAdmin = () => import("./pages/Admin");
 const loadDashboard = () => import("./pages/Dashboard");
@@ -107,6 +106,7 @@ const loadSettings = () => import("./pages/Settings");
 const loadPricing = () => import("./pages/Pricing");
 const loadAllyChat = () => import("./pages/AllyChat");
 const loadWeather = () => import("./pages/Weather");
+const loadAquariumDetail = () => import("./pages/AquariumDetail");
 const loadPrivacyPolicy = () => import("./pages/PrivacyPolicy");
 const loadTermsOfService = () => import("./pages/TermsOfService");
 
@@ -119,6 +119,7 @@ const Settings = lazyWithRetry(loadSettings);
 const Pricing = lazyWithRetry(loadPricing);
 const AllyChat = lazyWithRetry(loadAllyChat);
 const Weather = lazyWithRetry(loadWeather);
+const AquariumDetail = lazyWithRetry(loadAquariumDetail);
 const PrivacyPolicy = lazyWithRetry(loadPrivacyPolicy);
 const TermsOfService = lazyWithRetry(loadTermsOfService);
 
@@ -127,6 +128,7 @@ preloadCoreRoutes([
   loadWaterTests,
   loadTaskCalendar,
   loadWeather,
+  loadAquariumDetail,
   loadAllyChat,
   loadSettings,
   loadPricing,
@@ -205,7 +207,9 @@ const App = () => (
                     element={
                       <ProtectedRoute>
                         <PageErrorBoundary pageName="Aquarium Details" featureArea="aquarium">
-                          <AquariumDetail />
+                          <Suspense fallback={<DashboardSkeleton />}>
+                            <AquariumDetail />
+                          </Suspense>
                         </PageErrorBoundary>
                       </ProtectedRoute>
                     }
